@@ -1,111 +1,131 @@
-<style>
-    body {
-        background-color: #000;
-        color: #fff;
-        font-family: 'Arial', sans-serif;
-        margin: 0;
-        padding: 0;
-    }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>El Sótano del Doctor</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
 
-    header {
-        background-color: #111;
-        padding: 20px;
-        text-align: center;
-    }
+        header {
+            background-color: #111;
+            padding: 20px;
+            text-align: center;
+        }
 
-    header img {
-        width: 300px;
-        height: auto;
-    }
-
-    main {
-        padding: 20px;
-    }
-
-    section {
-        margin-bottom: 50px;
-        padding: 20px;
-        background-color: #111;
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-    }
-
-    h2 {
-        border-bottom: 2px solid #0cf;
-        color: #0cf;
-        padding-bottom: 10px;
-        font-size: 1.8em;
-        text-align: center;
-    }
-
-    p {
-        color: #aaa;
-        font-size: 1em;
-        line-height: 1.5;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-        color: #fff;
-        font-size: 0.95em;
-    }
-
-    thead {
-        background-color: #222;
-        color: #0cf;
-    }
-
-    th, td {
-        padding: 12px;
-        border: 1px solid #333;
-        text-align: left;
-    }
-
-    th {
-        font-weight: bold;
-    }
-
-    tr:nth-child(even) {
-        background-color: #1a1a1a;
-    }
-
-    .gallery {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        justify-content: center;
-    }
-
-    .gallery img {
-        width: 280px;
-        border: 2px solid #333;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
-    }
-
-    footer {
-        background-color: #111;
-        color: #888;
-        text-align: center;
-        padding: 20px;
-        font-size: 0.9em;
-        border-top: 1px solid #222;
-    }
-
-    @media (max-width: 600px) {
         header img {
-            width: 200px;
+            width: 300px;
+            height: auto;
         }
 
-        table, th, td {
-            font-size: 0.85em;
+        main {
+            padding: 20px;
         }
 
-        .gallery img {
+        section {
+            margin-bottom: 50px;
+            padding: 20px;
+            background-color: #111;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        h2 {
+            border-bottom: 2px solid #0cf;
+            color: #0cf;
+            padding-bottom: 10px;
+            font-size: 1.8em;
+            text-align: center;
+        }
+
+        p {
+            color: #aaa;
+            font-size: 1em;
+            line-height: 1.5;
+        }
+
+        table {
             width: 100%;
-            max-width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #fff;
+            font-size: 0.95em;
         }
-    }
-</style>
+
+        thead {
+            background-color: #222;
+            color: #0cf;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #333;
+            text-align: left;
+        }
+
+        tr:nth-child(even) {
+            background-color: #1a1a1a;
+        }
+
+        footer {
+            background-color: #111;
+            color: #888;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+            border-top: 1px solid #222;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="assets/logo_blanco.png" alt="El Sótano del Doctor logo" />
+    </header>
+
+    <main>
+        <section id="setlists">
+            <h2>🎼 Setlists Ensayos 2025 🎶</h2>
+            <p style="text-align: center;">Consulta los setlists en tiempo real desde BandHelper:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Tonalidad</th>
+                        <th>Tempo</th>
+                        <th>Duración</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Que nada nos pare</td>
+                        <td>G#m</td>
+                        <td>128</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td>Nada que perder</td>
+                        <td>G</td>
+                        <td>154</td>
+                        <td>—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Calendario de actuaciones</h2>
+            <p>Aquí podrás consultar todas las fechas confirmadas.</p>
+        </section>
+    </main>
+
+    <footer>
+        © 2025 El Sótano del Doctor. Todos los derechos reservados.
+    </footer>
+</body>
+</html>
+
