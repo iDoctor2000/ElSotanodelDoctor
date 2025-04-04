@@ -107,33 +107,13 @@
             <p style="margin-top:10px; font-size: 0.9em; color: #888;">🎧 Setlist actualizado en tiempo real desde la app</p>
         </section>
 
-<section id="Calendario de Actuaciones" style="text-align: center; margin-top: 50px;">
-  <h2 style="color: #0cf;">📅 Próximos conciertos</h2>
-  <p style="color: #aaa;">Consulta nuestro calendario actualizado desde BandHelper</p>
-  <button onclick="abrirModal()" style="padding: 10px 20px; margin-top: 10px; font-size: 1em; background-color: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer;">
-    📅 Ver calendario de conciertos
-  </button>
-</section>
-
-<!-- MODAL -->
-<div id="modalCalendario" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background-color: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
-  <div style="background-color: #fff; padding: 30px; border-radius: 10px; max-width: 800px; width: 90%; position: relative;">
-    <button onclick="cerrarModal()" style="position: absolute; top: 10px; right: 15px; background: #0cf; color: #000; border: none; font-size: 1.2em; padding: 5px 10px; border-radius: 5px; cursor: pointer;">✖</button>
-    <h3 style="color: #000; margin-top: 0;">Calendario de conciertos</h3>
-    <div style="overflow-x: auto;">
-      <script type="text/javascript" src="https://www.bandhelper.com/widget/calendar/10353?layout=2&range=6"></script>
-    </div>
+<section id="calendario" style="padding: 30px; margin-bottom: 50px;">
+  <h2 style="text-align: center; color: #0cf;">📅 Próximos conciertos</h2>
+  <p style="text-align: center; color: #aaa;">Consulta nuestro calendario actualizado desde BandHelper</p>
+  <div style="background-color: #111; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,255,255,0.1);">
+    <script type="text/javascript" src="https://www.bandhelper.com/widget/calendar/10353?range=6"></script>
   </div>
-</div>
-
-<script>
-  function abrirModal() {
-    document.getElementById("modalCalendario").style.display = "flex";
-  }
-  function cerrarModal() {
-    document.getElementById("modalCalendario").style.display = "none";
-  }
-</script>
+</section>
 
 
     </main>
