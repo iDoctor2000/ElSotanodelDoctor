@@ -19,10 +19,6 @@
 
     <link rel="icon" href="assets/favicon_el_sotano_dr.ico" type="image/x-icon">
 
-
-
-    
-    <link rel="icon" href="assets/favicon_el_sotano_dr.ico" type="image/x-icon">
     <style>
         body {
             background-color: #000;
@@ -122,27 +118,45 @@
                 </thead>
                 <tbody id="setlist-body"></tbody>
             </table>
+
             <button id="download-btn">📥 Descargar PDF del setlist</button>
+            <!-- Aquí se insertará automáticamente el párrafo con el tiempo total del set -->
             <p style="margin-top:10px; font-size: 0.9em; color: #888;">🎧 Setlist actualizado en tiempo real desde la app</p>
         </section>
 
-<section id="calendario" style="padding: 30px; margin-bottom: 50px;">
-  <h2 style="text-align: center; color: #0cf;">📅 Próximos conciertos</h2>
-  <p style="text-align: center; color: #aaa;">Consulta nuestro calendario actualizado desde BandHelper</p>
-  <div style="background-color: #111; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,255,255,0.1);">
-    <script type="text/javascript" src="https://www.bandhelper.com/widget/calendar/10353?range=6"></script>
-  </div>
-</section>
-
-
+        <section id="calendario" style="padding: 30px; margin-bottom: 50px;">
+            <h2 style="text-align: center; color: #0cf;">📅 Próximos conciertos</h2>
+            <p style="text-align: center; color: #aaa;">Consulta nuestro calendario actualizado desde BandHelper</p>
+            <div style="background-color: #111; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,255,255,0.1);">
+                <script type="text/javascript" src="https://www.bandhelper.com/widget/calendar/10353?range=6"></script>
+            </div>
+        </section>
     </main>
     <footer>
         © 2025 El Sótano del Doctor. Todos los derechos reservados.
     </footer>
 
+    <!-- Librerías jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
     <script>
         const url = 'https://cold-limit-811a.jagomezc.workers.dev';
+
+        // Función para convertir la duración "mm:ss" a segundos
+        function parseDurationToSeconds(durationStr) {
+            if (!durationStr || !durationStr.includes(":")) return 0;
+            const [min, sec] = durationStr.split(":").map(num => parseInt(num, 10));
+            return (min * 60) + (sec || 0);
+        }
+
+        // Función para formatear los segundos totales a "mm:ss"
+        function formatSecondsToMMSS(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            // Aseguramos que sean 2 dígitos en segundos
+            return `${minutes}:${String(seconds).padStart(2, '0')}`;
+        }
 
         async function cargarSetlist() {
             try {
@@ -150,7 +164,12 @@
                 const data = await res.json();
                 const tbody = document.getElementById('setlist-body');
                 tbody.innerHTML = '';
+
+                // Filtramos los elementos tipo "song"
                 const songs = data.filter(item => item.type === 'song');
+
+                let totalSeconds = 0;
+
                 songs.forEach(song => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -160,7 +179,30 @@
                         <td>${song.duration || ''}</td>
                     `;
                     tbody.appendChild(row);
+
+                    // Sumamos las duraciones, en caso de formato "mm:ss"
+                    totalSeconds += parseDurationToSeconds(song.duration);
                 });
+
+                // Calculamos el tiempo total y lo mostramos
+                const totalDuration = formatSecondsToMMSS(totalSeconds);
+
+                // Buscamos el <section> del setlist
+                const setlistSection = document.getElementById('setlists');
+
+                // Creamos o actualizamos un <p> para el tiempo total
+                let totalTimeParagraph = document.getElementById('total-time');
+                if (!totalTimeParagraph) {
+                    totalTimeParagraph = document.createElement('p');
+                    totalTimeParagraph.id = 'total-time';
+                    totalTimeParagraph.style.color = '#0cf';
+                    totalTimeParagraph.style.marginTop = '10px';
+                    totalTimeParagraph.style.textAlign = 'center';
+                    setlistSection.appendChild(totalTimeParagraph);
+                }
+
+                totalTimeParagraph.textContent = `Tiempo total del set: ${totalDuration}`;
+
                 return songs;
             } catch (err) {
                 console.error('Error al cargar el setlist:', err);
@@ -175,10 +217,17 @@
             doc.setFontSize(14);
             doc.text("Setlist - El Sótano del Doctor", 20, 20);
 
+            // Cargamos los datos y sumamos la duración
             const songs = await cargarSetlist();
 
+            // Construimos la tabla para el PDF
             const columns = ["Título", "Tonalidad", "Tempo", "Duración"];
-            const rows = songs.map(s => [s.name || '', s.key || '', s.tempo || '', s.duration || '']);
+            const rows = songs.map(s => [
+                s.name || '',
+                s.key || '',
+                s.tempo || '',
+                s.duration || ''
+            ]);
 
             doc.autoTable({
                 head: [columns],
@@ -191,10 +240,11 @@
             doc.save("setlist_ElSotanoDelDoctor.pdf");
         }
 
+        // Evento para el botón de descargar
         document.getElementById('download-btn').addEventListener('click', descargarPDF);
 
+        // Cargamos la lista de canciones y calculamos duraciones al cargar la página
         cargarSetlist();
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </body>
 </html>
