@@ -4,22 +4,10 @@
     <meta charset="UTF-8">
     <title>El Sótano del Doctor</title>
 
-    <!-- Open Graph para redes sociales -->
-    <meta property="og:title" content="El Sótano del Doctor" />
-    <meta property="og:description" content="Web oficial de ensayos y eventos proximos." />
-    <meta property="og:image" content="https://idoctor2000.github.io/ElSotanodelDoctor/assets/logo_negro copia.jpg" />
-    <meta property="og:url" content="https://idoctor2000.github.io/ElSotanodelDoctor/" />
-    <meta property="og:type" content="website" />
-
-    <!-- Para Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="El Sótano del Doctor" />
-    <meta name="twitter:description" content="Web oficial de ensayos y eventos proximos." />
-    <meta name="twitter:image" content="https://idoctor2000.github.io/ElSotanodelDoctor/assets/logo_negro copia.jpg" />
-
-    <link rel="icon" href="assets/favicon_el_sotano_dr.ico" type="image/x-icon">
+    <!-- ... Head original ... -->
 
     <style>
+        /* Tus estilos originales */
         body {
             background-color: #000;
             color: #fff;
@@ -120,7 +108,6 @@
             </table>
 
             <button id="download-btn">📥 Descargar PDF del setlist</button>
-            <!-- Aquí se insertará automáticamente el párrafo con el tiempo total del set -->
             <p style="margin-top:10px; font-size: 0.9em; color: #888;">🎧 Setlist actualizado en tiempo real desde la app</p>
         </section>
 
@@ -143,18 +130,24 @@
     <script>
         const url = 'https://cold-limit-811a.jagomezc.workers.dev';
 
-        // Función para convertir la duración "mm:ss" a segundos
+        // Función que interpreta "mm:ss" o un número de segundos
         function parseDurationToSeconds(durationStr) {
-            if (!durationStr || !durationStr.includes(":")) return 0;
-            const [min, sec] = durationStr.split(":").map(num => parseInt(num, 10));
-            return (min * 60) + (sec || 0);
+            if (!durationStr) return 0;
+            // Si hay ":", tratamos como "mm:ss"
+            if (durationStr.includes(":")) {
+                const [min, sec] = durationStr.split(":").map(num => parseInt(num, 10));
+                return (min * 60) + (sec || 0);
+            } else {
+                // Si no hay ":", es un número de segundos
+                const seconds = parseInt(durationStr, 10);
+                return isNaN(seconds) ? 0 : seconds;
+            }
         }
 
-        // Función para formatear los segundos totales a "mm:ss"
+        // Función para convertir segundos a "mm:ss"
         function formatSecondsToMMSS(totalSeconds) {
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
-            // Aseguramos que sean 2 dígitos en segundos
             return `${minutes}:${String(seconds).padStart(2, '0')}`;
         }
 
@@ -165,32 +158,33 @@
                 const tbody = document.getElementById('setlist-body');
                 tbody.innerHTML = '';
 
-                // Filtramos los elementos tipo "song"
                 const songs = data.filter(item => item.type === 'song');
-
                 let totalSeconds = 0;
 
                 songs.forEach(song => {
+                    // Aquí parseamos la duración original
+                    const rawDuration = song.duration || ''; 
+                    const durationInSeconds = parseDurationToSeconds(rawDuration);
+                    const durationFormatted = formatSecondsToMMSS(durationInSeconds);
+
+                    // Construimos la fila
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${song.name || ''}</td>
                         <td>${song.key || ''}</td>
                         <td>${song.tempo || ''}</td>
-                        <td>${song.duration || ''}</td>
+                        <td>${durationFormatted}</td>
                     `;
                     tbody.appendChild(row);
 
-                    // Sumamos las duraciones, en caso de formato "mm:ss"
-                    totalSeconds += parseDurationToSeconds(song.duration);
+                    // Sumamos la duración
+                    totalSeconds += durationInSeconds;
                 });
 
-                // Calculamos el tiempo total y lo mostramos
+                // Calculamos y mostramos el tiempo total
                 const totalDuration = formatSecondsToMMSS(totalSeconds);
-
-                // Buscamos el <section> del setlist
                 const setlistSection = document.getElementById('setlists');
 
-                // Creamos o actualizamos un <p> para el tiempo total
                 let totalTimeParagraph = document.getElementById('total-time');
                 if (!totalTimeParagraph) {
                     totalTimeParagraph = document.createElement('p');
@@ -200,7 +194,6 @@
                     totalTimeParagraph.style.textAlign = 'center';
                     setlistSection.appendChild(totalTimeParagraph);
                 }
-
                 totalTimeParagraph.textContent = `Tiempo total del set: ${totalDuration}`;
 
                 return songs;
@@ -217,17 +210,21 @@
             doc.setFontSize(14);
             doc.text("Setlist - El Sótano del Doctor", 20, 20);
 
-            // Cargamos los datos y sumamos la duración
+            // Obtenemos la lista (y sumamos la duración de paso)
             const songs = await cargarSetlist();
 
-            // Construimos la tabla para el PDF
             const columns = ["Título", "Tonalidad", "Tempo", "Duración"];
-            const rows = songs.map(s => [
-                s.name || '',
-                s.key || '',
-                s.tempo || '',
-                s.duration || ''
-            ]);
+            const rows = songs.map(s => {
+                // Volvemos a formatear para el PDF
+                const durationInSeconds = parseDurationToSeconds(s.duration || '');
+                const durationFormatted = formatSecondsToMMSS(durationInSeconds);
+                return [
+                    s.name || '',
+                    s.key || '',
+                    s.tempo || '',
+                    durationFormatted
+                ];
+            });
 
             doc.autoTable({
                 head: [columns],
@@ -240,11 +237,9 @@
             doc.save("setlist_ElSotanoDelDoctor.pdf");
         }
 
-        // Evento para el botón de descargar
+        // Listeners y carga inicial
         document.getElementById('download-btn').addEventListener('click', descargarPDF);
-
-        // Cargamos la lista de canciones y calculamos duraciones al cargar la página
-        cargarSetlist();
+        cargarSetlist(); 
     </script>
 </body>
 </html>
