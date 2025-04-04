@@ -54,24 +54,59 @@
         <img src="assets/logo_blanco.png" alt="El Sótano del Doctor logo" />
     </header>
     <main>
-<section id="setlists" style="background-color: #111; padding: 30px; border-radius: 12px; margin-bottom: 50px; box-shadow: 0 0 20px rgba(0,255,255,0.2);">
-  <h2 style="color: #00ffff; text-align: center; font-size: 2em; margin-bottom: 10px;">
-    🎼 Setlists Ensayos 2025 🎶
-  </h2>
-  <p style="text-align: center; font-size: 1.2em; color: #ccc; margin-bottom: 30px;">
-    Consulta los setlists en tiempo real desde BandHelper:
-  </p>
-
-  <div id="bandhelper-setlist" style="background-color: #000; padding: 20px; border-radius: 10px; border: 1px solid #00ffff; overflow-x: auto;">
-    <div style="min-width: 1200px;"> <!-- Aquí ampliamos espacio para la columna del título -->
-      <script type="text/javascript" src="https://www.bandhelper.com/widget/set_list/9ZzC9z?layout=1&fields=key,tempo,duration&sections=1&labels=1"></script>
-    </div>
+<section id="setlists" style="padding: 30px; margin-bottom: 50px;">
+  <h2 style="text-align: center; color: #00ffff; font-size: 2em;">🎼 Setlists Ensayos 2025 🎶</h2>
+  <div style="overflow-x: auto; margin-top: 20px;">
+    <table id="setlist-table" style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+      <thead>
+        <tr style="background-color: #111; color: #0ff;">
+          <th style="padding: 10px; border: 1px solid #333;">Título</th>
+          <th style="padding: 10px; border: 1px solid #333;">Tonalidad</th>
+          <th style="padding: 10px; border: 1px solid #333;">Tempo</th>
+          <th style="padding: 10px; border: 1px solid #333;">Duración</th>
+        </tr>
+      </thead>
+      <tbody id="setlist-body" style="background-color: #222; color: #fff;"></tbody>
+    </table>
   </div>
 
-  <p style="text-align: center; margin-top: 20px; font-size: 0.9em; color: #888;">
-    📲 Actualizado automáticamente desde la app
+  <p style="text-align: center; font-size: 0.9em; color: #888; margin-top: 10px;">
+    📲 Setlist actualizado en tiempo real desde BandHelper
   </p>
 </section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const url = 'https://cold-limit-811a.jagomezc.workers.dev';
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.getElementById('setlist-body');
+        if (!data.songs || data.songs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay canciones en el setlist.</td></tr>';
+          return;
+        }
+
+        data.songs.forEach(song => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td style="padding: 10px; border: 1px solid #444;">${song.title || ''}</td>
+            <td style="padding: 10px; border: 1px solid #444;">${song.key || ''}</td>
+            <td style="padding: 10px; border: 1px solid #444;">${song.tempo || ''}</td>
+            <td style="padding: 10px; border: 1px solid #444;">${song.duration || ''}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      })
+      .catch(err => {
+        console.error('Error al cargar el setlist:', err);
+        const tbody = document.getElementById('setlist-body');
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Error al cargar el setlist.</td></tr>';
+      });
+  });
+</script>
+
 
 
 
