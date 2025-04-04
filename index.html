@@ -1,21 +1,22 @@
 <main>
     <section id="setlists" style="padding: 30px; margin-bottom: 50px;">
-        <h2 style="text-align: center; color: #00ffff; font-size: 2em;">🎼 Setlists Ensayos 2025 🎶</h2>
-        <div style="overflow-x: auto; margin-top: 20px;">
-            <table id="setlist-table" style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+        <h2 style="text-align: center; color: #0cf; font-size: 2em;">🎼 Setlists Ensayos 2025 🎶</h2>
+        <p style="text-align: center; color: #ccc;">Consulta los setlists en tiempo real desde BandHelper:</p>
+        <div style="overflow-x: auto; margin-top: 20px; background-color: #000; padding: 10px; border: 1px solid #0cf; border-radius: 10px; box-shadow: 0 0 20px #0cf4;">
+            <table id="setlist-table" style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; color: #fff;">
                 <thead>
-                    <tr style="background-color: #111; color: #0ff;">
-                        <th style="padding: 10px; border: 1px solid #333;">Título</th>
-                        <th style="padding: 10px; border: 1px solid #333;">Tonalidad</th>
-                        <th style="padding: 10px; border: 1px solid #333;">Tempo</th>
-                        <th style="padding: 10px; border: 1px solid #333;">Duración</th>
+                    <tr style="background-color: #111; color: #0cf;">
+                        <th style="padding: 10px; border-bottom: 1px solid #0cf;">Título</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #0cf;">Tonalidad</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #0cf;">Tempo</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #0cf;">Duración</th>
                     </tr>
                 </thead>
-                <tbody id="setlist-body" style="background-color: #222; color: #fff;"></tbody>
+                <tbody id="setlist-body" style="background-color: #000;"></tbody>
             </table>
         </div>
         <p style="text-align: center; font-size: 0.9em; color: #888; margin-top: 10px;">
-            📲 Setlist actualizado en tiempo real desde BandHelper
+            🎧 Actualizado automáticamente desde la app
         </p>
     </section>
 
@@ -47,10 +48,10 @@
                     songs.forEach(song => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td style="padding: 10px; border: 1px solid #444;">${song.name || ''}</td>
-                            <td style="padding: 10px; border: 1px solid #444;">${song.key || ''}</td>
-                            <td style="padding: 10px; border: 1px solid #444;">${song.tempo || ''}</td>
-                            <td style="padding: 10px; border: 1px solid #444;">${song.duration || ''}</td>
+                            <td style="padding: 10px;">${song.name || ''}</td>
+                            <td style="padding: 10px;">${song.key || ''}</td>
+                            <td style="padding: 10px;">${song.tempo || ''}</td>
+                            <td style="padding: 10px;">${song.duration || ''}</td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -63,3 +64,4 @@
         });
     </script>
 </main>
+
