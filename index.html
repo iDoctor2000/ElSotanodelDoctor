@@ -4,6 +4,20 @@
   <meta charset="UTF-8" />
   <title>El Sótano del Doctor – Uso Interno</title>
 
+  <!-- METADATOS PARA VISTA PREVIA EN REDES (Open Graph / Telegram / WhatsApp) -->
+  <meta property="og:title" content="El Sótano del Doctor – Uso Interno" />
+  <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!" />
+  <meta property="og:image" content="assets/logo_negro copia.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://tusitioweb.com" />
+  <!-- Puedes ajustar la url a la real de tu servidor o dejarla en blanco -->
+
+  <!-- (Opcional) Metadatos Twitter Card, útiles si en el futuro compartes en Twitter -->
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="El Sótano del Doctor – Uso Interno"/>
+  <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!"/>
+  <meta name="twitter:image" content="assets/logo_negro copia.jpg"/>
+
   <!-- Ajuste para que sea responsive en móvil -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -120,7 +134,7 @@
 <body>
   <!-- Encabezado con logo -->
   <header>
-    <img src="assets/logo_blanco.png" alt="Logo de El Sótano del Doctor" />
+    <img src="assets/logo_negro copia.jpg" alt="Logo de El Sótano del Doctor" />
   </header>
 
   <!-- Contenedor principal -->
@@ -221,7 +235,7 @@
 
         // Mostramos tiempo total
         const totalTimeParagraph = document.getElementById('total-time');
-        totalTimeParagraph.textContent = 
+        totalTimeParagraph.textContent =
           'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
 
         return songs;
