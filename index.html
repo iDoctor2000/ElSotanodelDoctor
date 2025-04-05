@@ -2,207 +2,55 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>El Sótano del Doctor – Web Oficial</title>
+  <title>El Sótano del Doctor – Uso Interno</title>
 
-  <!-- META Etiquetas SEO Básicas -->
-  <meta name="description" content="El Sótano del Doctor es una banda de rock/cover de Murcia. Consulta setlists, próximos conciertos y más." />
-  <meta name="keywords" content="El Sótano del Doctor, banda, rock, Murcia, música, conciertos, setlist" />
-  <meta name="author" content="El Sótano del Doctor" />
-
-  <!-- META para redes sociales (Open Graph / Twitter Cards) -->
-  <meta property="og:title" content="El Sótano del Doctor" />
-  <meta property="og:description" content="Banda de rock y versiones. Aquí podrás ver nuestro setlist, próximos eventos y más." />
-  <meta property="og:image" content="assets/logo_blanco.png" />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://tusitioweb.com" />
-
-  <!-- Viewport para responsive -->
+  <!-- Ajuste para que sea responsive en móvil -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Librerías jsPDF (para exportar a PDF el setlist) -->
+  <!-- Librerías jsPDF para exportar el setlist a PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    /* 
-      =========================
-        ESTILOS PRINCIPALES
-      =========================
-    */
+    /* Estilos mínimos para el cuerpo */
     body {
       margin: 0;
       padding: 0;
       font-family: Arial, sans-serif;
-      background-color: #000;
-      color: #fff;
+      background-color: #000; /* Fondo negro */
+      color: #fff;            /* Texto blanco */
     }
 
-    /* 
-      =========================
-         ENCABEZADO & NAV
-      =========================
-    */
+    /* Encabezado */
     header {
       background-color: #111;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       padding: 10px 20px;
-    }
-    header .logo {
       display: flex;
-      align-items: center;
-    }
-    header .logo img {
-      width: 120px;
-      height: auto;
-    }
-    header nav {
-      position: relative;
-    }
-    nav ul {
-      list-style: none;
-      display: flex;
-      gap: 20px;
-      margin: 0;
-      padding: 0;
-    }
-    nav ul li {
-      position: relative;
-    }
-    nav ul li a {
-      text-decoration: none;
-      color: #fff;
-      font-weight: 500;
-      transition: color 0.3s ease;
-    }
-    nav ul li a:hover {
-      color: #0cf;
-    }
-
-    /* Botón hamburguesa sólo visible en móvil */
-    .hamburger {
-      display: none;
-      flex-direction: column;
-      cursor: pointer;
-      gap: 4px;
-      border: 1px solid #0cf;
-      padding: 5px;
-      border-radius: 4px;
-    }
-    .hamburger span {
-      width: 20px;
-      height: 2px;
-      background: #0cf;
-    }
-
-    /* Menú vertical en móvil (cuando toggle es activo) */
-    nav ul.mobile-active {
-      position: absolute;
-      top: 50px;
-      right: 0;
-      flex-direction: column;
-      background-color: #111;
-      padding: 10px;
-      border: 1px solid #333;
-      display: none;
-    }
-    nav ul.mobile-active.show {
-      display: flex;
-    }
-
-    /*
-      =========================
-          SECCIÓN HERO
-      =========================
-    */
-    .hero {
-      text-align: center;
-      padding: 60px 20px;
-      background: url('assets/background.jpg') center/cover no-repeat;
-      /* Ajusta la ruta y asegúrate de optimizar la imagen */
-      position: relative;
-    }
-    .hero::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-    }
-    .hero-content {
-      position: relative;
-      z-index: 2;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-    .hero h1 {
-      font-size: 2.5em;
-      margin-bottom: 20px;
-      color: #0cf;
-    }
-    .hero p {
-      font-size: 1.2em;
-      line-height: 1.4;
-      color: #eee;
-    }
-
-    /*
-      =========================
-         SECCIÓN LA BANDA
-      =========================
-    */
-    .section {
-      padding: 40px 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .section h2 {
-      text-align: center;
-      color: #0cf;
-      margin-bottom: 20px;
-      font-size: 2em;
-      border-bottom: 2px solid #0cf;
-      display: inline-block;
-      padding-bottom: 5px;
-    }
-    .banda-content {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
       align-items: center;
       justify-content: center;
-      margin-top: 20px;
     }
-    .banda-content img {
-      max-width: 300px;
-      border-radius: 10px;
-      border: 2px solid #0cf;
-    }
-    .banda-text {
-      max-width: 600px;
-    }
-    .banda-text p {
-      color: #ddd;
-      line-height: 1.6;
-      margin-bottom: 15px;
+    header img {
+      width: 180px;
+      height: auto;
     }
 
-    /*
-      =========================
-          SECCIÓN SETLIST
-      =========================
-    */
+    /* Sección Setlist */
+    section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
     #setlists {
       background-color: #111;
-      padding: 30px;
+      padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
       margin-bottom: 40px;
     }
-    #setlists h3 {
-      color: #0cf;
+    #setlists h2 {
       text-align: center;
-      margin-bottom: 10px;
+      color: #0cf;
+      margin-bottom: 15px;
     }
     #setlists table {
       width: 100%;
@@ -240,19 +88,15 @@
       text-align: center;
     }
 
-    /*
-      =========================
-       SECCIÓN CALENDARIO
-      =========================
-    */
+    /* Sección Calendario BandHelper */
     #calendario {
-      padding: 30px;
-      margin-bottom: 50px;
       background-color: #111;
+      padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,255,255,0.1);
+      margin-bottom: 40px;
     }
-    #calendario h3 {
+    #calendario h2 {
       text-align: center;
       color: #0cf;
       margin-bottom: 10px;
@@ -263,182 +107,30 @@
       margin-bottom: 20px;
     }
 
-    /*
-      =========================
-          SECCIÓN GALERÍA
-      =========================
-    */
-    #galeria {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-    }
-    .galeria-item {
-      width: 220px;
-      position: relative;
-    }
-    .galeria-item img {
-      width: 100%;
-      border-radius: 10px;
-      border: 2px solid #333;
-      cursor: pointer;
-      transition: transform 0.3s ease;
-    }
-    .galeria-item img:hover {
-      transform: scale(1.03);
-      border-color: #0cf;
-    }
-
-    /*
-      =========================
-        SECCIÓN CONTACTO
-      =========================
-    */
-    #contacto-form {
-      background-color: #111;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,255,255,0.1);
-    }
-    #contacto-form h3 {
-      color: #0cf;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    #contacto-form form {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    #contacto-form label {
-      font-weight: bold;
-      color: #aaa;
-    }
-    #contacto-form input[type="text"],
-    #contacto-form input[type="email"],
-    #contacto-form textarea {
-      padding: 10px;
-      border: 1px solid #333;
-      background-color: #222;
-      color: #fff;
-      border-radius: 5px;
-      resize: none;
-      font-size: 1em;
-    }
-    #contacto-form button {
-      align-self: center;
-      background-color: #0cf;
-      border: none;
-      color: #000;
-      padding: 10px 25px;
-      border-radius: 5px;
-      font-size: 1em;
-      cursor: pointer;
-    }
-    #contacto-form button:hover {
-      background-color: #09b;
-    }
-
-    /*
-      =========================
-          PIE DE PÁGINA
-      =========================
-    */
+    /* Footer */
     footer {
       background-color: #111;
       color: #888;
       text-align: center;
-      padding: 20px;
+      padding: 10px;
       border-top: 1px solid #222;
     }
-    .social-icons {
-      margin-bottom: 10px;
-    }
-    .social-icons a {
-      margin: 0 8px;
-      color: #0cf;
-      text-decoration: none;
-      font-size: 1.2em;
-      transition: color 0.3s ease;
-    }
-    .social-icons a:hover {
-      color: #fff;
-    }
-
-    /*
-      =========================
-         MEDIA QUERIES
-      =========================
-    */
-    @media (max-width: 768px) {
-      /* Mostrar botón hamburguesa en móvil, ocultar menú horizontal */
-      .hamburger {
-        display: flex;
-      }
-      nav ul {
-        display: none;
-      }
-      nav ul.mobile-active {
-        right: 0;
-      }
-
-      .banda-content {
-        flex-direction: column;
-        text-align: center;
-      }
-      .banda-content img, .banda-text {
-        max-width: 100%;
-      }
-
-      /* Ajuste hero */
-      .hero h1 {
-        font-size: 2em;
-      }
-      .hero p {
-        font-size: 1.1em;
-      }
-    }
-
   </style>
 </head>
 <body>
-  <!-- CABECERA -->
+  <!-- Encabezado con logo -->
   <header>
-    <div class="logo">
-      <img src="assets/logo_blanco.png" alt="Logo de El Sótano del Doctor" />
-    </div>
-    <nav>
-      <div class="hamburger" onclick="toggleMenu()">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-      <ul id="nav-links" class="mobile-active">
-        <li><a href="#hero">Inicio</a></li>
-        <li><a href="#la-banda">La Banda</a></li>
-        <li><a href="#setlists">Setlists</a></li>
-        <li><a href="#calendario">Conciertos</a></li>
-        <li><a href="#galeria">Galería</a></li>
-        <li><a href="#contacto-form">Contacto</a></li>
-      </ul>
-    </nav>
+    <img src="assets/logo_blanco.png" alt="Logo de El Sótano del Doctor" />
   </header>
 
-  <!-- SECCIÓN HERO / PORTADA -->
-  <section class="hero" id="hero" role="banner" aria-label="Portada El Sótano del Doctor">
-    <div class="hero-content">
-      <p>Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!</p>
-    </div>
-  </section>
-
-
-    <!-- SECCIÓN SETLISTS -->
-    <section class="section" id="setlists" aria-labelledby="titulo-setlist">
-      <h3 id="titulo-setlist">🎼 Setlists Ensayos 2025 🎶</h3>
-      <p style="text-align: center; color: #aaa;">Consulta los setlists en tiempo real desde nuestra app o BandHelper:</p>
+  <!-- Contenedor principal -->
+  <main>
+    <!-- Sección SETLISTS -->
+    <section id="setlists">
+      <h2>Setlist Ensayos 2025</h2>
+      <p style="text-align:center; color:#aaa;">
+        Consulta y exporta el setlist en tiempo real (uso interno).
+      </p>
       <table>
         <thead>
           <tr>
@@ -448,58 +140,46 @@
             <th>Duración</th>
           </tr>
         </thead>
-        <tbody id="setlist-body"></tbody>
+        <tbody id="setlist-body">
+          <!-- Filas generadas dinámicamente por JavaScript -->
+        </tbody>
       </table>
-      <button id="download-btn">📥 Descargar PDF del setlist</button>
-      <p style="margin-top:10px; font-size: 0.9em; color: #888; text-align:center;">🎧 Setlist actualizado en tiempo real</p>
+      <button id="download-btn">Descargar PDF del setlist</button>
       <p id="total-time"></p>
     </section>
 
-    <!-- SECCIÓN CALENDARIO DE CONCIERTOS -->
-    <section class="section" id="calendario" aria-labelledby="titulo-calendario">
-      <h3 id="titulo-calendario">📅 Próximos conciertos</h3>
-      <p>Consulta nuestro calendario actualizado. ¡No te pierdas el próximo show!</p>
+    <!-- Sección Calendario de Conciertos -->
+    <section id="calendario">
+      <h2>Próximos Conciertos</h2>
+      <p>Consulta el calendario actualizado de forma interna.</p>
       <div>
-        <!-- Script de BandHelper o el widget que uses -->
+        <!-- Script de BandHelper o widget insertado aquí -->
         <script type="text/javascript" src="https://www.bandhelper.com/widget/calendar/10353?range=6"></script>
       </div>
     </section>
-
   </main>
 
-  <!-- PIE DE PÁGINA -->
+  <!-- Footer mínimo -->
   <footer>
-
-   </div>
-    <p>© 2025 El Sótano del Doctor. Todos los derechos reservados.</p>
+    © 2025 El Sótano del Doctor. Uso interno.
   </footer>
 
-  <!-- 
-    =========================
-     SCRIPTS PRINCIPALES
-    =========================
-   -->
+  <!-- =========================
+       Scripts principales
+  ========================== -->
 
-  <!-- (1) Menu responsive -->
+  <!-- (1) Carga y manejo del SETLIST en tiempo real -->
   <script>
-    function toggleMenu() {
-      const navLinks = document.getElementById('nav-links');
-      navLinks.classList.toggle('show');
-    }
-  </script>
-
-  <!-- (2) Carga y manejo del SETLIST en tiempo real -->
-  <script>
-    // URL de tu API o servicio que retorna el setlist en JSON
     const url = 'https://cold-limit-811a.jagomezc.workers.dev';
 
-    // Función para parsear duración (tu lógica original)
     function parseDurationToSeconds(durationStr) {
       if (!durationStr) return 0;
+      // Si incluye ":", interpretamos mm:ss
       if (durationStr.includes(':')) {
         const [min, sec] = durationStr.split(':').map(num => parseInt(num, 10));
         return (min * 60) + (sec || 0);
       } else {
+        // Si no, es un número de segundos
         const seconds = parseInt(durationStr, 10);
         return isNaN(seconds) ? 0 : seconds;
       }
@@ -518,6 +198,7 @@
         const tbody = document.getElementById('setlist-body');
         tbody.innerHTML = '';
 
+        // Filtramos solo los items que sean "song"
         const songs = data.filter(item => item.type === 'song');
         let totalSeconds = 0;
 
@@ -538,29 +219,30 @@
           totalSeconds += durationInSeconds;
         });
 
-        const totalTime = formatSecondsToMMSS(totalSeconds);
+        // Mostramos tiempo total
         const totalTimeParagraph = document.getElementById('total-time');
-        totalTimeParagraph.textContent = `Tiempo total del set: ${totalTime}`;
+        totalTimeParagraph.textContent = 
+          'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
 
         return songs;
       } catch (err) {
         console.error('Error al cargar el setlist:', err);
-        document.getElementById('setlist-body').innerHTML = 
+        document.getElementById('setlist-body').innerHTML =
           '<tr><td colspan="4">Error al cargar el setlist.</td></tr>';
         return [];
       }
     }
 
-    // (3) Descargar setlist en PDF
+    // (2) Exportar setlist a PDF
     async function descargarPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       doc.setFontSize(14);
-      doc.text("Setlist - El Sótano del Doctor", 20, 20);
+      doc.text('Setlist - El Sótano del Doctor (Interno)', 20, 20);
 
       const songs = await cargarSetlist(); // Actualiza/obtiene el setlist
 
-      const columns = ["Título", "Tonalidad", "Tempo", "Duración"];
+      const columns = ['Título', 'Tonalidad', 'Tempo', 'Duración'];
       const rows = songs.map(s => {
         const durationInSeconds = parseDurationToSeconds(s.duration || '');
         const durationFormatted = formatSecondsToMMSS(durationInSeconds);
@@ -580,14 +262,12 @@
         headStyles: { fillColor: [0, 255, 255], textColor: 0 }
       });
 
-      doc.save("setlist_ElSotanoDelDoctor.pdf");
+      doc.save('setlist_ElSotanoDelDoctor.pdf');
     }
 
-    // Listeners
+    // (3) Listeners y carga inicial
     document.getElementById('download-btn').addEventListener('click', descargarPDF);
-
-    // Carga inicial
-    cargarSetlist();
+    cargarSetlist(); // Cargar al iniciar
   </script>
 </body>
 </html>
