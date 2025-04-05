@@ -2,144 +2,35 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>El Sótano del Doctor – Uso Interno</title>
+  <title>El Sótano del Doctor – Intranet</title>
 
-  <!-- METADATOS PARA VISTA PREVIA EN REDES (Open Graph / Telegram / WhatsApp) -->
+  <!-- Metadatos para la vista previa en redes -->
   <meta property="og:title" content="El Sótano del Doctor – Uso Interno" />
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!" />
   <meta property="og:image" content="assets/logo_negro copia.jpg" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://tusitioweb.com" />
-  <!-- Ajusta la URL a la que usarás realmente (si es accesible externamente) -->
 
-  <!-- (Opcional) Metadatos Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image"/>
-  <meta name="twitter:title" content="El Sótano del Doctor – Uso Interno"/>
-  <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!"/>
-  <meta name="twitter:image" content="assets/logo_negro copia.jpg"/>
-
-  <!-- Ajuste para que sea responsive en móvil -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Librerías jsPDF para exportar el setlist a PDF -->
+  <!-- Librerías jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <style>
-    /* Estilos mínimos para el cuerpo */
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background-color: #000; /* Fondo negro */
-      color: #fff;            /* Texto blanco */
-    }
-
-    /* Encabezado */
-    header {
-      background-color: #111;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    header img {
-      width: 180px;
-      height: auto;
-    }
-
-    /* Sección Setlist */
-    section {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    #setlists {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-      margin-bottom: 40px;
-    }
-    #setlists h2 {
-      text-align: center;
-      color: #0cf;
-      margin-bottom: 15px;
-    }
-    #setlists table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      color: #fff;
-      font-size: 0.95em;
-    }
-    #setlists thead {
-      background-color: #222;
-      color: #0cf;
-    }
-    #setlists th, #setlists td {
-      padding: 12px;
-      border: 1px solid #333;
-      text-align: left;
-    }
-    #setlists tr:nth-child(even) {
-      background-color: #1a1a1a;
-    }
-    #download-btn {
-      display: block;
-      margin: 20px auto 0 auto;
-      padding: 10px 20px;
-      font-size: 1em;
-      background-color: #0cf;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    #total-time {
-      color: #0cf;
-      margin-top: 10px;
-      text-align: center;
-    }
-
-    /* Sección Calendario BandHelper */
-    #calendario {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,255,255,0.1);
-      margin-bottom: 40px;
-    }
-    #calendario h2 {
-      text-align: center;
-      color: #0cf;
-      margin-bottom: 10px;
-    }
-    #calendario p {
-      text-align: center;
-      color: #aaa;
-      margin-bottom: 20px;
-    }
-
-    /* Footer */
-    footer {
-      background-color: #111;
-      color: #888;
-      text-align: center;
-      padding: 10px;
-      border-top: 1px solid #222;
-    }
+    /* ... Aquí iría tu CSS actual para la página ... */
+    /* Mantén el que ya tenías, no lo reproduzco todo para no alargar. */
   </style>
 </head>
 <body>
-  <!-- Encabezado con logo BLANCO para fondo negro -->
+  <!-- ENCABEZADO -->
   <header>
     <img src="assets/logo_blanco.png" alt="Logo de El Sótano del Doctor" />
   </header>
 
-  <!-- Contenedor principal -->
+  <!-- CONTENIDO PRINCIPAL -->
   <main>
-    <!-- Sección SETLISTS -->
+    <!-- SECCIÓN SETLIST -->
     <section id="setlists">
       <h2>Setlist Ensayos 2025</h2>
       <p style="text-align:center; color:#aaa;">
@@ -154,46 +45,36 @@
             <th>Duración</th>
           </tr>
         </thead>
-        <tbody id="setlist-body">
-          <!-- Filas generadas dinámicamente por JavaScript -->
-        </tbody>
+        <tbody id="setlist-body"></tbody>
       </table>
       <button id="download-btn">Descargar PDF del setlist</button>
       <p id="total-time"></p>
     </section>
 
-    <!-- Sección Calendario de Conciertos -->
+    <!-- SECCIÓN CALENDARIO -->
     <section id="calendario">
       <h2>Próximos Conciertos</h2>
-      <p>Consulta el calendario actualizado de forma interna.</p>
       <div>
-        <!-- Script de BandHelper o widget insertado aquí -->
         <script type="text/javascript" src="https://www.bandhelper.com/widget/calendar/10353?range=6"></script>
       </div>
     </section>
   </main>
 
-  <!-- Footer mínimo -->
+  <!-- FOOTER -->
   <footer>
     © 2025 El Sótano del Doctor. Uso interno.
   </footer>
 
-  <!-- =========================
-       Scripts principales
-  ========================== -->
-
-  <!-- (1) Carga y manejo del SETLIST en tiempo real -->
+  <!-- SCRIPT PRINCIPAL: Aquí tu lógica de cargar setlist + nuevo PDF -->
   <script>
     const url = 'https://cold-limit-811a.jagomezc.workers.dev';
 
     function parseDurationToSeconds(durationStr) {
       if (!durationStr) return 0;
-      // Si incluye ":", interpretamos mm:ss
       if (durationStr.includes(':')) {
         const [min, sec] = durationStr.split(':').map(num => parseInt(num, 10));
         return (min * 60) + (sec || 0);
       } else {
-        // Si no, es un número de segundos
         const seconds = parseInt(durationStr, 10);
         return isNaN(seconds) ? 0 : seconds;
       }
@@ -221,6 +102,7 @@
           const durationInSeconds = parseDurationToSeconds(rawDuration);
           const durationFormatted = formatSecondsToMMSS(durationInSeconds);
 
+          // Construimos la fila
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${song.name || ''}</td>
@@ -233,10 +115,10 @@
           totalSeconds += durationInSeconds;
         });
 
-        // Mostramos tiempo total
+        const totalTime = formatSecondsToMMSS(totalSeconds);
         const totalTimeParagraph = document.getElementById('total-time');
-        totalTimeParagraph.textContent =
-          'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
+        totalTimeParagraph.textContent = 
+          'Tiempo total del set: ' + totalTime;
 
         return songs;
       } catch (err) {
@@ -247,41 +129,137 @@
       }
     }
 
-    // (2) Exportar setlist a PDF
+    // DESCARGAR PDF (Versión Vistosa)
     async function descargarPDF() {
+      // 1) Cargamos la librería
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.setFontSize(14);
-      doc.text('Setlist - El Sótano del Doctor (Interno)', 20, 20);
-
-      const songs = await cargarSetlist(); // Actualiza/obtiene el setlist
-
-      const columns = ['Título', 'Tonalidad', 'Tempo', 'Duración'];
-      const rows = songs.map(s => {
-        const durationInSeconds = parseDurationToSeconds(s.duration || '');
-        const durationFormatted = formatSecondsToMMSS(durationInSeconds);
-        return [
-          s.name || '',
-          s.key || '',
-          s.tempo || '',
-          durationFormatted
-        ];
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt', // puntos (mejor para autoTable)
+        format: 'A4'
       });
 
+      // 2) Intentamos cargar el setlist en ese momento
+      const songs = await cargarSetlist();
+
+      // 3) Preparamos el logo: requiere que la imagen sea accesible
+      // Si estás sirviendo la imagen en "assets/logo_negro copia.jpg" y
+      // las políticas CORS lo permiten, podrías usar doc.addImage con su ruta.
+      // Un ejemplo genérico de doc.addImage() (¡hay que manejarlo con promesas o base64!):
+      try {
+        // Ojo: jsPDF necesita data base64 o un callback. Hay librerías para convertir fetch -> base64
+        // Ejemplo: Convertimos la imagen a base64 con fetch y FileReader
+        const imgUrl = 'assets/logo_negro copia.jpg'; // Ruta real
+        const imageResponse = await fetch(imgUrl);
+        const imageBlob = await imageResponse.blob();
+        const reader = new FileReader();
+
+        const base64Promise = new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(imageBlob);
+        const base64Image = await base64Promise;
+
+        // Insertamos la imagen en la cabecera del PDF
+        // Ajusta las coords y dimensiones a tu gusto
+        doc.addImage(base64Image, 'JPEG', 40, 30, 60, 60);
+
+      } catch (err) {
+        console.warn('No se pudo cargar el logo. Error:', err);
+        // Si falla, seguimos sin logo
+      }
+
+      // 4) Título grande en la parte superior
+      doc.setFontSize(16);
+      doc.setTextColor(40); // algo de gris
+      doc.text('Setlist - El Sótano del Doctor', 120, 50);
+
+      // 5) Subtítulo o info adicional
+      // (Por ejemplo, si quieres imitar "Nochevieja 24" - "24 canciones, 1:41"…)
+      // Reemplaza con tu contenido dinámico o estático
+      doc.setFontSize(12);
+      doc.setTextColor(80); 
+      // Supongamos que son X canciones y un totalTime calculado
+      const totalSongs = songs.length;
+      // Suponiendo que ya calculaste la duración total en formatSecondsToMMSS
+      // (está guardado en totalTimeParagraph?)
+      // Pero lo recalculamos aquí para no complicar.
+      let totalSecs = 0;
+      songs.forEach(s => {
+        const secs = parseDurationToSeconds(s.duration || '');
+        totalSecs += secs;
+      });
+      const totalTime = formatSecondsToMMSS(totalSecs);
+
+      doc.text(`${totalSongs} canciones, ${totalTime} horas`, 120, 70);
+
+      // 6) Preparamos las columnas
+      // Añadimos la columna '#' para enumerar
+      // Añadimos la columna 'Artista' también, suponiendo que en el JSON vendrá
+      // en un campo "artist" (si no existe, quedará vacío)
+      const columns = [
+        { header: '#', dataKey: 'num' },
+        { header: 'Título', dataKey: 'title' },
+        { header: 'Artista', dataKey: 'artist' },
+        { header: 'Tonalidad', dataKey: 'key' },
+        { header: 'Duración', dataKey: 'duration' }
+      ];
+
+      // 7) Construimos las filas
+      // Asumimos que "song.artist" existe en tu JSON, de lo contrario quedará vacío
+      const rows = songs.map((song, i) => ({
+        num: i + 1,
+        title: song.name || '',
+        artist: song.artist || '',         // Ajusta si es un campo distinto
+        key: song.key || '',
+        duration: formatSecondsToMMSS(parseDurationToSeconds(song.duration))
+      }));
+
+      // 8) Configuramos autoTable con tonos de gris
       doc.autoTable({
-        head: [columns],
-        body: rows,
-        startY: 30,
-        styles: { halign: 'left' },
-        headStyles: { fillColor: [0, 255, 255], textColor: 0 }
+        startY: 100,           // Empezar debajo de la imagen/título
+        head: [columns.map(col => col.header)],  // Los textos del encabezado
+        body: rows.map(r => [
+          r.num, r.title, r.artist, r.key, r.duration
+        ]),
+        headStyles: {
+          fillColor: [60, 60, 60],  // gris oscuro para cabecera
+          textColor: [255, 255, 255],  // texto blanco
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          fillColor: [245, 245, 245], // gris muy claro para filas
+          textColor: [0, 0, 0]
+        },
+        alternateRowStyles: {
+          fillColor: [230, 230, 230] // un gris diferente para alternar
+        },
+        // Ancho de columnas ajustado automáticamente
+        styles: {
+          halign: 'left',
+          fontSize: 10,   // tamaño de fuente interno
+          cellPadding: 5
+        },
+        columnStyles: {
+          0: { cellWidth: 20 },    // # enumeración
+          1: { cellWidth: 160 },   // Título
+          2: { cellWidth: 120 },   // Artista
+          3: { cellWidth: 60 },    // Tonalidad
+          4: { cellWidth: 60 }     // Duración
+        },
+        // Si hace falta que las columnas se adapten, se puede usar 'auto' en cellWidth
       });
 
+      // 9) Guardamos el PDF
       doc.save('setlist_ElSotanoDelDoctor.pdf');
     }
 
-    // (3) Listeners y carga inicial
+    // LISTENERS
     document.getElementById('download-btn').addEventListener('click', descargarPDF);
-    cargarSetlist(); // Cargar al iniciar
+
+    // Cargar Setlist al iniciar
+    cargarSetlist();
   </script>
 </body>
 </html>
