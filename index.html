@@ -214,11 +214,11 @@
 
   <!-- CONTENIDO PRINCIPAL -->
   <main>
-    <!-- 1) PRIMER SETLIST (JSON directo, sin proxy) -->
+    <!-- 1) PRIMER SETLIST (BandHelper feed: 9ZzC9z) -->
     <section id="setlists">
       <h2>Setlist Ensayos 2025 (Primer Setlist)</h2>
       <p style="text-align:center; color:#aaa;">
-        Consulta y exporta el setlist en tiempo real (uso interno).
+        Datos obtenidos desde <em>https://www.bandhelper.com/feed/set_list/9ZzC9z</em>.
       </p>
       <table>
         <thead>
@@ -236,7 +236,7 @@
       <p id="total-time"></p>
     </section>
 
-    <!-- 2) SEGUNDO SETLIST (BandHelper feed) -->
+    <!-- 2) SEGUNDO SETLIST (BandHelper feed: TXHvyb) -->
     <section id="second-setlist">
       <h2>Segundo Setlist (BandHelper)</h2>
       <p style="text-align:center; color:#aaa;">
@@ -281,46 +281,40 @@
        ========================= -->
   <script>
     /*
-      =========================
-       CONFIGURA AQUÍ TUS URLs
-      =========================
+      ================================
+       CONFIGURACIÓN DE LAS URLS
+      ================================
     */
-    // Si ya no usas proxy, pon la URL real del feed JSON de tu primer setlist:
-    const urlPrimerSetlist = 'https://www.midominio.com/mi_feed_primer_setlist.json';
-    // O la que tengas accesible sin CORS:
-    // const urlPrimerSetlist = 'https://www.bandhelper.com/feed/set_list/XXXXXX... (otro feed)';
-
-    // Para el segundo setlist, BandHelper:
+    // Primer setlist -> BandHelper feed 9ZzC9z
+    const urlPrimerSetlist = 'https://www.bandhelper.com/feed/set_list/9ZzC9z';
+    // Segundo setlist -> TXHvyb
     const urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
 
     /*
       ================================
-       FUNCIONES DE FORMATEO DURACIÓN
+       FUNCIONES COMUNES (duración, limpieza)
       ================================
     */
     function parseDurationToSeconds(durationStr) {
       if (!durationStr) return 0;
-      // Detectamos si es "min:sec" o entero segs
+      // si contiene ":", interpretamos mm:ss
       if (durationStr.includes(':')) {
-        // min:sec
         const [min, sec] = durationStr.split(':').map(num => parseInt(num, 10));
         return (min * 60) + (sec || 0);
       } else {
-        // asume que es un número entero
+        // asumimos que es un entero en segs
         const seconds = parseInt(durationStr, 10);
         return isNaN(seconds) ? 0 : seconds;
       }
     }
 
-    // formatea en hh:mm:ss si supera 60 min, si no mm:ss
+    // hh:mm:ss si > 1h, sino mm:ss
     function formatSecondsToHMS(totalSeconds) {
       if (totalSeconds < 3600) {
-        // Menos de una hora => mm:ss
         const min = Math.floor(totalSeconds / 60);
         const sec = totalSeconds % 60;
         return `${min}:${String(sec).padStart(2, '0')}`;
       } else {
-        // Horas, mins, secs
         const hours = Math.floor(totalSeconds / 3600);
         const remainder = totalSeconds % 3600;
         const min = Math.floor(remainder / 60);
@@ -329,15 +323,8 @@
       }
     }
 
-    /*
-      ==========================
-       FUNCIONES PARA LIMPIAR TEXTO
-       (Para quitar &amp; y emojis)
-      ==========================
-    */
     function cleanString(str) {
       if (!str) return '';
-      // 1) Reemplazar entidades HTML comunes
       let cleaned = str
         .replace(/&amp;/g, '&')
         .replace(/&aacute;/g, 'á')
@@ -349,40 +336,35 @@
         .replace(/&Ntilde;/g, 'Ñ')
         .replace(/&quot;/g, '"')
         .replace(/&apos;/g, "'")
-        .replace(/\\u00e1/g, 'á') // a veces las entidades vienen en \u
+        .replace(/\\u00e1/g, 'á')
         .replace(/\\u00f1/g, 'ñ')
-        // ... añade más si necesitas
-        .replace(/&[^;]+;/g, '');  // elimina otras desconocidas
-
-      // 2) Quitar emojis si jsPDF no los soporta (opcional):
-      // Ej: eliminamos caracteres fuera de rango ASCII
-      cleaned = cleaned.replace(/[^\x00-\xFF]/g, '');
-
+        .replace(/&[^;]+;/g, '') // eliminar otras entidades
+        // elimina emojis no soportados
+        .replace(/[^\x00-\xFF]/g, '');
       return cleaned.trim();
     }
 
     /*
-      =====================================
-       PRIMER SETLIST (con su JSON directo)
-      =====================================
+      ==========================
+       PRIMER SETLIST
+      ==========================
     */
     async function cargarPrimerSetlist() {
       try {
         const res = await fetch(urlPrimerSetlist);
         const data = await res.json();
+
+        // data es un array. Filtramos type==="song"
+        const songs = data.filter(item => item.type === 'song');
+
         const tbody = document.getElementById('setlist-body');
         tbody.innerHTML = '';
 
-        // Filtramos solo type==="song" si es la misma estructura
-        const songs = data.filter(item => item.type === 'song');
         let totalSeconds = 0;
-
         songs.forEach((song, i) => {
-          const rawDuration = song.duration || '0';
-          const secs = parseDurationToSeconds(rawDuration);
-          const durFmt = formatSecondsToHMS(secs);
+          const rawDur = song.duration || '0';
+          const secs = parseDurationToSeconds(rawDur);
 
-          // Limpia campos "name", "key", "tempo"
           const nameClean = cleanString(song.name || '');
           const keyClean = cleanString(song.key || '');
           const tempoClean = cleanString(song.tempo || '');
@@ -393,7 +375,7 @@
             <td>${nameClean}</td>
             <td>${keyClean}</td>
             <td>${tempoClean}</td>
-            <td>${durFmt}</td>
+            <td>${formatSecondsToHMS(secs)}</td>
           `;
           tbody.appendChild(row);
 
@@ -417,7 +399,7 @@
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
       const songs = await cargarPrimerSetlist();
 
-      // Inserta logo negro en el PDF
+      // logo
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imageResponse = await fetch(imgUrl);
@@ -441,8 +423,8 @@
       doc.text('Setlist - El Sótano del Doctor (Primer)', 120, 50);
 
       let totalSecs = 0;
-      songs.forEach(s => {
-        totalSecs += parseDurationToSeconds(s.duration || '0');
+      songs.forEach(song => {
+        totalSecs += parseDurationToSeconds(song.duration || '0');
       });
       const totalTime = formatSecondsToHMS(totalSecs);
       const totalSongs = songs.length;
@@ -451,10 +433,9 @@
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
 
-      // Columnas
       const columns = [
         { header: '#', dataKey: 'num' },
-        { header: 'Título', dataKey: 'title' },
+        { header: 'Título', dataKey: 'name' },
         { header: 'Tonalidad', dataKey: 'key' },
         { header: 'Tempo', dataKey: 'tempo' },
         { header: 'Duración', dataKey: 'duration' }
@@ -463,7 +444,7 @@
         const secs = parseDurationToSeconds(song.duration || '0');
         return {
           num: i + 1,
-          title: cleanString(song.name || ''),
+          name: cleanString(song.name || ''),
           key: cleanString(song.key || ''),
           tempo: cleanString(song.tempo || ''),
           duration: formatSecondsToHMS(secs)
@@ -473,7 +454,7 @@
       doc.autoTable({
         startY: 100,
         head: [columns.map(c => c.header)],
-        body: rows.map(r => [r.num, r.title, r.key, r.tempo, r.duration]),
+        body: rows.map(r => [r.num, r.name, r.key, r.tempo, r.duration]),
         headStyles: {
           fillColor: [60, 60, 60],
           textColor: [255, 255, 255],
@@ -501,15 +482,17 @@
 
     /*
       ============================
-       SEGUNDO SETLIST (BandHelper)
+       SEGUNDO SETLIST (TXHvyb)
       ============================
     */
+    const urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
+
     async function cargarSegundoSetlist() {
       try {
         const res = await fetch(urlSegundoSetlist);
         const data = await res.json();
 
-        // data es un array, filtrar type==="song"
+        // data es un array; filtrar type==="song"
         const songs = data.filter(item => item.type === 'song');
         const tbody = document.getElementById('second-body');
         tbody.innerHTML = '';
@@ -518,31 +501,30 @@
         songs.forEach((song, index) => {
           const rawDur = song.duration || '0';
           const secs = parseDurationToSeconds(rawDur);
-          const row = document.createElement('tr');
 
-          const nameClean = cleanString(song.name);
+          const nameClean = cleanString(song.name || '');
           const keyClean = cleanString(song.key || '');
           const tempoClean = cleanString(song.tempo || '');
 
-          row.innerHTML = `
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
             <td>${index + 1}</td>
             <td>${nameClean}</td>
             <td>${keyClean}</td>
             <td>${tempoClean}</td>
             <td>${formatSecondsToHMS(secs)}</td>
           `;
-          tbody.appendChild(row);
+          tbody.appendChild(tr);
 
           totalSeconds += secs;
         });
 
-        const totalTime = formatSecondsToHMS(totalSeconds);
         document.getElementById('total-time-2').textContent =
-          'Tiempo total del set: ' + totalTime;
+          'Tiempo total del set: ' + formatSecondsToHMS(totalSeconds);
 
         return songs;
       } catch (err) {
-        console.error('Error al cargar el segundo setlist (BandHelper):', err);
+        console.error('Error al cargar el segundo setlist:', err);
         document.getElementById('second-body').innerHTML =
           '<tr><td colspan="5">Error al cargar el segundo setlist.</td></tr>';
         return [];
@@ -587,7 +569,6 @@
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
 
-      // Columnas
       const columns2 = [
         { header: '#', dataKey: 'num' },
         { header: 'Canción', dataKey: 'name' },
@@ -599,7 +580,7 @@
         const secs = parseDurationToSeconds(song.duration || '0');
         return {
           num: i + 1,
-          name: cleanString(song.name),
+          name: cleanString(song.name || ''),
           key: cleanString(song.key || ''),
           tempo: cleanString(song.tempo || ''),
           duration: formatSecondsToHMS(secs)
@@ -641,10 +622,12 @@
       ============================
     */
     window.addEventListener('DOMContentLoaded', () => {
+      // Cargamos ambos setlists al iniciar
       cargarPrimerSetlist();
       cargarSegundoSetlist();
     });
 
+    // Botones de descarga PDF
     document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
     document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
   </script>
