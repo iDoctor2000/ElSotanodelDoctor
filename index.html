@@ -23,16 +23,21 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    /* =========================
-       ESTILO GLOBAL
-       ========================= */
-    body {
-      margin: 0; 
+    /* Reseteo y box-sizing */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
       padding: 0;
+      overflow-x: hidden; /* Previene scroll horizontal sobrante */
+    }
+
+    body {
       font-family: Arial, sans-serif;
       background-color: #000;
       color: #fff;
-      overflow-x: hidden; /* Evita scroll lateral */
     }
 
     /* CABECERA */
@@ -73,9 +78,10 @@
       border-right: 1px solid #222;
       padding: 20px;
       box-shadow: 2px 0 10px rgba(0, 255, 255, 0.1);
+
       transform: translateX(-250px); /* oculto por defecto */
       transition: transform 0.3s ease;
-      z-index: 9999; /* por encima del overlay (o igual, pero lo ajustamos) */
+      z-index: 9999;
     }
     .sidebar.show {
       transform: translateX(0);
@@ -120,7 +126,7 @@
       background-color: #000; 
       z-index: 9999; 
       overflow-y: auto; 
-      padding: 20px;
+      padding: 60px 20px 20px 20px; /* 60px arriba para no chocar con btn Cerrar */
     }
     #config-screen h2 {
       text-align: center; 
@@ -152,6 +158,7 @@
     #config-screen button:hover {
       background-color: #09b;
     }
+    /* Botón Cerrar Config */
     #close-config {
       position: absolute;
       top: 20px;
@@ -309,12 +316,6 @@
 
     /* MEDIA QUERIES */
     @media (max-width: 768px) {
-      main section {
-        padding: 10px;
-      }
-      #setlists table, #second-list-table, #calendario div {
-        font-size: 0.9em;
-      }
       .hamburger div {
         width: 20px;
       }
@@ -323,7 +324,7 @@
 </head>
 
 <body>
-  <!-- CABECERA con LOGO y BOTÓN HAMBURGER -->
+  <!-- CABECERA -->
   <header>
     <div class="logo">
       <img src="assets/logo_blanco.png" alt="Logo de El Sótano del Doctor" />
@@ -335,10 +336,10 @@
     </div>
   </header>
 
-  <!-- OVERLAY semitransparente -->
+  <!-- OVERLAY -->
   <div id="overlay"></div>
 
-  <!-- SIDEBAR MENÚ -->
+  <!-- MENÚ LATERAL -->
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
     <a href="#" id="menu-config">Configuración</a>
@@ -421,9 +422,6 @@
     © 2025 El Sótano del Doctor. All Rights Reserved.
   </footer>
 
-  <!-- =========================
-       SCRIPTS PRINCIPALES
-       ========================= -->
   <script>
     /*------------------------------------------
       1. FUNCIONES COMUNES (duración, etc)
@@ -448,6 +446,7 @@
       2. PRIMER SETLIST
     ------------------------------------------*/
     const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
+
     async function cargarPrimerSetlist() {
       try {
         const res = await fetch(urlPrimerSetlist);
@@ -473,8 +472,7 @@
           totalSeconds += secs;
         });
 
-        const totalTimeParagraph = document.getElementById('total-time');
-        totalTimeParagraph.textContent = 
+        document.getElementById('total-time').textContent =
           'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
 
         return songs;
@@ -485,10 +483,13 @@
         return [];
       }
     }
+
     async function descargarPDFprimerSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
       const songs = await cargarPrimerSetlist();
+
+      // Logo
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imgRes = await fetch(imgUrl);
@@ -504,9 +505,11 @@
       } catch (err) {
         console.warn('No se pudo cargar el logo (primer setlist):', err);
       }
+
       doc.setFontSize(16);
       doc.setTextColor(40);
       doc.text('Setlist - El Sótano del Doctor (Primer)', 120, 50);
+
       let totalSecs = 0;
       songs.forEach(s => {
         totalSecs += parseDurationToSeconds(s.duration || '0');
@@ -516,6 +519,7 @@
       doc.setFontSize(12);
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
+
       const columns = [
         { header: '#', dataKey: 'num' },
         { header: 'Título', dataKey: 'title' },
@@ -530,6 +534,7 @@
         tempo: song.tempo || '',
         duration: formatSecondsToMMSS(parseDurationToSeconds(song.duration || '0'))
       }));
+
       doc.autoTable({
         startY: 100,
         head: [columns.map(c => c.header)],
@@ -555,12 +560,13 @@
           4: { cellWidth: 60 }
         }
       });
+
       doc.save('setlist_ElSotanoDelDoctor.pdf');
     }
 
-    /*-------------------------------------
-      3. SEGUNDO SETLIST con FEED dinámico
-    -------------------------------------*/
+    /*------------------------------------------
+      3. SEGUNDO SETLIST (feed dinámico)
+    ------------------------------------------*/
     let urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
     function loadConfigFromLocalStorage() {
       const saved = localStorage.getItem('urlSegundoSetlist');
@@ -574,7 +580,6 @@
     }
     function cleanString(str) {
       if (!str) return '';
-      // Quita emojis no soportados en la fuente base
       return str.replace(/[^\x00-\xFF]/g, '').trim();
     }
     async function cargarSegundoSetlist() {
@@ -592,6 +597,7 @@
           const keyClean  = cleanString(song.key  || '');
           const tempoClean= cleanString(song.tempo|| '');
           const durFmt    = formatSecondsToMMSS(secs);
+
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${index + 1}</td>
@@ -690,9 +696,9 @@
       doc.save('SegundoSetlist.pdf');
     }
 
-    /*---------------------------------------
-      4. MENÚ HAMBURGUESA y CONFIGURACIÓN
-    ---------------------------------------*/
+    /*------------------------------------------
+      4. MENÚ Y CONFIGURACIÓN
+    ------------------------------------------*/
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const sidebarMenu  = document.getElementById('sidebar-menu');
     const menuConfig   = document.getElementById('menu-config');
@@ -701,7 +707,7 @@
 
     hamburgerBtn.addEventListener('click', () => {
       sidebarMenu.classList.add('show');
-      overlay.classList.add('show'); // mostrar overlay
+      overlay.classList.add('show');
     });
     menuCerrar.addEventListener('click', (e) => {
       e.preventDefault();
@@ -709,19 +715,18 @@
       overlay.classList.remove('show');
     });
     overlay.addEventListener('click', () => {
-      // Si se hace click en la zona oscura
       sidebarMenu.classList.remove('show');
       overlay.classList.remove('show');
     });
 
-    // BOTÓN "Configuración" en el menú
+    // BOTÓN "Configuración"
     menuConfig.addEventListener('click', (e) => {
       e.preventDefault();
       sidebarMenu.classList.remove('show');
       overlay.classList.remove('show');
-      // Mostramos config
+      // Muestra config
       document.getElementById('config-screen').style.display = 'block';
-      // Rellenamos el input con la parte final (ID)
+      // Rellenamos el input
       document.getElementById('feed-url').value = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
     });
 
@@ -757,12 +762,12 @@
       const saved = localStorage.getItem('urlSegundoSetlist');
       if (saved) urlSegundoSetlist = saved;
 
-      // Cargar setlists
+      // Cargamos ambos setlists
       cargarPrimerSetlist();
       cargarSegundoSetlist();
     });
 
-    // Botones PDF
+    // BOTONES PDF
     document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
     document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
   </script>
