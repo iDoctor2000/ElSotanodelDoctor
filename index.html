@@ -11,16 +11,16 @@
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://tusitioweb.com" />
 
-  <!-- Metadatos Twitter Card (opcionales) -->
+  <!-- (Opcional) Metadatos Twitter Card -->
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="twitter:title" content="El Sótano del Doctor – Uso Interno"/>
   <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!"/>
   <meta name="twitter:image" content="assets/logo_negro copia.jpg"/>
 
-  <!-- Ajuste para responsive -->
+  <!-- Ajuste para responsive en móvil -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Librerías jsPDF y autoTable -->
+  <!-- Librerías jsPDF y autoTable para generar PDFs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
@@ -29,22 +29,25 @@
        ESTILO GLOBAL
        ========================= */
     body {
-      margin: 0; padding: 0;
+      margin: 0;
+      padding: 0;
       font-family: Arial, sans-serif;
       background-color: #000; /* Fondo negro */
       color: #fff;            /* Texto blanco */
     }
+
     header {
       background-color: #111;
+      padding: 10px 20px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 10px 20px;
     }
     header img {
       width: 180px;
       height: auto;
     }
+
     footer {
       background-color: #111;
       color: #888;
@@ -52,6 +55,7 @@
       padding: 10px;
       border-top: 1px solid #222;
     }
+
     main section {
       max-width: 1200px;
       margin: 0 auto;
@@ -59,7 +63,8 @@
     }
 
     /* =========================
-       PRIMER SETLIST (el tuyo dinámico)
+       PRIMER SETLIST
+       (tu JSON con fetch a cold-limit)
        ========================= */
     #setlists {
       background-color: #111;
@@ -74,34 +79,46 @@
       margin-bottom: 15px;
     }
     #setlists table {
-      width: 100%; border-collapse: collapse;
-      margin-top: 20px; color: #fff; font-size: 0.95em;
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      color: #fff;
+      font-size: 0.95em;
     }
     #setlists thead {
-      background-color: #222; color: #0cf;
+      background-color: #222;
+      color: #0cf;
     }
     #setlists th, #setlists td {
-      padding: 12px; border: 1px solid #333; text-align: left;
+      padding: 12px;
+      border: 1px solid #333;
+      text-align: left;
     }
     #setlists tr:nth-child(even) {
       background-color: #1a1a1a;
     }
     #download-btn {
-      display: block; margin: 20px auto 0 auto;
-      padding: 10px 20px; font-size: 1em;
-      background-color: #0cf; color: #000;
-      border: none; border-radius: 8px;
+      display: block;
+      margin: 20px auto 0 auto;
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #0cf;
+      color: #000;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
     }
     #download-btn:hover {
       background-color: #09b;
     }
     #total-time {
-      color: #0cf; margin-top: 10px; text-align: center;
+      color: #0cf;
+      margin-top: 10px;
+      text-align: center;
     }
 
     /* =========================
-       SEGUNDO SETLIST (BandHelper)
+       SEGUNDO SETLIST (BandHelper feed)
        ========================= */
     #second-setlist {
       background-color: #111;
@@ -115,19 +132,44 @@
       color: #0cf;
       margin-bottom: 15px;
     }
-    #second-setlist .bandhelper-container {
+    #second-list-table {
+      width: 100%;
+      border-collapse: collapse;
       margin-top: 20px;
-      /* Si quieres controlar el tamaño, pon algo como: width: 100%; height: 600px; */
+      color: #fff;
+      font-size: 0.95em;
     }
-    #btn-print-second {
-      display: block; margin: 20px auto 0 auto;
-      padding: 10px 20px; font-size: 1em;
-      background-color: #0cf; color: #000;
-      border: none; border-radius: 8px;
+    #second-list-table thead {
+      background-color: #222;
+      color: #0cf;
+    }
+    #second-list-table th,
+    #second-list-table td {
+      padding: 12px;
+      border: 1px solid #333;
+      text-align: left;
+    }
+    #second-list-table tr:nth-child(even) {
+      background-color: #1a1a1a;
+    }
+    #download-btn-2 {
+      display: block;
+      margin: 20px auto 0 auto;
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #0cf;
+      color: #000;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
     }
-    #btn-print-second:hover {
+    #download-btn-2:hover {
       background-color: #09b;
+    }
+    #total-time-2 {
+      color: #0cf;
+      margin-top: 10px;
+      text-align: center;
     }
 
     /* =========================
@@ -141,10 +183,14 @@
       margin-bottom: 40px;
     }
     #calendario h2 {
-      text-align: center; color: #0cf; margin-bottom: 10px;
+      text-align: center;
+      color: #0cf;
+      margin-bottom: 10px;
     }
     #calendario p {
-      text-align: center; color: #aaa; margin-bottom: 20px;
+      text-align: center;
+      color: #aaa;
+      margin-bottom: 20px;
     }
 
     /* =========================
@@ -154,45 +200,25 @@
       main section {
         padding: 10px;
       }
-    }
-
-    /* =========================
-       IMPRESIÓN SOLO 2º SETLIST
-       ========================= */
-    @media print {
-      /* Por defecto, ocultamos todo */
-      body * {
-        display: none !important;
+      #setlists table,
+      #second-list-table,
+      #calendario div {
+        font-size: 0.9em;
       }
-      /* Mostramos solamente la sección #second-setlist */
-      #second-setlist, #second-setlist * {
-        display: block !important;
-        color: #000 !important; /* Depende si quieres imprimir en color invertido */
-        background: #fff !important;
-      }
-      /* Ajustamos el contenido al ancho */
-      #second-setlist {
-        position: relative;
-        top: 0; left: 0;
-        margin: 0;
-        padding: 0;
-        width: 100%;
-      }
-      /* Podrías añadir más estilos para table, etc., si el widget genera algo de HTML */
     }
   </style>
 </head>
 <body>
-  <!-- ENCABEZADO -->
+  <!-- CABECERA -->
   <header>
     <img src="assets/logo_blanco.png" alt="Logo de El Sótano del Doctor" />
   </header>
 
   <!-- CONTENIDO PRINCIPAL -->
   <main>
-    <!-- 1) SETLIST DINÁMICO (con PDF jsPDF) -->
+    <!-- 1) PRIMER SETLIST (Tu JSON con tempo/duración) -->
     <section id="setlists">
-      <h2>Setlist Ensayos 2025 (Dinamico)</h2>
+      <h2>Setlist Ensayos 2025 (Primer Setlist)</h2>
       <p style="text-align:center; color:#aaa;">
         Consulta y exporta el setlist en tiempo real (uso interno).
       </p>
@@ -212,20 +238,27 @@
       <p id="total-time"></p>
     </section>
 
-    <!-- 2) SEGUNDO SETLIST (BANDHELPER) -->
+    <!-- 2) SEGUNDO SETLIST (BandHelper feed) -->
     <section id="second-setlist">
       <h2>Segundo Setlist (BandHelper)</h2>
       <p style="text-align:center; color:#aaa;">
-        Este setlist se muestra mediante el script oficial de BandHelper.
+        Datos obtenidos directamente del feed BandHelper: <br />
+        <em>https://www.bandhelper.com/feed/set_list/TXHvyb</em>
       </p>
-      <div class="bandhelper-container">
-        <!-- Pega aquí el script del 2º setlist -->
-        <script type="text/javascript" 
-          src="https://www.bandhelper.com/widget/set_list/TXHvyb?layout=1&fields=key,tempo,duration&sections=1&labels=1">
-        </script>
-      </div>
-      <!-- Botón para imprimir SOLO este setlist (usando @media print) -->
-      <button id="btn-print-second">Imprimir 2º Setlist</button>
+      <table id="second-list-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Canción</th>
+            <th>Tonalidad</th>
+            <th>Tempo</th>
+            <th>Duración</th>
+          </tr>
+        </thead>
+        <tbody id="second-body"><!-- Se rellena por JS --></tbody>
+      </table>
+      <button id="download-btn-2">Descargar PDF del 2º setlist</button>
+      <p id="total-time-2"></p>
     </section>
 
     <!-- 3) CALENDARIO DE CONCIERTOS -->
@@ -233,8 +266,8 @@
       <h2>Próximos Conciertos</h2>
       <p>Consulta el calendario actualizado de forma interna.</p>
       <div>
-        <!-- Script BandHelper calendario -->
-        <script type="text/javascript" 
+        <!-- Script de BandHelper para el calendario -->
+        <script type="text/javascript"
           src="https://www.bandhelper.com/widget/calendar/10353?range=6">
         </script>
       </div>
@@ -250,8 +283,13 @@
        SCRIPTS PRINCIPALES
        ========================= -->
   <script>
-    // 1) Cargar primer setlist en tabla con PDF descargable
-    const url = 'https://cold-limit-811a.jagomezc.workers.dev';
+    /* 
+      ======================================
+       PARTE 1: PRIMER SETLIST 
+       (Tu JSON => cold-limit-811a API)
+      ======================================
+    */
+    const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
 
     function parseDurationToSeconds(durationStr) {
       if (!durationStr) return 0;
@@ -263,18 +301,16 @@
         return isNaN(seconds) ? 0 : seconds;
       }
     }
-
     function formatSecondsToMMSS(totalSeconds) {
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
       return `${minutes}:${String(seconds).padStart(2, '0')}`;
     }
 
-    async function cargarSetlist() {
+    async function cargarPrimerSetlist() {
       try {
-        const res = await fetch(url);
+        const res = await fetch(urlPrimerSetlist);
         const data = await res.json();
-
         const tbody = document.getElementById('setlist-body');
         tbody.innerHTML = '';
 
@@ -305,15 +341,15 @@
 
         return songs;
       } catch (err) {
-        console.error('Error al cargar el setlist:', err);
+        console.error('Error al cargar el primer setlist:', err);
         document.getElementById('setlist-body').innerHTML =
-          '<tr><td colspan="5">Error al cargar el setlist.</td></tr>';
+          '<tr><td colspan="5">Error al cargar el primer setlist.</td></tr>';
         return [];
       }
     }
 
-    // Descarga en PDF (con estilo "autoTable") del primer setlist
-    async function descargarPDF() {
+    // Descargar PDF del primer setlist con estilo A4
+    async function descargarPDFprimerSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({
         orientation: 'portrait',
@@ -321,9 +357,10 @@
         format: 'A4'
       });
 
-      const songs = await cargarSetlist();
+      // Cargamos los datos en ese momento
+      const songs = await cargarPrimerSetlist();
 
-      // Logo en PDF (logo_negro copia.jpg)
+      // Insertamos logo_negro copia.jpg en el PDF
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imageResponse = await fetch(imgUrl);
@@ -339,14 +376,14 @@
 
         doc.addImage(base64Image, 'JPEG', 40, 30, 60, 60);
       } catch (err) {
-        console.warn('No se pudo cargar el logo en el PDF:', err);
+        console.warn('No se pudo cargar el logo (primer setlist):', err);
       }
 
       doc.setFontSize(16);
       doc.setTextColor(40);
-      doc.text('Setlist - El Sótano del Doctor', 120, 50);
+      doc.text('Setlist - El Sótano del Doctor (Primer)', 120, 50);
 
-      // Calcular total de canciones y duración
+      // Calculamos nº canciones y duración total
       let totalSecs = 0;
       songs.forEach(s => {
         const secs = parseDurationToSeconds(s.duration || '');
@@ -365,7 +402,7 @@
         { header: 'Título', dataKey: 'title' },
         { header: 'Tonalidad', dataKey: 'key' },
         { header: 'Tempo', dataKey: 'tempo' },
-        { header: 'Duración', dataKey: 'duration' },
+        { header: 'Duración', dataKey: 'duration' }
       ];
 
       // Filas
@@ -384,19 +421,18 @@
           r.num, r.title, r.key, r.tempo, r.duration
         ]),
         headStyles: {
-          fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold'
+          fillColor: [60, 60, 60],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
         },
         bodyStyles: {
-          fillColor: [245, 245, 245], textColor: [0, 0, 0]
+          fillColor: [245, 245, 245],
+          textColor: [0, 0, 0]
         },
         alternateRowStyles: {
           fillColor: [230, 230, 230]
         },
-        styles: {
-          halign: 'left',
-          fontSize: 10,
-          cellPadding: 5
-        },
+        styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
         columnStyles: {
           0: { cellWidth: 30 },
           1: { cellWidth: 150 },
@@ -409,18 +445,174 @@
       doc.save('setlist_ElSotanoDelDoctor.pdf');
     }
 
-    // Al hacer clic en "Descargar PDF" del primer setlist
-    document.getElementById('download-btn').addEventListener('click', descargarPDF);
+    /* 
+      ======================================
+       PARTE 2: SEGUNDO SETLIST (BandHelper)
+       ======================================
+    */
+    const urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
 
-    // Cargar setlist inicial
-    cargarSetlist();
+    async function cargarSegundoSetlist() {
+      try {
+        const res = await fetch(urlSegundoSetlist);
+        const data = await res.json();
+        const tbody = document.getElementById('second-body');
+        tbody.innerHTML = '';
 
-    // 2) Para imprimir el segundo setlist (widget BandHelper)
-    // usaremos un botón que llama a window.print(),
-    // y las @media print ocultan todo excepto #second-setlist
-    document.getElementById('btn-print-second').addEventListener('click', () => {
-      window.print();
+        const songs = data.songs || [];
+        let totalSeconds = 0;
+
+        // Rellenamos la tabla HTML
+        songs.forEach((song, index) => {
+          const row = document.createElement('tr');
+          // BandHelper alimenta "title", "key", "tempo", "duration"
+          // Ajusta si el JSON difiere
+          const rawDuration = song.duration || '00:00';
+          const durSecs = parseDurationToSeconds(rawDuration);
+          const durFmt = formatSecondsToMMSS(durSecs);
+
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${song.title || ''}</td>
+            <td>${song.key || ''}</td>
+            <td>${song.tempo || ''}</td>
+            <td>${durFmt}</td>
+          `;
+          tbody.appendChild(row);
+
+          totalSeconds += durSecs;
+        });
+
+        // Mostramos tiempo total en el DOM
+        const totalTime2 = formatSecondsToMMSS(totalSeconds);
+        document.getElementById('total-time-2').textContent =
+          'Tiempo total del set: ' + totalTime2;
+
+        return songs; // devolvemos array de canciones
+      } catch (err) {
+        console.error('Error al cargar el segundo setlist (BandHelper):', err);
+        document.getElementById('second-body').innerHTML =
+          '<tr><td colspan="5">Error al cargar el segundo setlist.</td></tr>';
+        return [];
+      }
+    }
+
+    // Descargar PDF del segundo setlist con estilo DIN A4
+    async function descargarPDFsegundoSetlist() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'A4'
+      });
+
+      // Cargamos los datos en ese momento
+      const songs = await cargarSegundoSetlist();
+
+      // Insertamos logo_negro copia.jpg en el PDF
+      try {
+        const imgUrl = 'assets/logo_negro copia.jpg';
+        const imageResponse = await fetch(imgUrl);
+        const imageBlob = await imageResponse.blob();
+        const reader = new FileReader();
+
+        const base64Promise = new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(imageBlob);
+        const base64Image = await base64Promise;
+
+        doc.addImage(base64Image, 'JPEG', 40, 30, 60, 60);
+      } catch (err) {
+        console.warn('No se pudo cargar el logo (segundo setlist):', err);
+      }
+
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.text('Setlist - El Sótano del Doctor (Segundo)', 120, 50);
+
+      // Calculamos nº canciones y duración total
+      let totalSecs = 0;
+      songs.forEach(song => {
+        const rawDur = song.duration || '00:00';
+        const secs = parseDurationToSeconds(rawDur);
+        totalSecs += secs;
+      });
+      const totalTime = formatSecondsToMMSS(totalSecs);
+      const totalSongs = songs.length;
+
+      doc.setFontSize(12);
+      doc.setTextColor(80);
+      doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
+
+      // Columnas
+      const columns2 = [
+        { header: '#', dataKey: 'num' },
+        { header: 'Canción', dataKey: 'title' },
+        { header: 'Tonalidad', dataKey: 'key' },
+        { header: 'Tempo', dataKey: 'tempo' },
+        { header: 'Duración', dataKey: 'duration' }
+      ];
+
+      // Filas
+      const rows2 = songs.map((song, i) => {
+        const rawDur = song.duration || '00:00';
+        return {
+          num: i + 1,
+          title: song.title || '',
+          key: song.key || '',
+          tempo: song.tempo || '',
+          duration: formatSecondsToMMSS(parseDurationToSeconds(rawDur))
+        };
+      });
+
+      doc.autoTable({
+        startY: 100,
+        head: [columns2.map(c => c.header)],
+        body: rows2.map(r => [
+          r.num, r.title, r.key, r.tempo, r.duration
+        ]),
+        headStyles: {
+          fillColor: [60, 60, 60],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          fillColor: [245, 245, 245],
+          textColor: [0, 0, 0]
+        },
+        alternateRowStyles: {
+          fillColor: [230, 230, 230]
+        },
+        styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
+        columnStyles: {
+          0: { cellWidth: 30 },
+          1: { cellWidth: 150 },
+          2: { cellWidth: 80 },
+          3: { cellWidth: 50 },
+          4: { cellWidth: 60 }
+        }
+      });
+
+      doc.save('SegundoSetlist.pdf');
+    }
+
+    /* 
+      ======================================
+       EJECUCIONES Y EVENTOS
+      ======================================
+    */
+
+    // Al cargar la página, cargamos ambos setlists en sus tablas
+    window.addEventListener('DOMContentLoaded', () => {
+      cargarPrimerSetlist();
+      cargarSegundoSetlist();
     });
+
+    // Botones para descargar PDF de cada setlist
+    document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
+    document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
   </script>
 </body>
 </html>
