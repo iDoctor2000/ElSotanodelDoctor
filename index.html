@@ -64,7 +64,6 @@
 
     /* =========================
        PRIMER SETLIST
-       (Tu JSON => cold-limit-811a)
        ========================= */
     #setlists {
       background-color: #111;
@@ -118,7 +117,7 @@
     }
 
     /* =========================
-       SEGUNDO SETLIST (BandHelper)
+       SEGUNDO SETLIST
        ========================= */
     #second-setlist {
       background-color: #111;
@@ -132,7 +131,6 @@
       color: #0cf;
       margin-bottom: 15px;
     }
-    /* Estructura de la tabla del 2º setlist */
     #second-list-table {
       width: 100%;
       border-collapse: collapse;
@@ -200,7 +198,9 @@
       main section {
         padding: 10px;
       }
-      #setlists table, #second-list-table, #calendario div {
+      #setlists table,
+      #second-list-table,
+      #calendario div {
         font-size: 0.9em;
       }
     }
@@ -214,7 +214,7 @@
 
   <!-- CONTENIDO PRINCIPAL -->
   <main>
-    <!-- 1) PRIMER SETLIST (cold-limit-811a) -->
+    <!-- 1) PRIMER SETLIST (JSON directo, sin proxy) -->
     <section id="setlists">
       <h2>Setlist Ensayos 2025 (Primer Setlist)</h2>
       <p style="text-align:center; color:#aaa;">
@@ -280,37 +280,92 @@
        SCRIPTS PRINCIPALES
        ========================= -->
   <script>
-    /* 
-      ======================================
-       FUNCIONES COMUNES: parse/format duraciones
-      ======================================
+    /*
+      =========================
+       CONFIGURA AQUÍ TUS URLs
+      =========================
+    */
+    // Si ya no usas proxy, pon la URL real del feed JSON de tu primer setlist:
+    const urlPrimerSetlist = 'https://www.midominio.com/mi_feed_primer_setlist.json';
+    // O la que tengas accesible sin CORS:
+    // const urlPrimerSetlist = 'https://www.bandhelper.com/feed/set_list/XXXXXX... (otro feed)';
+
+    // Para el segundo setlist, BandHelper:
+    const urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
+
+    /*
+      ================================
+       FUNCIONES DE FORMATEO DURACIÓN
+      ================================
     */
     function parseDurationToSeconds(durationStr) {
       if (!durationStr) return 0;
-      // Si viene algo como "03:45", interpretamos min:seg
+      // Detectamos si es "min:sec" o entero segs
       if (durationStr.includes(':')) {
+        // min:sec
         const [min, sec] = durationStr.split(':').map(num => parseInt(num, 10));
         return (min * 60) + (sec || 0);
       } else {
-        // Si no, asumimos que es un número de segundos, p.ej "316"
+        // asume que es un número entero
         const seconds = parseInt(durationStr, 10);
         return isNaN(seconds) ? 0 : seconds;
       }
     }
 
-    function formatSecondsToMMSS(totalSeconds) {
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${minutes}:${String(seconds).padStart(2, '0')}`;
+    // formatea en hh:mm:ss si supera 60 min, si no mm:ss
+    function formatSecondsToHMS(totalSeconds) {
+      if (totalSeconds < 3600) {
+        // Menos de una hora => mm:ss
+        const min = Math.floor(totalSeconds / 60);
+        const sec = totalSeconds % 60;
+        return `${min}:${String(sec).padStart(2, '0')}`;
+      } else {
+        // Horas, mins, secs
+        const hours = Math.floor(totalSeconds / 3600);
+        const remainder = totalSeconds % 3600;
+        const min = Math.floor(remainder / 60);
+        const sec = remainder % 60;
+        return `${String(hours)}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+      }
     }
 
-    /* 
-      ======================================
-       PRIMER SETLIST (tu Worker)
-      ======================================
+    /*
+      ==========================
+       FUNCIONES PARA LIMPIAR TEXTO
+       (Para quitar &amp; y emojis)
+      ==========================
     */
-    const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
+    function cleanString(str) {
+      if (!str) return '';
+      // 1) Reemplazar entidades HTML comunes
+      let cleaned = str
+        .replace(/&amp;/g, '&')
+        .replace(/&aacute;/g, 'á')
+        .replace(/&eacute;/g, 'é')
+        .replace(/&iacute;/g, 'í')
+        .replace(/&oacute;/g, 'ó')
+        .replace(/&uacute;/g, 'ú')
+        .replace(/&ntilde;/g, 'ñ')
+        .replace(/&Ntilde;/g, 'Ñ')
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'")
+        .replace(/\\u00e1/g, 'á') // a veces las entidades vienen en \u
+        .replace(/\\u00f1/g, 'ñ')
+        // ... añade más si necesitas
+        .replace(/&[^;]+;/g, '');  // elimina otras desconocidas
 
+      // 2) Quitar emojis si jsPDF no los soporta (opcional):
+      // Ej: eliminamos caracteres fuera de rango ASCII
+      cleaned = cleaned.replace(/[^\x00-\xFF]/g, '');
+
+      return cleaned.trim();
+    }
+
+    /*
+      =====================================
+       PRIMER SETLIST (con su JSON directo)
+      =====================================
+    */
     async function cargarPrimerSetlist() {
       try {
         const res = await fetch(urlPrimerSetlist);
@@ -318,31 +373,35 @@
         const tbody = document.getElementById('setlist-body');
         tbody.innerHTML = '';
 
-        // Filtramos los que sean type==="song"
+        // Filtramos solo type==="song" si es la misma estructura
         const songs = data.filter(item => item.type === 'song');
         let totalSeconds = 0;
 
         songs.forEach((song, i) => {
-          const rawDuration = song.duration || '';
-          const durationInSeconds = parseDurationToSeconds(rawDuration);
-          const durationFormatted = formatSecondsToMMSS(durationInSeconds);
+          const rawDuration = song.duration || '0';
+          const secs = parseDurationToSeconds(rawDuration);
+          const durFmt = formatSecondsToHMS(secs);
+
+          // Limpia campos "name", "key", "tempo"
+          const nameClean = cleanString(song.name || '');
+          const keyClean = cleanString(song.key || '');
+          const tempoClean = cleanString(song.tempo || '');
 
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${i + 1}</td>
-            <td>${song.name || ''}</td>
-            <td>${song.key || ''}</td>
-            <td>${song.tempo || ''}</td>
-            <td>${durationFormatted}</td>
+            <td>${nameClean}</td>
+            <td>${keyClean}</td>
+            <td>${tempoClean}</td>
+            <td>${durFmt}</td>
           `;
           tbody.appendChild(row);
 
-          totalSeconds += durationInSeconds;
+          totalSeconds += secs;
         });
 
-        const totalTimeParagraph = document.getElementById('total-time');
-        totalTimeParagraph.textContent =
-          'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
+        document.getElementById('total-time').textContent =
+          'Tiempo total del set: ' + formatSecondsToHMS(totalSeconds);
 
         return songs;
       } catch (err) {
@@ -358,7 +417,7 @@
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
       const songs = await cargarPrimerSetlist();
 
-      // Logo
+      // Inserta logo negro en el PDF
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imageResponse = await fetch(imgUrl);
@@ -381,20 +440,18 @@
       doc.setTextColor(40);
       doc.text('Setlist - El Sótano del Doctor (Primer)', 120, 50);
 
-      // Nº canciones y duración total
       let totalSecs = 0;
       songs.forEach(s => {
-        const secs = parseDurationToSeconds(s.duration || '0');
-        totalSecs += secs;
+        totalSecs += parseDurationToSeconds(s.duration || '0');
       });
-      const totalTime = formatSecondsToMMSS(totalSecs);
+      const totalTime = formatSecondsToHMS(totalSecs);
       const totalSongs = songs.length;
 
       doc.setFontSize(12);
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
 
-      // autoTable
+      // Columnas
       const columns = [
         { header: '#', dataKey: 'num' },
         { header: 'Título', dataKey: 'title' },
@@ -402,13 +459,16 @@
         { header: 'Tempo', dataKey: 'tempo' },
         { header: 'Duración', dataKey: 'duration' }
       ];
-      const rows = songs.map((song, i) => ({
-        num: i + 1,
-        title: song.name || '',
-        key: song.key || '',
-        tempo: song.tempo || '',
-        duration: formatSecondsToMMSS(parseDurationToSeconds(song.duration || '0'))
-      }));
+      const rows = songs.map((song, i) => {
+        const secs = parseDurationToSeconds(song.duration || '0');
+        return {
+          num: i + 1,
+          title: cleanString(song.name || ''),
+          key: cleanString(song.key || ''),
+          tempo: cleanString(song.tempo || ''),
+          duration: formatSecondsToHMS(secs)
+        };
+      });
 
       doc.autoTable({
         startY: 100,
@@ -436,47 +496,47 @@
         }
       });
 
-      doc.save('setlist_ElSotanoDelDoctor.pdf');
+      doc.save('setlist_ElSotanoDelDoctor_Primero.pdf');
     }
 
-    /* 
-      ======================================
-       SEGUNDO SETLIST (BandHelper feed)
-      ======================================
+    /*
+      ============================
+       SEGUNDO SETLIST (BandHelper)
+      ============================
     */
-    const urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
-
     async function cargarSegundoSetlist() {
       try {
         const res = await fetch(urlSegundoSetlist);
         const data = await res.json();
 
-        // data es un array. Filtramos type==="song"
+        // data es un array, filtrar type==="song"
         const songs = data.filter(item => item.type === 'song');
-
         const tbody = document.getElementById('second-body');
         tbody.innerHTML = '';
 
         let totalSeconds = 0;
         songs.forEach((song, index) => {
-          // "song.name", "song.key", "song.tempo", "song.duration" (en segs)
-          const rawDuration = song.duration || '0';
-          const secs = parseDurationToSeconds(rawDuration);
+          const rawDur = song.duration || '0';
+          const secs = parseDurationToSeconds(rawDur);
           const row = document.createElement('tr');
+
+          const nameClean = cleanString(song.name);
+          const keyClean = cleanString(song.key || '');
+          const tempoClean = cleanString(song.tempo || '');
+
           row.innerHTML = `
             <td>${index + 1}</td>
-            <td>${song.name}</td>
-            <td>${song.key || ''}</td>
-            <td>${song.tempo || ''}</td>
-            <td>${formatSecondsToMMSS(secs)}</td>
+            <td>${nameClean}</td>
+            <td>${keyClean}</td>
+            <td>${tempoClean}</td>
+            <td>${formatSecondsToHMS(secs)}</td>
           `;
           tbody.appendChild(row);
 
           totalSeconds += secs;
         });
 
-        // Tiempo total
-        const totalTime = formatSecondsToMMSS(totalSeconds);
+        const totalTime = formatSecondsToHMS(totalSeconds);
         document.getElementById('total-time-2').textContent =
           'Tiempo total del set: ' + totalTime;
 
@@ -492,11 +552,8 @@
     async function descargarPDFsegundoSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
-
-      // Cargamos los datos
       const songs = await cargarSegundoSetlist();
 
-      // Logo
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imageResponse = await fetch(imgUrl);
@@ -519,19 +576,18 @@
       doc.setTextColor(40);
       doc.text('Setlist - El Sótano del Doctor (Segundo)', 120, 50);
 
-      // Nº canciones y duración total
       let totalSecs = 0;
       songs.forEach(song => {
         totalSecs += parseDurationToSeconds(song.duration || '0');
       });
-      const totalTime = formatSecondsToMMSS(totalSecs);
+      const totalTime = formatSecondsToHMS(totalSecs);
       const totalSongs = songs.length;
 
       doc.setFontSize(12);
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
 
-      // autoTable
+      // Columnas
       const columns2 = [
         { header: '#', dataKey: 'num' },
         { header: 'Canción', dataKey: 'name' },
@@ -543,10 +599,10 @@
         const secs = parseDurationToSeconds(song.duration || '0');
         return {
           num: i + 1,
-          name: song.name,
-          key: song.key || '',
-          tempo: song.tempo || '',
-          duration: formatSecondsToMMSS(secs)
+          name: cleanString(song.name),
+          key: cleanString(song.key || ''),
+          tempo: cleanString(song.tempo || ''),
+          duration: formatSecondsToHMS(secs)
         };
       });
 
@@ -576,25 +632,21 @@
         }
       });
 
-      doc.save('SegundoSetlist.pdf');
+      doc.save('setlist_ElSotanoDelDoctor_Segundo.pdf');
     }
 
-    /* 
-      ======================================
-       EJECUCIÓN AUTOMÁTICA
-      ======================================
+    /*
+      ============================
+       EJECUCIÓN AL CARGAR
+      ============================
     */
-    // Al cargar la página, iniciamos ambos setlists
     window.addEventListener('DOMContentLoaded', () => {
       cargarPrimerSetlist();
       cargarSegundoSetlist();
     });
 
-    // Botones de descarga
-    document.getElementById('download-btn')
-      .addEventListener('click', descargarPDFprimerSetlist);
-    document.getElementById('download-btn-2')
-      .addEventListener('click', descargarPDFsegundoSetlist);
+    document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
+    document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
   </script>
 </body>
 </html>
