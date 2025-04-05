@@ -64,7 +64,7 @@
 
     /* =========================
        PRIMER SETLIST
-       (tu JSON con fetch a cold-limit)
+       (Tu JSON => cold-limit-811a)
        ========================= */
     #setlists {
       background-color: #111;
@@ -118,7 +118,7 @@
     }
 
     /* =========================
-       SEGUNDO SETLIST (BandHelper feed)
+       SEGUNDO SETLIST (BandHelper)
        ========================= */
     #second-setlist {
       background-color: #111;
@@ -132,6 +132,7 @@
       color: #0cf;
       margin-bottom: 15px;
     }
+    /* Estructura de la tabla del 2º setlist */
     #second-list-table {
       width: 100%;
       border-collapse: collapse;
@@ -143,8 +144,7 @@
       background-color: #222;
       color: #0cf;
     }
-    #second-list-table th,
-    #second-list-table td {
+    #second-list-table th, #second-list-table td {
       padding: 12px;
       border: 1px solid #333;
       text-align: left;
@@ -200,9 +200,7 @@
       main section {
         padding: 10px;
       }
-      #setlists table,
-      #second-list-table,
-      #calendario div {
+      #setlists table, #second-list-table, #calendario div {
         font-size: 0.9em;
       }
     }
@@ -216,7 +214,7 @@
 
   <!-- CONTENIDO PRINCIPAL -->
   <main>
-    <!-- 1) PRIMER SETLIST (Tu JSON con tempo/duración) -->
+    <!-- 1) PRIMER SETLIST (cold-limit-811a) -->
     <section id="setlists">
       <h2>Setlist Ensayos 2025 (Primer Setlist)</h2>
       <p style="text-align:center; color:#aaa;">
@@ -232,7 +230,7 @@
             <th>Duración</th>
           </tr>
         </thead>
-        <tbody id="setlist-body"><!-- Se rellena por JS --></tbody>
+        <tbody id="setlist-body"></tbody>
       </table>
       <button id="download-btn">Descargar PDF del setlist</button>
       <p id="total-time"></p>
@@ -242,8 +240,7 @@
     <section id="second-setlist">
       <h2>Segundo Setlist (BandHelper)</h2>
       <p style="text-align:center; color:#aaa;">
-        Datos obtenidos directamente del feed BandHelper: <br />
-        <em>https://www.bandhelper.com/feed/set_list/TXHvyb</em>
+        Datos obtenidos desde <em>https://www.bandhelper.com/feed/set_list/TXHvyb</em>.
       </p>
       <table id="second-list-table">
         <thead>
@@ -255,7 +252,7 @@
             <th>Duración</th>
           </tr>
         </thead>
-        <tbody id="second-body"><!-- Se rellena por JS --></tbody>
+        <tbody id="second-body"></tbody>
       </table>
       <button id="download-btn-2">Descargar PDF del 2º setlist</button>
       <p id="total-time-2"></p>
@@ -285,27 +282,34 @@
   <script>
     /* 
       ======================================
-       PARTE 1: PRIMER SETLIST 
-       (Tu JSON => cold-limit-811a API)
+       FUNCIONES COMUNES: parse/format duraciones
       ======================================
     */
-    const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
-
     function parseDurationToSeconds(durationStr) {
       if (!durationStr) return 0;
+      // Si viene algo como "03:45", interpretamos min:seg
       if (durationStr.includes(':')) {
         const [min, sec] = durationStr.split(':').map(num => parseInt(num, 10));
         return (min * 60) + (sec || 0);
       } else {
+        // Si no, asumimos que es un número de segundos, p.ej "316"
         const seconds = parseInt(durationStr, 10);
         return isNaN(seconds) ? 0 : seconds;
       }
     }
+
     function formatSecondsToMMSS(totalSeconds) {
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
       return `${minutes}:${String(seconds).padStart(2, '0')}`;
     }
+
+    /* 
+      ======================================
+       PRIMER SETLIST (tu Worker)
+      ======================================
+    */
+    const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
 
     async function cargarPrimerSetlist() {
       try {
@@ -314,6 +318,7 @@
         const tbody = document.getElementById('setlist-body');
         tbody.innerHTML = '';
 
+        // Filtramos los que sean type==="song"
         const songs = data.filter(item => item.type === 'song');
         let totalSeconds = 0;
 
@@ -348,19 +353,12 @@
       }
     }
 
-    // Descargar PDF del primer setlist con estilo A4
     async function descargarPDFprimerSetlist() {
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'A4'
-      });
-
-      // Cargamos los datos en ese momento
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
       const songs = await cargarPrimerSetlist();
 
-      // Insertamos logo_negro copia.jpg en el PDF
+      // Logo
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imageResponse = await fetch(imgUrl);
@@ -383,10 +381,10 @@
       doc.setTextColor(40);
       doc.text('Setlist - El Sótano del Doctor (Primer)', 120, 50);
 
-      // Calculamos nº canciones y duración total
+      // Nº canciones y duración total
       let totalSecs = 0;
       songs.forEach(s => {
-        const secs = parseDurationToSeconds(s.duration || '');
+        const secs = parseDurationToSeconds(s.duration || '0');
         totalSecs += secs;
       });
       const totalTime = formatSecondsToMMSS(totalSecs);
@@ -396,7 +394,7 @@
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
 
-      // Columnas
+      // autoTable
       const columns = [
         { header: '#', dataKey: 'num' },
         { header: 'Título', dataKey: 'title' },
@@ -404,22 +402,18 @@
         { header: 'Tempo', dataKey: 'tempo' },
         { header: 'Duración', dataKey: 'duration' }
       ];
-
-      // Filas
       const rows = songs.map((song, i) => ({
         num: i + 1,
         title: song.name || '',
         key: song.key || '',
         tempo: song.tempo || '',
-        duration: formatSecondsToMMSS(parseDurationToSeconds(song.duration))
+        duration: formatSecondsToMMSS(parseDurationToSeconds(song.duration || '0'))
       }));
 
       doc.autoTable({
         startY: 100,
         head: [columns.map(c => c.header)],
-        body: rows.map(r => [
-          r.num, r.title, r.key, r.tempo, r.duration
-        ]),
+        body: rows.map(r => [r.num, r.title, r.key, r.tempo, r.duration]),
         headStyles: {
           fillColor: [60, 60, 60],
           textColor: [255, 255, 255],
@@ -447,8 +441,8 @@
 
     /* 
       ======================================
-       PARTE 2: SEGUNDO SETLIST (BandHelper)
-       ======================================
+       SEGUNDO SETLIST (BandHelper feed)
+      ======================================
     */
     const urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
 
@@ -456,39 +450,37 @@
       try {
         const res = await fetch(urlSegundoSetlist);
         const data = await res.json();
+
+        // data es un array. Filtramos type==="song"
+        const songs = data.filter(item => item.type === 'song');
+
         const tbody = document.getElementById('second-body');
         tbody.innerHTML = '';
 
-        const songs = data.songs || [];
         let totalSeconds = 0;
-
-        // Rellenamos la tabla HTML
         songs.forEach((song, index) => {
+          // "song.name", "song.key", "song.tempo", "song.duration" (en segs)
+          const rawDuration = song.duration || '0';
+          const secs = parseDurationToSeconds(rawDuration);
           const row = document.createElement('tr');
-          // BandHelper alimenta "title", "key", "tempo", "duration"
-          // Ajusta si el JSON difiere
-          const rawDuration = song.duration || '00:00';
-          const durSecs = parseDurationToSeconds(rawDuration);
-          const durFmt = formatSecondsToMMSS(durSecs);
-
           row.innerHTML = `
             <td>${index + 1}</td>
-            <td>${song.title || ''}</td>
+            <td>${song.name}</td>
             <td>${song.key || ''}</td>
             <td>${song.tempo || ''}</td>
-            <td>${durFmt}</td>
+            <td>${formatSecondsToMMSS(secs)}</td>
           `;
           tbody.appendChild(row);
 
-          totalSeconds += durSecs;
+          totalSeconds += secs;
         });
 
-        // Mostramos tiempo total en el DOM
-        const totalTime2 = formatSecondsToMMSS(totalSeconds);
+        // Tiempo total
+        const totalTime = formatSecondsToMMSS(totalSeconds);
         document.getElementById('total-time-2').textContent =
-          'Tiempo total del set: ' + totalTime2;
+          'Tiempo total del set: ' + totalTime;
 
-        return songs; // devolvemos array de canciones
+        return songs;
       } catch (err) {
         console.error('Error al cargar el segundo setlist (BandHelper):', err);
         document.getElementById('second-body').innerHTML =
@@ -497,19 +489,14 @@
       }
     }
 
-    // Descargar PDF del segundo setlist con estilo DIN A4
     async function descargarPDFsegundoSetlist() {
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'A4'
-      });
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
 
-      // Cargamos los datos en ese momento
+      // Cargamos los datos
       const songs = await cargarSegundoSetlist();
 
-      // Insertamos logo_negro copia.jpg en el PDF
+      // Logo
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imageResponse = await fetch(imgUrl);
@@ -532,12 +519,10 @@
       doc.setTextColor(40);
       doc.text('Setlist - El Sótano del Doctor (Segundo)', 120, 50);
 
-      // Calculamos nº canciones y duración total
+      // Nº canciones y duración total
       let totalSecs = 0;
       songs.forEach(song => {
-        const rawDur = song.duration || '00:00';
-        const secs = parseDurationToSeconds(rawDur);
-        totalSecs += secs;
+        totalSecs += parseDurationToSeconds(song.duration || '0');
       });
       const totalTime = formatSecondsToMMSS(totalSecs);
       const totalSongs = songs.length;
@@ -546,33 +531,29 @@
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
 
-      // Columnas
+      // autoTable
       const columns2 = [
         { header: '#', dataKey: 'num' },
-        { header: 'Canción', dataKey: 'title' },
+        { header: 'Canción', dataKey: 'name' },
         { header: 'Tonalidad', dataKey: 'key' },
         { header: 'Tempo', dataKey: 'tempo' },
         { header: 'Duración', dataKey: 'duration' }
       ];
-
-      // Filas
       const rows2 = songs.map((song, i) => {
-        const rawDur = song.duration || '00:00';
+        const secs = parseDurationToSeconds(song.duration || '0');
         return {
           num: i + 1,
-          title: song.title || '',
+          name: song.name,
           key: song.key || '',
           tempo: song.tempo || '',
-          duration: formatSecondsToMMSS(parseDurationToSeconds(rawDur))
+          duration: formatSecondsToMMSS(secs)
         };
       });
 
       doc.autoTable({
         startY: 100,
         head: [columns2.map(c => c.header)],
-        body: rows2.map(r => [
-          r.num, r.title, r.key, r.tempo, r.duration
-        ]),
+        body: rows2.map(r => [r.num, r.name, r.key, r.tempo, r.duration]),
         headStyles: {
           fillColor: [60, 60, 60],
           textColor: [255, 255, 255],
@@ -600,19 +581,20 @@
 
     /* 
       ======================================
-       EJECUCIONES Y EVENTOS
+       EJECUCIÓN AUTOMÁTICA
       ======================================
     */
-
-    // Al cargar la página, cargamos ambos setlists en sus tablas
+    // Al cargar la página, iniciamos ambos setlists
     window.addEventListener('DOMContentLoaded', () => {
       cargarPrimerSetlist();
       cargarSegundoSetlist();
     });
 
-    // Botones para descargar PDF de cada setlist
-    document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
-    document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
+    // Botones de descarga
+    document.getElementById('download-btn')
+      .addEventListener('click', descargarPDFprimerSetlist);
+    document.getElementById('download-btn-2')
+      .addEventListener('click', descargarPDFsegundoSetlist);
   </script>
 </body>
 </html>
