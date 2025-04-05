@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -132,15 +130,16 @@
     <script>
         const url = 'https://cold-limit-811a.jagomezc.workers.dev';
 
+        // Aquí pon tu propio LOGO en Base64 (este es un placeholder):
+        const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABS0lEQVR4nKWSv0uUURSGnx2/GAZdjB0skEBBeihzUDa0QLC0sgp0WA0YZtQpKyoE5NGwoZHZOr0RtEJMoBVKriytTHhHXP+Oyze3o/H85c+aczgCgKcYvpCqzCeR6Lx46HNBaEPoWqJ7F/i3gkcMLWcTUYR6O4zh51Gl8B1h2j+S4rERZxdh+Gd20p7b+VZ7gdCIEO6vslR0K3+IftDc88319HbB3HksmhWR0pU1pZqx81LB2HuR+pINwN0mn7rqvp23Y2AglccCyiHn6SxLa7cBYb6yUm80qt1PFyfvf0IPo3DXOpIcLBttx6AOc5D6K6bT43gGxbnY5rzNPU8XWp+gdY2FUvEF4wa1DpG95HJ6ZbDYzgDX+pT8z5agQAAAABJRU5ErkJggg==";
+
         // Función que interpreta "mm:ss" o un número de segundos
         function parseDurationToSeconds(durationStr) {
             if (!durationStr) return 0;
-            // Si hay ":", tratamos como "mm:ss"
             if (durationStr.includes(":")) {
                 const [min, sec] = durationStr.split(":").map(num => parseInt(num, 10));
                 return (min * 60) + (sec || 0);
             } else {
-                // Si no hay ":", es un número de segundos
                 const seconds = parseInt(durationStr, 10);
                 return isNaN(seconds) ? 0 : seconds;
             }
@@ -153,6 +152,7 @@
             return `${minutes}:${String(seconds).padStart(2, '0')}`;
         }
 
+        // Cargar setlist y pintar tabla
         async function cargarSetlist() {
             try {
                 const res = await fetch(url);
@@ -164,12 +164,11 @@
                 let totalSeconds = 0;
 
                 songs.forEach(song => {
-                    // Aquí parseamos la duración original
                     const rawDuration = song.duration || ''; 
                     const durationInSeconds = parseDurationToSeconds(rawDuration);
                     const durationFormatted = formatSecondsToMMSS(durationInSeconds);
 
-                    // Construimos la fila
+                    // Creamos la fila
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${song.name || ''}</td>
@@ -179,11 +178,10 @@
                     `;
                     tbody.appendChild(row);
 
-                    // Sumamos la duración
                     totalSeconds += durationInSeconds;
                 });
 
-                // Calculamos y mostramos el tiempo total
+                // Tiempo total
                 const totalDuration = formatSecondsToMMSS(totalSeconds);
                 const setlistSection = document.getElementById('setlists');
 
@@ -206,40 +204,116 @@
             }
         }
 
+        // Generar PDF vistoso
         async function descargarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.setFontSize(14);
-            doc.text("Setlist - El Sótano del Doctor", 20, 20);
-
-            // Obtenemos la lista (y sumamos la duración de paso)
+            // 1. Obtenemos la lista de canciones
             const songs = await cargarSetlist();
 
-            const columns = ["Título", "Tonalidad", "Tempo", "Duración"];
-            const rows = songs.map(s => {
-                // Volvemos a formatear para el PDF
-                const durationInSeconds = parseDurationToSeconds(s.duration || '');
-                const durationFormatted = formatSecondsToMMSS(durationInSeconds);
-                return [
-                    s.name || '',
-                    s.key || '',
-                    s.tempo || '',
-                    durationFormatted
-                ];
+            // 2. Calculamos la duración total
+            let totalSeconds = 0;
+            songs.forEach(s => {
+                const durSeg = parseDurationToSeconds(s.duration);
+                totalSeconds += durSeg;
+            });
+            const totalFormatted = formatSecondsToMMSS(totalSeconds);
+
+            // 3. Configuramos jsPDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'pt',
+                format: 'A4'
             });
 
+            // Metadatos opcionales
+            doc.setProperties({
+                title: "Setlist - El Sótano del Doctor",
+                subject: "Setlist generado automáticamente",
+                author: "El Sótano del Doctor"
+            });
+
+            // 4. Insertamos logo (Base64). Ajusta X, Y, width, height a tu gusto
+            doc.addImage(LOGO_BASE64, 'PNG', 40, 20, 60, 60);
+
+            // 5. Título y subtítulo
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.text("Setlist - El Sótano del Doctor", 130, 40);
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Tiempo total del set: ${totalFormatted}`, 130, 60);
+
+            const startYpos = 100;
+
+            // 6. Preparamos la tabla
+            // Columnas
+            const columns = [
+                { header: 'Título', dataKey: 'name' },
+                { header: 'Tonalidad', dataKey: 'key' },
+                { header: 'Tempo', dataKey: 'tempo' },
+                { header: 'Duración', dataKey: 'duration' }
+            ];
+
+            // Filas
+            const rows = songs.map(song => {
+                // De nuevo parseamos por si hay formato en segundos
+                const durSeg = parseDurationToSeconds(song.duration || '');
+                const durFormatted = formatSecondsToMMSS(durSeg);
+                return {
+                    name: song.name || '',
+                    key: song.key || '',
+                    tempo: song.tempo || '',
+                    duration: durFormatted
+                };
+            });
+
+            // 7. autoTable con tema 'striped'
             doc.autoTable({
-                head: [columns],
-                body: rows,
-                startY: 30,
-                styles: { halign: 'left' },
-                headStyles: { fillColor: [0, 255, 255], textColor: 0 }
+                startY: startYpos,
+                head: [columns.map(col => col.header)],
+                body: rows.map(row => Object.values(row)),
+                theme: 'striped',
+                headStyles: {
+                    fillColor: [0, 255, 255], // cian
+                    textColor: [0, 0, 0],
+                    fontSize: 12,
+                    fontStyle: 'bold'
+                },
+                bodyStyles: {
+                    fontSize: 11,
+                    cellPadding: 6
+                },
+                alternateRowStyles: {
+                    fillColor: [240, 240, 240]
+                },
+                columnStyles: {
+                    0: { cellWidth: 170 },
+                    1: { cellWidth: 70 },
+                    2: { cellWidth: 60 },
+                    3: { cellWidth: 70 }
+                },
+                margin: { left: 40, right: 40 }
             });
 
+            // 8. Pie de página con número de páginas
+            const pageCount = doc.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(
+                    `Página ${i} de ${pageCount}`,
+                    doc.internal.pageSize.getWidth() - 80,
+                    doc.internal.pageSize.getHeight() - 20
+                );
+            }
+
+            // 9. Guardamos
             doc.save("setlist_ElSotanoDelDoctor.pdf");
         }
 
-        // Listeners y carga inicial
+        // Evento del botón y carga inicial
         document.getElementById('download-btn').addEventListener('click', descargarPDF);
         cargarSetlist(); 
     </script>
