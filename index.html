@@ -2,244 +2,151 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>El Sótano del Doctor</title>
-
-    <!-- ... Head original ... -->
-
-    <style>
-        /* Tus estilos originales */
-        body {
-            background-color: #000;
-            color: #fff;
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            background-color: #111;
-            padding: 20px;
-            text-align: center;
-        }
-        header img {
-            width: 300px;
-            height: auto;
-        }
-        main {
-            padding: 20px;
-        }
-        section {
-            margin-bottom: 50px;
-            padding: 20px;
-            background-color: #111;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-        }
-        h2 {
-            border-bottom: 2px solid #0cf;
-            color: #0cf;
-            padding-bottom: 10px;
-            font-size: 1.8em;
-            text-align: center;
-        }
-        p {
-            color: #aaa;
-            font-size: 1em;
-            line-height: 1.5;
-            text-align: center;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            color: #fff;
-            font-size: 0.95em;
-        }
-        thead {
-            background-color: #222;
-            color: #0cf;
-        }
-        th, td {
-            padding: 12px;
-            border: 1px solid #333;
-            text-align: left;
-        }
-        tr:nth-child(even) {
-            background-color: #1a1a1a;
-        }
-        #download-btn {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
-            font-size: 1em;
-            background-color: #0cf;
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        footer {
-            background-color: #111;
-            color: #888;
-            text-align: center;
-            padding: 20px;
-            font-size: 0.9em;
-            border-top: 1px solid #222;
-        }
-    </style>
+    <title>El Sótano del Doctor - PDF mejorado</title>
 </head>
 <body>
-    <header>
-        <img src="assets/logo_blanco.png" alt="El Sótano del Doctor logo" />
-    </header>
-    <main>
-        <section id="setlists">
-            <h2>🎼 Setlists Ensayos 2025 🎶</h2>
-            <p>Consulta los setlists en tiempo real desde BandHelper:</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Título</th>
-                        <th>Tonalidad</th>
-                        <th>Tempo</th>
-                        <th>Duración</th>
-                    </tr>
-                </thead>
-                <tbody id="setlist-body"></tbody>
-            </table>
+    <h1>Ejemplo de PDF con estilo</h1>
+    <button id="download-btn">Descargar PDF vistoso</button>
 
-            <button id="download-btn">📥 Descargar PDF del setlist</button>
-            <p style="margin-top:10px; font-size: 0.9em; color: #888;">🎧 Setlist actualizado en tiempo real desde la app</p>
-        </section>
-
-        <section id="calendario" style="padding: 30px; margin-bottom: 50px;">
-            <h2 style="text-align: center; color: #0cf;">📅 Próximos conciertos</h2>
-            <p style="text-align: center; color: #aaa;">Consulta nuestro calendario actualizado desde BandHelper</p>
-            <div style="background-color: #111; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,255,255,0.1);">
-                <script type="text/javascript" src="https://www.bandhelper.com/widget/calendar/10353?range=6"></script>
-            </div>
-        </section>
-    </main>
-    <footer>
-        © 2025 El Sótano del Doctor. Todos los derechos reservados.
-    </footer>
-
-    <!-- Librerías jsPDF -->
+    <!-- jsPDF y jsPDF-Autotable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-
     <script>
-        const url = 'https://cold-limit-811a.jagomezc.workers.dev';
+      // EJEMPLO DE LOGO EN BASE64 (PNG). Sustitúyelo por tu cadena real
+      const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAA...";
 
-        // Función que interpreta "mm:ss" o un número de segundos
-        function parseDurationToSeconds(durationStr) {
-            if (!durationStr) return 0;
-            // Si hay ":", tratamos como "mm:ss"
-            if (durationStr.includes(":")) {
-                const [min, sec] = durationStr.split(":").map(num => parseInt(num, 10));
-                return (min * 60) + (sec || 0);
-            } else {
-                // Si no hay ":", es un número de segundos
-                const seconds = parseInt(durationStr, 10);
-                return isNaN(seconds) ? 0 : seconds;
-            }
+      // Datos de ejemplo para la tabla. Tú obtendrás 'songs' con fetch
+      const songsEjemplo = [
+        { name: "Canción 1", key: "C", tempo: "120", duration: "3:30" },
+        { name: "Canción 2", key: "Am", tempo: "130", duration: "4:10" },
+        { name: "Canción 3", key: "G", tempo: "90",  duration: "2:50" },
+        // ...
+      ];
+
+      function parseDurationToSeconds(durationStr) {
+        if (!durationStr) return 0;
+        if (durationStr.includes(":")) {
+          const [min, sec] = durationStr.split(":").map(num => parseInt(num, 10));
+          return (min * 60) + (sec || 0);
+        } else {
+          const seconds = parseInt(durationStr, 10);
+          return isNaN(seconds) ? 0 : seconds;
+        }
+      }
+
+      function formatSecondsToMMSS(totalSeconds) {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${minutes}:${String(seconds).padStart(2, '0')}`;
+      }
+
+      // Generar PDF
+      async function descargarPDF() {
+        // Normalmente aquí harías tu fetch a la API y tendrías 'songs' reales
+        // const res = await fetch("TU_URL");
+        // const data = await res.json();
+        // const songs = data.filter(item => item.type === 'song');
+
+        // Para la demo, uso songsEjemplo:
+        const songs = songsEjemplo;
+
+        // Calculamos la duración total
+        let totalSeconds = 0;
+        songs.forEach(s => {
+          totalSeconds += parseDurationToSeconds(s.duration);
+        });
+        const totalFormatted = formatSecondsToMMSS(totalSeconds);
+
+        // Configuración inicial de jsPDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: 'portrait',
+          unit: 'pt',   // points (más preciso para maquetación)
+          format: 'A4'  // o 'letter'
+        });
+        
+        // Propiedades del PDF (opcional)
+        doc.setProperties({
+          title: "Setlist - El Sótano del Doctor",
+          subject: "Setlist generado automáticamente",
+          author: "El Sótano del Doctor"
+        });
+
+        // Insertamos el LOGO (base64). Ajusta posición y tamaño a tu gusto
+        // x=40, y=20, width=80, height=80 (por ejemplo)
+        doc.addImage(LOGO_BASE64, 'PNG', 40, 20, 60, 60);
+
+        // TÍTULO (dejamos hueco para el logo)
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.text("Setlist - El Sótano del Doctor", 130, 40); 
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Tiempo total: ${totalFormatted}`, 130, 60);
+
+        // Ajustamos la posición inicial de la tabla (startY) para no pisar el logo
+        const startYpos = 100; 
+
+        // Preparamos las columnas y filas para autoTable
+        const columns = [
+          { header: 'Título', dataKey: 'name' },
+          { header: 'Tonalidad', dataKey: 'key' },
+          { header: 'Tempo', dataKey: 'tempo' },
+          { header: 'Duración', dataKey: 'duration' }
+        ];
+        const rows = songs.map(s => ({
+          name: s.name || '',
+          key: s.key || '',
+          tempo: s.tempo || '',
+          duration: s.duration || ''
+        }));
+
+        // autoTable con tema striped
+        doc.autoTable({
+          startY: startYpos,
+          head: [columns.map(col => col.header)],
+          body: rows.map(r => Object.values(r)),
+          theme: 'striped', // "striped", "grid" o "plain"
+          headStyles: {
+            fillColor: [0, 255, 255],  // cian
+            textColor: [0, 0, 0],
+            fontSize: 12,
+            fontStyle: 'bold'
+          },
+          bodyStyles: {
+            fontSize: 11,
+            cellPadding: 6
+          },
+          alternateRowStyles: {
+            fillColor: [240, 240, 240] // gris clarito
+          },
+          // Mapeamos ancho de columnas si quieres
+          columnStyles: {
+            0: { cellWidth: 150 }, // Título
+            1: { cellWidth: 80 },
+            2: { cellWidth: 60 },
+            3: { cellWidth: 80 }
+          },
+          // Dimensiones totales
+          tableWidth: 'auto',
+          margin: { left: 40, right: 40 }
+        });
+
+        // Añadimos pie de página (opcional)
+        const pageCount = doc.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(10);
+          doc.setTextColor(100);
+          doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 20);
         }
 
-        // Función para convertir segundos a "mm:ss"
-        function formatSecondsToMMSS(totalSeconds) {
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            return `${minutes}:${String(seconds).padStart(2, '0')}`;
-        }
+        // Guardamos el PDF
+        doc.save("setlist_ElSotanoDelDoctor.pdf");
+      }
 
-        async function cargarSetlist() {
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                const tbody = document.getElementById('setlist-body');
-                tbody.innerHTML = '';
-
-                const songs = data.filter(item => item.type === 'song');
-                let totalSeconds = 0;
-
-                songs.forEach(song => {
-                    // Aquí parseamos la duración original
-                    const rawDuration = song.duration || ''; 
-                    const durationInSeconds = parseDurationToSeconds(rawDuration);
-                    const durationFormatted = formatSecondsToMMSS(durationInSeconds);
-
-                    // Construimos la fila
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${song.name || ''}</td>
-                        <td>${song.key || ''}</td>
-                        <td>${song.tempo || ''}</td>
-                        <td>${durationFormatted}</td>
-                    `;
-                    tbody.appendChild(row);
-
-                    // Sumamos la duración
-                    totalSeconds += durationInSeconds;
-                });
-
-                // Calculamos y mostramos el tiempo total
-                const totalDuration = formatSecondsToMMSS(totalSeconds);
-                const setlistSection = document.getElementById('setlists');
-
-                let totalTimeParagraph = document.getElementById('total-time');
-                if (!totalTimeParagraph) {
-                    totalTimeParagraph = document.createElement('p');
-                    totalTimeParagraph.id = 'total-time';
-                    totalTimeParagraph.style.color = '#0cf';
-                    totalTimeParagraph.style.marginTop = '10px';
-                    totalTimeParagraph.style.textAlign = 'center';
-                    setlistSection.appendChild(totalTimeParagraph);
-                }
-                totalTimeParagraph.textContent = `Tiempo total del set: ${totalDuration}`;
-
-                return songs;
-            } catch (err) {
-                console.error('Error al cargar el setlist:', err);
-                document.getElementById('setlist-body').innerHTML = '<tr><td colspan="4">Error al cargar el setlist.</td></tr>';
-                return [];
-            }
-        }
-
-        async function descargarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.setFontSize(14);
-            doc.text("Setlist - El Sótano del Doctor", 20, 20);
-
-            // Obtenemos la lista (y sumamos la duración de paso)
-            const songs = await cargarSetlist();
-
-            const columns = ["Título", "Tonalidad", "Tempo", "Duración"];
-            const rows = songs.map(s => {
-                // Volvemos a formatear para el PDF
-                const durationInSeconds = parseDurationToSeconds(s.duration || '');
-                const durationFormatted = formatSecondsToMMSS(durationInSeconds);
-                return [
-                    s.name || '',
-                    s.key || '',
-                    s.tempo || '',
-                    durationFormatted
-                ];
-            });
-
-            doc.autoTable({
-                head: [columns],
-                body: rows,
-                startY: 30,
-                styles: { halign: 'left' },
-                headStyles: { fillColor: [0, 255, 255], textColor: 0 }
-            });
-
-            doc.save("setlist_ElSotanoDelDoctor.pdf");
-        }
-
-        // Listeners y carga inicial
-        document.getElementById('download-btn').addEventListener('click', descargarPDF);
-        cargarSetlist(); 
+      // Escuchar el botón
+      document.getElementById('download-btn').addEventListener('click', descargarPDF);
     </script>
 </body>
 </html>
