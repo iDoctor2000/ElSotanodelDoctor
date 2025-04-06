@@ -444,6 +444,84 @@
     </section>
   </main>
 
+<!-- Módulo de Encuestas para Ensayos - El Sótano del Doctor con Firebase -->
+<section id="encuestas" style="background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(0,255,255,0.1);">
+  <h2 style="text-align:center; color:#0cf;">Encuesta de Fechas para el Próximo Ensayo</h2>
+  <p style="text-align:center; color:#aaa;">Marca las fechas en las que estás disponible:</p>
+
+  <form id="form-encuesta">
+    <div id="opciones-fechas" style="margin-bottom: 20px;">
+      <label><input type="checkbox" name="fecha" value="2025-04-08"> Martes 8 de abril - 20:00h</label><br>
+      <label><input type="checkbox" name="fecha" value="2025-04-10"> Jueves 10 de abril - 20:00h</label><br>
+      <label><input type="checkbox" name="fecha" value="2025-04-12"> Sábado 12 de abril - 11:00h</label><br>
+    </div>
+    <button type="submit" style="background-color:#0cf; color:#000; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Enviar Voto</button>
+  </form>
+
+  <div id="resultados-encuesta" style="margin-top:30px; display:none;">
+    <h3 style="text-align:center; color:#0cf;">Resultados hasta ahora</h3>
+    <ul id="lista-resultados" style="list-style:none; padding:0;"></ul>
+  </div>
+</section>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAd70p3aEA218oPLWEs_DbMFEotHXfVyNg",
+    authDomain: "el-sotano-del-doctor.firebaseapp.com",
+    projectId: "el-sotano-del-doctor",
+    storageBucket: "el-sotano-del-doctor.appspot.com",
+    messagingSenderId: "288654488846",
+    appId: "1:288654488846:web:51a726467eaf8e8a88535f",
+    measurementId: "G-5N86SGCGW1"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  async function enviarVotos(fechas) {
+    const votosRef = db.collection('votacionesEnsayos');
+    for (const fecha of fechas) {
+      const doc = await votosRef.doc(fecha).get();
+      if (doc.exists) {
+        await votosRef.doc(fecha).update({ votos: firebase.firestore.FieldValue.increment(1) });
+      } else {
+        await votosRef.doc(fecha).set({ votos: 1 });
+      }
+    }
+    mostrarResultados();
+  }
+
+  async function mostrarResultados() {
+    const lista = document.getElementById('lista-resultados');
+    lista.innerHTML = '';
+    const snapshot = await db.collection('votacionesEnsayos').get();
+    snapshot.forEach(doc => {
+      const li = document.createElement('li');
+      li.textContent = `${doc.id}: ${doc.data().votos} voto(s)`;
+      lista.appendChild(li);
+    });
+    document.getElementById('resultados-encuesta').style.display = 'block';
+  }
+
+  document.getElementById('form-encuesta').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const fechasSeleccionadas = Array.from(document.querySelectorAll('input[name="fecha"]:checked')).map(input => input.value);
+    if (fechasSeleccionadas.length === 0) {
+      alert('Por favor, selecciona al menos una fecha.');
+      return;
+    }
+    await enviarVotos(fechasSeleccionadas);
+  });
+
+  // Mostrar resultados al cargar la página
+  mostrarResultados();
+</script>
+
+
   <!-- FOOTER -->
   <footer>
     © 2025 El Sótano del Doctor. All Rights Reserved.
