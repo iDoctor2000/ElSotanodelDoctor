@@ -247,6 +247,16 @@
       color: #0cf;
       margin-bottom: 15px;
     }
+    /* NUEVO TÍTULO DE CONCIERTO */
+    #concert-title {
+      text-align: center;
+      display: block;
+      margin-bottom: 10px;
+      color: #fff;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
     #second-list-table {
       width: 100%;
       border-collapse: collapse;
@@ -350,12 +360,24 @@
   <div id="config-screen">
     <button id="close-config">Cerrar</button>
     <h2>Configuración del Segundo Setlist</h2>
-    <label for="feed-url">ID/URL del feed</label>
+
+    <!-- NUEVA OPCIÓN: TÍTULO DEL CONCIERTO -->
+    <label for="concert-title-input">Nombre del próximo concierto</label>
+    <input 
+      type="text" 
+      id="concert-title-input" 
+      placeholder="Ej: Concierto Sala X, Festival Y..."
+    />
+
+    <label for="feed-url" style="margin-top: 20px;">
+      ID/URL del feed
+    </label>
     <input 
       type="text" 
       id="feed-url" 
       placeholder="Ej: TXHvyb o https://www.bandhelper.com/feed/set_list/..." 
     />
+
     <button id="guardar-config">Guardar configuración</button>
   </div>
 
@@ -386,6 +408,8 @@
     <!-- 2) SEGUNDO SETLIST -->
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
+      <!-- TÍTULO PERSONALIZADO AQUÍ -->
+      <h3 id="concert-title"></h3> 
       <p style="text-align:center; color:#aaa;">
         Feed actual: <em id="url-actual"></em>
       </p>
@@ -483,7 +507,6 @@
         return [];
       }
     }
-
     async function descargarPDFprimerSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
@@ -566,15 +589,29 @@
 
     /*------------------------------------------
       3. SEGUNDO SETLIST (feed dinámico)
+      + TÍTULO PERSONALIZADO
     ------------------------------------------*/
     let urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
+    let secondSetlistConcertTitle = '';
+
+    // Cargamos config de localStorage
     function loadConfigFromLocalStorage() {
-      const saved = localStorage.getItem('urlSegundoSetlist');
-      if (saved) urlSegundoSetlist = saved;
+      const savedURL = localStorage.getItem('urlSegundoSetlist');
+      if (savedURL) urlSegundoSetlist = savedURL;
+
+      const savedTitle = localStorage.getItem('secondSetlistConcertTitle');
+      if (savedTitle) secondSetlistConcertTitle = savedTitle;
     }
-    function saveConfigToLocalStorage(url) {
+    function saveConfigToLocalStorage(url, title) {
       localStorage.setItem('urlSegundoSetlist', url);
+      localStorage.setItem('secondSetlistConcertTitle', title);
     }
+
+    // Mostramos el título en la página principal
+    function displayConcertTitle() {
+      document.getElementById('concert-title').textContent = secondSetlistConcertTitle;
+    }
+
     function getSecondSetlistURL() {
       return urlSegundoSetlist;
     }
@@ -582,14 +619,19 @@
       if (!str) return '';
       return str.replace(/[^\x00-\xFF]/g, '').trim();
     }
+
     async function cargarSegundoSetlist() {
       try {
         const url = getSecondSetlistURL();
+        displayConcertTitle(); // actualizamos la UI con el título
+
         const res = await fetch(url);
         const data = await res.json();
+
         const songs = data.filter(item => item.type === 'song');
         const tbody = document.getElementById('second-body');
         tbody.innerHTML = '';
+
         let totalSeconds = 0;
         songs.forEach((song, index) => {
           const secs = parseDurationToSeconds(song.duration || '0');
@@ -612,6 +654,7 @@
         document.getElementById('url-actual').textContent = url;
         document.getElementById('total-time-2').textContent =
           'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
+
         return songs;
       } catch (err) {
         console.error('Error al cargar el segundo setlist:', err);
@@ -623,7 +666,10 @@
     async function descargarPDFsegundoSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
+
+      // Aseguramos que tenemos la info actual
       const songs = await cargarSegundoSetlist();
+
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imgRes = await fetch(imgUrl);
@@ -639,18 +685,26 @@
       } catch (err) {
         console.warn('No se pudo cargar el logo (segundo setlist):', err);
       }
+
       doc.setFontSize(16);
       doc.setTextColor(40);
-      doc.text('Setlist - El Sótano del Doctor (Segundo)', 120, 50);
+      // Incluimos el título del concierto en el PDF
+      doc.text(
+        `Setlist - ${secondSetlistConcertTitle || 'El Sótano del Doctor (Segundo)'}`,
+        120, 50
+      );
+
       let totalSecs = 0;
       songs.forEach(song => {
         totalSecs += parseDurationToSeconds(song.duration || '0');
       });
       const totalTime = formatSecondsToMMSS(totalSecs);
       const totalSongs = songs.length;
+
       doc.setFontSize(12);
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
+
       const columns2 = [
         { header: '#', dataKey: 'num' },
         { header: 'Canción', dataKey: 'name' },
@@ -668,6 +722,7 @@
           duration: formatSecondsToMMSS(secs)
         };
       });
+
       doc.autoTable({
         startY: 100,
         head: [columns2.map(c => c.header)],
@@ -693,6 +748,7 @@
           4: { cellWidth: 60 }
         }
       });
+
       doc.save('SegundoSetlist.pdf');
     }
 
@@ -726,8 +782,11 @@
       overlay.classList.remove('show');
       // Muestra config
       document.getElementById('config-screen').style.display = 'block';
-      // Rellenamos el input
-      document.getElementById('feed-url').value = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
+      // Rellenamos el input con la parte final (ID)
+      document.getElementById('feed-url').value = 
+        urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
+      // Rellenamos el input del título del concierto
+      document.getElementById('concert-title-input').value = secondSetlistConcertTitle;
     });
 
     // BOTÓN "Cerrar" en la pantalla config
@@ -738,8 +797,10 @@
     // BOTÓN "Guardar configuración"
     document.getElementById('guardar-config').addEventListener('click', () => {
       const inputVal = document.getElementById('feed-url').value.trim();
+      const titleVal = document.getElementById('concert-title-input').value.trim();
+
       if (!inputVal) {
-        alert('Introduce un ID o URL');
+        alert('Introduce un ID o URL del feed');
         return;
       }
       let newUrl;
@@ -749,8 +810,15 @@
         newUrl = inputVal;
       }
       urlSegundoSetlist = newUrl;
-      saveConfigToLocalStorage(newUrl);
+      secondSetlistConcertTitle = titleVal || '';
+
+      // Guardamos en localStorage
+      saveConfigToLocalStorage(urlSegundoSetlist, secondSetlistConcertTitle);
+
+      // Recargamos el 2º setlist
       cargarSegundoSetlist();
+
+      // Cerramos pantalla
       document.getElementById('config-screen').style.display = 'none';
     });
 
@@ -759,8 +827,7 @@
     ---------------------------------------*/
     window.addEventListener('DOMContentLoaded', () => {
       // Leemos config localStorage
-      const saved = localStorage.getItem('urlSegundoSetlist');
-      if (saved) urlSegundoSetlist = saved;
+      loadConfigFromLocalStorage();
 
       // Cargamos ambos setlists
       cargarPrimerSetlist();
