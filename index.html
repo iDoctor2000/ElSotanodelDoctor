@@ -133,9 +133,10 @@
       margin-bottom: 20px;
       color: #0cf;
     }
-    #config-screen label {
-      display: block;
-      margin: 10px 0 5px 0;
+    #config-screen p {
+      text-align: center;
+      color: #aaa;
+      margin-bottom: 20px;
     }
     #config-screen input {
       width: 100%; 
@@ -365,7 +366,6 @@
     </p>
     <br><br><br>
     
-    <!-- NUEVA OPCIÓN: TÍTULO DEL CONCIERTO -->
     <label for="concert-title-input">Nombre del próximo concierto</label>
     <input 
       type="text" 
@@ -412,7 +412,6 @@
     <!-- 2) SEGUNDO SETLIST -->
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
-      <!-- TÍTULO PERSONALIZADO AQUÍ -->
       <h3 id="concert-title"></h3> 
       <p style="text-align:center; color:#aaa;">
         Feed actual: <em id="url-actual"></em>
@@ -451,28 +450,46 @@
   </footer>
 
   <script>
-    /*------------------------------------------
-      1. FUNCIONES COMUNES (duración, etc)
-    ------------------------------------------*/
-    function parseDurationToSeconds(durationStr) {
-      if (!durationStr) return 0;
-      if (durationStr.includes(':')) {
-        const [min, sec] = durationStr.split(':').map(num => parseInt(num, 10));
+    /*-----------------------------------------------------------
+      1. FORMATEO HORAS Y LIMPIEZA: PASAMOS A hh:mm:ss SI supera 3600s
+    -----------------------------------------------------------*/
+    function parseDurationToSeconds(str) {
+      if (!str) return 0;
+      if (str.includes(':')) {
+        const [min, sec] = str.split(':').map(n => parseInt(n, 10));
         return (min * 60) + (sec || 0);
-      } else {
-        const seconds = parseInt(durationStr, 10);
-        return isNaN(seconds) ? 0 : seconds;
       }
-    }
-    function formatSecondsToMMSS(totalSeconds) {
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${minutes}:${String(seconds).padStart(2, '0')}`;
+      const secs = parseInt(str, 10);
+      return isNaN(secs) ? 0 : secs;
     }
 
-    /*------------------------------------------
+    // Si total >= 3600 => HH:MM:SS, si no => mm:ss
+    function formatSecondsHMSorMMSS(totalSeconds) {
+      if (totalSeconds < 3600) {
+        const m = Math.floor(totalSeconds / 60);
+        const s = totalSeconds % 60;
+        return `${m}:${String(s).padStart(2, '0')}`;
+      } else {
+        const h = Math.floor(totalSeconds / 3600);
+        const rest = totalSeconds % 3600;
+        const m = Math.floor(rest / 60);
+        const s = rest % 60;
+        return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
+    }
+
+    // Elimina emojis y convierte entidades raras
+    function cleanString(str) {
+      if (!str) return '';
+      // elimina emojis no compatibles
+      let cleaned = str.replace(/[^\x00-\xFF]/g, '');
+      // Podrías añadir más remociones de entidades
+      return cleaned.trim();
+    }
+
+    /*-----------------------------------------------------------
       2. PRIMER SETLIST
-    ------------------------------------------*/
+    -----------------------------------------------------------*/
     const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
 
     async function cargarPrimerSetlist() {
@@ -483,25 +500,25 @@
         tbody.innerHTML = '';
 
         const songs = data.filter(item => item.type === 'song');
-        let totalSeconds = 0;
+        let totalSecs = 0;
 
         songs.forEach((song, i) => {
           const secs = parseDurationToSeconds(song.duration || '');
-          const durFmt = formatSecondsToMMSS(secs);
+          totalSecs += secs;
+
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${i + 1}</td>
-            <td>${song.name || ''}</td>
-            <td>${song.key || ''}</td>
-            <td>${song.tempo || ''}</td>
-            <td>${durFmt}</td>
+            <td>${cleanString(song.name || '')}</td>
+            <td>${cleanString(song.key || '')}</td>
+            <td>${cleanString(song.tempo || '')}</td>
+            <td>${formatSecondsHMSorMMSS(secs)}</td>
           `;
           tbody.appendChild(row);
-          totalSeconds += secs;
         });
 
         document.getElementById('total-time').textContent =
-          'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
+          'Tiempo total del set: ' + formatSecondsHMSorMMSS(totalSecs);
 
         return songs;
       } catch (err) {
@@ -511,9 +528,14 @@
         return [];
       }
     }
+
     async function descargarPDFprimerSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
+
+      // Forzamos fuente helvetica (jsPDF base) para reducir caracteres raros
+      doc.setFont('helvetica', 'normal');
+
       const songs = await cargarPrimerSetlist();
 
       // Logo
@@ -539,10 +561,12 @@
 
       let totalSecs = 0;
       songs.forEach(s => {
-        totalSecs += parseDurationToSeconds(s.duration || '0');
+        const secs = parseDurationToSeconds(s.duration || '0');
+        totalSecs += secs;
       });
-      const totalTime = formatSecondsToMMSS(totalSecs);
+      const totalTime = formatSecondsHMSorMMSS(totalSecs);
       const totalSongs = songs.length;
+
       doc.setFontSize(12);
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
@@ -554,13 +578,16 @@
         { header: 'Tempo', dataKey: 'tempo' },
         { header: 'Duración', dataKey: 'duration' }
       ];
-      const rows = songs.map((song, i) => ({
-        num: i + 1,
-        title: song.name || '',
-        key: song.key || '',
-        tempo: song.tempo || '',
-        duration: formatSecondsToMMSS(parseDurationToSeconds(song.duration || '0'))
-      }));
+      const rows = songs.map((song, i) => {
+        const secs = parseDurationToSeconds(song.duration || '0');
+        return {
+          num: i + 1,
+          title: cleanString(song.name || ''),
+          key: cleanString(song.key || ''),
+          tempo: cleanString(song.tempo || ''),
+          duration: formatSecondsHMSorMMSS(secs)
+        };
+      });
 
       doc.autoTable({
         startY: 100,
@@ -592,13 +619,12 @@
     }
 
     /*------------------------------------------
-      3. SEGUNDO SETLIST (feed dinámico)
-      + TÍTULO PERSONALIZADO
+      4. SEGUNDO SETLIST
+         (Horas, limpieza, título persistente)
     ------------------------------------------*/
     let urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
-    let secondSetlistConcertTitle = '';
+    let secondSetlistConcertTitle = ''; // Título del concierto
 
-    // Cargamos config de localStorage
     function loadConfigFromLocalStorage() {
       const savedURL = localStorage.getItem('urlSegundoSetlist');
       if (savedURL) urlSegundoSetlist = savedURL;
@@ -610,8 +636,6 @@
       localStorage.setItem('urlSegundoSetlist', url);
       localStorage.setItem('secondSetlistConcertTitle', title);
     }
-
-    // Mostramos el título en la página principal
     function displayConcertTitle() {
       document.getElementById('concert-title').textContent = secondSetlistConcertTitle;
     }
@@ -619,16 +643,13 @@
     function getSecondSetlistURL() {
       return urlSegundoSetlist;
     }
-    function cleanString(str) {
-      if (!str) return '';
-      return str.replace(/[^\x00-\xFF]/g, '').trim();
-    }
 
     async function cargarSegundoSetlist() {
       try {
-        const url = getSecondSetlistURL();
-        displayConcertTitle(); // actualizamos la UI con el título
+        // Mostramos el título guardado
+        displayConcertTitle();
 
+        const url = getSecondSetlistURL();
         const res = await fetch(url);
         const data = await res.json();
 
@@ -636,28 +657,25 @@
         const tbody = document.getElementById('second-body');
         tbody.innerHTML = '';
 
-        let totalSeconds = 0;
+        let totalSecs = 0;
         songs.forEach((song, index) => {
           const secs = parseDurationToSeconds(song.duration || '0');
-          const nameClean = cleanString(song.name || '');
-          const keyClean  = cleanString(song.key  || '');
-          const tempoClean= cleanString(song.tempo|| '');
-          const durFmt    = formatSecondsToMMSS(secs);
+          totalSecs += secs;
 
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${index + 1}</td>
-            <td>${nameClean}</td>
-            <td>${keyClean}</td>
-            <td>${tempoClean}</td>
-            <td>${durFmt}</td>
+            <td>${cleanString(song.name || '')}</td>
+            <td>${cleanString(song.key || '')}</td>
+            <td>${cleanString(song.tempo || '')}</td>
+            <td>${formatSecondsHMSorMMSS(secs)}</td>
           `;
           tbody.appendChild(row);
-          totalSeconds += secs;
         });
+
         document.getElementById('url-actual').textContent = url;
         document.getElementById('total-time-2').textContent =
-          'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
+          'Tiempo total del set: ' + formatSecondsHMSorMMSS(totalSecs);
 
         return songs;
       } catch (err) {
@@ -667,11 +685,12 @@
         return [];
       }
     }
+
     async function descargarPDFsegundoSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
+      doc.setFont('helvetica', 'normal'); // Fuente base
 
-      // Aseguramos que tenemos la info actual
       const songs = await cargarSegundoSetlist();
 
       try {
@@ -692,17 +711,16 @@
 
       doc.setFontSize(16);
       doc.setTextColor(40);
-      // Incluimos el título del concierto en el PDF
-      doc.text(
-        `Setlist - ${secondSetlistConcertTitle || 'El Sótano del Doctor (Segundo)'}`,
-        120, 50
-      );
+
+      // Muestra Título del concierto en PDF (o un fallback)
+      const pdfTitle = secondSetlistConcertTitle || 'El Sótano del Doctor (Segundo)';
+      doc.text(`Setlist - ${pdfTitle}`, 120, 50);
 
       let totalSecs = 0;
       songs.forEach(song => {
         totalSecs += parseDurationToSeconds(song.duration || '0');
       });
-      const totalTime = formatSecondsToMMSS(totalSecs);
+      const totalTime = formatSecondsHMSorMMSS(totalSecs);
       const totalSongs = songs.length;
 
       doc.setFontSize(12);
@@ -721,9 +739,9 @@
         return {
           num: i + 1,
           name: cleanString(song.name || ''),
-          key: cleanString(song.key  || ''),
-          tempo: cleanString(song.tempo|| ''),
-          duration: formatSecondsToMMSS(secs)
+          key: cleanString(song.key || ''),
+          tempo: cleanString(song.tempo || ''),
+          duration: formatSecondsHMSorMMSS(secs)
         };
       });
 
@@ -757,7 +775,7 @@
     }
 
     /*------------------------------------------
-      4. MENÚ Y CONFIGURACIÓN
+      5. MENÚ Y CONFIGURACIÓN
     ------------------------------------------*/
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const sidebarMenu  = document.getElementById('sidebar-menu');
@@ -787,8 +805,9 @@
       // Muestra config
       document.getElementById('config-screen').style.display = 'block';
       // Rellenamos el input con la parte final (ID)
-      document.getElementById('feed-url').value = 
-        urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
+      const feedSuffix = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
+      document.getElementById('feed-url').value = feedSuffix;
+
       // Rellenamos el input del título del concierto
       document.getElementById('concert-title-input').value = secondSetlistConcertTitle;
     });
@@ -800,21 +819,21 @@
 
     // BOTÓN "Guardar configuración"
     document.getElementById('guardar-config').addEventListener('click', () => {
-      const inputVal = document.getElementById('feed-url').value.trim();
-      const titleVal = document.getElementById('concert-title-input').value.trim();
+      const newFeedVal = document.getElementById('feed-url').value.trim();
+      const newTitleVal = document.getElementById('concert-title-input').value.trim();
 
-      if (!inputVal) {
+      if (!newFeedVal) {
         alert('Introduce un ID o URL del feed');
         return;
       }
       let newUrl;
-      if (!inputVal.startsWith('http')) {
-        newUrl = `https://www.bandhelper.com/feed/set_list/${inputVal}`;
+      if (!newFeedVal.startsWith('http')) {
+        newUrl = `https://www.bandhelper.com/feed/set_list/${newFeedVal}`;
       } else {
-        newUrl = inputVal;
+        newUrl = newFeedVal;
       }
       urlSegundoSetlist = newUrl;
-      secondSetlistConcertTitle = titleVal || '';
+      secondSetlistConcertTitle = newTitleVal || '';
 
       // Guardamos en localStorage
       saveConfigToLocalStorage(urlSegundoSetlist, secondSetlistConcertTitle);
@@ -827,7 +846,7 @@
     });
 
     /*---------------------------------------
-      5. CARGA INICIAL
+      6. CARGA INICIAL
     ---------------------------------------*/
     window.addEventListener('DOMContentLoaded', () => {
       // Leemos config localStorage
