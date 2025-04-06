@@ -449,17 +449,13 @@
     -----------------------------------------------------------*/
 
 
-<!-- Módulo de Encuestas para Ensayos - El Sótano del Doctor con Firebase -->
+<!-- Módulo de Encuestas para Ensayos - El Sótano del Doctor con Firebase y Panel Admin -->
 <section id="encuestas" style="background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(0,255,255,0.1);">
   <h2 style="text-align:center; color:#0cf;">Encuesta de Fechas para el Próximo Ensayo</h2>
   <p style="text-align:center; color:#aaa;">Marca las fechas en las que estás disponible:</p>
 
   <form id="form-encuesta">
-    <div id="opciones-fechas" style="margin-bottom: 20px;">
-      <label><input type="checkbox" name="fecha" value="2025-04-08"> Martes 8 de abril - 20:00h</label><br>
-      <label><input type="checkbox" name="fecha" value="2025-04-10"> Jueves 10 de abril - 20:00h</label><br>
-      <label><input type="checkbox" name="fecha" value="2025-04-12"> Sábado 12 de abril - 11:00h</label><br>
-    </div>
+    <div id="opciones-fechas" style="margin-bottom: 20px;"></div>
     <button type="submit" style="background-color:#0cf; color:#000; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Enviar Voto</button>
   </form>
 
@@ -467,6 +463,21 @@
     <h3 style="text-align:center; color:#0cf;">Resultados hasta ahora</h3>
     <ul id="lista-resultados" style="list-style:none; padding:0;"></ul>
   </div>
+</section>
+
+<!-- PANEL ADMIN -->
+<section id="admin-panel" style="display:none; background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(255,255,0,0.1);">
+  <h2 style="text-align:center; color:yellow;">Panel de Administración</h2>
+  <input id="nueva-fecha" type="text" placeholder="Ej: Miércoles 10 abril - 17:30" style="width:100%; padding:10px; margin:10px 0; background:#222; color:#fff; border:1px solid #333;">
+  <button id="agregar-fecha" style="padding:10px 20px; background:yellow; color:#000; border:none; border-radius:8px; cursor:pointer;">Agregar Fecha</button>
+  <ul id="fechas-activas" style="margin-top:20px; list-style:none; padding:0;"></ul>
+</section>
+
+<!-- LOGIN ADMIN -->
+<section id="login-admin" style="background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 500px; text-align:center;">
+  <h3 style="color:#0cf;">Acceso a Panel de Administración</h3>
+  <input type="password" id="admin-pass" placeholder="Contraseña" style="padding:10px; width:80%; max-width:300px; background:#222; color:#fff; border:1px solid #333; border-radius:5px;">
+  <button id="login-btn" style="margin-top:10px; background-color:#0cf; color:#000; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Entrar</button>
 </section>
 
 <!-- Firebase SDKs -->
@@ -486,6 +497,17 @@
 
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+
+  async function cargarFechasDisponibles() {
+    const container = document.getElementById('opciones-fechas');
+    container.innerHTML = '';
+    const snapshot = await db.collection('fechasDisponibles').get();
+    snapshot.forEach(doc => {
+      const label = document.createElement('label');
+      label.innerHTML = `<input type="checkbox" name="fecha" value="${doc.id}"> ${doc.id}<br>`;
+      container.appendChild(label);
+    });
+  }
 
   async function enviarVotos(fechas) {
     const votosRef = db.collection('votacionesEnsayos');
@@ -522,9 +544,60 @@
     await enviarVotos(fechasSeleccionadas);
   });
 
-  // Mostrar resultados al cargar la página
+  // ADMIN: login sencillo con clave fija
+  const CLAVE_ADMIN = "ensayo2025";
+  document.getElementById('login-btn').addEventListener('click', () => {
+    const clave = document.getElementById('admin-pass').value.trim();
+    if (clave === CLAVE_ADMIN) {
+      document.getElementById('admin-panel').style.display = 'block';
+      document.getElementById('login-admin').style.display = 'none';
+      cargarFechasAdmin();
+    } else {
+      alert('Clave incorrecta.');
+    }
+  });
+
+  // ADMIN: agregar fechas
+  document.getElementById('agregar-fecha').addEventListener('click', async () => {
+    const nueva = document.getElementById('nueva-fecha').value.trim();
+    if (!nueva) return;
+    await db.collection('fechasDisponibles').doc(nueva).set({ activa: true });
+    document.getElementById('nueva-fecha').value = '';
+    cargarFechasDisponibles();
+    cargarFechasAdmin();
+  });
+
+  // ADMIN: mostrar fechas activas con opción de eliminar
+  async function cargarFechasAdmin() {
+    const ul = document.getElementById('fechas-activas');
+    ul.innerHTML = '';
+    const snapshot = await db.collection('fechasDisponibles').get();
+    snapshot.forEach(doc => {
+      const li = document.createElement('li');
+      li.textContent = doc.id;
+      const btn = document.createElement('button');
+      btn.textContent = 'Eliminar';
+      btn.style.marginLeft = '10px';
+      btn.style.background = 'red';
+      btn.style.color = '#fff';
+      btn.style.border = 'none';
+      btn.style.borderRadius = '4px';
+      btn.style.cursor = 'pointer';
+      btn.onclick = async () => {
+        await db.collection('fechasDisponibles').doc(doc.id).delete();
+        cargarFechasDisponibles();
+        cargarFechasAdmin();
+      };
+      li.appendChild(btn);
+      ul.appendChild(li);
+    });
+  }
+
+  // Inicial
+  cargarFechasDisponibles();
   mostrarResultados();
 </script>
+
 
 
   <!-- FOOTER -->
