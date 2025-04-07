@@ -31,14 +31,14 @@
     .sidebar a:hover { color: #0cf; }
     #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9998; display: none; }
     #overlay.show { display: block; }
-    #config-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 9999; overflow-y: auto; padding: 60px 20px 20px 20px; }
-    #config-screen h2 { text-align: center; margin-bottom: 20px; color: #0cf; }
-    #config-screen p { text-align: center; color: #aaa; margin-bottom: 20px; }
-    #config-screen input { width: 100%; max-width: 400px; padding: 10px; background-color: #222; color: #fff; border: 1px solid #333; border-radius: 5px; }
-    #config-screen button { margin-top: 20px; padding: 10px 20px; background-color: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; }
-    #config-screen button:hover { background-color: #09b; }
-    #close-config { position: absolute; top: 20px; right: 20px; font-size: 1.2em; background: none; border: 1px solid #0cf; color: #0cf; border-radius: 4px; padding: 5px 10px; cursor: pointer; }
-    #close-config:hover { background-color: #333; }
+    #config-screen, #miembros-screen, #admin-panel-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 9999; overflow-y: auto; padding: 60px 20px 20px 20px; }
+    #config-screen h2, #miembros-screen h2, #admin-panel-screen h2 { text-align: center; margin-bottom: 20px; color: #0cf; }
+    #config-screen p, #miembros-screen p, #admin-panel-screen p { text-align: center; color: #aaa; margin-bottom: 20px; }
+    #config-screen input, #miembros-screen input, #admin-panel-screen input { width: 100%; max-width: 400px; padding: 10px; background-color: #222; color: #fff; border: 1px solid #333; border-radius: 5px; }
+    #config-screen button, #miembros-screen button, #admin-panel-screen button { margin-top: 20px; padding: 10px 20px; background-color: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; }
+    #config-screen button:hover, #miembros-screen button:hover, #admin-panel-screen button:hover { background-color: #09b; }
+    #close-config, #close-miembros, #close-admin-panel { position: absolute; top: 20px; right: 20px; font-size: 1.2em; background: none; border: 1px solid #0cf; color: #0cf; border-radius: 4px; padding: 5px 10px; cursor: pointer; }
+    #close-config:hover, #close-miembros:hover, #close-admin-panel:hover { background-color: #333; }
     main section { max-width: 1200px; margin: 0 auto; padding: 20px; }
     #setlists, #second-setlist, #calendario, #encuestas, #admin-panel, #login-admin { background-color: #111; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0, 255, 255, 0.1); margin-bottom: 40px; }
     #setlists h2, #second-setlist h2, #calendario h2, #encuestas h2, #admin-panel h2, #login-admin h3 { text-align: center; color: #0cf; margin-bottom: 15px; }
@@ -70,6 +70,8 @@
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
     <a href="#" id="menu-config">Configuración</a>
+    <a href="#" id="menu-miembros">Miembros</a>
+    <a href="#" id="menu-admin-panel">Panel Admin</a>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
   <div id="config-screen">
@@ -81,6 +83,20 @@
     <label for="feed-url" style="margin-top: 20px;">ID/URL del feed</label>
     <input type="text" id="feed-url" placeholder="Ej: TXHvyb o https://www.bandhelper.com/feed/set_list/..." />
     <button id="guardar-config">Guardar configuración</button>
+  </div>
+  <div id="miembros-screen">
+    <button id="close-miembros">Cerrar</button>
+    <h2>Miembros del Grupo</h2>
+    <p>Información de contacto de los miembros de la banda</p>
+    <div id="miembros-lista"></div>
+    <button id="agregar-miembro">Añadir miembro</button>
+  </div>
+  <div id="admin-panel-screen">
+    <button id="close-admin-panel">Cerrar</button>
+    <h2>Panel de Administración</h2>
+    <input id="nueva-fecha" type="text" placeholder="Ej: Miércoles 10 abril - 17:30">
+    <button id="agregar-fecha">Agregar Fecha</button>
+    <ul id="fechas-activas"></ul>
   </div>
   <main>
     <section id="setlists">
@@ -139,12 +155,6 @@
         <ul id="lista-resultados"></ul>
       </div>
     </section>
-    <section id="admin-panel" style="display:none;">
-      <h2>Panel de Administración</h2>
-      <input id="nueva-fecha" type="text" placeholder="Ej: Miércoles 10 abril - 17:30">
-      <button id="agregar-fecha">Agregar Fecha</button>
-      <ul id="fechas-activas"></ul>
-    </section>
     <section id="login-admin">
       <h3>Acceso a Panel de Administración</h3>
       <input type="password" id="admin-pass" placeholder="Contraseña">
@@ -157,6 +167,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script>
+    /************************************************************/
+    /* 1. MÓDULO DE ENCUESTAS PARA ENSAYOS (Firebase)          */
+    /************************************************************/
     const firebaseConfig = {
       apiKey: "AIzaSyAd70p3aEA218oPLWEs_DbMFEotHXfVyNg",
       authDomain: "el-sotano-del-doctor.firebaseapp.com",
@@ -168,6 +181,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    let usuarioActual = prompt("Por favor, introduce tu nombre:");
     async function cargarFechasDisponibles() {
       const container = document.getElementById('opciones-fechas');
       container.innerHTML = '';
@@ -180,12 +194,17 @@
     }
     async function enviarVotos(fechas) {
       const votosRef = db.collection('votacionesEnsayos');
+      const votosUsuario = await votosRef.where('usuario', '==', usuarioActual).get();
+      if (!votosUsuario.empty) {
+        alert('Ya has votado. No puedes votar de nuevo.');
+        return;
+      }
       for (const fecha of fechas) {
-        const doc = await votosRef.doc(fecha).get();
+        const doc = await votosRef.doc(fecha + usuarioActual).get();
         if (doc.exists) {
-          await votosRef.doc(fecha).update({ votos: firebase.firestore.FieldValue.increment(1) });
+          await votosRef.doc(fecha + usuarioActual).update({ votos: firebase.firestore.FieldValue.increment(1) });
         } else {
-          await votosRef.doc(fecha).set({ votos: 1 });
+          await votosRef.doc(fecha + usuarioActual).set({ votos: 1, usuario: usuarioActual });
         }
       }
       mostrarResultados();
@@ -194,11 +213,20 @@
       const lista = document.getElementById('lista-resultados');
       lista.innerHTML = '';
       const snapshot = await db.collection('votacionesEnsayos').get();
+      const votosPorFecha = {};
       snapshot.forEach(doc => {
-        const li = document.createElement('li');
-        li.textContent = `${doc.id}: ${doc.data().votos} voto(s)`;
-        lista.appendChild(li);
+        const fecha = doc.id.replace(usuarioActual, '');
+        if (votosPorFecha[fecha]) {
+          votosPorFecha[fecha] += 1;
+        } else {
+          votosPorFecha[fecha] = 1;
+        }
       });
+      for (const fecha in votosPorFecha) {
+        const li = document.createElement('li');
+        li.textContent = `${fecha}: ${votosPorFecha[fecha]} voto(s)`;
+        lista.appendChild(li);
+      }
       document.getElementById('resultados-encuesta').style.display = 'block';
     }
     document.getElementById('form-encuesta').addEventListener('submit', async function(e) {
@@ -210,11 +238,14 @@
       }
       await enviarVotos(fechasSeleccionadas);
     });
+    /************************************************************/
+    /* 2. PANEL DE ADMINISTRACIÓN (Firebase)                   */
+    /************************************************************/
     const CLAVE_ADMIN = "ensayo2025";
     document.getElementById('login-btn').addEventListener('click', () => {
       const clave = document.getElementById('admin-pass').value.trim();
       if (clave === CLAVE_ADMIN) {
-        document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('admin-panel-screen').style.display = 'block';
         document.getElementById('login-admin').style.display = 'none';
         cargarFechasAdmin();
       } else {
@@ -255,6 +286,9 @@
     }
     cargarFechasDisponibles();
     mostrarResultados();
+    /************************************************************/
+    /* 3. FUNCIONES AUXILIARES (Formato de Horas, Limpieza)    */
+    /************************************************************/
     function parseDurationToSeconds(str) {
       if (!str) return 0;
       if (str.includes(':')) {
@@ -268,13 +302,13 @@
       if (totalSeconds < 3600) {
         const m = Math.floor(totalSeconds / 60);
         const s = totalSeconds % 60;
-        return `${m}:${String(s).padStart(2, '0')}`;
+        return `<span class="math-inline">\{m\}\:</span>{String(s).padStart(2, '0')}`;
       } else {
         const h = Math.floor(totalSeconds / 3600);
         const rest = totalSeconds % 3600;
         const m = Math.floor(rest / 60);
         const s = rest % 60;
-        return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        return `<span class="math-inline">\{h\}\:</span>{String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       }
     }
     function cleanString(str) {
@@ -282,6 +316,9 @@
       let cleaned = str.replace(/[^\x00-\xFF]/g, '');
       return cleaned.trim();
     }
+    /************************************************************/
+    /* 4. PRIMER SETLIST (Carga y Descarga PDF)                */
+    /************************************************************/
     const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
     async function cargarPrimerSetlist() {
       try {
@@ -296,10 +333,10 @@
           totalSecs += secs;
           const row = document.createElement('tr');
           row.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${cleanString(song.name || '')}</td>
-            <td>${cleanString(song.key || '')}</td>
-            <td>${cleanString(song.tempo || '')}</td>
+            <td><span class="math-inline">\{i \+ 1\}</td\>
+<td\></span>{cleanString(song.name || '')}</td>
+            <td><span class="math-inline">\{cleanString\(song\.key \|\| ''\)\}</td\>
+<td\></span>{cleanString(song.tempo || '')}</td>
             <td>${formatSecondsHMSorMMSS(secs)}</td>
           `;
           tbody.appendChild(row);
@@ -374,6 +411,9 @@
       });
       doc.save('setlist_ElSotanoDelDoctor.pdf');
     }
+    /************************************************************/
+    /* 5. SEGUNDO SETLIST (Carga y Descarga PDF, Configuración)*/
+    /************************************************************/
     let urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
     let secondSetlistConcertTitle = '';
     function loadConfigFromLocalStorage() {
@@ -407,10 +447,10 @@
           totalSecs += secs;
           const row = document.createElement('tr');
           row.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${cleanString(song.name || '')}</td>
-            <td>${cleanString(song.key || '')}</td>
-            <td>${cleanString(song.tempo || '')}</td>
+            <td><span class="math-inline">\{index \+ 1\}</td\>
+<td\></span>{cleanString(song.name || '')}</td>
+            <td><span class="math-inline">\{cleanString\(song\.key \|\| ''\)\}</td\>
+<td\></span>{cleanString(song.tempo || '')}</td>
             <td>${formatSecondsHMSorMMSS(secs)}</td>
           `;
           tbody.appendChild(row);
@@ -486,62 +526,13 @@
       });
       doc.save('SegundoSetlist.pdf');
     }
+    /************************************************************/
+    /* 6. MENÚ HAMBURGUESA Y CONFIGURACIÓN GENERAL            */
+    /************************************************************/
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const sidebarMenu = document.getElementById('sidebar-menu');
     const menuConfig = document.getElementById('menu-config');
+    const menuMiembros = document.getElementById('menu-miembros');
+    const menuAdminPanel = document.getElementById('menu-admin-panel');
     const menuCerrar = document.getElementById('menu-cerrar');
     const overlay = document.getElementById('overlay');
-    hamburgerBtn.addEventListener('click', () => {
-      sidebarMenu.classList.add('show');
-      overlay.classList.add('show');
-    });
-    menuCerrar.addEventListener('click', (e) => {
-      e.preventDefault();
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-    });
-    overlay.addEventListener('click', () => {
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-    });
-    menuConfig.addEventListener('click', (e) => {
-      e.preventDefault();
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-      document.getElementById('config-screen').style.display = 'block';
-      const feedSuffix = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
-      document.getElementById('feed-url').value = feedSuffix;
-      document.getElementById('concert-title-input').value = secondSetlistConcertTitle;
-    });
-    document.getElementById('close-config').addEventListener('click', () => {
-      document.getElementById('config-screen').style.display = 'none';
-    });
-    document.getElementById('guardar-config').addEventListener('click', () => {
-      const newFeedVal = document.getElementById('feed-url').value.trim();
-      const newTitleVal = document.getElementById('concert-title-input').value.trim();
-      if (!newFeedVal) {
-        alert('Introduce un ID o URL del feed');
-        return;
-      }
-      let newUrl;
-      if (!newFeedVal.startsWith('http')) {
-        newUrl = `https://www.bandhelper.com/feed/set_list/${newFeedVal}`;
-      } else {
-        newUrl = newFeedVal;
-      }
-      urlSegundoSetlist = newUrl;
-      secondSetlistConcertTitle = newTitleVal || '';
-      saveConfigToLocalStorage(urlSegundoSetlist, secondSetlistConcertTitle);
-      cargarSegundoSetlist();
-      document.getElementById('config-screen').style.display = 'none';
-    });
-    window.addEventListener('DOMContentLoaded', () => {
-      loadConfigFromLocalStorage();
-      cargarPrimerSetlist();
-      cargarSegundoSetlist();
-    });
-    document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
-    document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
-  </script>
-</body>
-</html>
