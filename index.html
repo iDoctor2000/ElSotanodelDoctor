@@ -22,10 +22,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
   <style>
     /* Reseteo y box-sizing */
     *, *::before, *::after {
@@ -114,7 +110,7 @@
     }
     /* PANTALLA DE CONFIGURACIÓN */
     #config-screen {
-      display: none; 
+      display: none;
       position: fixed; 
       top: 0; left: 0;
       width: 100%; 
@@ -142,6 +138,7 @@
       color: #fff;
       border: 1px solid #333;
       border-radius: 5px;
+      margin: 5px 0;
     }
     #config-screen button {
       margin-top: 20px;
@@ -176,7 +173,7 @@
       margin: 0 auto;
       padding: 20px;
     }
-    /* SETLISTS y CALENDARIO (ya existentes) */
+    /* SETLISTS Y CALENDARIO (secciones existentes) */
     #setlists, #second-setlist, #calendario {
       background-color: #111;
       padding: 20px;
@@ -186,15 +183,14 @@
     }
     #setlists h2, #second-setlist h2, #calendario h2 {
       text-align: center;
-      color: #0cf;
       margin-bottom: 15px;
     }
     #setlists table, #second-list-table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
-      color: #fff;
       font-size: 0.95em;
+      color: #fff;
     }
     #setlists thead, #second-list-table thead {
       background-color: #222;
@@ -227,47 +223,95 @@
       margin-top: 10px;
       text-align: center;
     }
+    /* NUEVAS SECCIONES: MIEMBROS Y FECHAS ENSAYO */
+    #miembros, #fechas-ensayo {
+      display: none;
+      background-color: #111;
+      color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 40px auto;
+      max-width: 800px;
+      box-shadow: 0 0 20px rgba(0,255,255,0.1);
+    }
+    #miembros h2, #fechas-ensayo h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    /* Formularios en secciones nuevas */
+    #form-miembros input, #form-fechas input, #form-fechas select {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      background-color: #222;
+      color: #fff;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+    #form-miembros button, #form-fechas button {
+      background-color: #0cf;
+      color: #000;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #form-miembros button:hover, #form-fechas button:hover {
+      background-color: #09b;
+    }
+    /* Panel de Administración de Fechas */
+    #login-admin-fechas, #panel-fechas {
+      background-color: #111;
+      color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px auto;
+      max-width: 800px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(255,255,0,0.1);
+    }
+    #login-admin-fechas input {
+      width: 80%;
+      max-width: 300px;
+      padding: 10px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #333;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    #login-admin-fechas button, #panel-fechas button {
+      background-color: #0cf;
+      color: #000;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #login-admin-fechas button:hover, #panel-fechas button:hover {
+      background-color: #09b;
+    }
+    #panel-fechas input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      background: #222;
+      color: #fff;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+    #panel-fechas ul {
+      list-style: none;
+      padding: 0;
+    }
+    #panel-fechas ul li {
+      margin-top: 10px;
+    }
     /* CALENDARIO */
     #calendario p {
       text-align: center;
       color: #aaa;
       margin-bottom: 20px;
-    }
-    /* NUEVAS SECCIONES: Miembros y Fechas Ensayo */
-    section#miembros,
-    section#fechas-ensayo {
-      display: none;
-    }
-    section#miembros h2,
-    section#fechas-ensayo h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    section#miembros form,
-    section#fechas-ensayo form {
-      text-align: center;
-    }
-    section#miembros form input,
-    section#fechas-ensayo form input {
-      margin: 10px;
-      padding: 8px;
-      border: 1px solid #333;
-      border-radius: 4px;
-      background-color: #222;
-      color: #fff;
-    }
-    section#miembros form button,
-    section#fechas-ensayo form button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      background-color: #0cf;
-      color: #000;
-      cursor: pointer;
-    }
-    section#miembros form button:hover,
-    section#fechas-ensayo form button:hover {
-      background-color: #09b;
     }
     /* FOOTER */
     footer {
@@ -285,7 +329,6 @@
     }
   </style>
 </head>
-
 <body>
   <!-- CABECERA -->
   <header>
@@ -298,11 +341,9 @@
       <div></div>
     </div>
   </header>
-
   <!-- OVERLAY -->
   <div id="overlay"></div>
-
-  <!-- MENÚ LATERAL (SIDEBAR) -->
+  <!-- MENÚ LATERAL -->
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
     <a href="#" id="menu-miembros">Miembros del Grupo</a>
@@ -310,43 +351,24 @@
     <a href="#" id="menu-config">Configuración</a>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
-
-  <!-- PANTALLA DE CONFIGURACIÓN -->
+  <!-- PANTALLA DE CONFIGURACIÓN (para el 2º setlist) -->
   <div id="config-screen">
     <button id="close-config">Cerrar</button>
     <h2>Configuración del Segundo Setlist</h2>
-    <p style="text-align: center; color: #aaa; margin-bottom: 20px;">
-      No toques si no sabes...
-    </p>
+    <p style="text-align: center; color: #aaa; margin-bottom: 20px;">No toques si no sabes...</p>
     <br><br><br>
-    
     <label for="concert-title-input">Nombre del próximo concierto</label>
-    <input 
-      type="text" 
-      id="concert-title-input" 
-      placeholder="Ej: Concierto Sala X, Festival Y..."
-    />
-
-    <label for="feed-url" style="margin-top: 20px;">
-      ID/URL del feed
-    </label>
-    <input 
-      type="text" 
-      id="feed-url" 
-      placeholder="Ej: TXHvyb o https://www.bandhelper.com/feed/set_list/..." 
-    />
-
+    <input type="text" id="concert-title-input" placeholder="Ej: Concierto Sala X, Festival Y..." />
+    <label for="feed-url" style="margin-top: 20px;">ID/URL del feed</label>
+    <input type="text" id="feed-url" placeholder="Ej: TXHvyb o https://www.bandhelper.com/feed/set_list/..." />
     <button id="guardar-config">Guardar configuración</button>
   </div>
-
-  <!-- CONTENIDO PRINCIPAL (Setlists y Calendario) -->
+  <!-- CONTENIDO PRINCIPAL -->
   <main>
-    <!-- 1) PRIMER SETLIST -->
+    <!-- 1) SETLIST ENSAYOS -->
     <section id="setlists">
       <h2>Setlist Ensayos -Año 2025-</h2>
-      <p style="text-align:center; color:#aaa;">
-        Consulta y exporta el setlist de ensayos en tiempo real.
-      </p>
+      <p style="text-align:center; color:#aaa;">Consulta y exporta el setlist de ensayos en tiempo real.</p>
       <table>
         <thead>
           <tr>
@@ -362,14 +384,11 @@
       <button id="download-btn">Descargar PDF</button>
       <p id="total-time"></p>
     </section>
-
     <!-- 2) SEGUNDO SETLIST -->
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <h3 id="concert-title"></h3> 
-      <p style="text-align:center; color:#aaa;">
-        Feed actual: <em id="url-actual"></em>
-      </p>
+      <p style="text-align:center; color:#aaa;">Feed actual: <em id="url-actual"></em></p>
       <table id="second-list-table">
         <thead>
           <tr>
@@ -385,71 +404,75 @@
       <button id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
     </section>
-
     <!-- 3) CALENDARIO -->
     <section id="calendario">
       <h2>Próximos Conciertos</h2>
       <p>Consulta el calendario actualizado.</p>
       <div>
-        <script type="text/javascript" 
-          src="https://www.bandhelper.com/widget/calendar/10353?range=6">
-        </script>
+        <script type="text/javascript" src="https://www.bandhelper.com/widget/calendar/10353?range=6"></script>
       </div>
     </section>
+    <!-- 4) MIEMBROS DEL GRUPO -->
+    <section id="miembros">
+      <h2>Miembros del Grupo</h2>
+      <div id="lista-miembros">
+        <!-- Se mostrarán los miembros registrados -->
+      </div>
+      <form id="form-miembros" style="margin-top:20px;">
+        <input type="text" id="nombre-miembro" placeholder="Nombre del miembro" required>
+        <input type="text" id="rol-miembro" placeholder="Rol (ej. Guitarra líder, Vocalista, etc.)" required>
+        <input type="tel" id="telefono-miembro" placeholder="Teléfono">
+        <input type="email" id="email-miembro" placeholder="Correo electrónico">
+        <!-- Input para subir imagen (acepta arrastrar y selección desde móvil) -->
+        <label for="foto-miembro">Sube la foto del miembro:</label>
+        <input type="file" id="foto-miembro" accept="image/*">
+        <button type="submit">Añadir Miembro</button>
+      </form>
+    </section>
+    <!-- 5) FECHAS ENSAYO / DISPONIBILIDAD -->
+    <section id="fechas-ensayo">
+      <h2>Disponibilidad para Ensayo</h2>
+      <p style="text-align:center; color:#aaa;">Selecciona tu miembro y, para cada fecha, indica si puedes venir.</p>
+      <form id="form-fechas" style="margin-top:20px;">
+        <label for="miembro-votante">Selecciona tu miembro:</label>
+        <select id="miembro-votante" required>
+          <option value="">-- Selecciona --</option>
+        </select>
+        <div id="opciones-fechas" style="margin-bottom: 20px;">
+          <!-- Se generarán grupos de radio para cada fecha disponible -->
+        </div>
+        <button type="submit">Enviar Disponibilidad</button>
+      </form>
+      <div id="resultados-disponibilidad" style="margin-top:30px; display:none;">
+        <h3 style="text-align:center; color:#0cf;">Resultados hasta ahora</h3>
+        <ul id="lista-resultados"></ul>
+      </div>
+      <hr style="border:1px solid #222; margin:20px 0;">
+      <h2 style="text-align:center; color:yellow;">Panel de Administración de Fechas</h2>
+      <section id="login-admin-fechas">
+        <h3 style="color:#0cf;">Acceso a Panel de Administración</h3>
+        <input type="password" id="admin-pass-fechas" placeholder="Contraseña">
+        <button id="login-btn-fechas">Entrar</button>
+      </section>
+      <section id="panel-fechas" style="display:none;">
+        <h2 style="text-align:center; color:yellow;">Panel de Administración de Fechas</h2>
+        <input id="nueva-fecha" type="text" placeholder="Ej: Miércoles 10 abril - 17:30">
+        <button id="agregar-fecha">Agregar Fecha</button>
+        <ul id="fechas-activas"></ul>
+      </section>
+    </section>
   </main>
-
-  <!-- SECCIÓN: MIEMBROS DEL GRUPO -->
-  <section id="miembros" style="display:none; background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(0,255,255,0.1);">
-    <h2 style="text-align:center; color:#0cf;">Miembros del Grupo</h2>
-    <div id="lista-miembros">
-      <!-- Aquí se mostrarán los miembros registrados -->
-    </div>
-    <form id="form-miembros" style="margin-top:20px; text-align:center;">
-      <input type="text" id="nombre-miembro" placeholder="Nombre del miembro" required>
-      <input type="text" id="rol-miembro" placeholder="Rol (ej. Guitarra líder, Vocalista, etc.)" required>
-      <input type="tel" id="telefono-miembro" placeholder="Teléfono">
-      <input type="email" id="email-miembro" placeholder="Correo electrónico">
-      <input type="text" id="foto-miembro" placeholder="URL de la fotografía">
-      <br>
-      <button type="submit">Añadir Miembro</button>
-    </form>
-  </section>
-
-  <!-- SECCIÓN: FECHAS ENSAYO (VOTACIÓN y ADMIN) -->
-  <section id="fechas-ensayo" style="display:none; background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(0,255,255,0.1);">
-    <h2 style="text-align:center; color:#0cf;">Encuesta de Disponibilidad para el Próximo Ensayo</h2>
-    <p style="text-align:center; color:#aaa;">Marca las fechas en las que estás disponible:</p>
-    <label for="email-voto" style="display:block; text-align:center;">Tu Email:</label>
-    <input type="email" id="email-voto" placeholder="Ingresa tu email" style="display:block; margin: 0 auto 20px auto; padding:10px; width:80%; max-width:400px;" required>
-    <form id="form-disponibilidad" style="text-align:center;">
-      <div id="opciones-fechas" style="margin-bottom: 20px;"></div>
-      <button type="submit" style="background-color:#0cf; color:#000; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Enviar Disponibilidad</button>
-    </form>
-    <div id="resultados-disponibilidad" style="margin-top:30px; display:none;">
-      <h3 style="text-align:center; color:#0cf;">Resultados hasta ahora</h3>
-      <ul id="lista-resultados-disponibilidad" style="list-style:none; padding:0;"></ul>
-    </div>
-    <!-- ADMIN: Login y Panel -->
-    <div id="login-admin" style="background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 500px; text-align:center;">
-      <h3 style="color:#0cf;">Acceso a Panel de Administración de Fechas Ensayo</h3>
-      <input type="password" id="admin-pass" placeholder="Contraseña" style="padding:10px; width:80%; max-width:300px; background:#222; color:#fff; border:1px solid #333; border-radius:5px;">
-      <button id="login-btn" style="margin-top:10px; background-color:#0cf; color:#000; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Entrar</button>
-    </div>
-    <div id="admin-panel" style="display:none; background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(255,255,0,0.1);">
-      <h2 style="text-align:center; color:yellow;">Panel de Administración de Fechas Ensayo</h2>
-      <input id="nueva-fecha" type="text" placeholder="Ej: Miércoles 10 abril - 17:30" style="width:100%; padding:10px; margin:10px 0; background:#222; color:#fff; border:1px solid #333;">
-      <button id="agregar-fecha" style="padding:10px 20px; background:yellow; color:#000; border:none; border-radius:8px; cursor:pointer;">Agregar Fecha</button>
-      <ul id="fechas-activas" style="margin-top:20px; list-style:none; padding:0;"></ul>
-    </div>
-  </section>
-
   <!-- FOOTER -->
   <footer>
     © 2025 El Sótano del Doctor. All Rights Reserved.
   </footer>
-
+  <!-- SCRIPTS -->
+  <!-- Firebase: Incluimos Firestore y Storage -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
   <script>
-    // Firebase Configuración
+    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAd70p3aEA218oPLWEs_DbMFEotHXfVyNg",
       authDomain: "el-sotano-del-doctor.firebaseapp.com",
@@ -461,8 +484,278 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const storage = firebase.storage();
 
-    // FUNCIONES COMUNES PARA SETLISTS
+    // Función para subir imagen y devolver la URL
+    async function uploadMemberImage(file) {
+      const storageRef = storage.ref();
+      const fileRef = storageRef.child('miembros/' + Date.now() + '_' + file.name);
+      await fileRef.put(file);
+      return await fileRef.getDownloadURL();
+    }
+
+    /* ---------------------
+       Navegación del menú
+    --------------------- */
+    function hideAllSections() {
+      document.getElementById('miembros').style.display = 'none';
+      document.getElementById('fechas-ensayo').style.display = 'none';
+      // Las secciones de setlists y calendario permanecen visibles.
+      document.getElementById('config-screen').style.display = 'none';
+    }
+    document.getElementById('menu-miembros').addEventListener('click', (e) => {
+      e.preventDefault();
+      hideAllSections();
+      document.getElementById('miembros').style.display = 'block';
+      document.getElementById('sidebar-menu').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+      cargarMiembros();
+    });
+    document.getElementById('menu-fechas').addEventListener('click', (e) => {
+      e.preventDefault();
+      hideAllSections();
+      document.getElementById('fechas-ensayo').style.display = 'block';
+      document.getElementById('sidebar-menu').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+      cargarFechasDisponiblesVotacion();
+      cargarMiembrosSelect();
+    });
+    document.getElementById('menu-config').addEventListener('click', (e) => {
+      e.preventDefault();
+      hideAllSections();
+      document.getElementById('config-screen').style.display = 'block';
+      document.getElementById('sidebar-menu').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+      const feedSuffix = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
+      document.getElementById('feed-url').value = feedSuffix;
+      document.getElementById('concert-title-input').value = secondSetlistConcertTitle;
+    });
+    document.getElementById('menu-cerrar').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('sidebar-menu').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+    });
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebarMenu  = document.getElementById('sidebar-menu');
+    const overlay      = document.getElementById('overlay');
+    hamburgerBtn.addEventListener('click', () => {
+      sidebarMenu.classList.add('show');
+      overlay.classList.add('show');
+    });
+    overlay.addEventListener('click', () => {
+      sidebarMenu.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+    // Botón "Cerrar" en Configuración (ahora funcional)
+    document.getElementById('close-config').addEventListener('click', () => {
+      document.getElementById('config-screen').style.display = 'none';
+    });
+    /* ---------------------
+       Funcionalidades para MIEMBROS DEL GRUPO
+    --------------------- */
+    document.getElementById('form-miembros').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('nombre-miembro').value.trim();
+      const rol = document.getElementById('rol-miembro').value.trim();
+      const telefono = document.getElementById('telefono-miembro').value.trim();
+      const email = document.getElementById('email-miembro').value.trim();
+      let fotoURL = "";
+      const fileInput = document.getElementById('foto-miembro');
+      if (fileInput.files && fileInput.files[0]) {
+        try {
+          fotoURL = await uploadMemberImage(fileInput.files[0]);
+        } catch (error) {
+          console.error("Error subiendo la imagen:", error);
+          alert("Error al subir la imagen. Se usará imagen por defecto.");
+        }
+      } else {
+        fotoURL = "assets/default.jpg";
+      }
+      if (!nombre || !rol) {
+        alert('Por favor, rellena al menos el nombre y el rol');
+        return;
+      }
+      try {
+        await db.collection('miembros').add({ nombre, rol, telefono, email, foto: fotoURL });
+        alert('Miembro añadido correctamente');
+        cargarMiembros();
+        e.target.reset();
+      } catch (error) {
+        console.error("Error al añadir miembro: ", error);
+        alert('Error añadiendo el miembro');
+      }
+    });
+    async function cargarMiembros() {
+      const container = document.getElementById('lista-miembros');
+      container.innerHTML = '';
+      const snapshot = await db.collection('miembros').get();
+      snapshot.forEach(doc => {
+        const member = doc.data();
+        const div = document.createElement('div');
+        div.style.border = "1px solid #222";
+        div.style.padding = "10px";
+        div.style.marginBottom = "10px";
+        div.innerHTML = `
+          <img src="${member.foto || 'assets/default.jpg'}" alt="${member.nombre}" style="width:50px; height:50px; border-radius:50%; margin-right:10px;">
+          <strong>${member.nombre}</strong> - ${member.rol}<br>
+          Tel: ${member.telefono || 'N/A'}<br>
+          Email: ${member.email || 'N/A'}
+        `;
+        container.appendChild(div);
+      });
+    }
+    /* ---------------------
+       Funcionalidades para FECHAS ENSAYO / DISPONIBILIDAD
+    --------------------- */
+    // Se crea un select para que el miembro se identifique; se carga desde la colección "miembros"
+    async function cargarMiembrosSelect() {
+      const select = document.getElementById('miembro-votante');
+      select.innerHTML = '<option value="">-- Selecciona --</option>';
+      const snapshot = await db.collection('miembros').get();
+      snapshot.forEach(doc => {
+        const member = doc.data();
+        const option = document.createElement('option');
+        option.value = doc.id; // Se usa el ID del documento para identificar
+        option.textContent = member.nombre;
+        select.appendChild(option);
+      });
+    }
+    // Crea grupos de radio para cada fecha (obtenida de la colección "fechasDisponibles")
+    async function cargarFechasDisponiblesVotacion() {
+      const container = document.getElementById('opciones-fechas');
+      container.innerHTML = '';
+      const snapshot = await db.collection('fechasDisponibles').get();
+      snapshot.forEach(doc => {
+        const fecha = doc.id;
+        const div = document.createElement('div');
+        div.setAttribute('data-fecha', fecha);
+        div.style.marginBottom = "10px";
+        div.innerHTML = `<strong>${fecha}</strong>: 
+          <label><input type="radio" name="vote_${fecha}" value="si" required> Sí</label>
+          <label style="margin-left: 10px;"><input type="radio" name="vote_${fecha}" value="no" required> No</label>`;
+        container.appendChild(div);
+      });
+    }
+    // Al enviar el formulario de disponibilidad se recogen los votos de cada fecha
+    document.getElementById('form-fechas').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const miembro = document.getElementById('miembro-votante').value;
+      if (!miembro) {
+        alert('Selecciona tu miembro.');
+        return;
+      }
+      const container = document.getElementById('opciones-fechas');
+      const voteDivs = container.querySelectorAll('div[data-fecha]');
+      const votes = {};
+      voteDivs.forEach(div => {
+        const fecha = div.getAttribute('data-fecha');
+        const selected = div.querySelector(`input[name="vote_${fecha}"]:checked`);
+        if (selected) {
+          votes[fecha] = selected.value;
+        }
+      });
+      if (Object.keys(votes).length === 0) {
+        alert("Debes emitir tu voto en al menos una fecha.");
+        return;
+      }
+      await enviarDisponibilidad(miembro, votes);
+      e.target.reset();
+    });
+    // Actualiza cada fecha en Firestore con el voto del miembro (evitando duplicados, o actualizando si ya existe)
+    async function enviarDisponibilidad(miembro, votes) {
+      for (const fecha in votes) {
+        const voteValue = votes[fecha];
+        const docRef = db.collection('fechasDisponibles').doc(fecha);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
+          let currentVotes = docSnap.data().votos || [];
+          const index = currentVotes.findIndex(vote => vote.miembro === miembro);
+          if (index >= 0) {
+            currentVotes[index].voto = voteValue;
+          } else {
+            currentVotes.push({ miembro: miembro, voto: voteValue });
+          }
+          await docRef.update({ votos: currentVotes });
+        } else {
+          await db.collection('fechasDisponibles').doc(fecha).set({ votos: [{ miembro: miembro, voto: voteValue }] });
+        }
+      }
+      alert("Disponibilidad registrada.");
+      mostrarResultadosDisponibilidad();
+    }
+    // Muestra los resultados de disponibilidad (por fecha y miembro)
+    async function mostrarResultadosDisponibilidad() {
+      const lista = document.getElementById('lista-resultados');
+      lista.innerHTML = '';
+      const snapshot = await db.collection('fechasDisponibles').get();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement('li');
+        let text = `${doc.id}: `;
+        if (data.votos && data.votos.length > 0) {
+          data.votos.forEach(vote => { text += ` [${vote.miembro}: ${vote.voto}] `; });
+        } else {
+          text += "Sin votos";
+        }
+        li.textContent = text;
+        lista.appendChild(li);
+      });
+      document.getElementById('resultados-disponibilidad').style.display = 'block';
+    }
+    /* ---------------------
+       Funciones para Panel de Administración de Fechas
+    --------------------- */
+    const CLAVE_ADMIN_FECHAS = "ensayo2025";
+    document.getElementById('login-btn-fechas').addEventListener('click', () => {
+      const clave = document.getElementById('admin-pass-fechas').value.trim();
+      if (clave === CLAVE_ADMIN_FECHAS) {
+        document.getElementById('panel-fechas').style.display = 'block';
+        document.getElementById('login-admin-fechas').style.display = 'none';
+        cargarFechasAdmin();
+      } else {
+        alert('Clave incorrecta.');
+      }
+    });
+    document.getElementById('agregar-fecha').addEventListener('click', async () => {
+      const nueva = document.getElementById('nueva-fecha').value.trim();
+      if (!nueva) return;
+      try {
+        await db.collection('fechasDisponibles').doc(nueva).set({ votos: [] });
+        document.getElementById('nueva-fecha').value = '';
+        cargarFechasDisponiblesVotacion();
+        cargarFechasAdmin();
+      } catch (error) {
+        console.error("Error al agregar fecha: ", error);
+        alert("Error al agregar fecha.");
+      }
+    });
+    async function cargarFechasAdmin() {
+      const ul = document.getElementById('fechas-activas');
+      ul.innerHTML = '';
+      const snapshot = await db.collection('fechasDisponibles').get();
+      snapshot.forEach(doc => {
+        const li = document.createElement('li');
+        li.textContent = doc.id;
+        const btn = document.createElement('button');
+        btn.textContent = 'Eliminar';
+        btn.style.marginLeft = '10px';
+        btn.style.background = 'red';
+        btn.style.color = '#fff';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '4px';
+        btn.style.cursor = 'pointer';
+        btn.onclick = async () => {
+          await db.collection('fechasDisponibles').doc(doc.id).delete();
+          cargarFechasDisponiblesVotacion();
+          cargarFechasAdmin();
+        };
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+    }
+    /* ---------------------
+       Funciones existentes para setlists y generación de PDF
+    --------------------- */
     function parseDurationToSeconds(str) {
       if (!str) return 0;
       if (str.includes(':')) {
@@ -490,8 +783,7 @@
       let cleaned = str.replace(/[^\x00-\xFF]/g, '');
       return cleaned.trim();
     }
-
-    // SETLISTS: Primer Setlist
+    // PRIMER SETLIST
     const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
     async function cargarPrimerSetlist() {
       try {
@@ -575,31 +867,14 @@
         startY: 100,
         head: [columns.map(c => c.header)],
         body: rows.map(r => [r.num, r.title, r.key, r.tempo, r.duration]),
-        headStyles: {
-          fillColor: [60, 60, 60],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        bodyStyles: {
-          fillColor: [245, 245, 245],
-          textColor: [0, 0, 0]
-        },
-        alternateRowStyles: {
-          fillColor: [230, 230, 230]
-        },
+        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
+        alternateRowStyles: { fillColor: [230, 230, 230] },
         styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
-        columnStyles: {
-          0: { cellWidth: 30 },
-          1: { cellWidth: 150 },
-          2: { cellWidth: 80 },
-          3: { cellWidth: 50 },
-          4: { cellWidth: 60 }
-        }
+        columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 150 }, 2: { cellWidth: 80 }, 3: { cellWidth: 50 }, 4: { cellWidth: 60 } }
       });
       doc.save('setlist_ElSotanoDelDoctor.pdf');
     }
-
-    // SEGUNDO SETLIST
     let urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
     let secondSetlistConcertTitle = '';
     function loadConfigFromLocalStorage() {
@@ -615,9 +890,7 @@
     function displayConcertTitle() {
       document.getElementById('concert-title').textContent = secondSetlistConcertTitle;
     }
-    function getSecondSetlistURL() {
-      return urlSegundoSetlist;
-    }
+    function getSecondSetlistURL() { return urlSegundoSetlist; }
     async function cargarSegundoSetlist() {
       try {
         displayConcertTitle();
@@ -642,13 +915,11 @@
           tbody.appendChild(row);
         });
         document.getElementById('url-actual').textContent = url;
-        document.getElementById('total-time-2').textContent =
-          'Tiempo total del set: ' + formatSecondsHMSorMMSS(totalSecs);
+        document.getElementById('total-time-2').textContent = 'Tiempo total del set: ' + formatSecondsHMSorMMSS(totalSecs);
         return songs;
       } catch (err) {
         console.error('Error al cargar el segundo setlist:', err);
-        document.getElementById('second-body').innerHTML =
-          '<tr><td colspan="5">Error al cargar el segundo setlist.</td></tr>';
+        document.getElementById('second-body').innerHTML = '<tr><td colspan="5">Error al cargar el segundo setlist.</td></tr>';
         return [];
       }
     }
@@ -677,9 +948,7 @@
       const pdfTitle = secondSetlistConcertTitle || 'El Sótano del Doctor (Segundo)';
       doc.text(`Setlist - ${pdfTitle}`, 120, 50);
       let totalSecs = 0;
-      songs.forEach(song => {
-        totalSecs += parseDurationToSeconds(song.duration || '0');
-      });
+      songs.forEach(song => { totalSecs += parseDurationToSeconds(song.duration || '0'); });
       const totalTime = formatSecondsHMSorMMSS(totalSecs);
       const totalSongs = songs.length;
       doc.setFontSize(12);
@@ -706,237 +975,21 @@
         startY: 100,
         head: [columns2.map(c => c.header)],
         body: rows2.map(r => [r.num, r.name, r.key, r.tempo, r.duration]),
-        headStyles: {
-          fillColor: [60, 60, 60],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        bodyStyles: {
-          fillColor: [245, 245, 245],
-          textColor: [0, 0, 0]
-        },
-        alternateRowStyles: {
-          fillColor: [230, 230, 230]
-        },
+        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
+        alternateRowStyles: { fillColor: [230, 230, 230] },
         styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
-        columnStyles: {
-          0: { cellWidth: 30 },
-          1: { cellWidth: 150 },
-          2: { cellWidth: 80 },
-          3: { cellWidth: 50 },
-          4: { cellWidth: 60 }
-        }
+        columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 150 }, 2: { cellWidth: 80 }, 3: { cellWidth: 50 }, 4: { cellWidth: 60 } }
       });
       doc.save('SegundoSetlist.pdf');
     }
-
-    // MENÚ HAMBURGUESA y NAVIGACIÓN
-    const hamburgerBtn = document.getElementById('hamburger-btn');
-    const sidebarMenu  = document.getElementById('sidebar-menu');
-    const menuConfig   = document.getElementById('menu-config');
-    const menuCerrar   = document.getElementById('menu-cerrar');
-    const menuMiembros = document.getElementById('menu-miembros');
-    const menuFechas   = document.getElementById('menu-fechas');
-    const overlay      = document.getElementById('overlay');
-
-    hamburgerBtn.addEventListener('click', () => {
-      sidebarMenu.classList.add('show');
-      overlay.classList.add('show');
-    });
-    menuCerrar.addEventListener('click', (e) => {
-      e.preventDefault();
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-    });
-    overlay.addEventListener('click', () => {
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-    });
-    menuConfig.addEventListener('click', (e) => {
-      e.preventDefault();
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-      document.getElementById('config-screen').style.display = 'block';
-      const feedSuffix = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
-      document.getElementById('feed-url').value = feedSuffix;
-      document.getElementById('concert-title-input').value = secondSetlistConcertTitle;
-    });
-    // Mostrar sección Miembros
-    menuMiembros.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.querySelector('main').style.display = 'none';
-      document.getElementById('fechas-ensayo').style.display = 'none';
-      document.getElementById('config-screen').style.display = 'none';
-      document.getElementById('miembros').style.display = 'block';
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-      cargarMiembros();
-    });
-    // Mostrar sección Fechas Ensayo
-    menuFechas.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.querySelector('main').style.display = 'none';
-      document.getElementById('miembros').style.display = 'none';
-      document.getElementById('config-screen').style.display = 'none';
-      document.getElementById('fechas-ensayo').style.display = 'block';
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-      cargarFechasDisponibles();
-      cargarDisponibilidadResultados();
-    });
-    // Mostrar main al cargar la página
     window.addEventListener('DOMContentLoaded', () => {
       loadConfigFromLocalStorage();
       cargarPrimerSetlist();
       cargarSegundoSetlist();
-      document.querySelector('main').style.display = 'block';
-      document.getElementById('miembros').style.display = 'none';
-      document.getElementById('fechas-ensayo').style.display = 'none';
     });
-
-    // MIEMBROS DEL GRUPO
-    document.getElementById('form-miembros').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const nombre = document.getElementById('nombre-miembro').value.trim();
-      const rol = document.getElementById('rol-miembro').value.trim();
-      const telefono = document.getElementById('telefono-miembro').value.trim();
-      const email = document.getElementById('email-miembro').value.trim();
-      const foto = document.getElementById('foto-miembro').value.trim();
-      if(!nombre || !rol) {
-        alert('Por favor, rellena al menos el nombre y el rol');
-        return;
-      }
-      try {
-        await db.collection('miembros').add({ nombre, rol, telefono, email, foto });
-        alert('Miembro añadido correctamente');
-        cargarMiembros();
-        e.target.reset();
-      } catch (error) {
-        console.error("Error al añadir miembro: ", error);
-        alert('Error añadiendo el miembro');
-      }
-    });
-    async function cargarMiembros() {
-      const container = document.getElementById('lista-miembros');
-      container.innerHTML = '';
-      const snapshot = await db.collection('miembros').get();
-      snapshot.forEach(doc => {
-        const member = doc.data();
-        const div = document.createElement('div');
-        div.style.border = "1px solid #222";
-        div.style.padding = "10px";
-        div.style.marginBottom = "10px";
-        div.innerHTML = `
-          <img src="${member.foto || 'assets/ruta_default.jpg'}" alt="${member.nombre}" style="width:50px; height:50px; border-radius:50%; margin-right:10px;">
-          <strong>${member.nombre}</strong> - ${member.rol}<br>
-          Tel: ${member.telefono || 'N/A'}<br>
-          Email: ${member.email || 'N/A'}
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    // FECHAS ENSAYO (VOTACIÓN y ADMIN)
-    async function cargarFechasDisponibles() {
-      const container = document.getElementById('opciones-fechas');
-      container.innerHTML = '';
-      const snapshot = await db.collection('fechasEnsayo').get();
-      snapshot.forEach(doc => {
-        const label = document.createElement('label');
-        label.innerHTML = `<input type="checkbox" name="fecha" value="${doc.id}"> ${doc.id}<br>`;
-        container.appendChild(label);
-      });
-    }
-    async function enviarDisponibilidad(email, fechas) {
-      for (const fecha of fechas) {
-        const docRef = db.collection('fechasEnsayo').doc(fecha);
-        const docSnap = await docRef.get();
-        if (docSnap.exists) {
-          const data = docSnap.data();
-          if(data.votos && data.votos.includes(email)) {
-            alert("Ya has indicado tu disponibilidad para la fecha " + fecha);
-          } else {
-            await docRef.update({ votos: firebase.firestore.FieldValue.arrayUnion(email) });
-          }
-        } else {
-          await db.collection('fechasEnsayo').doc(fecha).set({ votos: [email] });
-        }
-      }
-      alert("Disponibilidad registrada.");
-      cargarDisponibilidadResultados();
-    }
-    document.getElementById('form-disponibilidad').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email-voto').value.trim();
-      if(!email) {
-        alert("Por favor, ingresa tu email.");
-        return;
-      }
-      const fechasSeleccionadas = Array.from(document.querySelectorAll('input[name="fecha"]:checked')).map(input => input.value);
-      if (fechasSeleccionadas.length === 0) {
-        alert('Por favor, selecciona al menos una fecha.');
-        return;
-      }
-      await enviarDisponibilidad(email, fechasSeleccionadas);
-      e.target.reset();
-    });
-    async function cargarDisponibilidadResultados() {
-      const lista = document.getElementById('lista-resultados-disponibilidad');
-      lista.innerHTML = '';
-      const snapshot = await db.collection('fechasEnsayo').get();
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const li = document.createElement('li');
-        li.textContent = `${doc.id}: ${data.votos ? data.votos.length : 0} voto(s)`;
-        lista.appendChild(li);
-      });
-      document.getElementById('resultados-disponibilidad').style.display = 'block';
-    }
-
-    // PANEL ADMINISTRATIVO DE FECHAS ENSAYO
-    const CLAVE_ADMIN = "ensayo2025";
-    document.getElementById('login-btn').addEventListener('click', () => {
-      const clave = document.getElementById('admin-pass').value.trim();
-      if (clave === CLAVE_ADMIN) {
-        document.getElementById('admin-panel').style.display = 'block';
-        document.getElementById('login-admin').style.display = 'none';
-        cargarFechasAdmin();
-      } else {
-        alert('Clave incorrecta.');
-      }
-    });
-    document.getElementById('agregar-fecha').addEventListener('click', async () => {
-      const nueva = document.getElementById('nueva-fecha').value.trim();
-      if (!nueva) return;
-      await db.collection('fechasEnsayo').doc(nueva).set({ votos: [] });
-      document.getElementById('nueva-fecha').value = '';
-      cargarFechasDisponibles();
-      cargarFechasAdmin();
-    });
-    async function cargarFechasAdmin() {
-      const ul = document.getElementById('fechas-activas');
-      ul.innerHTML = '';
-      const snapshot = await db.collection('fechasEnsayo').get();
-      snapshot.forEach(doc => {
-        const li = document.createElement('li');
-        li.textContent = doc.id;
-        const btn = document.createElement('button');
-        btn.textContent = 'Eliminar';
-        btn.style.marginLeft = '10px';
-        btn.style.background = 'red';
-        btn.style.color = '#fff';
-        btn.style.border = 'none';
-        btn.style.borderRadius = '4px';
-        btn.style.cursor = 'pointer';
-        btn.onclick = async () => {
-          await db.collection('fechasEnsayo').doc(doc.id).delete();
-          cargarFechasDisponibles();
-          cargarFechasAdmin();
-        };
-        li.appendChild(btn);
-        ul.appendChild(li);
-      });
-    }
+    document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
+    document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
   </script>
 </body>
 </html>
