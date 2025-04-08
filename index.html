@@ -22,24 +22,25 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <style>
     /* Reseteo y box-sizing */
     *, *::before, *::after {
       box-sizing: border-box;
     }
-
     html, body {
       margin: 0;
       padding: 0;
-      overflow-x: hidden; /* Previene scroll horizontal sobrante */
+      overflow-x: hidden;
     }
-
     body {
       font-family: Arial, sans-serif;
       background-color: #000;
       color: #fff;
     }
-
     /* CABECERA */
     header {
       background-color: #111;
@@ -52,7 +53,6 @@
       width: 180px;
       height: auto;
     }
-
     /* BOTÓN HAMBURGER */
     .hamburger {
       cursor: pointer;
@@ -66,7 +66,6 @@
       background-color: #0cf;
       margin: 4px 0;
     }
-
     /* MENÚ LATERAL (SIDEBAR) */
     .sidebar {
       position: fixed;
@@ -78,8 +77,7 @@
       border-right: 1px solid #222;
       padding: 20px;
       box-shadow: 2px 0 10px rgba(0, 255, 255, 0.1);
-
-      transform: translateX(-250px); /* oculto por defecto */
+      transform: translateX(-250px);
       transition: transform 0.3s ease;
       z-index: 9999;
     }
@@ -101,8 +99,7 @@
     .sidebar a:hover {
       color: #0cf;
     }
-
-    /* OVERLAY (FONDO OSCURO) */
+    /* OVERLAY */
     #overlay {
       position: fixed;
       top: 0; left: 0;
@@ -110,13 +107,12 @@
       height: 100%;
       background: rgba(0,0,0,0.5);
       z-index: 9998;
-      display: none; /* oculto por defecto */
+      display: none;
     }
     #overlay.show {
       display: block;
     }
-
-    /* PANTALLA DE CONFIGURACIÓN (oculta por defecto) */
+    /* PANTALLA DE CONFIGURACIÓN */
     #config-screen {
       display: none; 
       position: fixed; 
@@ -126,7 +122,7 @@
       background-color: #000; 
       z-index: 9999; 
       overflow-y: auto; 
-      padding: 60px 20px 20px 20px; /* 60px arriba para no chocar con btn Cerrar */
+      padding: 60px 20px 20px 20px;
     }
     #config-screen h2 {
       text-align: center; 
@@ -159,7 +155,6 @@
     #config-screen button:hover {
       background-color: #09b;
     }
-    /* Botón Cerrar Config */
     #close-config {
       position: absolute;
       top: 20px;
@@ -175,47 +170,45 @@
     #close-config:hover {
       background-color: #333;
     }
-
     /* CONTENIDO PRINCIPAL */
     main section {
       max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
     }
-
-    /* PRIMER SETLIST */
-    #setlists {
+    /* SETLISTS y CALENDARIO (ya existentes) */
+    #setlists, #second-setlist, #calendario {
       background-color: #111;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
       margin-bottom: 40px;
     }
-    #setlists h2 {
+    #setlists h2, #second-setlist h2, #calendario h2 {
       text-align: center;
       color: #0cf;
       margin-bottom: 15px;
     }
-    #setlists table {
+    #setlists table, #second-list-table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
       color: #fff;
       font-size: 0.95em;
     }
-    #setlists thead {
+    #setlists thead, #second-list-table thead {
       background-color: #222;
       color: #0cf;
     }
-    #setlists th, #setlists td {
+    #setlists th, #setlists td, #second-list-table th, #second-list-table td {
       padding: 12px;
       border: 1px solid #333;
       text-align: left;
     }
-    #setlists tr:nth-child(even) {
+    #setlists tr:nth-child(even), #second-list-table tr:nth-child(even) {
       background-color: #1a1a1a;
     }
-    #download-btn {
+    #download-btn, #download-btn-2 {
       display: block;
       margin: 20px auto 0 auto;
       padding: 10px 20px;
@@ -226,96 +219,56 @@
       border-radius: 8px;
       cursor: pointer;
     }
-    #download-btn:hover {
+    #download-btn:hover, #download-btn-2:hover {
       background-color: #09b;
     }
-    #total-time {
+    #total-time, #total-time-2 {
       color: #0cf;
       margin-top: 10px;
       text-align: center;
     }
-
-    /* SEGUNDO SETLIST */
-    #second-setlist {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-      margin-bottom: 40px;
-    }
-    #second-setlist h2 {
-      text-align: center;
-      color: #0cf;
-      margin-bottom: 15px;
-    }
-    /* NUEVO TÍTULO DE CONCIERTO */
-    #concert-title {
-      text-align: center;
-      display: block;
-      margin-bottom: 10px;
-      color: #fff;
-      font-size: 1.2em;
-      font-weight: bold;
-    }
-
-    #second-list-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      color: #fff;
-      font-size: 0.95em;
-    }
-    #second-list-table thead {
-      background-color: #222;
-      color: #0cf;
-    }
-    #second-list-table th, #second-list-table td {
-      padding: 12px;
-      border: 1px solid #333;
-      text-align: left;
-    }
-    #second-list-table tr:nth-child(even) {
-      background-color: #1a1a1a;
-    }
-    #download-btn-2 {
-      display: block;
-      margin: 20px auto 0 auto;
-      padding: 10px 20px;
-      font-size: 1em;
-      background-color: #0cf;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    #download-btn-2:hover {
-      background-color: #09b;
-    }
-    #total-time-2 {
-      color: #0cf;
-      margin-top: 10px;
-      text-align: center;
-    }
-
     /* CALENDARIO */
-    #calendario {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,255,255,0.1);
-      margin-bottom: 40px;
-    }
-    #calendario h2 {
-      text-align: center;
-      color: #0cf;
-      margin-bottom: 10px;
-    }
     #calendario p {
       text-align: center;
       color: #aaa;
       margin-bottom: 20px;
     }
-
+    /* NUEVAS SECCIONES: Miembros y Fechas Ensayo */
+    section#miembros,
+    section#fechas-ensayo {
+      display: none;
+    }
+    section#miembros h2,
+    section#fechas-ensayo h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    section#miembros form,
+    section#fechas-ensayo form {
+      text-align: center;
+    }
+    section#miembros form input,
+    section#fechas-ensayo form input {
+      margin: 10px;
+      padding: 8px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background-color: #222;
+      color: #fff;
+    }
+    section#miembros form button,
+    section#fechas-ensayo form button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #0cf;
+      color: #000;
+      cursor: pointer;
+    }
+    section#miembros form button:hover,
+    section#fechas-ensayo form button:hover {
+      background-color: #09b;
+    }
     /* FOOTER */
     footer {
       background-color: #111;
@@ -324,7 +277,6 @@
       padding: 10px;
       border-top: 1px solid #222;
     }
-
     /* MEDIA QUERIES */
     @media (max-width: 768px) {
       .hamburger div {
@@ -350,9 +302,11 @@
   <!-- OVERLAY -->
   <div id="overlay"></div>
 
-  <!-- MENÚ LATERAL -->
+  <!-- MENÚ LATERAL (SIDEBAR) -->
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
+    <a href="#" id="menu-miembros">Miembros del Grupo</a>
+    <a href="#" id="menu-fechas">Fechas Ensayo</a>
     <a href="#" id="menu-config">Configuración</a>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
@@ -385,7 +339,7 @@
     <button id="guardar-config">Guardar configuración</button>
   </div>
 
-  <!-- CONTENIDO PRINCIPAL -->
+  <!-- CONTENIDO PRINCIPAL (Setlists y Calendario) -->
   <main>
     <!-- 1) PRIMER SETLIST -->
     <section id="setlists">
@@ -444,161 +398,50 @@
     </section>
   </main>
 
-    /*-----------------------------------------------------------
-<!-- Módulo de Encuestas para Ensayos - El Sótano del Doctor con Firebase -->
-    -----------------------------------------------------------*/
+  <!-- SECCIÓN: MIEMBROS DEL GRUPO -->
+  <section id="miembros" style="display:none; background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(0,255,255,0.1);">
+    <h2 style="text-align:center; color:#0cf;">Miembros del Grupo</h2>
+    <div id="lista-miembros">
+      <!-- Aquí se mostrarán los miembros registrados -->
+    </div>
+    <form id="form-miembros" style="margin-top:20px; text-align:center;">
+      <input type="text" id="nombre-miembro" placeholder="Nombre del miembro" required>
+      <input type="text" id="rol-miembro" placeholder="Rol (ej. Guitarra líder, Vocalista, etc.)" required>
+      <input type="tel" id="telefono-miembro" placeholder="Teléfono">
+      <input type="email" id="email-miembro" placeholder="Correo electrónico">
+      <input type="text" id="foto-miembro" placeholder="URL de la fotografía">
+      <br>
+      <button type="submit">Añadir Miembro</button>
+    </form>
+  </section>
 
-
-<!-- Módulo de Encuestas para Ensayos - El Sótano del Doctor con Firebase y Panel Admin -->
-<section id="encuestas" style="background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(0,255,255,0.1);">
-  <h2 style="text-align:center; color:#0cf;">Encuesta de Fechas para el Próximo Ensayo</h2>
-  <p style="text-align:center; color:#aaa;">Marca las fechas en las que estás disponible:</p>
-
-  <form id="form-encuesta">
-    <div id="opciones-fechas" style="margin-bottom: 20px;"></div>
-    <button type="submit" style="background-color:#0cf; color:#000; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Enviar Voto</button>
-  </form>
-
-  <div id="resultados-encuesta" style="margin-top:30px; display:none;">
-    <h3 style="text-align:center; color:#0cf;">Resultados hasta ahora</h3>
-    <ul id="lista-resultados" style="list-style:none; padding:0;"></ul>
-  </div>
-</section>
-
-<!-- PANEL ADMIN -->
-<section id="admin-panel" style="display:none; background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(255,255,0,0.1);">
-  <h2 style="text-align:center; color:yellow;">Panel de Administración</h2>
-  <input id="nueva-fecha" type="text" placeholder="Ej: Miércoles 10 abril - 17:30" style="width:100%; padding:10px; margin:10px 0; background:#222; color:#fff; border:1px solid #333;">
-  <button id="agregar-fecha" style="padding:10px 20px; background:yellow; color:#000; border:none; border-radius:8px; cursor:pointer;">Agregar Fecha</button>
-  <ul id="fechas-activas" style="margin-top:20px; list-style:none; padding:0;"></ul>
-</section>
-
-<!-- LOGIN ADMIN -->
-<section id="login-admin" style="background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 500px; text-align:center;">
-  <h3 style="color:#0cf;">Acceso a Panel de Administración</h3>
-  <input type="password" id="admin-pass" placeholder="Contraseña" style="padding:10px; width:80%; max-width:300px; background:#222; color:#fff; border:1px solid #333; border-radius:5px;">
-  <button id="login-btn" style="margin-top:10px; background-color:#0cf; color:#000; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Entrar</button>
-</section>
-
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAd70p3aEA218oPLWEs_DbMFEotHXfVyNg",
-    authDomain: "el-sotano-del-doctor.firebaseapp.com",
-    projectId: "el-sotano-del-doctor",
-    storageBucket: "el-sotano-del-doctor.appspot.com",
-    messagingSenderId: "288654488846",
-    appId: "1:288654488846:web:51a726467eaf8e8a88535f",
-    measurementId: "G-5N86SGCGW1"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-
-  async function cargarFechasDisponibles() {
-    const container = document.getElementById('opciones-fechas');
-    container.innerHTML = '';
-    const snapshot = await db.collection('fechasDisponibles').get();
-    snapshot.forEach(doc => {
-      const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox" name="fecha" value="${doc.id}"> ${doc.id}<br>`;
-      container.appendChild(label);
-    });
-  }
-
-  async function enviarVotos(fechas) {
-    const votosRef = db.collection('votacionesEnsayos');
-    for (const fecha of fechas) {
-      const doc = await votosRef.doc(fecha).get();
-      if (doc.exists) {
-        await votosRef.doc(fecha).update({ votos: firebase.firestore.FieldValue.increment(1) });
-      } else {
-        await votosRef.doc(fecha).set({ votos: 1 });
-      }
-    }
-    mostrarResultados();
-  }
-
-  async function mostrarResultados() {
-    const lista = document.getElementById('lista-resultados');
-    lista.innerHTML = '';
-    const snapshot = await db.collection('votacionesEnsayos').get();
-    snapshot.forEach(doc => {
-      const li = document.createElement('li');
-      li.textContent = `${doc.id}: ${doc.data().votos} voto(s)`;
-      lista.appendChild(li);
-    });
-    document.getElementById('resultados-encuesta').style.display = 'block';
-  }
-
-  document.getElementById('form-encuesta').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const fechasSeleccionadas = Array.from(document.querySelectorAll('input[name="fecha"]:checked')).map(input => input.value);
-    if (fechasSeleccionadas.length === 0) {
-      alert('Por favor, selecciona al menos una fecha.');
-      return;
-    }
-    await enviarVotos(fechasSeleccionadas);
-  });
-
-  // ADMIN: login sencillo con clave fija
-  const CLAVE_ADMIN = "ensayo2025";
-  document.getElementById('login-btn').addEventListener('click', () => {
-    const clave = document.getElementById('admin-pass').value.trim();
-    if (clave === CLAVE_ADMIN) {
-      document.getElementById('admin-panel').style.display = 'block';
-      document.getElementById('login-admin').style.display = 'none';
-      cargarFechasAdmin();
-    } else {
-      alert('Clave incorrecta.');
-    }
-  });
-
-  // ADMIN: agregar fechas
-  document.getElementById('agregar-fecha').addEventListener('click', async () => {
-    const nueva = document.getElementById('nueva-fecha').value.trim();
-    if (!nueva) return;
-    await db.collection('fechasDisponibles').doc(nueva).set({ activa: true });
-    document.getElementById('nueva-fecha').value = '';
-    cargarFechasDisponibles();
-    cargarFechasAdmin();
-  });
-
-  // ADMIN: mostrar fechas activas con opción de eliminar
-  async function cargarFechasAdmin() {
-    const ul = document.getElementById('fechas-activas');
-    ul.innerHTML = '';
-    const snapshot = await db.collection('fechasDisponibles').get();
-    snapshot.forEach(doc => {
-      const li = document.createElement('li');
-      li.textContent = doc.id;
-      const btn = document.createElement('button');
-      btn.textContent = 'Eliminar';
-      btn.style.marginLeft = '10px';
-      btn.style.background = 'red';
-      btn.style.color = '#fff';
-      btn.style.border = 'none';
-      btn.style.borderRadius = '4px';
-      btn.style.cursor = 'pointer';
-      btn.onclick = async () => {
-        await db.collection('fechasDisponibles').doc(doc.id).delete();
-        cargarFechasDisponibles();
-        cargarFechasAdmin();
-      };
-      li.appendChild(btn);
-      ul.appendChild(li);
-    });
-  }
-
-  // Inicial
-  cargarFechasDisponibles();
-  mostrarResultados();
-</script>
-
-
+  <!-- SECCIÓN: FECHAS ENSAYO (VOTACIÓN y ADMIN) -->
+  <section id="fechas-ensayo" style="display:none; background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(0,255,255,0.1);">
+    <h2 style="text-align:center; color:#0cf;">Encuesta de Disponibilidad para el Próximo Ensayo</h2>
+    <p style="text-align:center; color:#aaa;">Marca las fechas en las que estás disponible:</p>
+    <label for="email-voto" style="display:block; text-align:center;">Tu Email:</label>
+    <input type="email" id="email-voto" placeholder="Ingresa tu email" style="display:block; margin: 0 auto 20px auto; padding:10px; width:80%; max-width:400px;" required>
+    <form id="form-disponibilidad" style="text-align:center;">
+      <div id="opciones-fechas" style="margin-bottom: 20px;"></div>
+      <button type="submit" style="background-color:#0cf; color:#000; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Enviar Disponibilidad</button>
+    </form>
+    <div id="resultados-disponibilidad" style="margin-top:30px; display:none;">
+      <h3 style="text-align:center; color:#0cf;">Resultados hasta ahora</h3>
+      <ul id="lista-resultados-disponibilidad" style="list-style:none; padding:0;"></ul>
+    </div>
+    <!-- ADMIN: Login y Panel -->
+    <div id="login-admin" style="background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 500px; text-align:center;">
+      <h3 style="color:#0cf;">Acceso a Panel de Administración de Fechas Ensayo</h3>
+      <input type="password" id="admin-pass" placeholder="Contraseña" style="padding:10px; width:80%; max-width:300px; background:#222; color:#fff; border:1px solid #333; border-radius:5px;">
+      <button id="login-btn" style="margin-top:10px; background-color:#0cf; color:#000; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Entrar</button>
+    </div>
+    <div id="admin-panel" style="display:none; background-color:#111; color:#fff; padding:20px; border-radius:10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(255,255,0,0.1);">
+      <h2 style="text-align:center; color:yellow;">Panel de Administración de Fechas Ensayo</h2>
+      <input id="nueva-fecha" type="text" placeholder="Ej: Miércoles 10 abril - 17:30" style="width:100%; padding:10px; margin:10px 0; background:#222; color:#fff; border:1px solid #333;">
+      <button id="agregar-fecha" style="padding:10px 20px; background:yellow; color:#000; border:none; border-radius:8px; cursor:pointer;">Agregar Fecha</button>
+      <ul id="fechas-activas" style="margin-top:20px; list-style:none; padding:0;"></ul>
+    </div>
+  </section>
 
   <!-- FOOTER -->
   <footer>
@@ -606,9 +449,20 @@
   </footer>
 
   <script>
-    /*-----------------------------------------------------------
-      1. FORMATEO HORAS Y LIMPIEZA: PASAMOS A hh:mm:ss SI supera 3600s
-    -----------------------------------------------------------*/
+    // Firebase Configuración
+    const firebaseConfig = {
+      apiKey: "AIzaSyAd70p3aEA218oPLWEs_DbMFEotHXfVyNg",
+      authDomain: "el-sotano-del-doctor.firebaseapp.com",
+      projectId: "el-sotano-del-doctor",
+      storageBucket: "el-sotano-del-doctor.appspot.com",
+      messagingSenderId: "288654488846",
+      appId: "1:288654488846:web:51a726467eaf8e8a88535f",
+      measurementId: "G-5N86SGCGW1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // FUNCIONES COMUNES PARA SETLISTS
     function parseDurationToSeconds(str) {
       if (!str) return 0;
       if (str.includes(':')) {
@@ -618,8 +472,6 @@
       const secs = parseInt(str, 10);
       return isNaN(secs) ? 0 : secs;
     }
-
-    // Si total >= 3600 => HH:MM:SS, si no => mm:ss
     function formatSecondsHMSorMMSS(totalSeconds) {
       if (totalSeconds < 3600) {
         const m = Math.floor(totalSeconds / 60);
@@ -633,35 +485,25 @@
         return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       }
     }
-
-    // Elimina emojis y convierte entidades raras
     function cleanString(str) {
       if (!str) return '';
-      // elimina emojis no compatibles
       let cleaned = str.replace(/[^\x00-\xFF]/g, '');
-      // Podrías añadir más remociones de entidades
       return cleaned.trim();
     }
 
-    /*-----------------------------------------------------------
-      2. PRIMER SETLIST
-    -----------------------------------------------------------*/
+    // SETLISTS: Primer Setlist
     const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
-
     async function cargarPrimerSetlist() {
       try {
         const res = await fetch(urlPrimerSetlist);
         const data = await res.json();
         const tbody = document.getElementById('setlist-body');
         tbody.innerHTML = '';
-
         const songs = data.filter(item => item.type === 'song');
         let totalSecs = 0;
-
         songs.forEach((song, i) => {
           const secs = parseDurationToSeconds(song.duration || '');
           totalSecs += secs;
-
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${i + 1}</td>
@@ -672,10 +514,8 @@
           `;
           tbody.appendChild(row);
         });
-
         document.getElementById('total-time').textContent =
           'Tiempo total del set: ' + formatSecondsHMSorMMSS(totalSecs);
-
         return songs;
       } catch (err) {
         console.error('Error al cargar el primer setlist:', err);
@@ -684,17 +524,11 @@
         return [];
       }
     }
-
     async function descargarPDFprimerSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
-
-      // Forzamos fuente helvetica (jsPDF base) para reducir caracteres raros
       doc.setFont('helvetica', 'normal');
-
       const songs = await cargarPrimerSetlist();
-
-      // Logo
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imgRes = await fetch(imgUrl);
@@ -710,23 +544,16 @@
       } catch (err) {
         console.warn('No se pudo cargar el logo (primer setlist):', err);
       }
-
       doc.setFontSize(16);
       doc.setTextColor(40);
       doc.text('Setlist - El Sótano del Doctor (Primer)', 120, 50);
-
       let totalSecs = 0;
-      songs.forEach(s => {
-        const secs = parseDurationToSeconds(s.duration || '0');
-        totalSecs += secs;
-      });
+      songs.forEach(s => { totalSecs += parseDurationToSeconds(s.duration || '0'); });
       const totalTime = formatSecondsHMSorMMSS(totalSecs);
       const totalSongs = songs.length;
-
       doc.setFontSize(12);
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
-
       const columns = [
         { header: '#', dataKey: 'num' },
         { header: 'Título', dataKey: 'title' },
@@ -744,7 +571,6 @@
           duration: formatSecondsHMSorMMSS(secs)
         };
       });
-
       doc.autoTable({
         startY: 100,
         head: [columns.map(c => c.header)],
@@ -770,21 +596,15 @@
           4: { cellWidth: 60 }
         }
       });
-
       doc.save('setlist_ElSotanoDelDoctor.pdf');
     }
 
-    /*------------------------------------------
-      4. SEGUNDO SETLIST
-         (Horas, limpieza, título persistente)
-    ------------------------------------------*/
+    // SEGUNDO SETLIST
     let urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
-    let secondSetlistConcertTitle = ''; // Título del concierto
-
+    let secondSetlistConcertTitle = '';
     function loadConfigFromLocalStorage() {
       const savedURL = localStorage.getItem('urlSegundoSetlist');
       if (savedURL) urlSegundoSetlist = savedURL;
-
       const savedTitle = localStorage.getItem('secondSetlistConcertTitle');
       if (savedTitle) secondSetlistConcertTitle = savedTitle;
     }
@@ -795,29 +615,22 @@
     function displayConcertTitle() {
       document.getElementById('concert-title').textContent = secondSetlistConcertTitle;
     }
-
     function getSecondSetlistURL() {
       return urlSegundoSetlist;
     }
-
     async function cargarSegundoSetlist() {
       try {
-        // Mostramos el título guardado
         displayConcertTitle();
-
         const url = getSecondSetlistURL();
         const res = await fetch(url);
         const data = await res.json();
-
         const songs = data.filter(item => item.type === 'song');
         const tbody = document.getElementById('second-body');
         tbody.innerHTML = '';
-
         let totalSecs = 0;
         songs.forEach((song, index) => {
           const secs = parseDurationToSeconds(song.duration || '0');
           totalSecs += secs;
-
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${index + 1}</td>
@@ -828,11 +641,9 @@
           `;
           tbody.appendChild(row);
         });
-
         document.getElementById('url-actual').textContent = url;
         document.getElementById('total-time-2').textContent =
           'Tiempo total del set: ' + formatSecondsHMSorMMSS(totalSecs);
-
         return songs;
       } catch (err) {
         console.error('Error al cargar el segundo setlist:', err);
@@ -841,14 +652,11 @@
         return [];
       }
     }
-
     async function descargarPDFsegundoSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
-      doc.setFont('helvetica', 'normal'); // Fuente base
-
+      doc.setFont('helvetica', 'normal');
       const songs = await cargarSegundoSetlist();
-
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imgRes = await fetch(imgUrl);
@@ -864,25 +672,19 @@
       } catch (err) {
         console.warn('No se pudo cargar el logo (segundo setlist):', err);
       }
-
       doc.setFontSize(16);
       doc.setTextColor(40);
-
-      // Muestra Título del concierto en PDF (o un fallback)
       const pdfTitle = secondSetlistConcertTitle || 'El Sótano del Doctor (Segundo)';
       doc.text(`Setlist - ${pdfTitle}`, 120, 50);
-
       let totalSecs = 0;
       songs.forEach(song => {
         totalSecs += parseDurationToSeconds(song.duration || '0');
       });
       const totalTime = formatSecondsHMSorMMSS(totalSecs);
       const totalSongs = songs.length;
-
       doc.setFontSize(12);
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
-
       const columns2 = [
         { header: '#', dataKey: 'num' },
         { header: 'Canción', dataKey: 'name' },
@@ -900,7 +702,6 @@
           duration: formatSecondsHMSorMMSS(secs)
         };
       });
-
       doc.autoTable({
         startY: 100,
         head: [columns2.map(c => c.header)],
@@ -926,17 +727,16 @@
           4: { cellWidth: 60 }
         }
       });
-
       doc.save('SegundoSetlist.pdf');
     }
 
-    /*------------------------------------------
-      5. MENÚ Y CONFIGURACIÓN
-    ------------------------------------------*/
+    // MENÚ HAMBURGUESA y NAVIGACIÓN
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const sidebarMenu  = document.getElementById('sidebar-menu');
     const menuConfig   = document.getElementById('menu-config');
     const menuCerrar   = document.getElementById('menu-cerrar');
+    const menuMiembros = document.getElementById('menu-miembros');
+    const menuFechas   = document.getElementById('menu-fechas');
     const overlay      = document.getElementById('overlay');
 
     hamburgerBtn.addEventListener('click', () => {
@@ -952,70 +752,191 @@
       sidebarMenu.classList.remove('show');
       overlay.classList.remove('show');
     });
-
-    // BOTÓN "Configuración"
     menuConfig.addEventListener('click', (e) => {
       e.preventDefault();
       sidebarMenu.classList.remove('show');
       overlay.classList.remove('show');
-      // Muestra config
       document.getElementById('config-screen').style.display = 'block';
-      // Rellenamos el input con la parte final (ID)
       const feedSuffix = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
       document.getElementById('feed-url').value = feedSuffix;
-
-      // Rellenamos el input del título del concierto
       document.getElementById('concert-title-input').value = secondSetlistConcertTitle;
     });
-
-    // BOTÓN "Cerrar" en la pantalla config
-    document.getElementById('close-config').addEventListener('click', () => {
+    // Mostrar sección Miembros
+    menuMiembros.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelector('main').style.display = 'none';
+      document.getElementById('fechas-ensayo').style.display = 'none';
       document.getElementById('config-screen').style.display = 'none';
+      document.getElementById('miembros').style.display = 'block';
+      sidebarMenu.classList.remove('show');
+      overlay.classList.remove('show');
+      cargarMiembros();
     });
-
-    // BOTÓN "Guardar configuración"
-    document.getElementById('guardar-config').addEventListener('click', () => {
-      const newFeedVal = document.getElementById('feed-url').value.trim();
-      const newTitleVal = document.getElementById('concert-title-input').value.trim();
-
-      if (!newFeedVal) {
-        alert('Introduce un ID o URL del feed');
-        return;
-      }
-      let newUrl;
-      if (!newFeedVal.startsWith('http')) {
-        newUrl = `https://www.bandhelper.com/feed/set_list/${newFeedVal}`;
-      } else {
-        newUrl = newFeedVal;
-      }
-      urlSegundoSetlist = newUrl;
-      secondSetlistConcertTitle = newTitleVal || '';
-
-      // Guardamos en localStorage
-      saveConfigToLocalStorage(urlSegundoSetlist, secondSetlistConcertTitle);
-
-      // Recargamos el 2º setlist
-      cargarSegundoSetlist();
-
-      // Cerramos pantalla
+    // Mostrar sección Fechas Ensayo
+    menuFechas.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelector('main').style.display = 'none';
+      document.getElementById('miembros').style.display = 'none';
       document.getElementById('config-screen').style.display = 'none';
+      document.getElementById('fechas-ensayo').style.display = 'block';
+      sidebarMenu.classList.remove('show');
+      overlay.classList.remove('show');
+      cargarFechasDisponibles();
+      cargarDisponibilidadResultados();
     });
-
-    /*---------------------------------------
-      6. CARGA INICIAL
-    ---------------------------------------*/
+    // Mostrar main al cargar la página
     window.addEventListener('DOMContentLoaded', () => {
-      // Leemos config localStorage
       loadConfigFromLocalStorage();
-
-      // Cargamos ambos setlists
       cargarPrimerSetlist();
       cargarSegundoSetlist();
+      document.querySelector('main').style.display = 'block';
+      document.getElementById('miembros').style.display = 'none';
+      document.getElementById('fechas-ensayo').style.display = 'none';
     });
 
-    // BOTONES PDF
-    document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
-    document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
+    // MIEMBROS DEL GRUPO
+    document.getElementById('form-miembros').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('nombre-miembro').value.trim();
+      const rol = document.getElementById('rol-miembro').value.trim();
+      const telefono = document.getElementById('telefono-miembro').value.trim();
+      const email = document.getElementById('email-miembro').value.trim();
+      const foto = document.getElementById('foto-miembro').value.trim();
+      if(!nombre || !rol) {
+        alert('Por favor, rellena al menos el nombre y el rol');
+        return;
+      }
+      try {
+        await db.collection('miembros').add({ nombre, rol, telefono, email, foto });
+        alert('Miembro añadido correctamente');
+        cargarMiembros();
+        e.target.reset();
+      } catch (error) {
+        console.error("Error al añadir miembro: ", error);
+        alert('Error añadiendo el miembro');
+      }
+    });
+    async function cargarMiembros() {
+      const container = document.getElementById('lista-miembros');
+      container.innerHTML = '';
+      const snapshot = await db.collection('miembros').get();
+      snapshot.forEach(doc => {
+        const member = doc.data();
+        const div = document.createElement('div');
+        div.style.border = "1px solid #222";
+        div.style.padding = "10px";
+        div.style.marginBottom = "10px";
+        div.innerHTML = `
+          <img src="${member.foto || 'assets/ruta_default.jpg'}" alt="${member.nombre}" style="width:50px; height:50px; border-radius:50%; margin-right:10px;">
+          <strong>${member.nombre}</strong> - ${member.rol}<br>
+          Tel: ${member.telefono || 'N/A'}<br>
+          Email: ${member.email || 'N/A'}
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // FECHAS ENSAYO (VOTACIÓN y ADMIN)
+    async function cargarFechasDisponibles() {
+      const container = document.getElementById('opciones-fechas');
+      container.innerHTML = '';
+      const snapshot = await db.collection('fechasEnsayo').get();
+      snapshot.forEach(doc => {
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="checkbox" name="fecha" value="${doc.id}"> ${doc.id}<br>`;
+        container.appendChild(label);
+      });
+    }
+    async function enviarDisponibilidad(email, fechas) {
+      for (const fecha of fechas) {
+        const docRef = db.collection('fechasEnsayo').doc(fecha);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          if(data.votos && data.votos.includes(email)) {
+            alert("Ya has indicado tu disponibilidad para la fecha " + fecha);
+          } else {
+            await docRef.update({ votos: firebase.firestore.FieldValue.arrayUnion(email) });
+          }
+        } else {
+          await db.collection('fechasEnsayo').doc(fecha).set({ votos: [email] });
+        }
+      }
+      alert("Disponibilidad registrada.");
+      cargarDisponibilidadResultados();
+    }
+    document.getElementById('form-disponibilidad').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email-voto').value.trim();
+      if(!email) {
+        alert("Por favor, ingresa tu email.");
+        return;
+      }
+      const fechasSeleccionadas = Array.from(document.querySelectorAll('input[name="fecha"]:checked')).map(input => input.value);
+      if (fechasSeleccionadas.length === 0) {
+        alert('Por favor, selecciona al menos una fecha.');
+        return;
+      }
+      await enviarDisponibilidad(email, fechasSeleccionadas);
+      e.target.reset();
+    });
+    async function cargarDisponibilidadResultados() {
+      const lista = document.getElementById('lista-resultados-disponibilidad');
+      lista.innerHTML = '';
+      const snapshot = await db.collection('fechasEnsayo').get();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement('li');
+        li.textContent = `${doc.id}: ${data.votos ? data.votos.length : 0} voto(s)`;
+        lista.appendChild(li);
+      });
+      document.getElementById('resultados-disponibilidad').style.display = 'block';
+    }
+
+    // PANEL ADMINISTRATIVO DE FECHAS ENSAYO
+    const CLAVE_ADMIN = "ensayo2025";
+    document.getElementById('login-btn').addEventListener('click', () => {
+      const clave = document.getElementById('admin-pass').value.trim();
+      if (clave === CLAVE_ADMIN) {
+        document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('login-admin').style.display = 'none';
+        cargarFechasAdmin();
+      } else {
+        alert('Clave incorrecta.');
+      }
+    });
+    document.getElementById('agregar-fecha').addEventListener('click', async () => {
+      const nueva = document.getElementById('nueva-fecha').value.trim();
+      if (!nueva) return;
+      await db.collection('fechasEnsayo').doc(nueva).set({ votos: [] });
+      document.getElementById('nueva-fecha').value = '';
+      cargarFechasDisponibles();
+      cargarFechasAdmin();
+    });
+    async function cargarFechasAdmin() {
+      const ul = document.getElementById('fechas-activas');
+      ul.innerHTML = '';
+      const snapshot = await db.collection('fechasEnsayo').get();
+      snapshot.forEach(doc => {
+        const li = document.createElement('li');
+        li.textContent = doc.id;
+        const btn = document.createElement('button');
+        btn.textContent = 'Eliminar';
+        btn.style.marginLeft = '10px';
+        btn.style.background = 'red';
+        btn.style.color = '#fff';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '4px';
+        btn.style.cursor = 'pointer';
+        btn.onclick = async () => {
+          await db.collection('fechasEnsayo').doc(doc.id).delete();
+          cargarFechasDisponibles();
+          cargarFechasAdmin();
+        };
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+    }
   </script>
 </body>
 </html>
