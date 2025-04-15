@@ -1,1 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Miembros del Grupo – El Sótano del Doctor</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Librerías para PDF si hiciera falta -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Hoja de estilos -->
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <!-- CABECERA -->
+  <header>
+    <div class="logo">
+      <img src="assets/logo_blanco.png" alt="Logo de El Sótano del Doctor" />
+    </div>
+    <div class="hamburger" id="hamburger-btn">
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+  </header>
+
+  <!-- OVERLAY -->
+  <div id="overlay"></div>
+
+  <!-- MENÚ LATERAL -->
+  <nav class="sidebar" id="sidebar-menu">
+    <h2>Menú</h2>
+    <a href="./miembros.html">Miembros del Grupo</a>
+    <a href="./fechas.html">Fechas Ensayo</a>
+    <a href="./config.html">Configuración</a>
+    <a href="./index.html">Volver a Inicio</a>
+    <a href="#" id="menu-cerrar">Cerrar Menú</a>
+  </nav>
+
+  <!-- CONTENIDO PRINCIPAL (solo miembros) -->
+  <main>
+    <section id="miembros">
+      <h2>Miembros del Grupo</h2>
+      <div id="lista-miembros">
+        <!-- Se mostrarán los miembros registrados con botones Editar/Eliminar -->
+      </div>
+      <form id="form-miembros" style="margin-top:20px;">
+        <input type="text" id="nombre-miembro" placeholder="Nombre del miembro" required>
+        <input type="text" id="rol-miembro" placeholder="Rol (ej. Guitarra líder, Vocalista, etc.)" required>
+        <input type="tel" id="telefono-miembro" placeholder="Teléfono">
+        <input type="email" id="email-miembro" placeholder="Correo electrónico">
+        <label for="foto-miembro">Sube la foto del miembro:</label>
+        <input type="file" id="foto-miembro" accept="image/*">
+        <button type="submit">Añadir Miembro</button>
+      </form>
+    </section>
+  </main>
+
+  <!-- MODAL PARA EDITAR MIEMBRO -->
+  <div id="edit-member-modal" style="display:none; position: fixed; top: 0; left: 0; width:100%; height: 100%; background: rgba(0,0,0,0.8); z-index:10000;">
+    <div style="background:#111; padding:20px; margin: 50px auto; max-width: 400px; border-radius:10px;">
+      <h2 style="text-align:center; color:#0cf;">Editar Miembro</h2>
+      <form id="form-edit-miembro">
+        <input type="hidden" id="edit-member-id">
+        <input type="text" id="edit-nombre-miembro" placeholder="Nombre del miembro" required>
+        <input type="text" id="edit-rol-miembro" placeholder="Rol (ej. Guitarra líder, Vocalista, etc.)" required>
+        <input type="tel" id="edit-telefono-miembro" placeholder="Teléfono">
+        <input type="email" id="edit-email-miembro" placeholder="Correo electrónico">
+        <label for="edit-foto-miembro">Cambiar foto (opcional):</label>
+        <input type="file" id="edit-foto-miembro" accept="image/*">
+        <div style="margin-top:10px; text-align:center;">
+          <button type="submit">Guardar Cambios</button>
+          <button type="button" id="cancel-edit-member">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 El Sótano del Doctor. All Rights Reserved.
+  </footer>
+
+  <!-- Firebase + scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="./js/firebase.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
 
