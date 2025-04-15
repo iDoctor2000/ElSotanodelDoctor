@@ -446,7 +446,7 @@
         div.style.marginBottom = "10px";
         // Se incluye el id del documento para identificar el miembro
         div.setAttribute('data-id', doc.id);
-        div.innerHTML = 
+        div.innerHTML = `
           <img src="${member.foto || 'assets/default.jpg'}" alt="${member.nombre}" style="width:50px; height:50px; border-radius:50%; margin-right:10px;">
           <strong>${member.nombre}</strong> - ${member.rol}<br>
           Tel: ${member.telefono || 'N/A'}<br>
@@ -455,7 +455,7 @@
             <button class="btn-edit" data-id="${doc.id}">Editar</button>
             <button class="btn-delete" data-id="${doc.id}">Eliminar</button>
           </div>
-        ;
+        `;
         container.appendChild(div);
       });
       
@@ -551,9 +551,9 @@
         const div = document.createElement('div');
         div.setAttribute('data-fecha', fecha);
         div.style.marginBottom = "10px";
-        div.innerHTML = <strong>${fecha}</strong>: 
+        div.innerHTML = `<strong>${fecha}</strong>: 
           <label><input type="radio" name="vote_${fecha}" value="si" required> Sí</label>
-          <label style="margin-left: 10px;"><input type="radio" name="vote_${fecha}" value="no" required> No</label>;
+          <label style="margin-left: 10px;"><input type="radio" name="vote_${fecha}" value="no" required> No</label>`;
         container.appendChild(div);
       });
     }
@@ -570,7 +570,7 @@
       const votes = {};
       voteDivs.forEach(div => {
         const fecha = div.getAttribute('data-fecha');
-        const selected = div.querySelector(input[name="vote_${fecha}"]:checked);
+        const selected = div.querySelector(`input[name="vote_${fecha}"]:checked`);
         if (selected) {
           votes[fecha] = selected.value;
         }
@@ -612,9 +612,9 @@
       snapshot.forEach(doc => {
         const data = doc.data();
         const li = document.createElement('li');
-        let text = ${doc.id}: ;
+        let text = `${doc.id}: `;
         if (data.votos && data.votos.length > 0) {
-          data.votos.forEach(vote => { text +=  [${vote.miembro}: ${vote.voto}] ; });
+          data.votos.forEach(vote => { text += ` [${vote.miembro}: ${vote.voto}] `; });
         } else {
           text += "Sin votos";
         }
@@ -692,13 +692,13 @@
       if (totalSeconds < 3600) {
         const m = Math.floor(totalSeconds / 60);
         const s = totalSeconds % 60;
-        return ${m}:${String(s).padStart(2, '0')};
+        return `${m}:${String(s).padStart(2, '0')}`;
       } else {
         const h = Math.floor(totalSeconds / 3600);
         const rest = totalSeconds % 3600;
         const m = Math.floor(rest / 60);
         const s = rest % 60;
-        return ${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')};
+        return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       }
     }
     function cleanString(str) {
@@ -720,13 +720,13 @@
           const secs = parseDurationToSeconds(song.duration || '');
           totalSecs += secs;
           const row = document.createElement('tr');
-          row.innerHTML = 
+          row.innerHTML = `
             <td>${i + 1}</td>
             <td>${cleanString(song.name || '')}</td>
             <td>${cleanString(song.key || '')}</td>
             <td>${cleanString(song.tempo || '')}</td>
             <td>${formatSecondsHMSorMMSS(secs)}</td>
-          ;
+          `;
           tbody.appendChild(row);
         });
         document.getElementById('total-time').textContent =
@@ -768,7 +768,7 @@
       const totalSongs = songs.length;
       doc.setFontSize(12);
       doc.setTextColor(80);
-      doc.text(${totalSongs} canciones, ${totalTime} total, 120, 70);
+      doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
       const columns = [
         { header: '#', dataKey: 'num' },
         { header: 'Título', dataKey: 'title' },
@@ -828,13 +828,13 @@
           const secs = parseDurationToSeconds(song.duration || '0');
           totalSecs += secs;
           const row = document.createElement('tr');
-          row.innerHTML = 
+          row.innerHTML = `
             <td>${index + 1}</td>
             <td>${cleanString(song.name || '')}</td>
             <td>${cleanString(song.key || '')}</td>
             <td>${cleanString(song.tempo || '')}</td>
             <td>${formatSecondsHMSorMMSS(secs)}</td>
-          ;
+          `;
           tbody.appendChild(row);
         });
         document.getElementById('url-actual').textContent = url;
@@ -869,14 +869,14 @@
       doc.setFontSize(16);
       doc.setTextColor(40);
       const pdfTitle = secondSetlistConcertTitle || 'El Sótano del Doctor (Segundo)';
-      doc.text(Setlist - ${pdfTitle}, 120, 50);
+      doc.text(`Setlist - ${pdfTitle}`, 120, 50);
       let totalSecs = 0;
       songs.forEach(song => { totalSecs += parseDurationToSeconds(song.duration || '0'); });
       const totalTime = formatSecondsHMSorMMSS(totalSecs);
       const totalSongs = songs.length;
       doc.setFontSize(12);
       doc.setTextColor(80);
-      doc.text(${totalSongs} canciones, ${totalTime} total, 120, 70);
+      doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
       const columns2 = [
         { header: '#', dataKey: 'num' },
         { header: 'Canción', dataKey: 'name' },
