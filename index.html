@@ -22,8 +22,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
-  <!-- Enlazar hoja de estilos -->
-  <link rel="stylesheet" href="./css/style.css" />
+  <!-- Enlazar hoja de estilos externa -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <!-- CABECERA -->
@@ -38,18 +38,30 @@
     </div>
   </header>
 
-  <!-- OVERLAY (fondo oscuro tras el menú) -->
+  <!-- OVERLAY -->
   <div id="overlay"></div>
 
   <!-- MENÚ LATERAL -->
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
-    <!-- Links a otras páginas -->
-    <a href="./miembros.html">Miembros del Grupo</a>
-    <a href="./fechas.html">Fechas Ensayo</a>
-    <a href="./config.html">Configuración</a>
+    <a href="#" id="menu-miembros">Miembros del Grupo</a>
+    <a href="#" id="menu-fechas">Fechas Ensayo</a>
+    <a href="#" id="menu-config">Configuración</a>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
+
+  <!-- PANTALLA DE CONFIGURACIÓN (para el 2º setlist) -->
+  <div id="config-screen">
+    <button id="close-config">Cerrar</button>
+    <h2>Configuración del Segundo Setlist</h2>
+    <p style="text-align: center; color: #aaa; margin-bottom: 20px;">No toques si no sabes...</p>
+    <br><br><br>
+    <label for="concert-title-input">Nombre del próximo concierto</label>
+    <input type="text" id="concert-title-input" placeholder="Ej: Concierto Sala X, Festival Y..." />
+    <label for="feed-url" style="margin-top: 20px;">ID/URL del feed</label>
+    <input type="text" id="feed-url" placeholder="Ej: TXHvyb o https://www.bandhelper.com/feed/set_list/..." />
+    <button id="guardar-config">Guardar configuración</button>
+  </div>
 
   <!-- CONTENIDO PRINCIPAL -->
   <main>
@@ -102,18 +114,93 @@
         <script type="text/javascript" src="https://www.bandhelper.com/widget/calendar/10353?range=6"></script>
       </div>
     </section>
+
+    <!-- 4) MIEMBROS DEL GRUPO (inicialmente oculto) -->
+    <section id="miembros">
+      <h2>Miembros del Grupo</h2>
+      <div id="lista-miembros">
+        <!-- Se mostrarán los miembros registrados con botones Editar/Eliminar -->
+      </div>
+      <form id="form-miembros" style="margin-top:20px;">
+        <input type="text" id="nombre-miembro" placeholder="Nombre del miembro" required>
+        <input type="text" id="rol-miembro" placeholder="Rol (ej. Guitarra líder, Vocalista, etc.)" required>
+        <input type="tel" id="telefono-miembro" placeholder="Teléfono">
+        <input type="email" id="email-miembro" placeholder="Correo electrónico">
+        <!-- Input para subir imagen -->
+        <label for="foto-miembro">Sube la foto del miembro:</label>
+        <input type="file" id="foto-miembro" accept="image/*">
+        <button type="submit">Añadir Miembro</button>
+      </form>
+    </section>
+
+    <!-- 5) FECHAS ENSAYO / DISPONIBILIDAD -->
+    <section id="fechas-ensayo">
+      <h2>Disponibilidad para Ensayo</h2>
+      <p style="text-align:center; color:#aaa;">Selecciona tu miembro y, para cada fecha, indica si puedes venir.</p>
+      <form id="form-fechas" style="margin-top:20px;">
+        <label for="miembro-votante">Selecciona tu miembro:</label>
+        <select id="miembro-votante" required>
+          <option value="">-- Selecciona --</option>
+        </select>
+        <div id="opciones-fechas" style="margin-bottom: 20px;">
+          <!-- Se generarán grupos de radio para cada fecha disponible -->
+        </div>
+        <button type="submit">Enviar Disponibilidad</button>
+      </form>
+      <div id="resultados-disponibilidad" style="margin-top:30px; display:none;">
+        <h3 style="text-align:center; color:#0cf;">Resultados hasta ahora</h3>
+        <ul id="lista-resultados"></ul>
+      </div>
+      <hr style="border:1px solid #222; margin:20px 0;">
+      <h2 style="text-align:center; color:yellow;">Panel de Administración de Fechas</h2>
+      <section id="login-admin-fechas">
+        <h3 style="color:#0cf;">Acceso a Panel de Administración</h3>
+        <input type="password" id="admin-pass-fechas" placeholder="Contraseña">
+        <button id="login-btn-fechas">Entrar</button>
+      </section>
+      <section id="panel-fechas" style="display:none;">
+        <h2 style="text-align:center; color:yellow;">Panel de Administración de Fechas</h2>
+        <input id="nueva-fecha" type="text" placeholder="Ej: Miércoles 10 abril - 17:30">
+        <button id="agregar-fecha">Agregar Fecha</button>
+        <ul id="fechas-activas"></ul>
+      </section>
+    </section>
   </main>
+
+  <!-- MODAL PARA EDITAR MIEMBRO -->
+  <div id="edit-member-modal" style="display:none; position: fixed; top: 0; left: 0; width:100%; height: 100%; background: rgba(0,0,0,0.8); z-index:10000;">
+    <div style="background:#111; padding:20px; margin: 50px auto; max-width: 400px; border-radius:10px;">
+      <h2 style="text-align:center; color:#0cf;">Editar Miembro</h2>
+      <form id="form-edit-miembro">
+        <input type="hidden" id="edit-member-id">
+        <input type="text" id="edit-nombre-miembro" placeholder="Nombre del miembro" required>
+        <input type="text" id="edit-rol-miembro" placeholder="Rol (ej. Guitarra líder, Vocalista, etc.)" required>
+        <input type="tel" id="edit-telefono-miembro" placeholder="Teléfono">
+        <input type="email" id="edit-email-miembro" placeholder="Correo electrónico">
+        <label for="edit-foto-miembro">Cambiar foto (opcional):</label>
+        <input type="file" id="edit-foto-miembro" accept="image/*">
+        <div style="margin-top:10px; text-align:center;">
+          <button type="submit">Guardar Cambios</button>
+          <button type="button" id="cancel-edit-member">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- FOOTER -->
   <footer>
     © 2025 El Sótano del Doctor. All Rights Reserved.
   </footer>
 
-  <!-- Firebase + scripts -->
+  <!-- Cargar Firebase (App, Firestore, Storage) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-  <script src="./js/firebase.js"></script>
-  <script src="./js/app.js"></script>
+
+  <!-- Configuración de Firebase separada (opcional) -->
+  <script src="firebase.js"></script>
+
+  <!-- Archivo principal con toda la lógica de la app -->
+  <script src="app.js"></script>
 </body>
 </html>
