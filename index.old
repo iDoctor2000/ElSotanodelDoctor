@@ -1,0 +1,777 @@
+/*----Pagina con funciones basicas... configuracion de codigo de setlist y ensayo al principio.------
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>El Sótano del Doctor – Uso Interno</title>
+
+  <!-- METADATOS PARA PREVIA EN REDES -->
+  <meta property="og:title" content="El Sótano del Doctor – Uso Interno" />
+  <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!" />
+  <meta property="og:image" content="assets/logo_negro copia.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://tusitioweb.com" />
+
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="El Sótano del Doctor – Uso Interno"/>
+  <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!"/>
+  <meta name="twitter:image" content="assets/logo_negro copia.jpg"/>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Librerías jsPDF y autoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    /* Reseteo y box-sizing */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden; /* Previene scroll horizontal sobrante */
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #000;
+      color: #fff;
+    }
+
+    /* CABECERA */
+    header {
+      background-color: #111;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo img {
+      width: 180px;
+      height: auto;
+    }
+
+    /* BOTÓN HAMBURGER */
+    .hamburger {
+      cursor: pointer;
+      border: 1px solid #0cf;
+      border-radius: 4px;
+      padding: 5px;
+    }
+    .hamburger div {
+      width: 25px;
+      height: 3px;
+      background-color: #0cf;
+      margin: 4px 0;
+    }
+
+    /* MENÚ LATERAL (SIDEBAR) */
+    .sidebar {
+      position: fixed;
+      top: 0; 
+      left: 0;
+      width: 250px;
+      height: 100%;
+      background-color: #111;
+      border-right: 1px solid #222;
+      padding: 20px;
+      box-shadow: 2px 0 10px rgba(0, 255, 255, 0.1);
+
+      transform: translateX(-250px); /* oculto por defecto */
+      transition: transform 0.3s ease;
+      z-index: 9999;
+    }
+    .sidebar.show {
+      transform: translateX(0);
+    }
+    .sidebar h2 {
+      color: #0cf;
+      margin-top: 0;
+    }
+    .sidebar a {
+      display: block;
+      color: #fff;
+      text-decoration: none;
+      margin: 10px 0;
+      padding: 5px 0;
+      border-bottom: 1px solid #222;
+    }
+    .sidebar a:hover {
+      color: #0cf;
+    }
+
+    /* OVERLAY (FONDO OSCURO) */
+    #overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 9998;
+      display: none; /* oculto por defecto */
+    }
+    #overlay.show {
+      display: block;
+    }
+
+    /* PANTALLA DE CONFIGURACIÓN (oculta por defecto) */
+    #config-screen {
+      display: none; 
+      position: fixed; 
+      top: 0; left: 0;
+      width: 100%; 
+      height: 100%;
+      background-color: #000; 
+      z-index: 9999; 
+      overflow-y: auto; 
+      padding: 60px 20px 20px 20px; /* 60px arriba para no chocar con btn Cerrar */
+    }
+    #config-screen h2 {
+      text-align: center; 
+      margin-bottom: 20px;
+      color: #0cf;
+    }
+    #config-screen label {
+      display: block;
+      margin: 10px 0 5px 0;
+    }
+    #config-screen input {
+      width: 100%; 
+      max-width: 400px; 
+      padding: 10px;
+      background-color: #222;
+      color: #fff;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+    #config-screen button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #0cf;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #config-screen button:hover {
+      background-color: #09b;
+    }
+    /* Botón Cerrar Config */
+    #close-config {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 1.2em;
+      background: none;
+      border: 1px solid #0cf;
+      color: #0cf;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    #close-config:hover {
+      background-color: #333;
+    }
+
+    /* CONTENIDO PRINCIPAL */
+    main section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* PRIMER SETLIST */
+    #setlists {
+      background-color: #111;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+      margin-bottom: 40px;
+    }
+    #setlists h2 {
+      text-align: center;
+      color: #0cf;
+      margin-bottom: 15px;
+    }
+    #setlists table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      color: #fff;
+      font-size: 0.95em;
+    }
+    #setlists thead {
+      background-color: #222;
+      color: #0cf;
+    }
+    #setlists th, #setlists td {
+      padding: 12px;
+      border: 1px solid #333;
+      text-align: left;
+    }
+    #setlists tr:nth-child(even) {
+      background-color: #1a1a1a;
+    }
+    #download-btn {
+      display: block;
+      margin: 20px auto 0 auto;
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #0cf;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #download-btn:hover {
+      background-color: #09b;
+    }
+    #total-time {
+      color: #0cf;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    /* SEGUNDO SETLIST */
+    #second-setlist {
+      background-color: #111;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+      margin-bottom: 40px;
+    }
+    #second-setlist h2 {
+      text-align: center;
+      color: #0cf;
+      margin-bottom: 15px;
+    }
+    #second-list-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      color: #fff;
+      font-size: 0.95em;
+    }
+    #second-list-table thead {
+      background-color: #222;
+      color: #0cf;
+    }
+    #second-list-table th, #second-list-table td {
+      padding: 12px;
+      border: 1px solid #333;
+      text-align: left;
+    }
+    #second-list-table tr:nth-child(even) {
+      background-color: #1a1a1a;
+    }
+    #download-btn-2 {
+      display: block;
+      margin: 20px auto 0 auto;
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #0cf;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #download-btn-2:hover {
+      background-color: #09b;
+    }
+    #total-time-2 {
+      color: #0cf;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    /* CALENDARIO */
+    #calendario {
+      background-color: #111;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,255,255,0.1);
+      margin-bottom: 40px;
+    }
+    #calendario h2 {
+      text-align: center;
+      color: #0cf;
+      margin-bottom: 10px;
+    }
+    #calendario p {
+      text-align: center;
+      color: #aaa;
+      margin-bottom: 20px;
+    }
+
+    /* FOOTER */
+    footer {
+      background-color: #111;
+      color: #888;
+      text-align: center;
+      padding: 10px;
+      border-top: 1px solid #222;
+    }
+
+    /* MEDIA QUERIES */
+    @media (max-width: 768px) {
+      .hamburger div {
+        width: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- CABECERA -->
+  <header>
+    <div class="logo">
+      <img src="assets/logo_blanco.png" alt="Logo de El Sótano del Doctor" />
+    </div>
+    <div class="hamburger" id="hamburger-btn">
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+  </header>
+
+  <!-- OVERLAY -->
+  <div id="overlay"></div>
+
+  <!-- MENÚ LATERAL -->
+  <nav class="sidebar" id="sidebar-menu">
+    <h2>Menú</h2>
+    <a href="#" id="menu-config">Configuración</a>
+    <a href="#" id="menu-cerrar">Cerrar Menú</a>
+  </nav>
+
+  <!-- PANTALLA DE CONFIGURACIÓN -->
+  <div id="config-screen">
+    <button id="close-config">Cerrar</button>
+    <h2>Configuración del Segundo Setlist</h2>
+    <label for="feed-url">ID/URL del feed</label>
+    <input 
+      type="text" 
+      id="feed-url" 
+      placeholder="Ej: TXHvyb o https://www.bandhelper.com/feed/set_list/..." 
+    />
+    <button id="guardar-config">Guardar configuración</button>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main>
+    <!-- 1) PRIMER SETLIST -->
+    <section id="setlists">
+      <h2>Setlist Ensayos -Año 2025-</h2>
+      <p style="text-align:center; color:#aaa;">
+        Consulta y exporta el setlist de ensayos en tiempo real.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Título</th>
+            <th>Tonalidad</th>
+            <th>Tempo</th>
+            <th>Duración</th>
+          </tr>
+        </thead>
+        <tbody id="setlist-body"></tbody>
+      </table>
+      <button id="download-btn">Descargar PDF</button>
+      <p id="total-time"></p>
+    </section>
+
+    <!-- 2) SEGUNDO SETLIST -->
+    <section id="second-setlist">
+      <h2>Setlist Próximo Concierto</h2>
+      <p style="text-align:center; color:#aaa;">
+        Feed actual: <em id="url-actual"></em>
+      </p>
+      <table id="second-list-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Canción</th>
+            <th>Tonalidad</th>
+            <th>Tempo</th>
+            <th>Duración</th>
+          </tr>
+        </thead>
+        <tbody id="second-body"></tbody>
+      </table>
+      <button id="download-btn-2">Descargar PDF</button>
+      <p id="total-time-2"></p>
+    </section>
+
+    <!-- 3) CALENDARIO -->
+    <section id="calendario">
+      <h2>Próximos Conciertos</h2>
+      <p>Consulta el calendario actualizado.</p>
+      <div>
+        <script type="text/javascript" 
+          src="https://www.bandhelper.com/widget/calendar/10353?range=6">
+        </script>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    © 2025 El Sótano del Doctor. All Rights Reserved.
+  </footer>
+
+  <script>
+    /*------------------------------------------
+      1. FUNCIONES COMUNES (duración, etc)
+    ------------------------------------------*/
+    function parseDurationToSeconds(durationStr) {
+      if (!durationStr) return 0;
+      if (durationStr.includes(':')) {
+        const [min, sec] = durationStr.split(':').map(num => parseInt(num, 10));
+        return (min * 60) + (sec || 0);
+      } else {
+        const seconds = parseInt(durationStr, 10);
+        return isNaN(seconds) ? 0 : seconds;
+      }
+    }
+    function formatSecondsToMMSS(totalSeconds) {
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${minutes}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    /*------------------------------------------
+      2. PRIMER SETLIST
+    ------------------------------------------*/
+    const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
+
+    async function cargarPrimerSetlist() {
+      try {
+        const res = await fetch(urlPrimerSetlist);
+        const data = await res.json();
+        const tbody = document.getElementById('setlist-body');
+        tbody.innerHTML = '';
+
+        const songs = data.filter(item => item.type === 'song');
+        let totalSeconds = 0;
+
+        songs.forEach((song, i) => {
+          const secs = parseDurationToSeconds(song.duration || '');
+          const durFmt = formatSecondsToMMSS(secs);
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${song.name || ''}</td>
+            <td>${song.key || ''}</td>
+            <td>${song.tempo || ''}</td>
+            <td>${durFmt}</td>
+          `;
+          tbody.appendChild(row);
+          totalSeconds += secs;
+        });
+
+        document.getElementById('total-time').textContent =
+          'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
+
+        return songs;
+      } catch (err) {
+        console.error('Error al cargar el primer setlist:', err);
+        document.getElementById('setlist-body').innerHTML =
+          '<tr><td colspan="5">Error al cargar el primer setlist.</td></tr>';
+        return [];
+      }
+    }
+
+    async function descargarPDFprimerSetlist() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
+      const songs = await cargarPrimerSetlist();
+
+      // Logo
+      try {
+        const imgUrl = 'assets/logo_negro copia.jpg';
+        const imgRes = await fetch(imgUrl);
+        const imgBlob = await imgRes.blob();
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(imgBlob);
+        const base64Img = await base64Promise;
+        doc.addImage(base64Img, 'JPEG', 40, 30, 60, 60);
+      } catch (err) {
+        console.warn('No se pudo cargar el logo (primer setlist):', err);
+      }
+
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.text('Setlist - El Sótano del Doctor (Primer)', 120, 50);
+
+      let totalSecs = 0;
+      songs.forEach(s => {
+        totalSecs += parseDurationToSeconds(s.duration || '0');
+      });
+      const totalTime = formatSecondsToMMSS(totalSecs);
+      const totalSongs = songs.length;
+      doc.setFontSize(12);
+      doc.setTextColor(80);
+      doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
+
+      const columns = [
+        { header: '#', dataKey: 'num' },
+        { header: 'Título', dataKey: 'title' },
+        { header: 'Tonalidad', dataKey: 'key' },
+        { header: 'Tempo', dataKey: 'tempo' },
+        { header: 'Duración', dataKey: 'duration' }
+      ];
+      const rows = songs.map((song, i) => ({
+        num: i + 1,
+        title: song.name || '',
+        key: song.key || '',
+        tempo: song.tempo || '',
+        duration: formatSecondsToMMSS(parseDurationToSeconds(song.duration || '0'))
+      }));
+
+      doc.autoTable({
+        startY: 100,
+        head: [columns.map(c => c.header)],
+        body: rows.map(r => [r.num, r.title, r.key, r.tempo, r.duration]),
+        headStyles: {
+          fillColor: [60, 60, 60],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          fillColor: [245, 245, 245],
+          textColor: [0, 0, 0]
+        },
+        alternateRowStyles: {
+          fillColor: [230, 230, 230]
+        },
+        styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
+        columnStyles: {
+          0: { cellWidth: 30 },
+          1: { cellWidth: 150 },
+          2: { cellWidth: 80 },
+          3: { cellWidth: 50 },
+          4: { cellWidth: 60 }
+        }
+      });
+
+      doc.save('setlist_ElSotanoDelDoctor.pdf');
+    }
+
+    /*------------------------------------------
+      3. SEGUNDO SETLIST (feed dinámico)
+    ------------------------------------------*/
+    let urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
+    function loadConfigFromLocalStorage() {
+      const saved = localStorage.getItem('urlSegundoSetlist');
+      if (saved) urlSegundoSetlist = saved;
+    }
+    function saveConfigToLocalStorage(url) {
+      localStorage.setItem('urlSegundoSetlist', url);
+    }
+    function getSecondSetlistURL() {
+      return urlSegundoSetlist;
+    }
+    function cleanString(str) {
+      if (!str) return '';
+      return str.replace(/[^\x00-\xFF]/g, '').trim();
+    }
+    async function cargarSegundoSetlist() {
+      try {
+        const url = getSecondSetlistURL();
+        const res = await fetch(url);
+        const data = await res.json();
+        const songs = data.filter(item => item.type === 'song');
+        const tbody = document.getElementById('second-body');
+        tbody.innerHTML = '';
+        let totalSeconds = 0;
+        songs.forEach((song, index) => {
+          const secs = parseDurationToSeconds(song.duration || '0');
+          const nameClean = cleanString(song.name || '');
+          const keyClean  = cleanString(song.key  || '');
+          const tempoClean= cleanString(song.tempo|| '');
+          const durFmt    = formatSecondsToMMSS(secs);
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${nameClean}</td>
+            <td>${keyClean}</td>
+            <td>${tempoClean}</td>
+            <td>${durFmt}</td>
+          `;
+          tbody.appendChild(row);
+          totalSeconds += secs;
+        });
+        document.getElementById('url-actual').textContent = url;
+        document.getElementById('total-time-2').textContent =
+          'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
+        return songs;
+      } catch (err) {
+        console.error('Error al cargar el segundo setlist:', err);
+        document.getElementById('second-body').innerHTML =
+          '<tr><td colspan="5">Error al cargar el segundo setlist.</td></tr>';
+        return [];
+      }
+    }
+    async function descargarPDFsegundoSetlist() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
+      const songs = await cargarSegundoSetlist();
+      try {
+        const imgUrl = 'assets/logo_negro copia.jpg';
+        const imgRes = await fetch(imgUrl);
+        const imgBlob = await imgRes.blob();
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(imgBlob);
+        const base64Img = await base64Promise;
+        doc.addImage(base64Img, 'JPEG', 40, 30, 60, 60);
+      } catch (err) {
+        console.warn('No se pudo cargar el logo (segundo setlist):', err);
+      }
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.text('Setlist - El Sótano del Doctor (Segundo)', 120, 50);
+      let totalSecs = 0;
+      songs.forEach(song => {
+        totalSecs += parseDurationToSeconds(song.duration || '0');
+      });
+      const totalTime = formatSecondsToMMSS(totalSecs);
+      const totalSongs = songs.length;
+      doc.setFontSize(12);
+      doc.setTextColor(80);
+      doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
+      const columns2 = [
+        { header: '#', dataKey: 'num' },
+        { header: 'Canción', dataKey: 'name' },
+        { header: 'Tonalidad', dataKey: 'key' },
+        { header: 'Tempo', dataKey: 'tempo' },
+        { header: 'Duración', dataKey: 'duration' }
+      ];
+      const rows2 = songs.map((song, i) => {
+        const secs = parseDurationToSeconds(song.duration || '0');
+        return {
+          num: i + 1,
+          name: cleanString(song.name || ''),
+          key: cleanString(song.key  || ''),
+          tempo: cleanString(song.tempo|| ''),
+          duration: formatSecondsToMMSS(secs)
+        };
+      });
+      doc.autoTable({
+        startY: 100,
+        head: [columns2.map(c => c.header)],
+        body: rows2.map(r => [r.num, r.name, r.key, r.tempo, r.duration]),
+        headStyles: {
+          fillColor: [60, 60, 60],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          fillColor: [245, 245, 245],
+          textColor: [0, 0, 0]
+        },
+        alternateRowStyles: {
+          fillColor: [230, 230, 230]
+        },
+        styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
+        columnStyles: {
+          0: { cellWidth: 30 },
+          1: { cellWidth: 150 },
+          2: { cellWidth: 80 },
+          3: { cellWidth: 50 },
+          4: { cellWidth: 60 }
+        }
+      });
+      doc.save('SegundoSetlist.pdf');
+    }
+
+    /*------------------------------------------
+      4. MENÚ Y CONFIGURACIÓN
+    ------------------------------------------*/
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebarMenu  = document.getElementById('sidebar-menu');
+    const menuConfig   = document.getElementById('menu-config');
+    const menuCerrar   = document.getElementById('menu-cerrar');
+    const overlay      = document.getElementById('overlay');
+
+    hamburgerBtn.addEventListener('click', () => {
+      sidebarMenu.classList.add('show');
+      overlay.classList.add('show');
+    });
+    menuCerrar.addEventListener('click', (e) => {
+      e.preventDefault();
+      sidebarMenu.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+    overlay.addEventListener('click', () => {
+      sidebarMenu.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+
+    // BOTÓN "Configuración"
+    menuConfig.addEventListener('click', (e) => {
+      e.preventDefault();
+      sidebarMenu.classList.remove('show');
+      overlay.classList.remove('show');
+      // Muestra config
+      document.getElementById('config-screen').style.display = 'block';
+      // Rellenamos el input
+      document.getElementById('feed-url').value = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
+    });
+
+    // BOTÓN "Cerrar" en la pantalla config
+    document.getElementById('close-config').addEventListener('click', () => {
+      document.getElementById('config-screen').style.display = 'none';
+    });
+
+    // BOTÓN "Guardar configuración"
+    document.getElementById('guardar-config').addEventListener('click', () => {
+      const inputVal = document.getElementById('feed-url').value.trim();
+      if (!inputVal) {
+        alert('Introduce un ID o URL');
+        return;
+      }
+      let newUrl;
+      if (!inputVal.startsWith('http')) {
+        newUrl = `https://www.bandhelper.com/feed/set_list/${inputVal}`;
+      } else {
+        newUrl = inputVal;
+      }
+      urlSegundoSetlist = newUrl;
+      saveConfigToLocalStorage(newUrl);
+      cargarSegundoSetlist();
+      document.getElementById('config-screen').style.display = 'none';
+    });
+
+    /*---------------------------------------
+      5. CARGA INICIAL
+    ---------------------------------------*/
+    window.addEventListener('DOMContentLoaded', () => {
+      // Leemos config localStorage
+      const saved = localStorage.getItem('urlSegundoSetlist');
+      if (saved) urlSegundoSetlist = saved;
+
+      // Cargamos ambos setlists
+      cargarPrimerSetlist();
+      cargarSegundoSetlist();
+    });
+
+    // BOTONES PDF
+    document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
+    document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
+  </script>
+</body>
+</html>
