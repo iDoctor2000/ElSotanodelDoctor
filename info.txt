@@ -1,0 +1,15 @@
+index.html: Página principal (Setlists + Calendario).
+
+miembros.html: Página para gestionar Miembros del Grupo.
+
+fechas.html: Página para administrar Disponibilidad y Fechas de Ensayo.
+
+config.html: Página de Configuración del segundo Setlist.
+
+css/style.css: Hoja de estilos global (la misma para todas las páginas).
+
+js/firebase.js: Configuración e inicialización de Firebase.
+
+js/app.js: Lógica principal (listeners, funciones de CRUD, exportar PDF, etc.).
+
+assets/: Logos, imágenes por defecto, etc.
