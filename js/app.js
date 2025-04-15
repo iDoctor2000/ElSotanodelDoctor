@@ -1,92 +1,44 @@
 // app.js
 
 /* -----------------------------------
-    Funciones / Variables Globales
+    Menú Hamburguesa (común a todas las páginas)
 ----------------------------------- */
-
-// CLAVE para panel de administración de fechas:
-const CLAVE_ADMIN_FECHAS = "ensayo2025";
-
-// URLs de setlists
-const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
-let urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
-let secondSetlistConcertTitle = '';
-
-// Al cargar la página
 window.addEventListener('DOMContentLoaded', () => {
-  loadConfigFromLocalStorage();
-  cargarPrimerSetlist();
-  cargarSegundoSetlist();
-});
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const sidebarMenu = document.getElementById('sidebar-menu');
+  const overlay = document.getElementById('overlay');
+  const menuCerrar = document.getElementById('menu-cerrar');
 
-/* -----------------------------------
-    LÓGICA DE MENÚ / NAVEGACIÓN
------------------------------------ */
-const hamburgerBtn = document.getElementById('hamburger-btn');
-const sidebarMenu  = document.getElementById('sidebar-menu');
-const overlay      = document.getElementById('overlay');
+  // Si existen estos elementos en la página (en caso de que no estén, no pasa nada)
+  if (hamburgerBtn && sidebarMenu && overlay && menuCerrar) {
+    hamburgerBtn.addEventListener('click', () => {
+      sidebarMenu.classList.add('show');
+      overlay.classList.add('show');
+    });
 
-hamburgerBtn.addEventListener('click', () => {
-  sidebarMenu.classList.add('show');
-  overlay.classList.add('show');
-});
-overlay.addEventListener('click', () => {
-  sidebarMenu.classList.remove('show');
-  overlay.classList.remove('show');
-});
+    overlay.addEventListener('click', () => {
+      sidebarMenu.classList.remove('show');
+      overlay.classList.remove('show');
+    });
 
-document.getElementById('menu-cerrar').addEventListener('click', (e) => {
-  e.preventDefault();
-  sidebarMenu.classList.remove('show');
-  overlay.classList.remove('show');
-});
+    menuCerrar.addEventListener('click', (e) => {
+      e.preventDefault();
+      sidebarMenu.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+  }
 
-function hideAllSections() {
-  document.getElementById('miembros').style.display = 'none';
-  document.getElementById('fechas-ensayo').style.display = 'none';
-  document.getElementById('config-screen').style.display = 'none';
-}
-
-// Enlaces del menú
-document.getElementById('menu-miembros').addEventListener('click', (e) => {
-  e.preventDefault();
-  hideAllSections();
-  document.getElementById('miembros').style.display = 'block';
-  sidebarMenu.classList.remove('show');
-  overlay.classList.remove('show');
-  cargarMiembros();
-});
-document.getElementById('menu-fechas').addEventListener('click', (e) => {
-  e.preventDefault();
-  hideAllSections();
-  document.getElementById('fechas-ensayo').style.display = 'block';
-  sidebarMenu.classList.remove('show');
-  overlay.classList.remove('show');
-  cargarFechasDisponiblesVotacion();
-  cargarMiembrosSelect();
-});
-document.getElementById('menu-config').addEventListener('click', (e) => {
-  e.preventDefault();
-  hideAllSections();
-  document.getElementById('config-screen').style.display = 'block';
-  sidebarMenu.classList.remove('show');
-  overlay.classList.remove('show');
-  // Ajustar campos
-  const feedSuffix = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
-  document.getElementById('feed-url').value = feedSuffix;
-  document.getElementById('concert-title-input').value = secondSetlistConcertTitle;
-});
-
-// Botón cerrar en Configuración
-document.getElementById('close-config').addEventListener('click', () => {
-  document.getElementById('config-screen').style.display = 'none';
+  // A continuación llamamos a las funciones específicas de cada página
+  inicializarSetlists();
+  inicializarMiembros();
+  inicializarFechasEnsayo();
+  inicializarConfig();
 });
 
 
 /* -----------------------------------
-    LÓGICA DE MIEMBROS DEL GRUPO
+    Funciones Comunes
 ----------------------------------- */
-
 // Subir imagen de miembro a Firebase Storage
 async function uploadMemberImage(file) {
   const storageRef = storage.ref();
@@ -95,309 +47,7 @@ async function uploadMemberImage(file) {
   return await fileRef.getDownloadURL();
 }
 
-// Agregar miembro
-document.getElementById('form-miembros').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const nombre = document.getElementById('nombre-miembro').value.trim();
-  const rol = document.getElementById('rol-miembro').value.trim();
-  const telefono = document.getElementById('telefono-miembro').value.trim();
-  const email = document.getElementById('email-miembro').value.trim();
-
-  let fotoURL = "";
-  const fileInput = document.getElementById('foto-miembro');
-  if (fileInput.files && fileInput.files[0]) {
-    try {
-      fotoURL = await uploadMemberImage(fileInput.files[0]);
-    } catch (error) {
-      console.error("Error subiendo la imagen:", error);
-      alert("Error al subir la imagen. Se usará imagen por defecto.");
-      fotoURL = "assets/default.jpg";
-    }
-  } else {
-    fotoURL = "assets/default.jpg";
-  }
-
-  if (!nombre || !rol) {
-    alert('Por favor, rellena al menos el nombre y el rol');
-    return;
-  }
-
-  try {
-    await db.collection('miembros').add({
-      nombre, rol, telefono, email, foto: fotoURL
-    });
-    alert('Miembro añadido correctamente');
-    cargarMiembros();
-    e.target.reset();
-  } catch (error) {
-    console.error("Error al añadir miembro: ", error);
-    alert('Error añadiendo el miembro');
-  }
-});
-
-// Cargar miembros
-async function cargarMiembros() {
-  const container = document.getElementById('lista-miembros');
-  container.innerHTML = '';
-  const snapshot = await db.collection('miembros').get();
-
-  snapshot.forEach(doc => {
-    const member = doc.data();
-    const div = document.createElement('div');
-    div.style.border = "1px solid #222";
-    div.style.padding = "10px";
-    div.style.marginBottom = "10px";
-    div.setAttribute('data-id', doc.id);
-
-    div.innerHTML = `
-      <img src="${member.foto || 'assets/default.jpg'}"
-           alt="${member.nombre}"
-           style="width:50px; height:50px; border-radius:50%; margin-right:10px;">
-      <strong>${member.nombre}</strong> - ${member.rol}<br>
-      Tel: ${member.telefono || 'N/A'}<br>
-      Email: ${member.email || 'N/A'}
-      <div style="margin-top: 5px;">
-        <button class="btn-edit" data-id="${doc.id}">Editar</button>
-        <button class="btn-delete" data-id="${doc.id}">Eliminar</button>
-      </div>
-    `;
-    container.appendChild(div);
-  });
-
-  // Botones Editar / Eliminar
-  document.querySelectorAll('.btn-edit').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const memberId = e.target.getAttribute('data-id');
-      const docSnap = await db.collection('miembros').doc(memberId).get();
-      if (docSnap.exists) {
-        const data = docSnap.data();
-        document.getElementById('edit-member-id').value = memberId;
-        document.getElementById('edit-nombre-miembro').value = data.nombre;
-        document.getElementById('edit-rol-miembro').value = data.rol;
-        document.getElementById('edit-telefono-miembro').value = data.telefono || "";
-        document.getElementById('edit-email-miembro').value = data.email || "";
-        document.getElementById('edit-member-modal').style.display = 'block';
-      }
-    });
-  });
-  document.querySelectorAll('.btn-delete').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const memberId = e.target.getAttribute('data-id');
-      if (confirm("¿Estás seguro de eliminar este miembro?")) {
-        await db.collection('miembros').doc(memberId).delete();
-        cargarMiembros();
-      }
-    });
-  });
-}
-
-// Editar miembro (modal)
-document.getElementById('form-edit-miembro').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const memberId = document.getElementById('edit-member-id').value;
-  const nombre = document.getElementById('edit-nombre-miembro').value.trim();
-  const rol = document.getElementById('edit-rol-miembro').value.trim();
-  const telefono = document.getElementById('edit-telefono-miembro').value.trim();
-  const email = document.getElementById('edit-email-miembro').value.trim();
-
-  let fotoURL = null;
-  const fileInput = document.getElementById('edit-foto-miembro');
-  if (fileInput.files && fileInput.files[0]) {
-    try {
-      fotoURL = await uploadMemberImage(fileInput.files[0]);
-    } catch (error) {
-      console.error("Error al subir nueva imagen:", error);
-      alert("Error al subir la nueva imagen. Se mantendrá la anterior.");
-    }
-  }
-
-  const updatedData = { nombre, rol, telefono, email };
-  if (fotoURL) updatedData.foto = fotoURL;
-
-  try {
-    await db.collection('miembros').doc(memberId).update(updatedData);
-    alert("Miembro actualizado correctamente.");
-    document.getElementById('edit-member-modal').style.display = 'none';
-    cargarMiembros();
-  } catch (error) {
-    console.error("Error al actualizar miembro: ", error);
-    alert("Error al actualizar el miembro.");
-  }
-});
-
-// Cancelar edición
-document.getElementById('cancel-edit-member').addEventListener('click', () => {
-  document.getElementById('edit-member-modal').style.display = 'none';
-});
-
-
-/* -----------------------------------
-    LÓGICA DE FECHAS ENSAYO / DISPONIBILIDAD
------------------------------------ */
-
-async function cargarMiembrosSelect() {
-  const select = document.getElementById('miembro-votante');
-  select.innerHTML = '<option value="">-- Selecciona --</option>';
-  const snapshot = await db.collection('miembros').get();
-  snapshot.forEach(doc => {
-    const member = doc.data();
-    const option = document.createElement('option');
-    option.value = doc.id;
-    option.textContent = member.nombre;
-    select.appendChild(option);
-  });
-}
-
-async function cargarFechasDisponiblesVotacion() {
-  const container = document.getElementById('opciones-fechas');
-  container.innerHTML = '';
-  const snapshot = await db.collection('fechasDisponibles').get();
-  snapshot.forEach(doc => {
-    const fecha = doc.id;
-    const div = document.createElement('div');
-    div.setAttribute('data-fecha', fecha);
-    div.style.marginBottom = "10px";
-    div.innerHTML = `
-      <strong>${fecha}</strong>:
-      <label><input type="radio" name="vote_${fecha}" value="si" required> Sí</label>
-      <label style="margin-left: 10px;"><input type="radio" name="vote_${fecha}" value="no" required> No</label>
-    `;
-    container.appendChild(div);
-  });
-}
-
-document.getElementById('form-fechas').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const miembro = document.getElementById('miembro-votante').value;
-  if (!miembro) {
-    alert('Selecciona tu miembro.');
-    return;
-  }
-  const container = document.getElementById('opciones-fechas');
-  const voteDivs = container.querySelectorAll('div[data-fecha]');
-  const votes = {};
-
-  voteDivs.forEach(div => {
-    const fecha = div.getAttribute('data-fecha');
-    const selected = div.querySelector(`input[name="vote_${fecha}"]:checked`);
-    if (selected) {
-      votes[fecha] = selected.value;
-    }
-  });
-
-  if (Object.keys(votes).length === 0) {
-    alert("Debes emitir tu voto en al menos una fecha.");
-    return;
-  }
-  await enviarDisponibilidad(miembro, votes);
-  e.target.reset();
-});
-
-async function enviarDisponibilidad(miembro, votes) {
-  for (const fecha in votes) {
-    const voteValue = votes[fecha];
-    const docRef = db.collection('fechasDisponibles').doc(fecha);
-    const docSnap = await docRef.get();
-
-    if (docSnap.exists) {
-      let currentVotes = docSnap.data().votos || [];
-      const index = currentVotes.findIndex(vote => vote.miembro === miembro);
-      if (index >= 0) {
-        currentVotes[index].voto = voteValue;
-      } else {
-        currentVotes.push({ miembro, voto: voteValue });
-      }
-      await docRef.update({ votos: currentVotes });
-    } else {
-      await db.collection('fechasDisponibles').doc(fecha).set({
-        votos: [{ miembro, voto: voteValue }]
-      });
-    }
-  }
-  alert("Disponibilidad registrada.");
-  mostrarResultadosDisponibilidad();
-}
-
-async function mostrarResultadosDisponibilidad() {
-  const lista = document.getElementById('lista-resultados');
-  lista.innerHTML = '';
-  const snapshot = await db.collection('fechasDisponibles').get();
-
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    const li = document.createElement('li');
-    let text = `${doc.id}: `;
-    if (data.votos && data.votos.length > 0) {
-      data.votos.forEach(vote => {
-        text += ` [${vote.miembro}: ${vote.voto}] `;
-      });
-    } else {
-      text += "Sin votos";
-    }
-    li.textContent = text;
-    lista.appendChild(li);
-  });
-  document.getElementById('resultados-disponibilidad').style.display = 'block';
-}
-
-/* -----------------------------------
-    Panel de Administración de Fechas
------------------------------------ */
-document.getElementById('login-btn-fechas').addEventListener('click', () => {
-  const clave = document.getElementById('admin-pass-fechas').value.trim();
-  if (clave === CLAVE_ADMIN_FECHAS) {
-    document.getElementById('panel-fechas').style.display = 'block';
-    document.getElementById('login-admin-fechas').style.display = 'none';
-    cargarFechasAdmin();
-  } else {
-    alert('Clave incorrecta.');
-  }
-});
-
-document.getElementById('agregar-fecha').addEventListener('click', async () => {
-  const nueva = document.getElementById('nueva-fecha').value.trim();
-  if (!nueva) return;
-  try {
-    await db.collection('fechasDisponibles').doc(nueva).set({ votos: [] });
-    document.getElementById('nueva-fecha').value = '';
-    cargarFechasDisponiblesVotacion();
-    cargarFechasAdmin();
-  } catch (error) {
-    console.error("Error al agregar fecha: ", error);
-    alert("Error al agregar fecha.");
-  }
-});
-
-async function cargarFechasAdmin() {
-  const ul = document.getElementById('fechas-activas');
-  ul.innerHTML = '';
-  const snapshot = await db.collection('fechasDisponibles').get();
-  snapshot.forEach(doc => {
-    const li = document.createElement('li');
-    li.textContent = doc.id;
-
-    const btn = document.createElement('button');
-    btn.textContent = 'Eliminar';
-    btn.style.marginLeft = '10px';
-    btn.style.background = 'red';
-    btn.style.color = '#fff';
-    btn.style.border = 'none';
-    btn.style.borderRadius = '4px';
-    btn.style.cursor = 'pointer';
-    btn.onclick = async () => {
-      await db.collection('fechasDisponibles').doc(doc.id).delete();
-      cargarFechasDisponiblesVotacion();
-      cargarFechasAdmin();
-    };
-    li.appendChild(btn);
-    ul.appendChild(li);
-  });
-}
-
-
-/* -----------------------------------
-    LÓGICA DE SETLISTS (Fetch, PDF, etc.)
------------------------------------ */
+// Convertir duración a segundos
 function parseDurationToSeconds(str) {
   if (!str) return 0;
   if (str.includes(':')) {
@@ -408,6 +58,7 @@ function parseDurationToSeconds(str) {
   return isNaN(secs) ? 0 : secs;
 }
 
+// Formatear segundos a mm:ss (o h:mm:ss si es > 1 hora)
 function formatSecondsHMSorMMSS(totalSeconds) {
   if (totalSeconds < 3600) {
     const m = Math.floor(totalSeconds / 60);
@@ -422,13 +73,65 @@ function formatSecondsHMSorMMSS(totalSeconds) {
   }
 }
 
+// Limpiar strings con caracteres raros
 function cleanString(str) {
   if (!str) return '';
   let cleaned = str.replace(/[^\x00-\xFF]/g, '');
   return cleaned.trim();
 }
 
-// Primer Setlist
+/* -----------------------------------
+    1) INICIALIZAR SETLISTS (index.html)
+----------------------------------- */
+const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
+let urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
+let secondSetlistConcertTitle = '';
+
+// Cargar config local (para el 2º setlist)
+function loadConfigFromLocalStorage() {
+  const savedURL = localStorage.getItem('urlSegundoSetlist');
+  if (savedURL) urlSegundoSetlist = savedURL;
+  const savedTitle = localStorage.getItem('secondSetlistConcertTitle');
+  if (savedTitle) secondSetlistConcertTitle = savedTitle;
+}
+
+// Guardar config local
+function saveConfigToLocalStorage(url, title) {
+  localStorage.setItem('urlSegundoSetlist', url);
+  localStorage.setItem('secondSetlistConcertTitle', title);
+}
+
+// Inicializar setlists en index.html
+function inicializarSetlists() {
+  // Comprobamos si estamos en la página que tiene el ID #setlists
+  const setlistsSection = document.getElementById('setlists');
+  const secondSetlistSection = document.getElementById('second-setlist');
+  if (!setlistsSection || !secondSetlistSection) {
+    // Si no existen estos elementos, significa que NO estamos en index.html
+    return;
+  }
+
+  // Cargar config local
+  loadConfigFromLocalStorage();
+
+  // Cargar primer setlist
+  cargarPrimerSetlist();
+
+  // Cargar segundo setlist
+  cargarSegundoSetlist();
+
+  // Asignar listeners a botones de PDF
+  const downloadBtn1 = document.getElementById('download-btn');
+  const downloadBtn2 = document.getElementById('download-btn-2');
+  if (downloadBtn1) {
+    downloadBtn1.addEventListener('click', descargarPDFprimerSetlist);
+  }
+  if (downloadBtn2) {
+    downloadBtn2.addEventListener('click', descargarPDFsegundoSetlist);
+  }
+}
+
+// Cargar primer setlist
 async function cargarPrimerSetlist() {
   try {
     const res = await fetch(urlPrimerSetlist);
@@ -456,18 +159,21 @@ async function cargarPrimerSetlist() {
     return songs;
   } catch (err) {
     console.error('Error al cargar el primer setlist:', err);
-    document.getElementById('setlist-body').innerHTML =
-      '<tr><td colspan="5">Error al cargar el primer setlist.</td></tr>';
+    const tbody = document.getElementById('setlist-body');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="5">Error al cargar el primer setlist.</td></tr>';
+    }
     return [];
   }
 }
 
+// Descargar PDF primer setlist
 async function descargarPDFprimerSetlist() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
   doc.setFont('helvetica', 'normal');
 
-  const songs = await cargarPrimerSetlist();
+  const songs = await cargarPrimerSetlist(); // recarga (por si hubo cambios)
   // Agregar logo
   try {
     const imgUrl = 'assets/logo_negro copia.jpg';
@@ -525,9 +231,7 @@ async function descargarPDFprimerSetlist() {
     headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
     bodyStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
     alternateRowStyles: { fillColor: [230, 230, 230] },
-    styles: {
-      halign: 'left', fontSize: 10, cellPadding: 5
-    },
+    styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
     columnStyles: {
       0: { cellWidth: 30 },
       1: { cellWidth: 150 },
@@ -540,40 +244,23 @@ async function descargarPDFprimerSetlist() {
   doc.save('setlist_ElSotanoDelDoctor.pdf');
 }
 
-document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
-
-
-// Segundo Setlist
-function loadConfigFromLocalStorage() {
-  const savedURL = localStorage.getItem('urlSegundoSetlist');
-  if (savedURL) urlSegundoSetlist = savedURL;
-  const savedTitle = localStorage.getItem('secondSetlistConcertTitle');
-  if (savedTitle) secondSetlistConcertTitle = savedTitle;
-}
-
-function saveConfigToLocalStorage(url, title) {
-  localStorage.setItem('urlSegundoSetlist', url);
-  localStorage.setItem('secondSetlistConcertTitle', title);
-}
-
-function displayConcertTitle() {
-  document.getElementById('concert-title').textContent = secondSetlistConcertTitle;
-}
-
-function getSecondSetlistURL() {
-  return urlSegundoSetlist;
-}
-
+// Cargar segundo setlist
 async function cargarSegundoSetlist() {
+  const secondBody = document.getElementById('second-body');
+  if (!secondBody) {
+    // Si no existe, no estamos en la página con el segundo setlist
+    return;
+  }
   try {
-    displayConcertTitle();
-    const url = getSecondSetlistURL();
+    // Ponemos el título en pantalla
+    document.getElementById('concert-title').textContent = secondSetlistConcertTitle;
+
+    const url = urlSegundoSetlist;
     const res = await fetch(url);
     const data = await res.json();
 
     const songs = data.filter(item => item.type === 'song');
-    const tbody = document.getElementById('second-body');
-    tbody.innerHTML = '';
+    secondBody.innerHTML = '';
 
     let totalSecs = 0;
     songs.forEach((song, index) => {
@@ -587,7 +274,7 @@ async function cargarSegundoSetlist() {
         <td>${cleanString(song.tempo || '')}</td>
         <td>${formatSecondsHMSorMMSS(secs)}</td>
       `;
-      tbody.appendChild(row);
+      secondBody.appendChild(row);
     });
 
     document.getElementById('url-actual').textContent = url;
@@ -597,36 +284,20 @@ async function cargarSegundoSetlist() {
     return songs;
   } catch (err) {
     console.error('Error al cargar el segundo setlist:', err);
-    document.getElementById('second-body').innerHTML =
-      '<tr><td colspan="5">Error al cargar el segundo setlist.</td></tr>';
+    secondBody.innerHTML = '<tr><td colspan="5">Error al cargar el segundo setlist.</td></tr>';
     return [];
   }
 }
 
-document.getElementById('guardar-config').addEventListener('click', () => {
-  const feed = document.getElementById('feed-url').value.trim();
-  const title = document.getElementById('concert-title-input').value.trim();
-
-  // Reconstruye la URL si no contiene "http"
-  let fullURL = feed;
-  if (!feed.startsWith('http')) {
-    fullURL = 'https://www.bandhelper.com/feed/set_list/' + feed;
-  }
-  urlSegundoSetlist = fullURL;
-  secondSetlistConcertTitle = title;
-  saveConfigToLocalStorage(fullURL, title);
-  alert('Configuración guardada.');
-});
-
-document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
-
+// Descargar PDF segundo setlist
 async function descargarPDFsegundoSetlist() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
   doc.setFont('helvetica', 'normal');
 
   const songs = await cargarSegundoSetlist();
-  // Agregar logo
+  if (!songs) return;
+
   try {
     const imgUrl = 'assets/logo_negro copia.jpg';
     const imgRes = await fetch(imgUrl);
@@ -685,9 +356,7 @@ async function descargarPDFsegundoSetlist() {
     headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
     bodyStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
     alternateRowStyles: { fillColor: [230, 230, 230] },
-    styles: {
-      halign: 'left', fontSize: 10, cellPadding: 5
-    },
+    styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
     columnStyles: {
       0: { cellWidth: 30 },
       1: { cellWidth: 150 },
@@ -699,3 +368,60 @@ async function descargarPDFsegundoSetlist() {
 
   doc.save('SegundoSetlist.pdf');
 }
+
+
+/* -----------------------------------
+    2) INICIALIZAR MIEMBROS (miembros.html)
+----------------------------------- */
+function inicializarMiembros() {
+  const miembrosSection = document.getElementById('miembros');
+  if (!miembrosSection) return; // No estamos en la página de miembros
+
+  // Listeners para añadir miembro
+  const formMiembros = document.getElementById('form-miembros');
+  if (formMiembros) {
+    formMiembros.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('nombre-miembro').value.trim();
+      const rol = document.getElementById('rol-miembro').value.trim();
+      const telefono = document.getElementById('telefono-miembro').value.trim();
+      const email = document.getElementById('email-miembro').value.trim();
+
+      let fotoURL = "";
+      const fileInput = document.getElementById('foto-miembro');
+      if (fileInput.files && fileInput.files[0]) {
+        try {
+          fotoURL = await uploadMemberImage(fileInput.files[0]);
+        } catch (error) {
+          console.error("Error subiendo la imagen:", error);
+          alert("Error al subir la imagen. Se usará imagen por defecto.");
+          fotoURL = "assets/default.jpg";
+        }
+      } else {
+        fotoURL = "assets/default.jpg";
+      }
+
+      if (!nombre || !rol) {
+        alert('Por favor, rellena al menos el nombre y el rol');
+        return;
+      }
+
+      try {
+        await db.collection('miembros').add({
+          nombre, rol, telefono, email, foto: fotoURL
+        });
+        alert('Miembro añadido correctamente');
+        cargarMiembros();
+        e.target.reset();
+      } catch (error) {
+        console.error("Error al añadir miembro: ", error);
+        alert('Error añadiendo el miembro');
+      }
+    });
+  }
+
+  // Listener para cancelar edición
+  const cancelEditBtn = document.getElementById('cancel-edit-member');
+  if (cancelEditBtn) {
+    cancelEditBtn.addEventListener('click', () => {
+      document.getElementById('edit-member-modal').style.display
