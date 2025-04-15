@@ -1,0 +1,340 @@
+/* Reseteo y box-sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+body {
+  font-family: Arial, sans-serif;
+  background-color: #000;
+  color: #fff;
+}
+
+/* CABECERA */
+header {
+  background-color: #111;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo img {
+  width: 180px;
+  height: auto;
+}
+
+/* BOTÓN HAMBURGER */
+.hamburger {
+  cursor: pointer;
+  border: 1px solid #0cf;
+  border-radius: 4px;
+  padding: 5px;
+}
+.hamburger div {
+  width: 25px;
+  height: 3px;
+  background-color: #0cf;
+  margin: 4px 0;
+}
+
+/* MENÚ LATERAL (SIDEBAR) */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background-color: #111;
+  border-right: 1px solid #222;
+  padding: 20px;
+  box-shadow: 2px 0 10px rgba(0,255,255,0.1);
+  transform: translateX(-250px);
+  transition: transform 0.3s ease;
+  z-index: 9999;
+}
+.sidebar.show {
+  transform: translateX(0);
+}
+.sidebar h2 {
+  color: #0cf;
+  margin-top: 0;
+}
+.sidebar a {
+  display: block;
+  color: #fff;
+  text-decoration: none;
+  margin: 10px 0;
+  padding: 5px 0;
+  border-bottom: 1px solid #222;
+}
+.sidebar a:hover {
+  color: #0cf;
+}
+
+/* OVERLAY */
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 9998;
+  display: none;
+}
+#overlay.show {
+  display: block;
+}
+
+/* PANTALLA DE CONFIGURACIÓN */
+#config-screen {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  z-index: 9999;
+  overflow-y: auto;
+  padding: 60px 20px 20px 20px;
+}
+#config-screen h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #0cf;
+}
+#config-screen p {
+  text-align: center;
+  color: #aaa;
+  margin-bottom: 20px;
+}
+#config-screen input {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px;
+  background-color: #222;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 5px;
+  margin: 5px 0;
+}
+#config-screen button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #0cf;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#config-screen button:hover {
+  background-color: #09b;
+}
+#close-config {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 1.2em;
+  background: none;
+  border: 1px solid #0cf;
+  color: #0cf;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+#close-config:hover {
+  background-color: #333;
+}
+
+/* CONTENIDO PRINCIPAL */
+main section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* SETLISTS Y CALENDARIO (secciones existentes) */
+#setlists,
+#second-setlist,
+#calendario {
+  background-color: #111;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0,255,255,0.1);
+  margin-bottom: 40px;
+}
+#setlists h2,
+#second-setlist h2,
+#calendario h2 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+#setlists table,
+#second-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 0.95em;
+  color: #fff;
+}
+#setlists thead,
+#second-list-table thead {
+  background-color: #222;
+  color: #0cf;
+}
+#setlists th,
+#setlists td,
+#second-list-table th,
+#second-list-table td {
+  padding: 12px;
+  border: 1px solid #333;
+  text-align: left;
+}
+#setlists tr:nth-child(even),
+#second-list-table tr:nth-child(even) {
+  background-color: #1a1a1a;
+}
+#download-btn,
+#download-btn-2 {
+  display: block;
+  margin: 20px auto 0 auto;
+  padding: 10px 20px;
+  font-size: 1em;
+  background-color: #0cf;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#download-btn:hover,
+#download-btn-2:hover {
+  background-color: #09b;
+}
+#total-time,
+#total-time-2 {
+  color: #0cf;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* NUEVAS SECCIONES: MIEMBROS Y FECHAS ENSAYO (ocultas por defecto) */
+#miembros,
+#fechas-ensayo {
+  display: none;
+  background-color: #111;
+  color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 40px auto;
+  max-width: 800px;
+  box-shadow: 0 0 20px rgba(0,255,255,0.1);
+}
+#miembros h2,
+#fechas-ensayo h2 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+/* Formularios en secciones nuevas */
+#form-miembros input,
+#form-fechas input,
+#form-fechas select {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  background-color: #222;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 5px;
+}
+#form-miembros button,
+#form-fechas button {
+  background-color: #0cf;
+  color: #000;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#form-miembros button:hover,
+#form-fechas button:hover {
+  background-color: #09b;
+}
+
+/* Panel de Administración de Fechas */
+#login-admin-fechas,
+#panel-fechas {
+  background-color: #111;
+  color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px auto;
+  max-width: 800px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(255,255,0,0.1);
+}
+#login-admin-fechas input {
+  width: 80%;
+  max-width: 300px;
+  padding: 10px;
+  background: #222;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+#login-admin-fechas button,
+#panel-fechas button {
+  background-color: #0cf;
+  color: #000;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#login-admin-fechas button:hover,
+#panel-fechas button:hover {
+  background-color: #09b;
+}
+#panel-fechas input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  background: #222;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 5px;
+}
+#panel-fechas ul {
+  list-style: none;
+  padding: 0;
+}
+#panel-fechas ul li {
+  margin-top: 10px;
+}
+
+/* CALENDARIO */
+#calendario p {
+  text-align: center;
+  color: #aaa;
+  margin-bottom: 20px;
+}
+
+/* FOOTER */
+footer {
+  background-color: #111;
+  color: #888;
+  text-align: center;
+  padding: 10px;
+  border-top: 1px solid #222;
+}
+
+/* MEDIA QUERIES */
+@media (max-width: 768px) {
+  .hamburger div {
+    width: 20px;
+  }
+}
