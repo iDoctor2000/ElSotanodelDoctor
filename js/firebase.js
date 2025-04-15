@@ -2,7 +2,7 @@
 
 // Configuración de Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyAd70p3aEA218oPLWEs_DbMFEotHXfVyNg",
+  apiKey: "AIzaSyAd70p3...tuClave...",
   authDomain: "el-sotano-del-doctor.firebaseapp.com",
   projectId: "el-sotano-del-doctor",
   storageBucket: "el-sotano-del-doctor.appspot.com",
