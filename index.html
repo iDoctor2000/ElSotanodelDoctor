@@ -24,305 +24,126 @@
 
   <style>
     /* Reseteo y box-sizing */
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden; /* Previene scroll horizontal sobrante */
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #000;
-      color: #fff;
-    }
-
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; overflow-x: hidden; }
+    body { font-family: Arial, sans-serif; background-color: #000; color: #fff; }
+    
     /* CABECERA */
-    header {
-      background-color: #111;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .logo img {
-      width: 180px;
-      height: auto;
-    }
+    header { background-color: #111; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; }
+    .logo img { width: 180px; height: auto; }
 
     /* BOTÓN HAMBURGER */
-    .hamburger {
-      cursor: pointer;
-      border: 1px solid #0cf;
-      border-radius: 4px;
-      padding: 5px;
-    }
-    .hamburger div {
-      width: 25px;
-      height: 3px;
-      background-color: #0cf;
-      margin: 4px 0;
-    }
+    .hamburger { cursor: pointer; border: 1px solid #0cf; border-radius: 4px; padding: 5px; }
+    .hamburger div { width: 25px; height: 3px; background-color: #0cf; margin: 4px 0; }
 
     /* MENÚ LATERAL (SIDEBAR) */
     .sidebar {
-      position: fixed;
-      top: 0; 
-      left: 0;
-      width: 250px;
-      height: 100%;
-      background-color: #111;
-      border-right: 1px solid #222;
-      padding: 20px;
-      box-shadow: 2px 0 10px rgba(0, 255, 255, 0.1);
-
-      transform: translateX(-250px); /* oculto por defecto */
-      transition: transform 0.3s ease;
-      z-index: 9999;
+      position: fixed; top: 0; left: 0; width: 250px; height: 100%;
+      background-color: #111; border-right: 1px solid #222; padding: 20px;
+      box-shadow: 2px 0 10px rgba(0,255,255,0.1);
+      transform: translateX(-250px); transition: transform 0.3s ease; z-index: 9999;
     }
-    .sidebar.show {
-      transform: translateX(0);
-    }
-    .sidebar h2 {
-      color: #0cf;
-      margin-top: 0;
-    }
+    .sidebar.show { transform: translateX(0); }
+    .sidebar h2 { color: #0cf; margin-top: 0; }
     .sidebar a {
-      display: block;
-      color: #fff;
-      text-decoration: none;
-      margin: 10px 0;
-      padding: 5px 0;
-      border-bottom: 1px solid #222;
+      display: block; color: #fff; text-decoration: none; margin: 10px 0; padding: 5px 0; border-bottom: 1px solid #222;
     }
-    .sidebar a:hover {
-      color: #0cf;
-    }
-
-    /* OVERLAY (FONDO OSCURO) */
-    #overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 9998;
-      display: none; /* oculto por defecto */
-    }
-    #overlay.show {
-      display: block;
-    }
-
-    /* PANTALLA DE CONFIGURACIÓN (oculta por defecto) */
+    .sidebar a:hover { color: #0cf; }
+    
+    /* OVERLAY */
+    #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9998; display: none; }
+    #overlay.show { display: block; }
+    
+    /* PANTALLA DE CONFIGURACIÓN */
     #config-screen {
-      display: none; 
-      position: fixed; 
-      top: 0; left: 0;
-      width: 100%; 
-      height: 100%;
-      background-color: #000; 
-      z-index: 9999; 
-      overflow-y: auto; 
-      padding: 60px 20px 20px 20px; /* 60px arriba para no chocar con btn Cerrar */
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: #000; z-index: 9999; overflow-y: auto; padding: 60px 20px 20px 20px;
     }
-    #config-screen h2 {
-      text-align: center; 
-      margin-bottom: 20px;
-      color: #0cf;
-    }
-    #config-screen label {
-      display: block;
-      margin: 10px 0 5px 0;
-    }
+    #config-screen h2 { text-align: center; margin-bottom: 20px; color: #0cf; }
+    #config-screen p { text-align: center; color: #aaa; margin-bottom: 20px; }
     #config-screen input {
-      width: 100%; 
-      max-width: 400px; 
-      padding: 10px;
-      background-color: #222;
-      color: #fff;
-      border: 1px solid #333;
-      border-radius: 5px;
+      width: 100%; max-width: 400px; padding: 10px; background-color: #222;
+      color: #fff; border: 1px solid #333; border-radius: 5px; margin: 5px 0;
     }
     #config-screen button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: #0cf;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+      margin-top: 20px; padding: 10px 20px; background-color: #0cf;
+      color: #000; border: none; border-radius: 8px; cursor: pointer;
     }
-    #config-screen button:hover {
-      background-color: #09b;
-    }
-    /* Botón Cerrar Config */
+    #config-screen button:hover { background-color: #09b; }
     #close-config {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 1.2em;
-      background: none;
-      border: 1px solid #0cf;
-      color: #0cf;
-      border-radius: 4px;
-      padding: 5px 10px;
-      cursor: pointer;
+      position: absolute; top: 20px; right: 20px; font-size: 1.2em;
+      background: none; border: 1px solid #0cf; color: #0cf; border-radius: 4px; padding: 5px 10px; cursor: pointer;
     }
-    #close-config:hover {
-      background-color: #333;
-    }
-
+    #close-config:hover { background-color: #333; }
+    
     /* CONTENIDO PRINCIPAL */
-    main section {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
+    main section { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    
+    /* SETLISTS Y CALENDARIO (secciones existentes) */
+    #setlists, #second-setlist, #calendario {
+      background-color: #111; padding: 20px; border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,255,255,0.1); margin-bottom: 40px;
     }
-
-    /* PRIMER SETLIST */
-    #setlists {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-      margin-bottom: 40px;
+    #setlists h2, #second-setlist h2, #calendario h2 { text-align: center; margin-bottom: 15px; }
+    #setlists table, #second-list-table {
+      width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.95em; color: #fff;
     }
-    #setlists h2 {
-      text-align: center;
-      color: #0cf;
-      margin-bottom: 15px;
+    #setlists thead, #second-list-table thead { background-color: #222; color: #0cf; }
+    #setlists th, #setlists td, #second-list-table th, #second-list-table td {
+      padding: 12px; border: 1px solid #333; text-align: left;
     }
-    #setlists table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      color: #fff;
-      font-size: 0.95em;
+    #setlists tr:nth-child(even), #second-list-table tr:nth-child(even) { background-color: #1a1a1a; }
+    #download-btn, #download-btn-2 {
+      display: block; margin: 20px auto 0 auto; padding: 10px 20px; font-size: 1em;
+      background-color: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer;
     }
-    #setlists thead {
-      background-color: #222;
-      color: #0cf;
+    #download-btn:hover, #download-btn-2:hover { background-color: #09b; }
+    #total-time, #total-time-2 { color: #0cf; margin-top: 10px; text-align: center; }
+    
+    /* NUEVAS SECCIONES: MIEMBROS Y FECHAS ENSAYO (ocultas por defecto) */
+    #miembros, #fechas-ensayo { display: none; background-color: #111; color: #fff; padding: 20px;
+      border-radius: 10px; margin: 40px auto; max-width: 800px; box-shadow: 0 0 20px rgba(0,255,255,0.1);
     }
-    #setlists th, #setlists td {
-      padding: 12px;
-      border: 1px solid #333;
-      text-align: left;
+    #miembros h2, #fechas-ensayo h2 { text-align: center; margin-bottom: 15px; }
+    /* Formularios en secciones nuevas */
+    #form-miembros input, #form-fechas input, #form-fechas select {
+      width: 100%; padding: 10px; margin: 5px 0; background-color: #222;
+      color: #fff; border: 1px solid #333; border-radius: 5px;
     }
-    #setlists tr:nth-child(even) {
-      background-color: #1a1a1a;
+    #form-miembros button, #form-fechas button {
+      background-color: #0cf; color: #000; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;
     }
-    #download-btn {
-      display: block;
-      margin: 20px auto 0 auto;
-      padding: 10px 20px;
-      font-size: 1em;
-      background-color: #0cf;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+    #form-miembros button:hover, #form-fechas button:hover { background-color: #09b; }
+    
+    /* Panel de Administración de Fechas */
+    #login-admin-fechas, #panel-fechas {
+      background-color: #111; color: #fff; padding: 20px; border-radius: 10px;
+      margin: 20px auto; max-width: 800px; text-align: center; box-shadow: 0 0 20px rgba(255,255,0,0.1);
     }
-    #download-btn:hover {
-      background-color: #09b;
+    #login-admin-fechas input {
+      width: 80%; max-width: 300px; padding: 10px; background: #222;
+      color: #fff; border: 1px solid #333; border-radius: 5px; margin-bottom: 10px;
     }
-    #total-time {
-      color: #0cf;
-      margin-top: 10px;
-      text-align: center;
+    #login-admin-fechas button, #panel-fechas button {
+      background-color: #0cf; color: #000; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;
     }
-
-    /* SEGUNDO SETLIST */
-    #second-setlist {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-      margin-bottom: 40px;
+    #login-admin-fechas button:hover, #panel-fechas button:hover { background-color: #09b; }
+    #panel-fechas input { width: 100%; padding: 10px; margin: 10px 0; background: #222;
+      color: #fff; border: 1px solid #333; border-radius: 5px;
     }
-    #second-setlist h2 {
-      text-align: center;
-      color: #0cf;
-      margin-bottom: 15px;
-    }
-    #second-list-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      color: #fff;
-      font-size: 0.95em;
-    }
-    #second-list-table thead {
-      background-color: #222;
-      color: #0cf;
-    }
-    #second-list-table th, #second-list-table td {
-      padding: 12px;
-      border: 1px solid #333;
-      text-align: left;
-    }
-    #second-list-table tr:nth-child(even) {
-      background-color: #1a1a1a;
-    }
-    #download-btn-2 {
-      display: block;
-      margin: 20px auto 0 auto;
-      padding: 10px 20px;
-      font-size: 1em;
-      background-color: #0cf;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    #download-btn-2:hover {
-      background-color: #09b;
-    }
-    #total-time-2 {
-      color: #0cf;
-      margin-top: 10px;
-      text-align: center;
-    }
-
+    #panel-fechas ul { list-style: none; padding: 0; }
+    #panel-fechas ul li { margin-top: 10px; }
+    
     /* CALENDARIO */
-    #calendario {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,255,255,0.1);
-      margin-bottom: 40px;
-    }
-    #calendario h2 {
-      text-align: center;
-      color: #0cf;
-      margin-bottom: 10px;
-    }
-    #calendario p {
-      text-align: center;
-      color: #aaa;
-      margin-bottom: 20px;
-    }
-
+    #calendario p { text-align: center; color: #aaa; margin-bottom: 20px; }
+    
     /* FOOTER */
-    footer {
-      background-color: #111;
-      color: #888;
-      text-align: center;
-      padding: 10px;
-      border-top: 1px solid #222;
-    }
-
+    footer { background-color: #111; color: #888; text-align: center; padding: 10px; border-top: 1px solid #222; }
+    
     /* MEDIA QUERIES */
-    @media (max-width: 768px) {
-      .hamburger div {
-        width: 20px;
-      }
-    }
+    @media (max-width: 768px) { .hamburger div { width: 20px; } }
   </style>
 </head>
-
 <body>
   <!-- CABECERA -->
   <header>
@@ -342,31 +163,31 @@
   <!-- MENÚ LATERAL -->
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
+    <a href="#" id="menu-miembros">Miembros del Grupo</a>
+    <a href="#" id="menu-fechas">Fechas Ensayo</a>
     <a href="#" id="menu-config">Configuración</a>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
 
-  <!-- PANTALLA DE CONFIGURACIÓN -->
+  <!-- PANTALLA DE CONFIGURACIÓN (para el 2º setlist) -->
   <div id="config-screen">
     <button id="close-config">Cerrar</button>
     <h2>Configuración del Segundo Setlist</h2>
-    <label for="feed-url">ID/URL del feed</label>
-    <input 
-      type="text" 
-      id="feed-url" 
-      placeholder="Ej: TXHvyb o https://www.bandhelper.com/feed/set_list/..." 
-    />
+    <p style="text-align: center; color: #aaa; margin-bottom: 20px;">No toques si no sabes...</p>
+    <br><br><br>
+    <label for="concert-title-input">Nombre del próximo concierto</label>
+    <input type="text" id="concert-title-input" placeholder="Ej: Concierto Sala X, Festival Y..." />
+    <label for="feed-url" style="margin-top: 20px;">ID/URL del feed</label>
+    <input type="text" id="feed-url" placeholder="Ej: TXHvyb o https://www.bandhelper.com/feed/set_list/..." />
     <button id="guardar-config">Guardar configuración</button>
   </div>
 
   <!-- CONTENIDO PRINCIPAL -->
   <main>
-    <!-- 1) PRIMER SETLIST -->
+    <!-- 1) SETLIST ENSAYOS -->
     <section id="setlists">
       <h2>Setlist Ensayos -Año 2025-</h2>
-      <p style="text-align:center; color:#aaa;">
-        Consulta y exporta el setlist de ensayos en tiempo real.
-      </p>
+      <p style="text-align:center; color:#aaa;">Consulta y exporta el setlist de ensayos en tiempo real.</p>
       <table>
         <thead>
           <tr>
@@ -386,9 +207,8 @@
     <!-- 2) SEGUNDO SETLIST -->
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
-      <p style="text-align:center; color:#aaa;">
-        Feed actual: <em id="url-actual"></em>
-      </p>
+      <h3 id="concert-title"></h3> 
+      <p style="text-align:center; color:#aaa;">Feed actual: <em id="url-actual"></em></p>
       <table id="second-list-table">
         <thead>
           <tr>
@@ -410,71 +230,507 @@
       <h2>Próximos Conciertos</h2>
       <p>Consulta el calendario actualizado.</p>
       <div>
-        <script type="text/javascript" 
-          src="https://www.bandhelper.com/widget/calendar/10353?range=6">
-        </script>
+        <script type="text/javascript" src="https://www.bandhelper.com/widget/calendar/10353?range=6"></script>
       </div>
     </section>
+
+    <!-- 4) MIEMBROS DEL GRUPO (inicialmente oculto) -->
+    <section id="miembros">
+      <h2>Miembros del Grupo</h2>
+      <div id="lista-miembros">
+        <!-- Se mostrarán los miembros registrados con botones Editar/Eliminar -->
+      </div>
+      <form id="form-miembros" style="margin-top:20px;">
+        <input type="text" id="nombre-miembro" placeholder="Nombre del miembro" required>
+        <input type="text" id="rol-miembro" placeholder="Rol (ej. Guitarra líder, Vocalista, etc.)" required>
+        <input type="tel" id="telefono-miembro" placeholder="Teléfono">
+        <input type="email" id="email-miembro" placeholder="Correo electrónico">
+        <!-- Input para subir imagen -->
+        <label for="foto-miembro">Sube la foto del miembro:</label>
+        <input type="file" id="foto-miembro" accept="image/*">
+        <button type="submit">Añadir Miembro</button>
+      </form>
+    </section>
+
+    <!-- 5) FECHAS ENSAYO / DISPONIBILIDAD -->
+    <section id="fechas-ensayo">
+      <h2>Disponibilidad para Ensayo</h2>
+      <p style="text-align:center; color:#aaa;">Selecciona tu miembro y, para cada fecha, indica si puedes venir.</p>
+      <form id="form-fechas" style="margin-top:20px;">
+        <label for="miembro-votante">Selecciona tu miembro:</label>
+        <select id="miembro-votante" required>
+          <option value="">-- Selecciona --</option>
+        </select>
+        <div id="opciones-fechas" style="margin-bottom: 20px;">
+          <!-- Se generarán grupos de radio para cada fecha disponible -->
+        </div>
+        <button type="submit">Enviar Disponibilidad</button>
+      </form>
+      <div id="resultados-disponibilidad" style="margin-top:30px; display:none;">
+        <h3 style="text-align:center; color:#0cf;">Resultados hasta ahora</h3>
+        <ul id="lista-resultados"></ul>
+      </div>
+      <hr style="border:1px solid #222; margin:20px 0;">
+      <h2 style="text-align:center; color:yellow;">Panel de Administración de Fechas</h2>
+      <section id="login-admin-fechas">
+        <h3 style="color:#0cf;">Acceso a Panel de Administración</h3>
+        <input type="password" id="admin-pass-fechas" placeholder="Contraseña">
+        <button id="login-btn-fechas">Entrar</button>
+      </section>
+      <section id="panel-fechas" style="display:none;">
+        <h2 style="text-align:center; color:yellow;">Panel de Administración de Fechas</h2>
+        <input id="nueva-fecha" type="text" placeholder="Ej: Miércoles 10 abril - 17:30">
+        <button id="agregar-fecha">Agregar Fecha</button>
+        <ul id="fechas-activas"></ul>
+      </section>
+    </section>
   </main>
+
+  <!-- MODAL PARA EDITAR MIEMBRO -->
+  <div id="edit-member-modal" style="display:none; position: fixed; top: 0; left: 0; width:100%; height: 100%; background: rgba(0,0,0,0.8); z-index:10000;">
+    <div style="background:#111; padding:20px; margin: 50px auto; max-width: 400px; border-radius:10px;">
+      <h2 style="text-align:center; color:#0cf;">Editar Miembro</h2>
+      <form id="form-edit-miembro">
+        <input type="hidden" id="edit-member-id">
+        <input type="text" id="edit-nombre-miembro" placeholder="Nombre del miembro" required>
+        <input type="text" id="edit-rol-miembro" placeholder="Rol (ej. Guitarra líder, Vocalista, etc.)" required>
+        <input type="tel" id="edit-telefono-miembro" placeholder="Teléfono">
+        <input type="email" id="edit-email-miembro" placeholder="Correo electrónico">
+        <label for="edit-foto-miembro">Cambiar foto (opcional):</label>
+        <input type="file" id="edit-foto-miembro" accept="image/*">
+        <div style="margin-top:10px; text-align:center;">
+          <button type="submit">Guardar Cambios</button>
+          <button type="button" id="cancel-edit-member">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- FOOTER -->
   <footer>
     © 2025 El Sótano del Doctor. All Rights Reserved.
   </footer>
 
+  <!-- SCRIPTS -->
+  <!-- Incluimos Firebase (Firestore y Storage) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
   <script>
-    /*------------------------------------------
-      1. FUNCIONES COMUNES (duración, etc)
-    ------------------------------------------*/
-    function parseDurationToSeconds(durationStr) {
-      if (!durationStr) return 0;
-      if (durationStr.includes(':')) {
-        const [min, sec] = durationStr.split(':').map(num => parseInt(num, 10));
-        return (min * 60) + (sec || 0);
+    // Configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAd70p3aEA218oPLWEs_DbMFEotHXfVyNg",
+      authDomain: "el-sotano-del-doctor.firebaseapp.com",
+      projectId: "el-sotano-del-doctor",
+      storageBucket: "el-sotano-del-doctor.appspot.com",
+      messagingSenderId: "288654488846",
+      appId: "1:288654488846:web:51a726467eaf8e8a88535f",
+      measurementId: "G-5N86SGCGW1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // Función para subir imagen y devolver la URL
+    async function uploadMemberImage(file) {
+      const storageRef = storage.ref();
+      const fileRef = storageRef.child('miembros/' + Date.now() + '_' + file.name);
+      await fileRef.put(file);
+      return await fileRef.getDownloadURL();
+    }
+
+    /* ---------------------
+       Navegación del menú
+    --------------------- */
+    function hideAllSections() {
+      document.getElementById('miembros').style.display = 'none';
+      document.getElementById('fechas-ensayo').style.display = 'none';
+      document.getElementById('config-screen').style.display = 'none';
+    }
+    document.getElementById('menu-miembros').addEventListener('click', (e) => {
+      e.preventDefault();
+      hideAllSections();
+      document.getElementById('miembros').style.display = 'block';
+      document.getElementById('sidebar-menu').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+      cargarMiembros();
+    });
+    document.getElementById('menu-fechas').addEventListener('click', (e) => {
+      e.preventDefault();
+      hideAllSections();
+      document.getElementById('fechas-ensayo').style.display = 'block';
+      document.getElementById('sidebar-menu').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+      cargarFechasDisponiblesVotacion();
+      cargarMiembrosSelect();
+    });
+    document.getElementById('menu-config').addEventListener('click', (e) => {
+      e.preventDefault();
+      hideAllSections();
+      document.getElementById('config-screen').style.display = 'block';
+      document.getElementById('sidebar-menu').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+      const feedSuffix = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
+      document.getElementById('feed-url').value = feedSuffix;
+      document.getElementById('concert-title-input').value = secondSetlistConcertTitle;
+    });
+    document.getElementById('menu-cerrar').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('sidebar-menu').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+    });
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebarMenu  = document.getElementById('sidebar-menu');
+    const overlay      = document.getElementById('overlay');
+    hamburgerBtn.addEventListener('click', () => {
+      sidebarMenu.classList.add('show');
+      overlay.classList.add('show');
+    });
+    overlay.addEventListener('click', () => {
+      sidebarMenu.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+    // Botón "Cerrar" en Configuración
+    document.getElementById('close-config').addEventListener('click', () => {
+      document.getElementById('config-screen').style.display = 'none';
+    });
+    
+    /* ---------------------
+       Funcionalidades para MIEMBROS DEL GRUPO
+    --------------------- */
+    // Agregar miembro
+    document.getElementById('form-miembros').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('nombre-miembro').value.trim();
+      const rol = document.getElementById('rol-miembro').value.trim();
+      const telefono = document.getElementById('telefono-miembro').value.trim();
+      const email = document.getElementById('email-miembro').value.trim();
+      let fotoURL = "";
+      const fileInput = document.getElementById('foto-miembro');
+      if (fileInput.files && fileInput.files[0]) {
+        try {
+          fotoURL = await uploadMemberImage(fileInput.files[0]);
+        } catch (error) {
+          console.error("Error subiendo la imagen:", error);
+          alert("Error al subir la imagen. Se usará imagen por defecto.");
+          fotoURL = "assets/default.jpg";
+        }
       } else {
-        const seconds = parseInt(durationStr, 10);
-        return isNaN(seconds) ? 0 : seconds;
+        fotoURL = "assets/default.jpg";
+      }
+      if (!nombre || !rol) {
+        alert('Por favor, rellena al menos el nombre y el rol');
+        return;
+      }
+      try {
+        await db.collection('miembros').add({ nombre, rol, telefono, email, foto: fotoURL });
+        alert('Miembro añadido correctamente');
+        cargarMiembros();
+        e.target.reset();
+      } catch (error) {
+        console.error("Error al añadir miembro: ", error);
+        alert('Error añadiendo el miembro');
+      }
+    });
+    
+    // Cargar miembros y mostrar botones Editar/Eliminar
+    async function cargarMiembros() {
+      const container = document.getElementById('lista-miembros');
+      container.innerHTML = '';
+      const snapshot = await db.collection('miembros').get();
+      snapshot.forEach(doc => {
+        const member = doc.data();
+        const div = document.createElement('div');
+        div.style.border = "1px solid #222";
+        div.style.padding = "10px";
+        div.style.marginBottom = "10px";
+        // Se incluye el id del documento para identificar el miembro
+        div.setAttribute('data-id', doc.id);
+        div.innerHTML = 
+          <img src="${member.foto || 'assets/default.jpg'}" alt="${member.nombre}" style="width:50px; height:50px; border-radius:50%; margin-right:10px;">
+          <strong>${member.nombre}</strong> - ${member.rol}<br>
+          Tel: ${member.telefono || 'N/A'}<br>
+          Email: ${member.email || 'N/A'}
+          <div style="margin-top: 5px;">
+            <button class="btn-edit" data-id="${doc.id}">Editar</button>
+            <button class="btn-delete" data-id="${doc.id}">Eliminar</button>
+          </div>
+        ;
+        container.appendChild(div);
+      });
+      
+      // Asignar eventos a botones Editar y Eliminar
+      document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const memberId = e.target.getAttribute('data-id');
+          // Obtener datos del miembro
+          const docSnap = await db.collection('miembros').doc(memberId).get();
+          if (docSnap.exists) {
+            const data = docSnap.data();
+            document.getElementById('edit-member-id').value = memberId;
+            document.getElementById('edit-nombre-miembro').value = data.nombre;
+            document.getElementById('edit-rol-miembro').value = data.rol;
+            document.getElementById('edit-telefono-miembro').value = data.telefono || "";
+            document.getElementById('edit-email-miembro').value = data.email || "";
+            document.getElementById('edit-member-modal').style.display = 'block';
+          }
+        });
+      });
+      document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const memberId = e.target.getAttribute('data-id');
+          if (confirm("¿Estás seguro de eliminar este miembro?")) {
+            await db.collection('miembros').doc(memberId).delete();
+            cargarMiembros();
+          }
+        });
+      });
+    }
+    
+    // Gestión de edición de miembro
+    document.getElementById('form-edit-miembro').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const memberId = document.getElementById('edit-member-id').value;
+      const nombre = document.getElementById('edit-nombre-miembro').value.trim();
+      const rol = document.getElementById('edit-rol-miembro').value.trim();
+      const telefono = document.getElementById('edit-telefono-miembro').value.trim();
+      const email = document.getElementById('edit-email-miembro').value.trim();
+      let fotoURL = null;
+      const fileInput = document.getElementById('edit-foto-miembro');
+      if (fileInput.files && fileInput.files[0]) {
+        try {
+          fotoURL = await uploadMemberImage(fileInput.files[0]);
+        } catch (error) {
+          console.error("Error al subir nueva imagen:", error);
+          alert("Error al subir la nueva imagen. Se mantendrá la anterior.");
+        }
+      }
+      
+      const updatedData = { nombre, rol, telefono, email };
+      if (fotoURL) { updatedData.foto = fotoURL; }
+      
+      try {
+        await db.collection('miembros').doc(memberId).update(updatedData);
+        alert("Miembro actualizado correctamente.");
+        document.getElementById('edit-member-modal').style.display = 'none';
+        cargarMiembros();
+      } catch (error) {
+        console.error("Error al actualizar miembro: ", error);
+        alert("Error al actualizar el miembro.");
+      }
+    });
+    
+    // Cancelar edición: cerrar modal
+    document.getElementById('cancel-edit-member').addEventListener('click', () => {
+      document.getElementById('edit-member-modal').style.display = 'none';
+    });
+
+    /* ---------------------
+       Funcionalidades para FECHAS ENSAYO / DISPONIBILIDAD
+    --------------------- */
+    // Cargar el select de miembros (usado en la votación de fechas)
+    async function cargarMiembrosSelect() {
+      const select = document.getElementById('miembro-votante');
+      select.innerHTML = '<option value="">-- Selecciona --</option>';
+      const snapshot = await db.collection('miembros').get();
+      snapshot.forEach(doc => {
+        const member = doc.data();
+        const option = document.createElement('option');
+        option.value = doc.id;
+        option.textContent = member.nombre;
+        select.appendChild(option);
+      });
+    }
+    // Crear grupos de radio para cada fecha disponible
+    async function cargarFechasDisponiblesVotacion() {
+      const container = document.getElementById('opciones-fechas');
+      container.innerHTML = '';
+      const snapshot = await db.collection('fechasDisponibles').get();
+      snapshot.forEach(doc => {
+        const fecha = doc.id;
+        const div = document.createElement('div');
+        div.setAttribute('data-fecha', fecha);
+        div.style.marginBottom = "10px";
+        div.innerHTML = <strong>${fecha}</strong>: 
+          <label><input type="radio" name="vote_${fecha}" value="si" required> Sí</label>
+          <label style="margin-left: 10px;"><input type="radio" name="vote_${fecha}" value="no" required> No</label>;
+        container.appendChild(div);
+      });
+    }
+    // Al enviar el formulario de disponibilidad
+    document.getElementById('form-fechas').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const miembro = document.getElementById('miembro-votante').value;
+      if (!miembro) {
+        alert('Selecciona tu miembro.');
+        return;
+      }
+      const container = document.getElementById('opciones-fechas');
+      const voteDivs = container.querySelectorAll('div[data-fecha]');
+      const votes = {};
+      voteDivs.forEach(div => {
+        const fecha = div.getAttribute('data-fecha');
+        const selected = div.querySelector(input[name="vote_${fecha}"]:checked);
+        if (selected) {
+          votes[fecha] = selected.value;
+        }
+      });
+      if (Object.keys(votes).length === 0) {
+        alert("Debes emitir tu voto en al menos una fecha.");
+        return;
+      }
+      await enviarDisponibilidad(miembro, votes);
+      e.target.reset();
+    });
+    // Actualizar Firestore con el voto del miembro (evitando duplicados o actualizando si ya existe)
+    async function enviarDisponibilidad(miembro, votes) {
+      for (const fecha in votes) {
+        const voteValue = votes[fecha];
+        const docRef = db.collection('fechasDisponibles').doc(fecha);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
+          let currentVotes = docSnap.data().votos || [];
+          const index = currentVotes.findIndex(vote => vote.miembro === miembro);
+          if (index >= 0) {
+            currentVotes[index].voto = voteValue;
+          } else {
+            currentVotes.push({ miembro: miembro, voto: voteValue });
+          }
+          await docRef.update({ votos: currentVotes });
+        } else {
+          await db.collection('fechasDisponibles').doc(fecha).set({ votos: [{ miembro: miembro, voto: voteValue }] });
+        }
+      }
+      alert("Disponibilidad registrada.");
+      mostrarResultadosDisponibilidad();
+    }
+    // Mostrar los resultados de disponibilidad
+    async function mostrarResultadosDisponibilidad() {
+      const lista = document.getElementById('lista-resultados');
+      lista.innerHTML = '';
+      const snapshot = await db.collection('fechasDisponibles').get();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement('li');
+        let text = ${doc.id}: ;
+        if (data.votos && data.votos.length > 0) {
+          data.votos.forEach(vote => { text +=  [${vote.miembro}: ${vote.voto}] ; });
+        } else {
+          text += "Sin votos";
+        }
+        li.textContent = text;
+        lista.appendChild(li);
+      });
+      document.getElementById('resultados-disponibilidad').style.display = 'block';
+    }
+
+    /* ---------------------
+       Funcionalidades para Panel de Administración de Fechas
+    --------------------- */
+    const CLAVE_ADMIN_FECHAS = "ensayo2025";
+    document.getElementById('login-btn-fechas').addEventListener('click', () => {
+      const clave = document.getElementById('admin-pass-fechas').value.trim();
+      if (clave === CLAVE_ADMIN_FECHAS) {
+        document.getElementById('panel-fechas').style.display = 'block';
+        document.getElementById('login-admin-fechas').style.display = 'none';
+        cargarFechasAdmin();
+      } else {
+        alert('Clave incorrecta.');
+      }
+    });
+    document.getElementById('agregar-fecha').addEventListener('click', async () => {
+      const nueva = document.getElementById('nueva-fecha').value.trim();
+      if (!nueva) return;
+      try {
+        await db.collection('fechasDisponibles').doc(nueva).set({ votos: [] });
+        document.getElementById('nueva-fecha').value = '';
+        cargarFechasDisponiblesVotacion();
+        cargarFechasAdmin();
+      } catch (error) {
+        console.error("Error al agregar fecha: ", error);
+        alert("Error al agregar fecha.");
+      }
+    });
+    async function cargarFechasAdmin() {
+      const ul = document.getElementById('fechas-activas');
+      ul.innerHTML = '';
+      const snapshot = await db.collection('fechasDisponibles').get();
+      snapshot.forEach(doc => {
+        const li = document.createElement('li');
+        li.textContent = doc.id;
+        const btn = document.createElement('button');
+        btn.textContent = 'Eliminar';
+        btn.style.marginLeft = '10px';
+        btn.style.background = 'red';
+        btn.style.color = '#fff';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '4px';
+        btn.style.cursor = 'pointer';
+        btn.onclick = async () => {
+          await db.collection('fechasDisponibles').doc(doc.id).delete();
+          cargarFechasDisponiblesVotacion();
+          cargarFechasAdmin();
+        };
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+    }
+
+    /* ---------------------
+       Funciones existentes para setlists y generación de PDF
+    --------------------- */
+    function parseDurationToSeconds(str) {
+      if (!str) return 0;
+      if (str.includes(':')) {
+        const [min, sec] = str.split(':').map(n => parseInt(n, 10));
+        return (min * 60) + (sec || 0);
+      }
+      const secs = parseInt(str, 10);
+      return isNaN(secs) ? 0 : secs;
+    }
+    function formatSecondsHMSorMMSS(totalSeconds) {
+      if (totalSeconds < 3600) {
+        const m = Math.floor(totalSeconds / 60);
+        const s = totalSeconds % 60;
+        return ${m}:${String(s).padStart(2, '0')};
+      } else {
+        const h = Math.floor(totalSeconds / 3600);
+        const rest = totalSeconds % 3600;
+        const m = Math.floor(rest / 60);
+        const s = rest % 60;
+        return ${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')};
       }
     }
-    function formatSecondsToMMSS(totalSeconds) {
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${minutes}:${String(seconds).padStart(2, '0')}`;
+    function cleanString(str) {
+      if (!str) return '';
+      let cleaned = str.replace(/[^\x00-\xFF]/g, '');
+      return cleaned.trim();
     }
-
-    /*------------------------------------------
-      2. PRIMER SETLIST
-    ------------------------------------------*/
+    // PRIMER SETLIST
     const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
-
     async function cargarPrimerSetlist() {
       try {
         const res = await fetch(urlPrimerSetlist);
         const data = await res.json();
         const tbody = document.getElementById('setlist-body');
         tbody.innerHTML = '';
-
         const songs = data.filter(item => item.type === 'song');
-        let totalSeconds = 0;
-
+        let totalSecs = 0;
         songs.forEach((song, i) => {
           const secs = parseDurationToSeconds(song.duration || '');
-          const durFmt = formatSecondsToMMSS(secs);
+          totalSecs += secs;
           const row = document.createElement('tr');
-          row.innerHTML = `
+          row.innerHTML = 
             <td>${i + 1}</td>
-            <td>${song.name || ''}</td>
-            <td>${song.key || ''}</td>
-            <td>${song.tempo || ''}</td>
-            <td>${durFmt}</td>
-          `;
+            <td>${cleanString(song.name || '')}</td>
+            <td>${cleanString(song.key || '')}</td>
+            <td>${cleanString(song.tempo || '')}</td>
+            <td>${formatSecondsHMSorMMSS(secs)}</td>
+          ;
           tbody.appendChild(row);
-          totalSeconds += secs;
         });
-
         document.getElementById('total-time').textContent =
-          'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
-
+          'Tiempo total del set: ' + formatSecondsHMSorMMSS(totalSecs);
         return songs;
       } catch (err) {
         console.error('Error al cargar el primer setlist:', err);
@@ -483,13 +739,11 @@
         return [];
       }
     }
-
     async function descargarPDFprimerSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
+      doc.setFont('helvetica', 'normal');
       const songs = await cargarPrimerSetlist();
-
-      // Logo
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imgRes = await fetch(imgUrl);
@@ -505,21 +759,16 @@
       } catch (err) {
         console.warn('No se pudo cargar el logo (primer setlist):', err);
       }
-
       doc.setFontSize(16);
       doc.setTextColor(40);
       doc.text('Setlist - El Sótano del Doctor (Primer)', 120, 50);
-
       let totalSecs = 0;
-      songs.forEach(s => {
-        totalSecs += parseDurationToSeconds(s.duration || '0');
-      });
-      const totalTime = formatSecondsToMMSS(totalSecs);
+      songs.forEach(s => { totalSecs += parseDurationToSeconds(s.duration || '0'); });
+      const totalTime = formatSecondsHMSorMMSS(totalSecs);
       const totalSongs = songs.length;
       doc.setFontSize(12);
       doc.setTextColor(80);
-      doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
-
+      doc.text(${totalSongs} canciones, ${totalTime} total, 120, 70);
       const columns = [
         { header: '#', dataKey: 'num' },
         { header: 'Título', dataKey: 'title' },
@@ -527,102 +776,80 @@
         { header: 'Tempo', dataKey: 'tempo' },
         { header: 'Duración', dataKey: 'duration' }
       ];
-      const rows = songs.map((song, i) => ({
-        num: i + 1,
-        title: song.name || '',
-        key: song.key || '',
-        tempo: song.tempo || '',
-        duration: formatSecondsToMMSS(parseDurationToSeconds(song.duration || '0'))
-      }));
-
+      const rows = songs.map((song, i) => {
+        const secs = parseDurationToSeconds(song.duration || '0');
+        return {
+          num: i + 1,
+          title: cleanString(song.name || ''),
+          key: cleanString(song.key || ''),
+          tempo: cleanString(song.tempo || ''),
+          duration: formatSecondsHMSorMMSS(secs)
+        };
+      });
       doc.autoTable({
         startY: 100,
         head: [columns.map(c => c.header)],
         body: rows.map(r => [r.num, r.title, r.key, r.tempo, r.duration]),
-        headStyles: {
-          fillColor: [60, 60, 60],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        bodyStyles: {
-          fillColor: [245, 245, 245],
-          textColor: [0, 0, 0]
-        },
-        alternateRowStyles: {
-          fillColor: [230, 230, 230]
-        },
+        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
+        alternateRowStyles: { fillColor: [230, 230, 230] },
         styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
-        columnStyles: {
-          0: { cellWidth: 30 },
-          1: { cellWidth: 150 },
-          2: { cellWidth: 80 },
-          3: { cellWidth: 50 },
-          4: { cellWidth: 60 }
-        }
+        columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 150 }, 2: { cellWidth: 80 }, 3: { cellWidth: 50 }, 4: { cellWidth: 60 } }
       });
-
       doc.save('setlist_ElSotanoDelDoctor.pdf');
     }
-
-    /*------------------------------------------
-      3. SEGUNDO SETLIST (feed dinámico)
-    ------------------------------------------*/
     let urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
+    let secondSetlistConcertTitle = '';
     function loadConfigFromLocalStorage() {
-      const saved = localStorage.getItem('urlSegundoSetlist');
-      if (saved) urlSegundoSetlist = saved;
+      const savedURL = localStorage.getItem('urlSegundoSetlist');
+      if (savedURL) urlSegundoSetlist = savedURL;
+      const savedTitle = localStorage.getItem('secondSetlistConcertTitle');
+      if (savedTitle) secondSetlistConcertTitle = savedTitle;
     }
-    function saveConfigToLocalStorage(url) {
+    function saveConfigToLocalStorage(url, title) {
       localStorage.setItem('urlSegundoSetlist', url);
+      localStorage.setItem('secondSetlistConcertTitle', title);
     }
-    function getSecondSetlistURL() {
-      return urlSegundoSetlist;
+    function displayConcertTitle() {
+      document.getElementById('concert-title').textContent = secondSetlistConcertTitle;
     }
-    function cleanString(str) {
-      if (!str) return '';
-      return str.replace(/[^\x00-\xFF]/g, '').trim();
-    }
+    function getSecondSetlistURL() { return urlSegundoSetlist; }
     async function cargarSegundoSetlist() {
       try {
+        displayConcertTitle();
         const url = getSecondSetlistURL();
         const res = await fetch(url);
         const data = await res.json();
         const songs = data.filter(item => item.type === 'song');
         const tbody = document.getElementById('second-body');
         tbody.innerHTML = '';
-        let totalSeconds = 0;
+        let totalSecs = 0;
         songs.forEach((song, index) => {
           const secs = parseDurationToSeconds(song.duration || '0');
-          const nameClean = cleanString(song.name || '');
-          const keyClean  = cleanString(song.key  || '');
-          const tempoClean= cleanString(song.tempo|| '');
-          const durFmt    = formatSecondsToMMSS(secs);
-
+          totalSecs += secs;
           const row = document.createElement('tr');
-          row.innerHTML = `
+          row.innerHTML = 
             <td>${index + 1}</td>
-            <td>${nameClean}</td>
-            <td>${keyClean}</td>
-            <td>${tempoClean}</td>
-            <td>${durFmt}</td>
-          `;
+            <td>${cleanString(song.name || '')}</td>
+            <td>${cleanString(song.key || '')}</td>
+            <td>${cleanString(song.tempo || '')}</td>
+            <td>${formatSecondsHMSorMMSS(secs)}</td>
+          ;
           tbody.appendChild(row);
-          totalSeconds += secs;
         });
         document.getElementById('url-actual').textContent = url;
-        document.getElementById('total-time-2').textContent =
-          'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
+        document.getElementById('total-time-2').textContent = 'Tiempo total del set: ' + formatSecondsHMSorMMSS(totalSecs);
         return songs;
       } catch (err) {
         console.error('Error al cargar el segundo setlist:', err);
-        document.getElementById('second-body').innerHTML =
-          '<tr><td colspan="5">Error al cargar el segundo setlist.</td></tr>';
+        document.getElementById('second-body').innerHTML = '<tr><td colspan="5">Error al cargar el segundo setlist.</td></tr>';
         return [];
       }
     }
     async function descargarPDFsegundoSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
+      doc.setFont('helvetica', 'normal');
       const songs = await cargarSegundoSetlist();
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
@@ -641,16 +868,15 @@
       }
       doc.setFontSize(16);
       doc.setTextColor(40);
-      doc.text('Setlist - El Sótano del Doctor (Segundo)', 120, 50);
+      const pdfTitle = secondSetlistConcertTitle || 'El Sótano del Doctor (Segundo)';
+      doc.text(Setlist - ${pdfTitle}, 120, 50);
       let totalSecs = 0;
-      songs.forEach(song => {
-        totalSecs += parseDurationToSeconds(song.duration || '0');
-      });
-      const totalTime = formatSecondsToMMSS(totalSecs);
+      songs.forEach(song => { totalSecs += parseDurationToSeconds(song.duration || '0'); });
+      const totalTime = formatSecondsHMSorMMSS(totalSecs);
       const totalSongs = songs.length;
       doc.setFontSize(12);
       doc.setTextColor(80);
-      doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
+      doc.text(${totalSongs} canciones, ${totalTime} total, 120, 70);
       const columns2 = [
         { header: '#', dataKey: 'num' },
         { header: 'Canción', dataKey: 'name' },
@@ -663,111 +889,28 @@
         return {
           num: i + 1,
           name: cleanString(song.name || ''),
-          key: cleanString(song.key  || ''),
-          tempo: cleanString(song.tempo|| ''),
-          duration: formatSecondsToMMSS(secs)
+          key: cleanString(song.key || ''),
+          tempo: cleanString(song.tempo || ''),
+          duration: formatSecondsHMSorMMSS(secs)
         };
       });
       doc.autoTable({
         startY: 100,
         head: [columns2.map(c => c.header)],
         body: rows2.map(r => [r.num, r.name, r.key, r.tempo, r.duration]),
-        headStyles: {
-          fillColor: [60, 60, 60],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        bodyStyles: {
-          fillColor: [245, 245, 245],
-          textColor: [0, 0, 0]
-        },
-        alternateRowStyles: {
-          fillColor: [230, 230, 230]
-        },
+        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
+        alternateRowStyles: { fillColor: [230, 230, 230] },
         styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
-        columnStyles: {
-          0: { cellWidth: 30 },
-          1: { cellWidth: 150 },
-          2: { cellWidth: 80 },
-          3: { cellWidth: 50 },
-          4: { cellWidth: 60 }
-        }
+        columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 150 }, 2: { cellWidth: 80 }, 3: { cellWidth: 50 }, 4: { cellWidth: 60 } }
       });
       doc.save('SegundoSetlist.pdf');
     }
-
-    /*------------------------------------------
-      4. MENÚ Y CONFIGURACIÓN
-    ------------------------------------------*/
-    const hamburgerBtn = document.getElementById('hamburger-btn');
-    const sidebarMenu  = document.getElementById('sidebar-menu');
-    const menuConfig   = document.getElementById('menu-config');
-    const menuCerrar   = document.getElementById('menu-cerrar');
-    const overlay      = document.getElementById('overlay');
-
-    hamburgerBtn.addEventListener('click', () => {
-      sidebarMenu.classList.add('show');
-      overlay.classList.add('show');
-    });
-    menuCerrar.addEventListener('click', (e) => {
-      e.preventDefault();
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-    });
-    overlay.addEventListener('click', () => {
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-    });
-
-    // BOTÓN "Configuración"
-    menuConfig.addEventListener('click', (e) => {
-      e.preventDefault();
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-      // Muestra config
-      document.getElementById('config-screen').style.display = 'block';
-      // Rellenamos el input
-      document.getElementById('feed-url').value = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
-    });
-
-    // BOTÓN "Cerrar" en la pantalla config
-    document.getElementById('close-config').addEventListener('click', () => {
-      document.getElementById('config-screen').style.display = 'none';
-    });
-
-    // BOTÓN "Guardar configuración"
-    document.getElementById('guardar-config').addEventListener('click', () => {
-      const inputVal = document.getElementById('feed-url').value.trim();
-      if (!inputVal) {
-        alert('Introduce un ID o URL');
-        return;
-      }
-      let newUrl;
-      if (!inputVal.startsWith('http')) {
-        newUrl = `https://www.bandhelper.com/feed/set_list/${inputVal}`;
-      } else {
-        newUrl = inputVal;
-      }
-      urlSegundoSetlist = newUrl;
-      saveConfigToLocalStorage(newUrl);
-      cargarSegundoSetlist();
-      document.getElementById('config-screen').style.display = 'none';
-    });
-
-    /*---------------------------------------
-      5. CARGA INICIAL
-    ---------------------------------------*/
     window.addEventListener('DOMContentLoaded', () => {
-      // Leemos config localStorage
-      const saved = localStorage.getItem('urlSegundoSetlist');
-      if (saved) urlSegundoSetlist = saved;
-
-      // Cargamos ambos setlists
+      loadConfigFromLocalStorage();
       cargarPrimerSetlist();
       cargarSegundoSetlist();
     });
-
-    // BOTONES PDF
     document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
     document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
   </script>
