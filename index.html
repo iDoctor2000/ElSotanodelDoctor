@@ -1133,11 +1133,11 @@
     document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
     document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
 
-    // Cargar datos al iniciar sin mostrar la pantalla de contraseña
-    window.onload = () => {
+    // Cargar datos al iniciar
+    window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('password-screen').classList.remove('show');
       loadAllData();
-    };
+    });
   </script>
 </body>
 </html>
