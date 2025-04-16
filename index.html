@@ -22,10 +22,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
-
   <style>
     /* Reseteo y box-sizing */
     *, *::before, *::after {
@@ -269,39 +265,6 @@
       background-color: #1a1a1a;
     }
 
-    /* ENSAYOS */
-    #rehearsals {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,255,255,0.1);
-      margin-bottom: 40px;
-    }
-    #rehearsals h2 {
-      text-align: center;
-      color: #0cf;
-      margin-bottom: 10px;
-    }
-    #rehearsals table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      color: #fff;
-      font-size: 0.95em;
-    }
-    #rehearsals thead {
-      background-color: #222;
-      color: #0cf;
-    }
-    #rehearsals th, #rehearsals td {
-      padding: 12px;
-      border: 1px solid #333;
-      text-align: left;
-    }
-    #rehearsals tr:nth-child(even) {
-      background-color: #1a1a1a;
-    }
-
     /* CALENDARIO */
     #calendario {
       background-color: #111;
@@ -368,6 +331,11 @@
   <div id="setlist-config-screen" class="config-screen">
     <button class="close-btn" id="close-setlist-config">Cerrar</button>
     <h2>Configuración de Setlists</h2>
+    <h3>Primer Setlist</h3>
+    <label for="setlist1-name">Nombre del Setlist</label>
+    <input type="text" id="setlist1-name" placeholder="Ej: Ensayos 2025" />
+    <label for="setlist1-url">ID/URL del feed</label>
+    <input type="text" id="setlist1-url" placeholder="URL del feed" />
     <h3>Segundo Setlist</h3>
     <label for="setlist2-name">Nombre del Setlist</label>
     <input type="text" id="setlist2-name" placeholder="Ej: Concierto Navidad" />
@@ -387,27 +355,12 @@
       <option value="admin">Administrador</option>
       <option value="member">Miembro</option>
     </select>
-    <label for="user-mission">Misión</label>
-    <select id="user-mission" multiple>
-      <option value="Cantante">Cantante</option>
-      <option value="Batería">Batería</option>
-      <option value="Bajo">Bajo</option>
-      <option value="Teclados">Teclados</option>
-      <option value="Dirección Musical">Dirección Musical</option>
-      <option value="Saxo">Saxo</option>
-      <option value="Coros">Coros</option>
-      <option value="Guitarra Rítmica">Guitarra Rítmica</option>
-      <option value="Guitarra Acústica">Guitarra Acústica</option>
-      <option value="Guitarra Solista">Guitarra Solista</option>
-      <option value="Técnico de Sonido">Técnico de Sonido</option>
-    </select>
     <button id="add-user">Añadir Usuario</button>
     <table id="user-table">
       <thead>
         <tr>
           <th>Nombre</th>
           <th>Rol</th>
-          <th>Misión</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -496,34 +449,15 @@
           <tr>
             <th>Nombre</th>
             <th>Rol</th>
-            <th>Misión</th>
           </tr>
         </thead>
         <tbody id="users-body"></tbody>
       </table>
     </section>
 
-    <!-- 4) ENSAYOS -->
-    <section id="rehearsals">
-      <h2>Próximos Ensayos</h2>
-      <p style="text-align:center; color:#aaa;">
-        Lista de próximos ensayos.
-      </p>
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Lugar</th>
-          </tr>
-        </thead>
-        <tbody id="rehearsals-body"></tbody>
-      </table>
-    </section>
-
-    <!-- 5) CALENDARIO -->
+    <!-- 4) CALENDARIO -->
     <section id="calendario">
-      <h2>Próximos Conciertos</h2>
+      <h2>Próximos Conciertos y Ensayos</h2>
       <p>Consulta el calendario actualizado.</p>
       <div>
         <script type="text/javascript" 
@@ -539,21 +473,6 @@
   </footer>
 
   <script>
-    // Configuración de Firebase
-    const firebaseConfig = {
-      apiKey: "AIZAsyA7d70p3aEA218PLWE5_DBMFEtoHXfyvNg",
-      authDomain: "el-sotano-del-doctor.firebaseapp.com",
-      projectId: "el-sotano-del-doctor",
-      storageBucket: "el-sotano-del-doctor.firestorestorage.app",
-      messagingSenderId: "288654488846",
-      appId: "1:288654488846:web:51a7264676afe8ba8635f",
-      measurementId: "G-5N8G5GCW1"
-    };
-
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
     /*------------------------------------------
       1. FUNCIONES COMUNES
     ------------------------------------------*/
@@ -585,28 +504,15 @@
       setlist2: { name: 'Setlist Próximo Concierto', url: 'https://www.bandhelper.com/feed/set_list/TXHvyb' }
     };
 
-    async function loadSetlistConfig() {
-      try {
-        const doc = await db.collection('config').doc('setlists').get();
-        if (doc.exists) {
-          setlistConfig = doc.data();
-        } else {
-          await db.collection('config').doc('setlists').set(setlistConfig);
-        }
-        updateSetlistTitles();
-      } catch (err) {
-        console.error('Error al cargar configuración de setlists:', err);
-      }
+    function loadSetlistConfig() {
+      const saved = localStorage.getItem('setlistConfig');
+      if (saved) setlistConfig = JSON.parse(saved);
+      updateSetlistTitles();
     }
 
-    async function saveSetlistConfig() {
-      try {
-        await db.collection('config').doc('setlists').set(setlistConfig);
-        updateSetlistTitles();
-      } catch (err) {
-        console.error('Error al guardar configuración de setlists:', err);
-        alert('Error al guardar configuración de setlists.');
-      }
+    function saveSetlistConfig() {
+      localStorage.setItem('setlistConfig', JSON.stringify(setlistConfig));
+      updateSetlistTitles();
     }
 
     function updateSetlistTitles() {
@@ -619,7 +525,6 @@
     ------------------------------------------*/
     async function cargarPrimerSetlist() {
       try {
-        document.getElementById('setlist-body').innerHTML = '<tr><td colspan="5">Cargando...</td></tr>';
         const res = await fetch(setlistConfig.setlist1.url);
         const data = await res.json();
         const tbody = document.getElementById('setlist-body');
@@ -688,4 +593,371 @@
 
       const columns = [
         { header: '#', dataKey: 'num' },
-        { header: 'Título', dataKey: 'title'
+        { header: 'Título', dataKey: 'title' },
+        { header: 'Tonalidad', dataKey: 'key' },
+        { header: 'Tempo', dataKey: 'tempo' },
+        { header: 'Duración', dataKey: 'duration' }
+      ];
+      const rows = songs.map((song, i) => ({
+        num: i + 1,
+        title: song.name || '',
+        key: song.key || '',
+        tempo: song.tempo || '',
+        duration: formatSecondsToMMSS(parseDurationToSeconds(song.duration || '0'))
+      }));
+
+      doc.autoTable({
+        startY: 100,
+        head: [columns.map(c => c.header)],
+        body: rows.map(r => [r.num, r.title, r.key, r.tempo, r.duration]),
+        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
+        alternateRowStyles: { fillColor: [230, 230, 230] },
+        styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
+        columnStyles: {
+          0: { cellWidth: 30 },
+          1: { cellWidth: 150 },
+          2: { cellWidth: 80 },
+          3: { cellWidth: 50 },
+          4: { cellWidth: 60 }
+        }
+      });
+
+      doc.save(`setlist_${setlistConfig.setlist1.name.replace(/\s+/g, '_')}.pdf`);
+    }
+
+    /*------------------------------------------
+      4. SEGUNDO SETLIST
+    ------------------------------------------*/
+    async function cargarSegundoSetlist() {
+      try {
+        const res = await fetch(setlistConfig.setlist2.url);
+        const data = await res.json();
+        const songs = data.filter(item => item.type === 'song');
+        const tbody = document.getElementById('second-body');
+        tbody.innerHTML = '';
+        let totalSeconds = 0;
+
+        songs.forEach((song, index) => {
+          const secs = parseDurationToSeconds(song.duration || '0');
+          const nameClean = cleanString(song.name || '');
+          const keyClean = cleanString(song.key || '');
+          const tempoClean = cleanString(song.tempo || '');
+          const durFmt = formatSecondsToMMSS(secs);
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${nameClean}</td>
+            <td>${keyClean}</td>
+            <td>${tempoClean}</td>
+            <td>${durFmt}</td>
+          `;
+          tbody.appendChild(row);
+          totalSeconds += secs;
+        });
+
+        document.getElementById('url-actual').textContent = setlistConfig.setlist2.url;
+        document.getElementById('total-time-2').textContent =
+          'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
+        return songs;
+      } catch (err) {
+        console.error('Error al cargar el segundo setlist:', err);
+        document.getElementById('second-body').innerHTML =
+          '<tr><td colspan="5">Error al cargar el segundo setlist.</td></tr>';
+        return [];
+      }
+    }
+
+    async function descargarPDFsegundoSetlist() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
+      const songs = await cargarSegundoSetlist();
+
+      try {
+        const imgUrl = 'assets/logo_negro copia.jpg';
+        const imgRes = await fetch(imgUrl);
+        const imgBlob = await imgRes.blob();
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(imgBlob);
+        const base64Img = await base64Promise;
+        doc.addImage(base64Img, 'JPEG', 40, 30, 60, 60);
+      } catch (err) {
+        console.warn('No se pudo cargar el logo (segundo setlist):', err);
+      }
+
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.text(`Setlist - ${setlistConfig.setlist2.name}`, 120, 50);
+
+      let totalSecs = 0;
+      songs.forEach(song => totalSecs += parseDurationToSeconds(song.duration || '0'));
+      const totalTime = formatSecondsToMMSS(totalSecs);
+      const totalSongs = songs.length;
+      doc.setFontSize(12);
+      doc.setTextColor(80);
+      doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
+
+      const columns = [
+        { header: '#', dataKey: 'num' },
+        { header: 'Canción', dataKey: 'name' },
+        { header: 'Tonalidad', dataKey: 'key' },
+        { header: 'Tempo', dataKey: 'tempo' },
+        { header: 'Duración', dataKey: 'duration' }
+      ];
+      const rows = songs.map((song, i) => ({
+        num: i + 1,
+        name: cleanString(song.name || ''),
+        key: cleanString(song.key || ''),
+        tempo: cleanString(song.tempo || ''),
+        duration: formatSecondsToMMSS(parseDurationToSeconds(song.duration || '0'))
+      }));
+
+      doc.autoTable({
+        startY: 100,
+        head: [columns.map(c => c.header)],
+        body: rows.map(r => [r.num, r.name, r.key, r.tempo, r.duration]),
+        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
+        alternateRowStyles: { fillColor: [230, 230, 230] },
+        styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
+        columnStyles: {
+          0: { cellWidth: 30 },
+          1: { cellWidth: 150 },
+          2: { cellWidth: 80 },
+          3: { cellWidth: 50 },
+          4: { cellWidth: 60 }
+        }
+      });
+
+      doc.save(`setlist_${setlistConfig.setlist2.name.replace(/\s+/g, '_')}.pdf`);
+    }
+
+    /*------------------------------------------
+      5. GESTIÓN DE USUARIOS
+    ------------------------------------------*/
+    let users = [];
+
+    function loadUsers() {
+      const saved = localStorage.getItem('users');
+      if (saved) users = JSON.parse(saved);
+      renderUsers();
+    }
+
+    function saveUsers() {
+      localStorage.setItem('users', JSON.stringify(users));
+      renderUsers();
+    }
+
+    function renderUsers() {
+      const tbody = document.getElementById('user-table-body');
+      const mainTbody = document.getElementById('users-body');
+      tbody.innerHTML = '';
+      mainTbody.innerHTML = '';
+
+      users.forEach((user, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${user.name}</td>
+          <td>${user.role === 'admin' ? 'Administrador' : 'Miembro'}</td>
+          <td><button class="delete-user" data-index="${index}">Eliminar</button></td>
+        `;
+        tbody.appendChild(row);
+
+        const mainRow = document.createElement('tr');
+        mainRow.innerHTML = `
+          <td>${user.name}</td>
+          <td>${user.role === 'admin' ? 'Administrador' : 'Miembro'}</td>
+        `;
+        mainTbody.appendChild(mainRow);
+      });
+
+      document.querySelectorAll('.delete-user').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const index = btn.getAttribute('data-index');
+          users.splice(index, 1);
+          saveUsers();
+        });
+      });
+    }
+
+    /*------------------------------------------
+      6. ASIGNACIÓN DE ENSAYOS
+    ------------------------------------------*/
+    let rehearsals = [];
+
+    function loadRehearsals() {
+      const saved = localStorage.getItem('rehearsals');
+      if (saved) rehearsals = JSON.parse(saved);
+      renderRehearsals();
+    }
+
+    function saveRehearsals() {
+      localStorage.setItem('rehearsals', JSON.stringify(rehearsals));
+      renderRehearsals();
+    }
+
+    function renderRehearsals() {
+      const tbody = document.getElementById('rehearsal-table-body');
+      tbody.innerHTML = '';
+
+      rehearsals.forEach((rehearsal, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${rehearsal.date}</td>
+          <td>${rehearsal.time}</td>
+          <td>${rehearsal.location}</td>
+          <td><button class="delete-rehearsal" data-index="${index}">Eliminar</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      document.querySelectorAll('.delete-rehearsal').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const index = btn.getAttribute('data-index');
+          rehearsals.splice(index, 1);
+          saveRehearsals();
+        });
+      });
+    }
+
+    /*------------------------------------------
+      7. MENÚ Y CONFIGURACIÓN
+    ------------------------------------------*/
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebarMenu = document.getElementById('sidebar-menu');
+    const overlay = document.getElementById('overlay');
+
+    function closeAllScreens() {
+      document.querySelectorAll('.config-screen').forEach(screen => {
+        screen.style.display = 'none';
+      });
+      sidebarMenu.classList.remove('show');
+      overlay.classList.remove('show');
+    }
+
+    hamburgerBtn.addEventListener('click', () => {
+      sidebarMenu.classList.add('show');
+      overlay.classList.add('show');
+    });
+
+    document.getElementById('menu-cerrar').addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAllScreens();
+    });
+
+    overlay.addEventListener('click', closeAllScreens);
+
+    // Configuración de Setlists
+    document.getElementById('menu-setlist-config').addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAllScreens();
+      const screen = document.getElementById('setlist-config-screen');
+      screen.style.display = 'block';
+      document.getElementById('setlist1-name').value = setlistConfig.setlist1.name;
+      document.getElementById('setlist1-url').value = setlistConfig.setlist1.url;
+      document.getElementById('setlist2-name').value = setlistConfig.setlist2.name;
+      document.getElementById('setlist2-url').value = setlistConfig.setlist2.url.replace('https://www.bandhelper.com/feed/set_list/', '');
+    });
+
+    document.getElementById('close-setlist-config').addEventListener('click', () => {
+      document.getElementById('setlist-config-screen').style.display = 'none';
+    });
+
+    document.getElementById('guardar-setlist-config').addEventListener('click', () => {
+      const setlist1Name = document.getElementById('setlist1-name').value.trim();
+      const setlist1Url = document.getElementById('setlist1-url').value.trim();
+      const setlist2Name = document.getElementById('setlist2-name').value.trim();
+      let setlist2Url = document.getElementById('setlist2-url').value.trim();
+
+      if (!setlist1Name || !setlist1Url || !setlist2Name || !setlist2Url) {
+        alert('Por favor, completa todos los campos.');
+        return;
+      }
+
+      setlistConfig.setlist1.name = setlist1Name;
+      setlistConfig.setlist1.url = setlist1Url;
+      setlistConfig.setlist2.name = setlist2Name;
+      if (!setlist2Url.startsWith('http')) {
+        setlist2Url = `https://www.bandhelper.com/feed/set_list/${setlist2Url}`;
+      }
+      setlistConfig.setlist2.url = setlist2Url;
+
+      saveSetlistConfig();
+      cargarPrimerSetlist();
+      cargarSegundoSetlist();
+      document.getElementById('setlist-config-screen').style.display = 'none';
+    });
+
+    // Gestión de Usuarios
+    document.getElementById('menu-user-mgmt').addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAllScreens();
+      document.getElementById('user-mgmt-screen').style.display = 'block';
+    });
+
+    document.getElementById('close-user-mgmt').addEventListener('click', () => {
+      document.getElementById('user-mgmt-screen').style.display = 'none';
+    });
+
+    document.getElementById('add-user').addEventListener('click', () => {
+      const name = document.getElementById('user-name').value.trim();
+      const role = document.getElementById('user-role').value;
+
+      if (!name) {
+        alert('Por favor, introduce un nombre.');
+        return;
+      }
+
+      users.push({ name, role });
+      saveUsers();
+      document.getElementById('user-name').value = '';
+    });
+
+    // Asignación de Ensayos
+    document.getElementById('menu-rehearsal').addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAllScreens();
+      document.getElementById('rehearsal-screen').style.display = 'block';
+    });
+
+    document.getElementById('close-rehearsal').addEventListener('click', () => {
+      document.getElementById('rehearsal-screen').style.display = 'none';
+    });
+
+    document.getElementById('add-rehearsal').addEventListener('click', () => {
+      const date = document.getElementById('rehearsal-date').value;
+      const time = document.getElementById('rehearsal-time').value;
+      const location = document.getElementById('rehearsal-location').value.trim();
+
+      if (!date || !time || !location) {
+        alert('Por favor, completa todos los campos.');
+        return;
+      }
+
+      rehearsals.push({ date, time, location });
+      saveRehearsals();
+      document.getElementById('rehearsal-date').value = '';
+      document.getElementById('rehearsal-time').value = '';
+      document.getElementById('rehearsal-location').value = '';
+    });
+
+    /*------------------------------------------
+      8. CARGA INICIAL
+    ------------------------------------------*/
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSetlistConfig();
+      loadUsers();
+      loadRehearsals();
+      cargarPrimerSetlist();
+      cargarSegundoSetlist();
+    });
+
+    document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
+    document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
+  </script>
+</body>
+</html>
