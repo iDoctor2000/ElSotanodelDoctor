@@ -23,8 +23,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
   <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
 
   <style>
     /* Reseteo y box-sizing */
@@ -591,7 +591,6 @@
         if (doc.exists) {
           setlistConfig = doc.data();
         } else {
-          // Valores por defecto si no existe el documento
           await db.collection('config').doc('setlists').set(setlistConfig);
         }
         updateSetlistTitles();
@@ -675,4 +674,18 @@
         console.warn('No se pudo cargar el logo (primer setlist):', err);
       }
 
-      doc.setFontSize
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.text(`Setlist - ${setlistConfig.setlist1.name}`, 120, 50);
+
+      let totalSecs = 0;
+      songs.forEach(s => totalSecs += parseDurationToSeconds(s.duration || '0'));
+      const totalTime = formatSecondsToMMSS(totalSecs);
+      const totalSongs = songs.length;
+      doc.setFontSize(12);
+      doc.setTextColor(80);
+      doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
+
+      const columns = [
+        { header: '#', dataKey: 'num' },
+        { header: 'Título', dataKey: 'title'
