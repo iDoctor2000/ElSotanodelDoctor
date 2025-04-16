@@ -129,9 +129,11 @@
       background-color: #000;
       z-index: 10000;
       padding: 20px;
-      display: flex;
       align-items: center;
       justify-content: center;
+    }
+    #password-screen.show {
+      display: flex;
     }
     #password-screen .password-container {
       background-color: #111;
@@ -589,15 +591,19 @@
         return;
       }
       const passwordScreen = document.getElementById('password-screen');
-      passwordScreen.style.display = 'flex';
+      passwordScreen.classList.add('show');
       const submitBtn = document.getElementById('submit-password');
       const passwordInput = document.getElementById('admin-password');
+
+      // Limpiar eventos anteriores para evitar duplicados
+      submitBtn.onclick = null;
+      passwordInput.onkeypress = null;
 
       const handleSubmit = () => {
         const password = passwordInput.value;
         if (password === ADMIN_PASSWORD) {
           isAdminAuthenticated = true;
-          passwordScreen.style.display = 'none';
+          passwordScreen.classList.remove('show');
           passwordInput.value = '';
           callback();
         } else {
@@ -1002,7 +1008,7 @@
       });
       sidebarMenu.classList.remove('show');
       overlay.classList.remove('show');
-      document.getElementById('password-screen').style.display = 'none';
+      document.getElementById('password-screen').classList.remove('show');
     }
 
     hamburgerBtn.addEventListener('click', () => {
@@ -1127,8 +1133,11 @@
     document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
     document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
 
-    // Cargar datos al iniciar
-    loadAllData();
+    // Cargar datos al iniciar sin mostrar la pantalla de contraseña
+    window.onload = () => {
+      document.getElementById('password-screen').classList.remove('show');
+      loadAllData();
+    };
   </script>
 </body>
 </html>
