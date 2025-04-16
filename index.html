@@ -602,6 +602,7 @@
           callback();
         } else {
           alert('Contraseña incorrecta.');
+          passwordInput.value = '';
         }
       };
 
@@ -1001,6 +1002,7 @@
       });
       sidebarMenu.classList.remove('show');
       overlay.classList.remove('show');
+      document.getElementById('password-screen').style.display = 'none';
     }
 
     hamburgerBtn.addEventListener('click', () => {
