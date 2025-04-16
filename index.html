@@ -31,7 +31,7 @@
     html, body {
       margin: 0;
       padding: 0;
-      overflow-x: hidden; /* Previene scroll horizontal sobrante */
+      overflow-x: hidden;
     }
 
     body {
@@ -78,8 +78,7 @@
       border-right: 1px solid #222;
       padding: 20px;
       box-shadow: 2px 0 10px rgba(0, 255, 255, 0.1);
-
-      transform: translateX(-250px); /* oculto por defecto */
+      transform: translateX(-250px);
       transition: transform 0.3s ease;
       z-index: 9999;
     }
@@ -110,14 +109,14 @@
       height: 100%;
       background: rgba(0,0,0,0.5);
       z-index: 9998;
-      display: none; /* oculto por defecto */
+      display: none;
     }
     #overlay.show {
       display: block;
     }
 
-    /* PANTALLA DE CONFIGURACIÓN (oculta por defecto) */
-    #config-screen {
+    /* PANTALLA DE CONFIGURACIÓN */
+    .config-screen {
       display: none; 
       position: fixed; 
       top: 0; left: 0;
@@ -126,18 +125,18 @@
       background-color: #000; 
       z-index: 9999; 
       overflow-y: auto; 
-      padding: 60px 20px 20px 20px; /* 60px arriba para no chocar con btn Cerrar */
+      padding: 60px 20px 20px 20px;
     }
-    #config-screen h2 {
+    .config-screen h2 {
       text-align: center; 
       margin-bottom: 20px;
       color: #0cf;
     }
-    #config-screen label {
+    .config-screen label {
       display: block;
       margin: 10px 0 5px 0;
     }
-    #config-screen input {
+    .config-screen input, .config-screen select {
       width: 100%; 
       max-width: 400px; 
       padding: 10px;
@@ -146,7 +145,7 @@
       border: 1px solid #333;
       border-radius: 5px;
     }
-    #config-screen button {
+    .config-screen button {
       margin-top: 20px;
       padding: 10px 20px;
       background-color: #0cf;
@@ -155,11 +154,10 @@
       border-radius: 8px;
       cursor: pointer;
     }
-    #config-screen button:hover {
+    .config-screen button:hover {
       background-color: #09b;
     }
-    /* Botón Cerrar Config */
-    #close-config {
+    .config-screen .close-btn {
       position: absolute;
       top: 20px;
       right: 20px;
@@ -171,7 +169,7 @@
       padding: 5px 10px;
       cursor: pointer;
     }
-    #close-config:hover {
+    .config-screen .close-btn:hover {
       background-color: #333;
     }
 
@@ -182,39 +180,39 @@
       padding: 20px;
     }
 
-    /* PRIMER SETLIST */
-    #setlists {
+    /* SETLISTS */
+    #setlists, #second-setlist {
       background-color: #111;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
       margin-bottom: 40px;
     }
-    #setlists h2 {
+    #setlists h2, #second-setlist h2 {
       text-align: center;
       color: #0cf;
       margin-bottom: 15px;
     }
-    #setlists table {
+    #setlists table, #second-list-table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
       color: #fff;
       font-size: 0.95em;
     }
-    #setlists thead {
+    #setlists thead, #second-list-table thead {
       background-color: #222;
       color: #0cf;
     }
-    #setlists th, #setlists td {
+    #setlists th, #setlists td, #second-list-table th, #second-list-table td {
       padding: 12px;
       border: 1px solid #333;
       text-align: left;
     }
-    #setlists tr:nth-child(even) {
+    #setlists tr:nth-child(even), #second-list-table tr:nth-child(even) {
       background-color: #1a1a1a;
     }
-    #download-btn {
+    .download-btn {
       display: block;
       margin: 20px auto 0 auto;
       padding: 10px 20px;
@@ -225,65 +223,46 @@
       border-radius: 8px;
       cursor: pointer;
     }
-    #download-btn:hover {
+    .download-btn:hover {
       background-color: #09b;
     }
-    #total-time {
+    #total-time, #total-time-2 {
       color: #0cf;
       margin-top: 10px;
       text-align: center;
     }
 
-    /* SEGUNDO SETLIST */
-    #second-setlist {
+    /* USUARIOS */
+    #usuarios {
       background-color: #111;
       padding: 20px;
       border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+      box-shadow: 0 0 10px rgba(0,255,255,0.1);
       margin-bottom: 40px;
     }
-    #second-setlist h2 {
+    #usuarios h2 {
       text-align: center;
       color: #0cf;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
-    #second-list-table {
+    #usuarios table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
       color: #fff;
       font-size: 0.95em;
     }
-    #second-list-table thead {
+    #usuarios thead {
       background-color: #222;
       color: #0cf;
     }
-    #second-list-table th, #second-list-table td {
+    #usuarios th, #usuarios td {
       padding: 12px;
       border: 1px solid #333;
       text-align: left;
     }
-    #second-list-table tr:nth-child(even) {
+    #usuarios tr:nth-child(even) {
       background-color: #1a1a1a;
-    }
-    #download-btn-2 {
-      display: block;
-      margin: 20px auto 0 auto;
-      padding: 10px 20px;
-      font-size: 1em;
-      background-color: #0cf;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    #download-btn-2:hover {
-      background-color: #09b;
-    }
-    #total-time-2 {
-      color: #0cf;
-      margin-top: 10px;
-      text-align: center;
     }
 
     /* CALENDARIO */
@@ -342,28 +321,82 @@
   <!-- MENÚ LATERAL -->
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
-    <a href="#" id="menu-config">Configuración</a>
+    <a href="#" id="menu-setlist-config">Configurar Setlists</a>
+    <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
+    <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
 
-  <!-- PANTALLA DE CONFIGURACIÓN -->
-  <div id="config-screen">
-    <button id="close-config">Cerrar</button>
-    <h2>Configuración del Segundo Setlist</h2>
-    <label for="feed-url">ID/URL del feed</label>
-    <input 
-      type="text" 
-      id="feed-url" 
-      placeholder="Ej: TXHvyb o https://www.bandhelper.com/feed/set_list/..." 
-    />
-    <button id="guardar-config">Guardar configuración</button>
+  <!-- PANTALLA CONFIGURACIÓN SETLISTS -->
+  <div id="setlist-config-screen" class="config-screen">
+    <button class="close-btn" id="close-setlist-config">Cerrar</button>
+    <h2>Configuración de Setlists</h2>
+    <h3>Primer Setlist</h3>
+    <label for="setlist1-name">Nombre del Setlist</label>
+    <input type="text" id="setlist1-name" placeholder="Ej: Ensayos 2025" />
+    <label for="setlist1-url">ID/URL del feed</label>
+    <input type="text" id="setlist1-url" placeholder="URL del feed" />
+    <h3>Segundo Setlist</h3>
+    <label for="setlist2-name">Nombre del Setlist</label>
+    <input type="text" id="setlist2-name" placeholder="Ej: Concierto Navidad" />
+    <label for="setlist2-url">ID/URL del feed</label>
+    <input type="text" id="setlist2-url" placeholder="Ej: TXHvyb o URL completa" />
+    <button id="guardar-setlist-config">Guardar Configuración</button>
+  </div>
+
+  <!-- PANTALLA GESTIÓN DE USUARIOS -->
+  <div id="user-mgmt-screen" class="config-screen">
+    <button class="close-btn" id="close-user-mgmt">Cerrar</button>
+    <h2>Gestión de Usuarios</h2>
+    <label for="user-name">Nombre</label>
+    <input type="text" id="user-name" placeholder="Nombre del usuario" />
+    <label for="user-role">Rol</label>
+    <select id="user-role">
+      <option value="admin">Administrador</option>
+      <option value="member">Miembro</option>
+    </select>
+    <button id="add-user">Añadir Usuario</button>
+    <table id="user-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Rol</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="user-table-body"></tbody>
+    </table>
+  </div>
+
+  <!-- PANTALLA ASIGNACIÓN DE ENSAYOS -->
+  <div id="rehearsal-screen" class="config-screen">
+    <button class="close-btn" id="close-rehearsal">Cerrar</button>
+    <h2>Asignación de Ensayos</h2>
+    <label for="rehearsal-date">Fecha</label>
+    <input type="date" id="rehearsal-date" />
+    <label for="rehearsal-time">Hora</label>
+    <input type="time" id="rehearsal-time" />
+    <label for="rehearsal-location">Lugar</label>
+    <input type="text" id="rehearsal-location" placeholder="Ej: Estudio 1" />
+    <button id="add-rehearsal">Añadir Ensayo</button>
+    <table id="rehearsal-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Lugar</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="rehearsal-table-body"></tbody>
+    </table>
   </div>
 
   <!-- CONTENIDO PRINCIPAL -->
   <main>
     <!-- 1) PRIMER SETLIST -->
     <section id="setlists">
-      <h2>Setlist Ensayos -Año 2025-</h2>
+      <h2 id="setlist1-title">Setlist Ensayos -Año 2025-</h2>
       <p style="text-align:center; color:#aaa;">
         Consulta y exporta el setlist de ensayos en tiempo real.
       </p>
@@ -379,13 +412,13 @@
         </thead>
         <tbody id="setlist-body"></tbody>
       </table>
-      <button id="download-btn">Descargar PDF</button>
+      <button class="download-btn" id="download-btn">Descargar PDF</button>
       <p id="total-time"></p>
     </section>
 
     <!-- 2) SEGUNDO SETLIST -->
     <section id="second-setlist">
-      <h2>Setlist Próximo Concierto</h2>
+      <h2 id="setlist2-title">Setlist Próximo Concierto</h2>
       <p style="text-align:center; color:#aaa;">
         Feed actual: <em id="url-actual"></em>
       </p>
@@ -401,13 +434,30 @@
         </thead>
         <tbody id="second-body"></tbody>
       </table>
-      <button id="download-btn-2">Descargar PDF</button>
+      <button class="download-btn" id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
     </section>
 
-    <!-- 3) CALENDARIO -->
+    <!-- 3) USUARIOS -->
+    <section id="usuarios">
+      <h2>Usuarios Registrados</h2>
+      <p style="text-align:center; color:#aaa;">
+        Lista de usuarios con acceso a la intranet.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Rol</th>
+          </tr>
+        </thead>
+        <tbody id="users-body"></tbody>
+      </table>
+    </section>
+
+    <!-- 4) CALENDARIO -->
     <section id="calendario">
-      <h2>Próximos Conciertos</h2>
+      <h2>Próximos Conciertos y Ensayos</h2>
       <p>Consulta el calendario actualizado.</p>
       <div>
         <script type="text/javascript" 
@@ -424,7 +474,7 @@
 
   <script>
     /*------------------------------------------
-      1. FUNCIONES COMUNES (duración, etc)
+      1. FUNCIONES COMUNES
     ------------------------------------------*/
     function parseDurationToSeconds(durationStr) {
       if (!durationStr) return 0;
@@ -441,19 +491,44 @@
       const seconds = totalSeconds % 60;
       return `${minutes}:${String(seconds).padStart(2, '0')}`;
     }
+    function cleanString(str) {
+      if (!str) return '';
+      return str.replace(/[^\x00-\xFF]/g, '').trim();
+    }
 
     /*------------------------------------------
-      2. PRIMER SETLIST
+      2. CONFIGURACIÓN DE SETLISTS
     ------------------------------------------*/
-    const urlPrimerSetlist = 'https://cold-limit-811a.jagomezc.workers.dev';
+    let setlistConfig = {
+      setlist1: { name: 'Setlist Ensayos -Año 2025-', url: 'https://cold-limit-811a.jagomezc.workers.dev' },
+      setlist2: { name: 'Setlist Próximo Concierto', url: 'https://www.bandhelper.com/feed/set_list/TXHvyb' }
+    };
 
+    function loadSetlistConfig() {
+      const saved = localStorage.getItem('setlistConfig');
+      if (saved) setlistConfig = JSON.parse(saved);
+      updateSetlistTitles();
+    }
+
+    function saveSetlistConfig() {
+      localStorage.setItem('setlistConfig', JSON.stringify(setlistConfig));
+      updateSetlistTitles();
+    }
+
+    function updateSetlistTitles() {
+      document.getElementById('setlist1-title').textContent = setlistConfig.setlist1.name;
+      document.getElementById('setlist2-title').textContent = setlistConfig.setlist2.name;
+    }
+
+    /*------------------------------------------
+      3. PRIMER SETLIST
+    ------------------------------------------*/
     async function cargarPrimerSetlist() {
       try {
-        const res = await fetch(urlPrimerSetlist);
+        const res = await fetch(setlistConfig.setlist1.url);
         const data = await res.json();
         const tbody = document.getElementById('setlist-body');
         tbody.innerHTML = '';
-
         const songs = data.filter(item => item.type === 'song');
         let totalSeconds = 0;
 
@@ -474,7 +549,6 @@
 
         document.getElementById('total-time').textContent =
           'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
-
         return songs;
       } catch (err) {
         console.error('Error al cargar el primer setlist:', err);
@@ -489,7 +563,6 @@
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
       const songs = await cargarPrimerSetlist();
 
-      // Logo
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imgRes = await fetch(imgUrl);
@@ -508,12 +581,10 @@
 
       doc.setFontSize(16);
       doc.setTextColor(40);
-      doc.text('Setlist - El Sótano del Doctor (Primer)', 120, 50);
+      doc.text(`Setlist - ${setlistConfig.setlist1.name}`, 120, 50);
 
       let totalSecs = 0;
-      songs.forEach(s => {
-        totalSecs += parseDurationToSeconds(s.duration || '0');
-      });
+      songs.forEach(s => totalSecs += parseDurationToSeconds(s.duration || '0'));
       const totalTime = formatSecondsToMMSS(totalSecs);
       const totalSongs = songs.length;
       doc.setFontSize(12);
@@ -539,18 +610,9 @@
         startY: 100,
         head: [columns.map(c => c.header)],
         body: rows.map(r => [r.num, r.title, r.key, r.tempo, r.duration]),
-        headStyles: {
-          fillColor: [60, 60, 60],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        bodyStyles: {
-          fillColor: [245, 245, 245],
-          textColor: [0, 0, 0]
-        },
-        alternateRowStyles: {
-          fillColor: [230, 230, 230]
-        },
+        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
+        alternateRowStyles: { fillColor: [230, 230, 230] },
         styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
         columnStyles: {
           0: { cellWidth: 30 },
@@ -561,43 +623,27 @@
         }
       });
 
-      doc.save('setlist_ElSotanoDelDoctor.pdf');
+      doc.save(`setlist_${setlistConfig.setlist1.name.replace(/\s+/g, '_')}.pdf`);
     }
 
     /*------------------------------------------
-      3. SEGUNDO SETLIST (feed dinámico)
+      4. SEGUNDO SETLIST
     ------------------------------------------*/
-    let urlSegundoSetlist = 'https://www.bandhelper.com/feed/set_list/TXHvyb';
-    function loadConfigFromLocalStorage() {
-      const saved = localStorage.getItem('urlSegundoSetlist');
-      if (saved) urlSegundoSetlist = saved;
-    }
-    function saveConfigToLocalStorage(url) {
-      localStorage.setItem('urlSegundoSetlist', url);
-    }
-    function getSecondSetlistURL() {
-      return urlSegundoSetlist;
-    }
-    function cleanString(str) {
-      if (!str) return '';
-      return str.replace(/[^\x00-\xFF]/g, '').trim();
-    }
     async function cargarSegundoSetlist() {
       try {
-        const url = getSecondSetlistURL();
-        const res = await fetch(url);
+        const res = await fetch(setlistConfig.setlist2.url);
         const data = await res.json();
         const songs = data.filter(item => item.type === 'song');
         const tbody = document.getElementById('second-body');
         tbody.innerHTML = '';
         let totalSeconds = 0;
+
         songs.forEach((song, index) => {
           const secs = parseDurationToSeconds(song.duration || '0');
           const nameClean = cleanString(song.name || '');
-          const keyClean  = cleanString(song.key  || '');
-          const tempoClean= cleanString(song.tempo|| '');
-          const durFmt    = formatSecondsToMMSS(secs);
-
+          const keyClean = cleanString(song.key || '');
+          const tempoClean = cleanString(song.tempo || '');
+          const durFmt = formatSecondsToMMSS(secs);
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${index + 1}</td>
@@ -609,7 +655,8 @@
           tbody.appendChild(row);
           totalSeconds += secs;
         });
-        document.getElementById('url-actual').textContent = url;
+
+        document.getElementById('url-actual').textContent = setlistConfig.setlist2.url;
         document.getElementById('total-time-2').textContent =
           'Tiempo total del set: ' + formatSecondsToMMSS(totalSeconds);
         return songs;
@@ -620,10 +667,12 @@
         return [];
       }
     }
+
     async function descargarPDFsegundoSetlist() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'A4' });
       const songs = await cargarSegundoSetlist();
+
       try {
         const imgUrl = 'assets/logo_negro copia.jpg';
         const imgRes = await fetch(imgUrl);
@@ -639,51 +688,41 @@
       } catch (err) {
         console.warn('No se pudo cargar el logo (segundo setlist):', err);
       }
+
       doc.setFontSize(16);
       doc.setTextColor(40);
-      doc.text('Setlist - El Sótano del Doctor (Segundo)', 120, 50);
+      doc.text(`Setlist - ${setlistConfig.setlist2.name}`, 120, 50);
+
       let totalSecs = 0;
-      songs.forEach(song => {
-        totalSecs += parseDurationToSeconds(song.duration || '0');
-      });
+      songs.forEach(song => totalSecs += parseDurationToSeconds(song.duration || '0'));
       const totalTime = formatSecondsToMMSS(totalSecs);
       const totalSongs = songs.length;
       doc.setFontSize(12);
       doc.setTextColor(80);
       doc.text(`${totalSongs} canciones, ${totalTime} total`, 120, 70);
-      const columns2 = [
+
+      const columns = [
         { header: '#', dataKey: 'num' },
         { header: 'Canción', dataKey: 'name' },
         { header: 'Tonalidad', dataKey: 'key' },
         { header: 'Tempo', dataKey: 'tempo' },
         { header: 'Duración', dataKey: 'duration' }
       ];
-      const rows2 = songs.map((song, i) => {
-        const secs = parseDurationToSeconds(song.duration || '0');
-        return {
-          num: i + 1,
-          name: cleanString(song.name || ''),
-          key: cleanString(song.key  || ''),
-          tempo: cleanString(song.tempo|| ''),
-          duration: formatSecondsToMMSS(secs)
-        };
-      });
+      const rows = songs.map((song, i) => ({
+        num: i + 1,
+        name: cleanString(song.name || ''),
+        key: cleanString(song.key || ''),
+        tempo: cleanString(song.tempo || ''),
+        duration: formatSecondsToMMSS(parseDurationToSeconds(song.duration || '0'))
+      }));
+
       doc.autoTable({
         startY: 100,
-        head: [columns2.map(c => c.header)],
-        body: rows2.map(r => [r.num, r.name, r.key, r.tempo, r.duration]),
-        headStyles: {
-          fillColor: [60, 60, 60],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        bodyStyles: {
-          fillColor: [245, 245, 245],
-          textColor: [0, 0, 0]
-        },
-        alternateRowStyles: {
-          fillColor: [230, 230, 230]
-        },
+        head: [columns.map(c => c.header)],
+        body: rows.map(r => [r.num, r.name, r.key, r.tempo, r.duration]),
+        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
+        alternateRowStyles: { fillColor: [230, 230, 230] },
         styles: { halign: 'left', fontSize: 10, cellPadding: 5 },
         columnStyles: {
           0: { cellWidth: 30 },
@@ -693,81 +732,230 @@
           4: { cellWidth: 60 }
         }
       });
-      doc.save('SegundoSetlist.pdf');
+
+      doc.save(`setlist_${setlistConfig.setlist2.name.replace(/\s+/g, '_')}.pdf`);
     }
 
     /*------------------------------------------
-      4. MENÚ Y CONFIGURACIÓN
+      5. GESTIÓN DE USUARIOS
+    ------------------------------------------*/
+    let users = [];
+
+    function loadUsers() {
+      const saved = localStorage.getItem('users');
+      if (saved) users = JSON.parse(saved);
+      renderUsers();
+    }
+
+    function saveUsers() {
+      localStorage.setItem('users', JSON.stringify(users));
+      renderUsers();
+    }
+
+    function renderUsers() {
+      const tbody = document.getElementById('user-table-body');
+      const mainTbody = document.getElementById('users-body');
+      tbody.innerHTML = '';
+      mainTbody.innerHTML = '';
+
+      users.forEach((user, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${user.name}</td>
+          <td>${user.role === 'admin' ? 'Administrador' : 'Miembro'}</td>
+          <td><button class="delete-user" data-index="${index}">Eliminar</button></td>
+        `;
+        tbody.appendChild(row);
+
+        const mainRow = document.createElement('tr');
+        mainRow.innerHTML = `
+          <td>${user.name}</td>
+          <td>${user.role === 'admin' ? 'Administrador' : 'Miembro'}</td>
+        `;
+        mainTbody.appendChild(mainRow);
+      });
+
+      document.querySelectorAll('.delete-user').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const index = btn.getAttribute('data-index');
+          users.splice(index, 1);
+          saveUsers();
+        });
+      });
+    }
+
+    /*------------------------------------------
+      6. ASIGNACIÓN DE ENSAYOS
+    ------------------------------------------*/
+    let rehearsals = [];
+
+    function loadRehearsals() {
+      const saved = localStorage.getItem('rehearsals');
+      if (saved) rehearsals = JSON.parse(saved);
+      renderRehearsals();
+    }
+
+    function saveRehearsals() {
+      localStorage.setItem('rehearsals', JSON.stringify(rehearsals));
+      renderRehearsals();
+    }
+
+    function renderRehearsals() {
+      const tbody = document.getElementById('rehearsal-table-body');
+      tbody.innerHTML = '';
+
+      rehearsals.forEach((rehearsal, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${rehearsal.date}</td>
+          <td>${rehearsal.time}</td>
+          <td>${rehearsal.location}</td>
+          <td><button class="delete-rehearsal" data-index="${index}">Eliminar</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      document.querySelectorAll('.delete-rehearsal').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const index = btn.getAttribute('data-index');
+          rehearsals.splice(index, 1);
+          saveRehearsals();
+        });
+      });
+    }
+
+    /*------------------------------------------
+      7. MENÚ Y CONFIGURACIÓN
     ------------------------------------------*/
     const hamburgerBtn = document.getElementById('hamburger-btn');
-    const sidebarMenu  = document.getElementById('sidebar-menu');
-    const menuConfig   = document.getElementById('menu-config');
-    const menuCerrar   = document.getElementById('menu-cerrar');
-    const overlay      = document.getElementById('overlay');
+    const sidebarMenu = document.getElementById('sidebar-menu');
+    const overlay = document.getElementById('overlay');
+
+    function closeAllScreens() {
+      document.querySelectorAll('.config-screen').forEach(screen => {
+        screen.style.display = 'none';
+      });
+      sidebarMenu.classList.remove('show');
+      overlay.classList.remove('show');
+    }
 
     hamburgerBtn.addEventListener('click', () => {
       sidebarMenu.classList.add('show');
       overlay.classList.add('show');
     });
-    menuCerrar.addEventListener('click', (e) => {
+
+    document.getElementById('menu-cerrar').addEventListener('click', (e) => {
       e.preventDefault();
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-    });
-    overlay.addEventListener('click', () => {
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
+      closeAllScreens();
     });
 
-    // BOTÓN "Configuración"
-    menuConfig.addEventListener('click', (e) => {
+    overlay.addEventListener('click', closeAllScreens);
+
+    // Configuración de Setlists
+    document.getElementById('menu-setlist-config').addEventListener('click', (e) => {
       e.preventDefault();
-      sidebarMenu.classList.remove('show');
-      overlay.classList.remove('show');
-      // Muestra config
-      document.getElementById('config-screen').style.display = 'block';
-      // Rellenamos el input
-      document.getElementById('feed-url').value = urlSegundoSetlist.replace('https://www.bandhelper.com/feed/set_list/', '');
+      closeAllScreens();
+      const screen = document.getElementById('setlist-config-screen');
+      screen.style.display = 'block';
+      document.getElementById('setlist1-name').value = setlistConfig.setlist1.name;
+      document.getElementById('setlist1-url').value = setlistConfig.setlist1.url;
+      document.getElementById('setlist2-name').value = setlistConfig.setlist2.name;
+      document.getElementById('setlist2-url').value = setlistConfig.setlist2.url.replace('https://www.bandhelper.com/feed/set_list/', '');
     });
 
-    // BOTÓN "Cerrar" en la pantalla config
-    document.getElementById('close-config').addEventListener('click', () => {
-      document.getElementById('config-screen').style.display = 'none';
+    document.getElementById('close-setlist-config').addEventListener('click', () => {
+      document.getElementById('setlist-config-screen').style.display = 'none';
     });
 
-    // BOTÓN "Guardar configuración"
-    document.getElementById('guardar-config').addEventListener('click', () => {
-      const inputVal = document.getElementById('feed-url').value.trim();
-      if (!inputVal) {
-        alert('Introduce un ID o URL');
+    document.getElementById('guardar-setlist-config').addEventListener('click', () => {
+      const setlist1Name = document.getElementById('setlist1-name').value.trim();
+      const setlist1Url = document.getElementById('setlist1-url').value.trim();
+      const setlist2Name = document.getElementById('setlist2-name').value.trim();
+      let setlist2Url = document.getElementById('setlist2-url').value.trim();
+
+      if (!setlist1Name || !setlist1Url || !setlist2Name || !setlist2Url) {
+        alert('Por favor, completa todos los campos.');
         return;
       }
-      let newUrl;
-      if (!inputVal.startsWith('http')) {
-        newUrl = `https://www.bandhelper.com/feed/set_list/${inputVal}`;
-      } else {
-        newUrl = inputVal;
+
+      setlistConfig.setlist1.name = setlist1Name;
+      setlistConfig.setlist1.url = setlist1Url;
+      setlistConfig.setlist2.name = setlist2Name;
+      if (!setlist2Url.startsWith('http')) {
+        setlist2Url = `https://www.bandhelper.com/feed/set_list/${setlist2Url}`;
       }
-      urlSegundoSetlist = newUrl;
-      saveConfigToLocalStorage(newUrl);
+      setlistConfig.setlist2.url = setlist2Url;
+
+      saveSetlistConfig();
+      cargarPrimerSetlist();
       cargarSegundoSetlist();
-      document.getElementById('config-screen').style.display = 'none';
+      document.getElementById('setlist-config-screen').style.display = 'none';
     });
 
-    /*---------------------------------------
-      5. CARGA INICIAL
-    ---------------------------------------*/
-    window.addEventListener('DOMContentLoaded', () => {
-      // Leemos config localStorage
-      const saved = localStorage.getItem('urlSegundoSetlist');
-      if (saved) urlSegundoSetlist = saved;
+    // Gestión de Usuarios
+    document.getElementById('menu-user-mgmt').addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAllScreens();
+      document.getElementById('user-mgmt-screen').style.display = 'block';
+    });
 
-      // Cargamos ambos setlists
+    document.getElementById('close-user-mgmt').addEventListener('click', () => {
+      document.getElementById('user-mgmt-screen').style.display = 'none';
+    });
+
+    document.getElementById('add-user').addEventListener('click', () => {
+      const name = document.getElementById('user-name').value.trim();
+      const role = document.getElementById('user-role').value;
+
+      if (!name) {
+        alert('Por favor, introduce un nombre.');
+        return;
+      }
+
+      users.push({ name, role });
+      saveUsers();
+      document.getElementById('user-name').value = '';
+    });
+
+    // Asignación de Ensayos
+    document.getElementById('menu-rehearsal').addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAllScreens();
+      document.getElementById('rehearsal-screen').style.display = 'block';
+    });
+
+    document.getElementById('close-rehearsal').addEventListener('click', () => {
+      document.getElementById('rehearsal-screen').style.display = 'none';
+    });
+
+    document.getElementById('add-rehearsal').addEventListener('click', () => {
+      const date = document.getElementById('rehearsal-date').value;
+      const time = document.getElementById('rehearsal-time').value;
+      const location = document.getElementById('rehearsal-location').value.trim();
+
+      if (!date || !time || !location) {
+        alert('Por favor, completa todos los campos.');
+        return;
+      }
+
+      rehearsals.push({ date, time, location });
+      saveRehearsals();
+      document.getElementById('rehearsal-date').value = '';
+      document.getElementById('rehearsal-time').value = '';
+      document.getElementById('rehearsal-location').value = '';
+    });
+
+    /*------------------------------------------
+      8. CARGA INICIAL
+    ------------------------------------------*/
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSetlistConfig();
+      loadUsers();
+      loadRehearsals();
       cargarPrimerSetlist();
       cargarSegundoSetlist();
     });
 
-    // BOTONES PDF
     document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
     document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
   </script>
