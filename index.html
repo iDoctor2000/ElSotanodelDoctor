@@ -22,6 +22,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+
   <style>
     /* Reseteo y box-sizing */
     *, *::before, *::after {
@@ -115,6 +119,53 @@
       display: block;
     }
 
+    /* PANTALLA DE CONTRASEÑA */
+    #password-screen {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      z-index: 10000;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #password-screen .password-container {
+      background-color: #111;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+    #password-screen h2 {
+      color: #0cf;
+      margin-bottom: 20px;
+    }
+    #password-screen input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      background-color: #222;
+      color: #fff;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+    #password-screen button {
+      padding: 10px 20px;
+      background-color: #0cf;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #password-screen button:hover {
+      background-color: #09b;
+    }
+
     /* PANTALLA DE CONFIGURACIÓN */
     .config-screen {
       display: none; 
@@ -174,6 +225,9 @@
     }
 
     /* CONTENIDO PRINCIPAL */
+    main {
+      display: block;
+    }
     main section {
       max-width: 1200px;
       margin: 0 auto;
@@ -303,6 +357,15 @@
 </head>
 
 <body>
+  <!-- PANTALLA DE CONTRASEÑA -->
+  <div id="password-screen">
+    <div class="password-container">
+      <h2>Introduce la Contraseña</h2>
+      <input type="password" id="admin-password" placeholder="Contraseña" />
+      <button id="submit-password">Acceder</button>
+    </div>
+  </div>
+
   <!-- CABECERA -->
   <header>
     <div class="logo">
@@ -473,6 +536,27 @@
   </footer>
 
   <script>
+    // Configuración de Firebase con las credenciales proporcionadas
+    const firebaseConfig = {
+      apiKey: "AIZAsyA7d70p3aEA218PLWE5_DBMFEtoHXfyvNg",
+      authDomain: "el-sotano-del-doctor.firebaseapp.com",
+      projectId: "el-sotano-del-doctor",
+      storageBucket: "el-sotano-del-doctor.firestorestorage.app",
+      messagingSenderId: "288654488846",
+      appId: "1:288654488846:web:51a7264676afe8ba8635f",
+      measurementId: "G-5N8G5GCW1"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Contraseña estática para acceder a las opciones de edición
+    const ADMIN_PASSWORD = "elsotano2025"; // Cambia esto por la contraseña que desees
+
+    // Variable para controlar si el usuario ha ingresado la contraseña
+    let isAdminAuthenticated = false;
+
     /*------------------------------------------
       1. FUNCIONES COMUNES
     ------------------------------------------*/
@@ -497,22 +581,66 @@
     }
 
     /*------------------------------------------
-      2. CONFIGURACIÓN DE SETLISTS
+      2. CONTROL DE ACCESO CON CONTRASEÑA
+    ------------------------------------------*/
+    function showPasswordScreen(callback) {
+      if (isAdminAuthenticated) {
+        callback();
+        return;
+      }
+      const passwordScreen = document.getElementById('password-screen');
+      passwordScreen.style.display = 'flex';
+      const submitBtn = document.getElementById('submit-password');
+      const passwordInput = document.getElementById('admin-password');
+
+      const handleSubmit = () => {
+        const password = passwordInput.value;
+        if (password === ADMIN_PASSWORD) {
+          isAdminAuthenticated = true;
+          passwordScreen.style.display = 'none';
+          passwordInput.value = '';
+          callback();
+        } else {
+          alert('Contraseña incorrecta.');
+        }
+      };
+
+      submitBtn.onclick = handleSubmit;
+      passwordInput.onkeypress = (e) => {
+        if (e.key === 'Enter') handleSubmit();
+      };
+    }
+
+    /*------------------------------------------
+      3. CONFIGURACIÓN DE SETLISTS
     ------------------------------------------*/
     let setlistConfig = {
       setlist1: { name: 'Setlist Ensayos -Año 2025-', url: 'https://cold-limit-811a.jagomezc.workers.dev' },
       setlist2: { name: 'Setlist Próximo Concierto', url: 'https://www.bandhelper.com/feed/set_list/TXHvyb' }
     };
 
-    function loadSetlistConfig() {
-      const saved = localStorage.getItem('setlistConfig');
-      if (saved) setlistConfig = JSON.parse(saved);
-      updateSetlistTitles();
+    async function loadSetlistConfig() {
+      try {
+        const doc = await db.collection('config').doc('setlists').get();
+        if (doc.exists) {
+          setlistConfig = doc.data();
+        }
+        updateSetlistTitles();
+        cargarPrimerSetlist();
+        cargarSegundoSetlist();
+      } catch (err) {
+        console.error('Error al cargar configuración de setlists:', err);
+      }
     }
 
-    function saveSetlistConfig() {
-      localStorage.setItem('setlistConfig', JSON.stringify(setlistConfig));
-      updateSetlistTitles();
+    async function saveSetlistConfig() {
+      try {
+        await db.collection('config').doc('setlists').set(setlistConfig);
+        updateSetlistTitles();
+      } catch (err) {
+        console.error('Error al guardar configuración de setlists:', err);
+        alert('Error al guardar configuración de setlists.');
+      }
     }
 
     function updateSetlistTitles() {
@@ -521,7 +649,7 @@
     }
 
     /*------------------------------------------
-      3. PRIMER SETLIST
+      4. PRIMER SETLIST
     ------------------------------------------*/
     async function cargarPrimerSetlist() {
       try {
@@ -627,7 +755,7 @@
     }
 
     /*------------------------------------------
-      4. SEGUNDO SETLIST
+      5. SEGUNDO SETLIST
     ------------------------------------------*/
     async function cargarSegundoSetlist() {
       try {
@@ -737,19 +865,38 @@
     }
 
     /*------------------------------------------
-      5. GESTIÓN DE USUARIOS
+      6. GESTIÓN DE USUARIOS
     ------------------------------------------*/
     let users = [];
 
-    function loadUsers() {
-      const saved = localStorage.getItem('users');
-      if (saved) users = JSON.parse(saved);
-      renderUsers();
+    async function loadUsers() {
+      try {
+        const snapshot = await db.collection('users').get();
+        users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderUsers();
+      } catch (err) {
+        console.error('Error al cargar usuarios:', err);
+      }
     }
 
-    function saveUsers() {
-      localStorage.setItem('users', JSON.stringify(users));
-      renderUsers();
+    async function saveUser(user) {
+      try {
+        await db.collection('users').add(user);
+        await loadUsers();
+      } catch (err) {
+        console.error('Error al guardar usuario:', err);
+        alert('Error al guardar usuario.');
+      }
+    }
+
+    async function deleteUser(id) {
+      try {
+        await db.collection('users').doc(id).delete();
+        await loadUsers();
+      } catch (err) {
+        console.error('Error al eliminar usuario:', err);
+        alert('Error al eliminar usuario.');
+      }
     }
 
     function renderUsers() {
@@ -758,12 +905,12 @@
       tbody.innerHTML = '';
       mainTbody.innerHTML = '';
 
-      users.forEach((user, index) => {
+      users.forEach(user => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${user.name}</td>
           <td>${user.role === 'admin' ? 'Administrador' : 'Miembro'}</td>
-          <td><button class="delete-user" data-index="${index}">Eliminar</button></td>
+          <td><button class="delete-user" data-id="${user.id}">Eliminar</button></td>
         `;
         tbody.appendChild(row);
 
@@ -777,55 +924,72 @@
 
       document.querySelectorAll('.delete-user').forEach(btn => {
         btn.addEventListener('click', () => {
-          const index = btn.getAttribute('data-index');
-          users.splice(index, 1);
-          saveUsers();
+          const id = btn.getAttribute('data-id');
+          deleteUser(id);
         });
       });
     }
 
     /*------------------------------------------
-      6. ASIGNACIÓN DE ENSAYOS
+      7. ASIGNACIÓN DE ENSAYOS
     ------------------------------------------*/
     let rehearsals = [];
 
-    function loadRehearsals() {
-      const saved = localStorage.getItem('rehearsals');
-      if (saved) rehearsals = JSON.parse(saved);
-      renderRehearsals();
+    async function loadRehearsals() {
+      try {
+        const snapshot = await db.collection('rehearsals').orderBy('date').get();
+        rehearsals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderRehearsals();
+      } catch (err) {
+        console.error('Error al cargar ensayos:', err);
+      }
     }
 
-    function saveRehearsals() {
-      localStorage.setItem('rehearsals', JSON.stringify(rehearsals));
-      renderRehearsals();
+    async function saveRehearsal(rehearsal) {
+      try {
+        await db.collection('rehearsals').add(rehearsal);
+        await loadRehearsals();
+      } catch (err) {
+        console.error('Error al guardar ensayo:', err);
+        alert('Error al guardar ensayo.');
+      }
+    }
+
+    async function deleteRehearsal(id) {
+      try {
+        await db.collection('rehearsals').doc(id).delete();
+        await loadRehearsals();
+      } catch (err) {
+        console.error('Error al eliminar ensayo:', err);
+        alert('Error al eliminar ensayo.');
+      }
     }
 
     function renderRehearsals() {
       const tbody = document.getElementById('rehearsal-table-body');
       tbody.innerHTML = '';
 
-      rehearsals.forEach((rehearsal, index) => {
+      rehearsals.forEach(rehearsal => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${rehearsal.date}</td>
           <td>${rehearsal.time}</td>
           <td>${rehearsal.location}</td>
-          <td><button class="delete-rehearsal" data-index="${index}">Eliminar</button></td>
+          <td><button class="delete-rehearsal" data-id="${rehearsal.id}">Eliminar</button></td>
         `;
         tbody.appendChild(row);
       });
 
       document.querySelectorAll('.delete-rehearsal').forEach(btn => {
         btn.addEventListener('click', () => {
-          const index = btn.getAttribute('data-index');
-          rehearsals.splice(index, 1);
-          saveRehearsals();
+          const id = btn.getAttribute('data-id');
+          deleteRehearsal(id);
         });
       });
     }
 
     /*------------------------------------------
-      7. MENÚ Y CONFIGURACIÓN
+      8. MENÚ Y CONFIGURACIÓN
     ------------------------------------------*/
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const sidebarMenu = document.getElementById('sidebar-menu');
@@ -854,13 +1018,15 @@
     // Configuración de Setlists
     document.getElementById('menu-setlist-config').addEventListener('click', (e) => {
       e.preventDefault();
-      closeAllScreens();
-      const screen = document.getElementById('setlist-config-screen');
-      screen.style.display = 'block';
-      document.getElementById('setlist1-name').value = setlistConfig.setlist1.name;
-      document.getElementById('setlist1-url').value = setlistConfig.setlist1.url;
-      document.getElementById('setlist2-name').value = setlistConfig.setlist2.name;
-      document.getElementById('setlist2-url').value = setlistConfig.setlist2.url.replace('https://www.bandhelper.com/feed/set_list/', '');
+      showPasswordScreen(() => {
+        closeAllScreens();
+        const screen = document.getElementById('setlist-config-screen');
+        screen.style.display = 'block';
+        document.getElementById('setlist1-name').value = setlistConfig.setlist1.name;
+        document.getElementById('setlist1-url').value = setlistConfig.setlist1.url;
+        document.getElementById('setlist2-name').value = setlistConfig.setlist2.name;
+        document.getElementById('setlist2-url').value = setlistConfig.setlist2.url.replace('https://www.bandhelper.com/feed/set_list/', '');
+      });
     });
 
     document.getElementById('close-setlist-config').addEventListener('click', () => {
@@ -895,8 +1061,10 @@
     // Gestión de Usuarios
     document.getElementById('menu-user-mgmt').addEventListener('click', (e) => {
       e.preventDefault();
-      closeAllScreens();
-      document.getElementById('user-mgmt-screen').style.display = 'block';
+      showPasswordScreen(() => {
+        closeAllScreens();
+        document.getElementById('user-mgmt-screen').style.display = 'block';
+      });
     });
 
     document.getElementById('close-user-mgmt').addEventListener('click', () => {
@@ -912,16 +1080,17 @@
         return;
       }
 
-      users.push({ name, role });
-      saveUsers();
+      saveUser({ name, role });
       document.getElementById('user-name').value = '';
     });
 
     // Asignación de Ensayos
     document.getElementById('menu-rehearsal').addEventListener('click', (e) => {
       e.preventDefault();
-      closeAllScreens();
-      document.getElementById('rehearsal-screen').style.display = 'block';
+      showPasswordScreen(() => {
+        closeAllScreens();
+        document.getElementById('rehearsal-screen').style.display = 'block';
+      });
     });
 
     document.getElementById('close-rehearsal').addEventListener('click', () => {
@@ -938,26 +1107,26 @@
         return;
       }
 
-      rehearsals.push({ date, time, location });
-      saveRehearsals();
+      saveRehearsal({ date, time, location });
       document.getElementById('rehearsal-date').value = '';
       document.getElementById('rehearsal-time').value = '';
       document.getElementById('rehearsal-location').value = '';
     });
 
     /*------------------------------------------
-      8. CARGA INICIAL
+      9. CARGA INICIAL
     ------------------------------------------*/
-    window.addEventListener('DOMContentLoaded', () => {
+    function loadAllData() {
       loadSetlistConfig();
       loadUsers();
       loadRehearsals();
-      cargarPrimerSetlist();
-      cargarSegundoSetlist();
-    });
+    }
 
     document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
     document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
+
+    // Cargar datos al iniciar
+    loadAllData();
   </script>
 </body>
 </html>
