@@ -473,30 +473,39 @@
   </footer>
 
   <script>
-    /*------------------------------------------
-      1. FUNCIONES COMUNES
-    ------------------------------------------*/
-    function parseDurationToSeconds(durationStr) {
-      if (!durationStr) return 0;
-      if (durationStr.includes(':')) {
-        const [min, sec] = durationStr.split(':').map(num => parseInt(num, 10));
-        return (min * 60) + (sec || 0);
-      } else {
-        const seconds = parseInt(durationStr, 10);
-        return isNaN(seconds) ? 0 : seconds;
-      }
-    }
-    		function formatSecondsToHHMM(totalSeconds) {
-  				const hours = Math.floor(totalSeconds / 3600);
-  				const minutes = Math.floor((totalSeconds % 3600) / 60);
-  				return hours > 0 
+
+/*------------------------------------------
+  1. FUNCIONES COMUNES
+------------------------------------------*/
+function parseDurationToSeconds(durationStr) {
+  if (!durationStr) return 0;
+  if (durationStr.includes(':')) {
+    const [min, sec] = durationStr.split(':').map(num => parseInt(num, 10));
+    return (min * 60) + (sec || 0);
+  } else {
+    const seconds = parseInt(durationStr, 10);
+    return isNaN(seconds) ? 0 : seconds;
+  }
+}
+
+function formatSecondsToMMSS(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function formatSecondsToHHMM(totalSeconds) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  return hours > 0 
     ? `${hours}h ${String(minutes).padStart(2, '0')}m` 
     : `${minutes}m`;
 }
-    function cleanString(str) {
-      if (!str) return '';
-      return str.replace(/[^\x00-\xFF]/g, '').trim();
-    }
+
+function cleanString(str) {
+  if (!str) return '';
+  return str.replace(/[^\x00-\xFF]/g, '').trim();
+}
 
     /*------------------------------------------
       2. CONFIGURACIÓN DE SETLISTS
