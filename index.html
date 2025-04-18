@@ -977,14 +977,23 @@ function cleanString(str) {
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.7.0/firebase-firestore.js";
 
   /* --- TU configuración (copia‑pega de la consola) --- */
-  const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "tu‑proyecto.firebaseapp.com",
-    projectId: "tu‑proyecto",
-    storageBucket: "tu‑proyecto.appspot.com",
-    messagingSenderId: "…",
-    appId: "…"
-  };
+  // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
+  authDomain: "sotanointranet.firebaseapp.com",
+  projectId: "sotanointranet",
+  storageBucket: "sotanointranet.firebasestorage.app",
+  messagingSenderId: "756955233128",
+  appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
   /* --- Inicializar --- */
   const app = initializeApp(firebaseConfig);
