@@ -970,5 +970,35 @@ function cleanString(str) {
     document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
     document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
   </script>
+  
+  <script type="module">
+  /* --- SDKs que necesitamos --- */
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.7.0/firebase-firestore.js";
+
+  /* --- TU configuración (copia‑pega de la consola) --- */
+  const firebaseConfig = {
+    apiKey: "TU_API_KEY",
+    authDomain: "tu‑proyecto.firebaseapp.com",
+    projectId: "tu‑proyecto",
+    storageBucket: "tu‑proyecto.appspot.com",
+    messagingSenderId: "…",
+    appId: "…"
+  };
+
+  /* --- Inicializar --- */
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  /* --- Helpers genéricos --- */
+  async function loadDoc(id, fallback) {
+    const snap = await getDoc(doc(db, "intranet", id));
+    return snap.exists() ? snap.data() : fallback;
+  }
+  function saveDoc(id, data) {
+    return setDoc(doc(db, "intranet", id), data);
+  }
+</script>
+  
 </body>
 </html>
