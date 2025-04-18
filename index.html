@@ -190,22 +190,16 @@
   const toHHMM = s => { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`; };
   const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
 
-/* ---------- 2. Acceso Firestore ---------- */
-async function loadDoc(id, fallback) {
-  try {
-    const snap = await db.collection("intranet").doc(id).get();
-    return snap.exists ? snap.data() : fallback;
-  } catch (e) {
-    console.warn("Firestore read error:", e.code || e.message);
-    return fallback;                 // sigue usando lo que ya había
+  /* ---------- 2. Acceso Firestore ---------- */
+  async function loadDoc(id, fallback) {
+    try {
+      const snap = await db.collection("intranet").doc(id).get();
+      return snap.exists ? snap.data() : fallback;
+    } catch (e) { console.error(e); return fallback; }
   }
-}
-
-function saveDoc(id, data) {
-  return db.collection("intranet").doc(id).set(data)
-           .catch(e => alert("Error guardando en Firestore: " + (e.code || e.message)));
-}
-
+  function saveDoc(id, data) {
+    return db.collection("intranet").doc(id).set(data);
+  }
 
   /* ---------- 3. Configuración Setlists ---------- */
   let setlistConfig = {
@@ -243,55 +237,68 @@ function saveDoc(id, data) {
   /* ---------- 5. Segundo Setlist ---------- */
   async function cargarSegundoSetlist() {
     try {
-      const songs = (await (await fetch(setlistConfig.setlist2.url)).json()).filter(i => i.type === "song");
-      const tbody = document.getElementById("second-body"); tbody.innerHTML = "";
+      const response = await fetch(setlistConfig.setlist2.url);
+      if (!response.ok) throw new Error('Error en la respuesta de la API');
+      const data = await response.json();
+      const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : [];
+      
+      const tbody = document.getElementById("second-body");
+      tbody.innerHTML = "";
       let total = 0;
+      
       songs.forEach((s, i) => {
-        const secs = parseDuration(s.duration); total += secs;
+        const secs = parseDuration(s.duration || "0");
+        total += secs;
         tbody.insertAdjacentHTML("beforeend",
-          `<tr><td>${i + 1}</td><td>${clean(s.name)}</td><td>${clean(s.key)}</td><td>${clean(s.tempo)}</td><td>${toMMSS(secs)}</td></tr>`);
+          `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
+        );
       });
+      
       document.getElementById("url-actual").textContent = setlistConfig.setlist2.url;
-      document.getElementById("total-time-2").textContent = "Tiempo total del set: " + toMMSS(total);
+      document.getElementById("total-time-2").textContent = "Tiempo total del set: " + toHHMM(total);
       return songs;
     } catch (e) {
-      console.error(e);
+      console.error("Error cargando segundo setlist:", e);
       document.getElementById("second-body").innerHTML =
-        '<tr><td colspan="5">Error al cargar el segundo setlist.</td></tr>';
+        '<tr><td colspan="5">No se pudo cargar el segundo setlist. Verifica la URL o la conexión.</td></tr>';
+      document.getElementById("total-time-2").textContent = "";
       return [];
     }
   }
 
+  /* ---------- 6. Usuarios ---------- */
+  let users = [];
+  function renderUsers() {
+    const tbody = document.getElementById("user-table-body");
+    const main  = document.getElementById("users-body");
+    tbody.innerHTML = main.innerHTML = "";
+    users.forEach((u, i) => {
+      tbody.insertAdjacentHTML("beforeend",
+        `<tr><td>${u.name}</td><td>${u.role === "admin" ? "Administrador" : "Miembro"}</td>
+         <td><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`);
+      main.insertAdjacentHTML("beforeend",
+        `<tr><td>${u.name}</td><td>${u.role === "admin" ? "Administrador" : "Miembro"}</td></tr>`);
+    });
+    tbody.querySelectorAll(".delete-user").forEach(btn =>
+      btn.onclick = () => { users.splice(btn.dataset.i, 1); saveUsers(); });
+  }
+  async function loadUsers() { users = await loadDoc("users", []); renderUsers(); }
+  function saveUsers() { saveDoc("users", users); renderUsers(); }
 
-/* ---------- 6. Usuarios ---------- */
-document.getElementById("add-user").onclick = () => {
-  const name = document.getElementById("user-name").value.trim();
-  const role = document.getElementById("user-role").value;
-  if (!name) { alert("Introduce un nombre"); return; }
-
-  users.push({ name, role });
-  renderUsers();                 // pinta al instante
-  saveDoc("users", users);       // guarda; si falla, avisa
-  document.getElementById("user-name").value = "";
-};
-
-
-
-/* ---------- 7. Ensayos ---------- */
-document.getElementById("add-rehearsal").onclick = () => {
-  const date = document.getElementById("rehearsal-date").value;
-  const time = document.getElementById("rehearsal-time").value;
-  const loc  = document.getElementById("rehearsal-location").value.trim();
-  if (!date || !time || !loc) { alert("Completa todos los campos"); return; }
-
-  rehearsals.push({ date, time, location: loc });
-  renderRehearsals();            // pinta de inmediato
-  saveDoc("rehearsals", rehearsals);
-  document.getElementById("rehearsal-date").value =
-  document.getElementById("rehearsal-time").value =
-  document.getElementById("rehearsal-location").value = "";
-};
-
+  /* ---------- 7. Ensayos ---------- */
+  let rehearsals = [];
+  function renderRehearsals() {
+    const tbody = document.getElementById("rehearsal-table-body"); tbody.innerHTML = "";
+    rehearsals.forEach((r, i) => {
+      tbody.insertAdjacentHTML("beforeend",
+        `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.location}</td>
+         <td><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
+    });
+    tbody.querySelectorAll(".delete-rehearsal").forEach(btn =>
+      btn.onclick = () => { rehearsals.splice(btn.dataset.i, 1); saveRehearsals(); });
+  }
+  async function loadRehearsals() { rehearsals = await loadDoc("rehearsals", []); renderRehearsals(); }
+  function saveRehearsals() { saveDoc("rehearsals", rehearsals); renderRehearsals(); }
 
   /* ---------- 8. PDF ---------- */
   async function genPDF(songs, title, fileName) {
@@ -318,55 +325,108 @@ document.getElementById("add-rehearsal").onclick = () => {
   /* ---------- 9. Menú & pantallas ---------- */
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
   function closeAll() {
-    document.querySelectorAll(".config-screen").forEach(s => s.style.display = "none");
-    sidebar.classList.remove("show"); overlay.classList.remove("show");
+    document.querySelectorAll(".config-screen").forEach(s => {
+      s.style.display = "none";
+      // Limpia los campos de entrada al cerrar
+      s.querySelectorAll("input, select").forEach(input => input.value = "");
+    });
+    sidebar.classList.remove("show");
+    overlay.classList.remove("show");
   }
-  document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
-  document.getElementById("menu-cerrar").onclick   = e => { e.preventDefault(); closeAll(); };
+
+  document.getElementById("hamburger-btn").onclick = () => {
+    sidebar.classList.add("show");
+    overlay.classList.add("show");
+  };
+
+  document.getElementById("menu-cerrar").onclick = e => {
+    e.preventDefault();
+    closeAll();
+  };
+
   overlay.onclick = closeAll;
 
   /* --- Setlists screen */
   document.getElementById("menu-setlist-config").onclick = e => {
-    e.preventDefault(); closeAll();
-    const s = document.getElementById("setlist-config-screen"); s.style.display = "block";
+    e.preventDefault();
+    closeAll();
+    const s = document.getElementById("setlist-config-screen");
+    s.style.display = "block";
     document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
-    document.getElementById("setlist1-url").value  = setlistConfig.setlist1.url;
+    document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
     document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
-    document.getElementById("setlist2-url").value  = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
+    document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
   };
-  document.getElementById("close-setlist-config").onclick = () => document.getElementById("setlist-config-screen").style.display = "none";
-  document.getElementById("guardar-setlist-config").onclick = () => {
+
+  document.getElementById("close-setlist-config").onclick = () => {
+    document.getElementById("setlist-config-screen").style.display = "none";
+  };
+
+  document.getElementById("guardar-setlist-config").onclick = async () => {
     const n1 = document.getElementById("setlist1-name").value.trim(),
           u1 = document.getElementById("setlist1-url").value.trim(),
           n2 = document.getElementById("setlist2-name").value.trim(),
           raw = document.getElementById("setlist2-url").value.trim();
-    if (!n1 || !u1 || !n2 || !raw) { alert("Completa todos los campos"); return; }
+    
+    if (!n1 || !u1 || !n2 || !raw) {
+      alert("Completa todos los campos");
+      return;
+    }
+    
     setlistConfig.setlist1 = { name: n1, url: u1 };
     setlistConfig.setlist2 = { name: n2, url: raw.startsWith("http") ? raw : `https://www.bandhelper.com/feed/set_list/${raw}` };
-    saveSetlistConfig();
-    cargarPrimerSetlist(); cargarSegundoSetlist();
+    
+    await saveSetlistConfig();
+    await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
     document.getElementById("setlist-config-screen").style.display = "none";
   };
 
   /* --- Usuarios screen */
-  document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); closeAll(); document.getElementById("user-mgmt-screen").style.display = "block"; };
-  document.getElementById("close-user-mgmt").onclick = () => document.getElementById("user-mgmt-screen").style.display = "none";
+  document.getElementById("menu-user-mgmt").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("user-mgmt-screen").style.display = "block";
+  };
+
+  document.getElementById("close-user-mgmt").onclick = () => {
+    document.getElementById("user-mgmt-screen").style.display = "none";
+  };
+
   document.getElementById("add-user").onclick = () => {
-    const name = document.getElementById("user-name").value.trim(), role = document.getElementById("user-role").value;
-    if (!name) { alert("Introduce un nombre"); return; }
-    users.push({ name, role }); saveUsers(); document.getElementById("user-name").value = "";
+    const name = document.getElementById("user-name").value.trim(),
+          role = document.getElementById("user-role").value;
+    if (!name) {
+      alert("Introduce un nombre");
+      return;
+    }
+    users.push({ name, role });
+    saveUsers();
+    document.getElementById("user-name").value = "";
   };
 
   /* --- Ensayos screen */
-  document.getElementById("menu-rehearsal").onclick = e => { e.preventDefault(); closeAll(); document.getElementById("rehearsal-screen").style.display = "block"; };
-  document.getElementById("close-rehearsal").onclick = () => document.getElementById("rehearsal-screen").style.display = "none";
+  document.getElementById("menu-rehearsal").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("rehearsal-screen").style.display = "block";
+  };
+
+  document.getElementById("close-rehearsal").onclick = () => {
+    document.getElementById("rehearsal-screen").style.display = "none";
+  };
+
   document.getElementById("add-rehearsal").onclick = () => {
     const date = document.getElementById("rehearsal-date").value,
           time = document.getElementById("rehearsal-time").value,
-          loc  = document.getElementById("rehearsal-location").value.trim();
-    if (!date || !time || !loc) { alert("Completa todos los campos"); return; }
-    rehearsals.push({ date, time, location: loc }); saveRehearsals();
-    document.getElementById("rehearsal-date").value = document.getElementById("rehearsal-time").value =
+          loc = document.getElementById("rehearsal-location").value.trim();
+    if (!date || !time || !loc) {
+      alert("Completa todos los campos");
+      return;
+    }
+    rehearsals.push({ date, time, location: loc });
+    saveRehearsals();
+    document.getElementById("rehearsal-date").value = "";
+    document.getElementById("rehearsal-time").value = "";
     document.getElementById("rehearsal-location").value = "";
   };
 
@@ -374,7 +434,7 @@ document.getElementById("add-rehearsal").onclick = () => {
   document.addEventListener("DOMContentLoaded", async () => {
     await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
     const [songs1, songs2] = await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
-    document.getElementById("download-btn" ).onclick = () => genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
+    document.getElementById("download-btn").onclick = () => genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
     document.getElementById("download-btn-2").onclick = () => genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf");
   });
   </script>
