@@ -52,11 +52,9 @@
     .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
                    overflow-y:auto;padding:60px 20px 20px}
     .config-screen h2{color:#0cf;text-align:center;margin:0 0 20px}
-    .config-screen h3{color:#0cf;margin:10px 0}
     .config-screen label{display:block;margin:10px 0 5px}
     .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
                                               border:1px solid #333;border-radius:5px}
-    .config-screen select[multiple] { height: 150px; }
     .config-screen button{margin-top:20px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .config-screen button:hover{background:#09b}
     .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;
@@ -64,8 +62,8 @@
     .config-screen .close-btn:hover{background:#333}
     /* Secciones */
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists,#rehearsals,#second-setlist,#calendario,#usuarios{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
-    #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px}
+    #setlists,#second-setlist,#usuarios,#calendario{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
+    #setlists h2,#second-setlist h2,#usuarios h2,#calendario h2{text-align:center;color:#0cf;margin-bottom:15px}
     table{width:100%;border-collapse:collapse;margin-top:20px;color:#fff;font-size:.95em}
     thead{background:#222;color:#0cf}th,td{padding:12px;border:1px solid #333;text-align:left}
     tr:nth-child(even){background:#1a1a1a}
@@ -103,7 +101,7 @@
   <div id="setlist-config-screen" class="config-screen">
     <button class="close-btn" id="close-setlist-config">Cerrar</button>
     <h2>Configuración de Setlists</h2>
-    <h3>Setlist Próximo Ensayo</h3>
+    <h3>Primer Setlist</h3>
     <label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025">
     <label>ID/URL feed</label><input id="setlist1-url" placeholder="URL">
     <h3>Segundo Setlist</h3>
@@ -118,23 +116,11 @@
     <button class="close-btn" id="close-user-mgmt">Cerrar</button>
     <h2>Gestión de Usuarios</h2>
     <label>Nombre</label><input id="user-name" placeholder="Nombre">
-    <label>Roles</label>
-    <select id="user-role" multiple>
-      <option value="Batería">Batería</option>
-      <option value="Teclados">Teclados</option>
-      <option value="Voz">Voz</option>
-      <option value="Guitarra eléctrica">Guitarra eléctrica</option>
-      <option value="Guitarra Acústica">Guitarra Acústica</option>
-      <option value="Bajo">Bajo</option>
-      <option value="Percusión">Percusión</option>
-      <option value="Saxo">Saxo</option>
-      <option value="Dirección Musical">Dirección Musical</option>
-      <option value="Técnico de Sonido">Técnico de Sonido</option>
-      <option value="Montador">Montador</option>
-    </select>
+    <label>Rol</label>
+    <select id="user-role"><option value="admin">Administrador</option><option value="member">Miembro</option></select>
     <button id="add-user">Añadir Usuario</button>
     <p id="user-message" class="error-message"></p>
-    <table id="user-table"><thead><tr><th>Nombre</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
+    <table id="user-table"><thead><tr><th>Nombre</th><th>Rol</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
   </div>
 
   <!-- Ensayos -->
@@ -160,39 +146,36 @@
       <p id="total-time"></p>
     </section>
 
-    <!-- 2) Ensayos (movido después del primer setlist) -->
-    <section id="rehearsals">
-      <h2>Próximos Ensayos</h2>
-      <p style="text-align:center;color:#aaa">Lista de ensayos asignados manualmente.</p>
-      <table id="rehearsal-main-table">
-        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th></tr></thead>
-        <tbody id="rehearsal-main-body"></tbody>
-      </table>
-    </section>
-
-    <!-- 3) Segundo setlist -->
+    <!-- 2) Segundo setlist -->
     <section id="second-setlist">
-      <h2>Setlist Próximo Concierto</h2>
+      <h2 id="setlist2-title">Setlist Próximo Concierto</h2>
       <p style="text-align:center;color:#aaa">Feed actual: <em id="url-actual"></em></p>
       <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
     </section>
 
+    <!-- 3) Usuarios -->
+    <section id="usuarios">
+      <h2>Usuarios Registrados</h2>
+      <p style="text-align:center;color:#aaa">Lista de usuarios con acceso a la intranet.</p>
+      <table><thead><tr><th>Nombre</th><th>Rol</th></tr></thead><tbody id="users-body"></tbody></table>
+    </section>
+
     <!-- 4) Calendario -->
     <section id="calendario">
-      <h2>Próximos Conciertos</h2>
+      <h2>Próximos Ensayos y Conciertos</h2>
+      <h3>Ensayos Programados</h3>
+      <p style="text-align:center;color:#aaa">Lista de ensayos asignados manualmente.</p>
+      <table id="rehearsal-main-table">
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th></tr></thead>
+        <tbody id="rehearsal-main-body"></tbody>
+      </table>
+      <h3>Conciertos Próximos (BandHelper)</h3>
       <p style="text-align:center;color:#aaa">Consulta los conciertos actualizados desde BandHelper.</p>
       <div id="bandhelper-concerts">
         <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
       </div>
-    </section>
-
-    <!-- 5) Usuarios -->
-    <section id="usuarios">
-      <h2>Usuarios Registrados</h2>
-      <p style="text-align:center;color:#aaa">Lista de usuarios con acceso a la intranet.</p>
-      <table><thead><tr><th>Nombre</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table>
     </section>
   </main>
 
@@ -221,17 +204,6 @@
   const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const toHHMM = s => { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`; };
   const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
-
-  // Formatear fecha como "Domingo 24 de Mayo"
-  const formatDateWithDay = dateStr => {
-    const date = new Date(dateStr);
-    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    const dayName = days[date.getDay()];
-    const day = date.getDate();
-    const monthName = months[date.getMonth()];
-    return `${dayName} ${day} de ${monthName}`;
-  };
 
   /* ---------- 2. Acceso Firestore ---------- */
   async function loadDoc(id, fallback) {
@@ -262,7 +234,7 @@
 
   function updateTitles() {
     document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
-    // El título del segundo setlist siempre será "Setlist Próximo Concierto" en la página principal
+    document.getElementById("setlist2-title").textContent = setlistConfig.setlist2.name;
   }
 
   async function loadSetlistConfig() {
@@ -279,9 +251,7 @@
   /* ---------- 4. Primer Setlist ---------- */
   async function cargarPrimerSetlist() {
     try {
-      const response = await fetch(setlistConfig.setlist1.url);
-      if (!response.ok) throw new Error(`Error al cargar el primer setlist: ${response.statusText}`);
-      const songs = (await response.json()).filter(i => i.type === "song");
+      const songs = (await (await fetch(setlistConfig.setlist1.url)).json()).filter(i => i.type === "song");
       const tbody = document.getElementById("setlist-body");
       tbody.innerHTML = "";
       let total = 0;
@@ -294,10 +264,9 @@
       document.getElementById("total-time").textContent = "Tiempo total del set: " + toHHMM(total);
       return songs;
     } catch (e) {
-      console.error("Error cargando el primer setlist:", e);
+      console.error(e);
       document.getElementById("setlist-body").innerHTML =
-        '<tr><td colspan="5">No se pudo cargar el setlist de ensayos. Verifica la URL o la conexión.</td></tr>';
-      document.getElementById("total-time").textContent = "";
+        '<tr><td colspan="5">Error al cargar el primer setlist.</td></tr>';
       return [];
     }
   }
@@ -306,7 +275,7 @@
   async function cargarSegundoSetlist() {
     try {
       const response = await fetch(setlistConfig.setlist2.url);
-      if (!response.ok) throw new Error(`Error al cargar el segundo setlist: ${response.statusText}`);
+      if (!response.ok) throw new Error('Error en la respuesta de la API');
       const data = await response.json();
       const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : [];
       
@@ -328,9 +297,8 @@
     } catch (e) {
       console.error("Error cargando segundo setlist:", e);
       document.getElementById("second-body").innerHTML =
-        '<tr><td colspan="5">No se pudo cargar el setlist del concierto. Verifica la URL o la conexión.</td></tr>';
+        '<tr><td colspan="5">No se pudo cargar el segundo setlist. Verifica la URL o la conexión.</td></tr>';
       document.getElementById("total-time-2").textContent = "";
-      document.getElementById("url-actual").textContent = setlistConfig.setlist2.url;
       return [];
     }
   }
@@ -343,12 +311,11 @@
     const main = document.getElementById("users-body");
     tbody.innerHTML = main.innerHTML = "";
     users.forEach((u, i) => {
-      const rolesDisplay = u.roles.join(", ");
       tbody.insertAdjacentHTML("beforeend",
-        `<tr><td>${u.name}</td><td>${rolesDisplay}</td>
+        `<tr><td>${u.name}</td><td>${u.role === "admin" ? "Administrador" : "Miembro"}</td>
          <td><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`);
       main.insertAdjacentHTML("beforeend",
-        `<tr><td>${u.name}</td><td>${rolesDisplay}</td></tr>`);
+        `<tr><td>${u.name}</td><td>${u.role === "admin" ? "Administrador" : "Miembro"}</td></tr>`);
     });
     tbody.querySelectorAll(".delete-user").forEach(btn =>
       btn.onclick = async () => {
@@ -378,21 +345,17 @@
   let rehearsals = [];
 
   function renderRehearsals() {
-    // Ordenar ensayos por fecha (ascendente, más próximos primero)
-    rehearsals.sort((a, b) => new Date(a.date) - new Date(b.date));
-
     const tbodyConfig = document.getElementById("rehearsal-table-body");
     const tbodyMain = document.getElementById("rehearsal-main-body");
     tbodyConfig.innerHTML = tbodyMain.innerHTML = "";
     rehearsals.forEach((r, i) => {
-      const formattedDate = formatDateWithDay(r.date);
       // Renderizar en la pantalla de configuración (con botón de eliminar)
       tbodyConfig.insertAdjacentHTML("beforeend",
-        `<tr><td>${formattedDate}</td><td>${r.time}</td><td>${r.location}</td>
+        `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.location}</td>
          <td><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
       // Renderizar en la página principal (sin botón de eliminar)
       tbodyMain.insertAdjacentHTML("beforeend",
-        `<tr><td>${formattedDate}</td><td>${r.time}</td><td>${r.location}</td></tr>`);
+        `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.location}</td></tr>`);
     });
     tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
       btn.onclick = async () => {
@@ -452,13 +415,7 @@
   function closeAll() {
     document.querySelectorAll(".config-screen").forEach(s => {
       s.style.display = "none";
-      s.querySelectorAll("input, select").forEach(input => {
-        if (input.tagName === "SELECT" && input.hasAttribute("multiple")) {
-          Array.from(input.options).forEach(option => option.selected = false);
-        } else {
-          input.value = "";
-        }
-      });
+      s.querySelectorAll("input, select").forEach(input => input.value = "");
       const message = s.querySelector("#user-message, #rehearsal-message, #setlist-message");
       if (message) message.textContent = "";
     });
@@ -542,8 +499,7 @@
     userMessage.textContent = "";
 
     const name = document.getElementById("user-name").value.trim();
-    const roleSelect = document.getElementById("user-role");
-    const roles = Array.from(roleSelect.selectedOptions).map(option => option.value);
+    const role = document.getElementById("user-role").value;
 
     if (!name) {
       userMessage.className = "error-message";
@@ -551,17 +507,10 @@
       return;
     }
 
-    if (roles.length === 0) {
-      userMessage.className = "error-message";
-      userMessage.textContent = "Selecciona al menos un rol";
-      return;
-    }
-
     try {
-      users.push({ name, roles });
+      users.push({ name, role });
       await saveUsers();
       document.getElementById("user-name").value = "";
-      Array.from(roleSelect.options).forEach(option => option.selected = false);
       userMessage.className = "success-message";
       userMessage.textContent = "Usuario añadido correctamente";
     } catch (e) {
@@ -613,42 +562,13 @@
   /* ---------- 10. Carga inicial ---------- */
   document.addEventListener("DOMContentLoaded", async () => {
     try {
-      // Cargar datos de Firestore (esto no debería fallar)
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
-
-      // Cargar los setlists, pero manejar errores de forma independiente
-      let songs1 = [], songs2 = [];
-      try {
-        songs1 = await cargarPrimerSetlist();
-      } catch (e) {
-        console.error("Fallo al cargar el primer setlist, continuando con la carga inicial:", e);
-      }
-
-      try {
-        songs2 = await cargarSegundoSetlist();
-      } catch (e) {
-        console.error("Fallo al cargar el segundo setlist, continuando con la carga inicial:", e);
-      }
-
-      // Asignar eventos a los botones de descarga, incluso si los setlists fallaron
-      document.getElementById("download-btn").onclick = () => {
-        if (songs1.length > 0) {
-          genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
-        } else {
-          alert("No hay canciones disponibles para descargar el PDF del setlist de ensayos.");
-        }
-      };
-
-      document.getElementById("download-btn-2").onclick = () => {
-        if (songs2.length > 0) {
-          genPDF(songs2, "Setlist Próximo Concierto", "setlist_concierto.pdf");
-        } else {
-          alert("No hay canciones disponibles para descargar el PDF del setlist del concierto.");
-        }
-      };
+      const [songs1, songs2] = await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
+      document.getElementById("download-btn").onclick = () => genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
+      document.getElementById("download-btn-2").onclick = () => genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf");
     } catch (e) {
-      console.error("Error en la carga inicial (Firestore):", e);
-      alert("Error al cargar los datos iniciales de Firestore. Revisa la consola para más detalles.");
+      console.error("Error en la carga inicial:", e);
+      alert("Error al cargar los datos iniciales. Revisa la consola para más detalles.");
     }
   });
   </script>
