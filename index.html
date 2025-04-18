@@ -108,6 +108,7 @@
     <label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad">
     <label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvyb o URL completa">
     <button id="guardar-setlist-config">Guardar Configuración</button>
+    <p id="setlist-message" class="error-message"></p>
   </div>
 
   <!-- Usuarios -->
@@ -130,6 +131,7 @@
     <label>Hora</label><input type="time" id="rehearsal-time">
     <label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1">
     <button id="add-rehearsal">Añadir Ensayo</button>
+    <p id="rehearsal-message" class="error-message"></p>
     <table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table>
   </div>
 
@@ -162,9 +164,18 @@
 
     <!-- 4) Calendario -->
     <section id="calendario">
-      <h2>Próximos Conciertos y Ensayos</h2>
-      <p>Consulta el calendario actualizado.</p>
-      <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
+      <h2>Próximos Ensayos y Conciertos</h2>
+      <h3>Ensayos Programados</h3>
+      <p style="text-align:center;color:#aaa">Lista de ensayos asignados manualmente.</p>
+      <table id="rehearsal-main-table">
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th></tr></thead>
+        <tbody id="rehearsal-main-body"></tbody>
+      </table>
+      <h3>Conciertos Próximos (BandHelper)</h3>
+      <p style="text-align:center;color:#aaa">Consulta los conciertos actualizados desde BandHelper.</p>
+      <div id="bandhelper-concerts">
+        <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
+      </div>
     </section>
   </main>
 
@@ -228,13 +239,13 @@
 
   async function loadSetlistConfig() {
     const data = await loadDoc("setlists", { config: setlistConfig });
-    setlistConfig = data.config || setlistConfig; // Extraemos el campo 'config'
+    setlistConfig = data.config || setlistConfig;
     updateTitles();
   }
 
-  function saveSetlistConfig() {
+  async function saveSetlistConfig() {
     updateTitles();
-    return saveDoc("setlists", { config: setlistConfig }); // Guardamos como objeto con campo 'config'
+    return await saveDoc("setlists", { config: setlistConfig });
   }
 
   /* ---------- 4. Primer Setlist ---------- */
@@ -315,13 +326,13 @@
 
   async function loadUsers() {
     const data = await loadDoc("users", { users: [] });
-    users = data.users || []; // Extraemos el campo 'users'
+    users = data.users || [];
     renderUsers();
   }
 
   async function saveUsers() {
     try {
-      await saveDoc("users", { users }); // Guardamos como objeto con campo 'users'
+      await saveDoc("users", { users });
       renderUsers();
       return true;
     } catch (e) {
@@ -334,14 +345,19 @@
   let rehearsals = [];
 
   function renderRehearsals() {
-    const tbody = document.getElementById("rehearsal-table-body");
-    tbody.innerHTML = "";
+    const tbodyConfig = document.getElementById("rehearsal-table-body");
+    const tbodyMain = document.getElementById("rehearsal-main-body");
+    tbodyConfig.innerHTML = tbodyMain.innerHTML = "";
     rehearsals.forEach((r, i) => {
-      tbody.insertAdjacentHTML("beforeend",
+      // Renderizar en la pantalla de configuración (con botón de eliminar)
+      tbodyConfig.insertAdjacentHTML("beforeend",
         `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.location}</td>
          <td><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
+      // Renderizar en la página principal (sin botón de eliminar)
+      tbodyMain.insertAdjacentHTML("beforeend",
+        `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.location}</td></tr>`);
     });
-    tbody.querySelectorAll(".delete-rehearsal").forEach(btn =>
+    tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
       btn.onclick = async () => {
         rehearsals.splice(btn.dataset.i, 1);
         await saveRehearsals();
@@ -350,13 +366,19 @@
 
   async function loadRehearsals() {
     const data = await loadDoc("rehearsals", { rehearsals: [] });
-    rehearsals = data.rehearsals || []; // Extraemos el campo 'rehearsals'
+    rehearsals = data.rehearsals || [];
     renderRehearsals();
   }
 
   async function saveRehearsals() {
-    await saveDoc("rehearsals", { rehearsals }); // Guardamos como objeto con campo 'rehearsals'
-    renderRehearsals();
+    try {
+      await saveDoc("rehearsals", { rehearsals });
+      renderRehearsals();
+      return true;
+    } catch (e) {
+      console.error("Error al guardar ensayos:", e);
+      throw e;
+    }
   }
 
   /* ---------- 8. PDF ---------- */
@@ -394,7 +416,7 @@
     document.querySelectorAll(".config-screen").forEach(s => {
       s.style.display = "none";
       s.querySelectorAll("input, select").forEach(input => input.value = "");
-      const message = s.querySelector("#user-message");
+      const message = s.querySelector("#user-message, #rehearsal-message, #setlist-message");
       if (message) message.textContent = "";
     });
     sidebar.classList.remove("show");
@@ -427,25 +449,37 @@
 
   document.getElementById("close-setlist-config").onclick = () => {
     document.getElementById("setlist-config-screen").style.display = "none";
+    document.getElementById("setlist-message").textContent = "";
   };
 
   document.getElementById("guardar-setlist-config").onclick = async () => {
+    const setlistMessage = document.getElementById("setlist-message");
+    setlistMessage.textContent = "";
+
     const n1 = document.getElementById("setlist1-name").value.trim(),
           u1 = document.getElementById("setlist1-url").value.trim(),
           n2 = document.getElementById("setlist2-name").value.trim(),
           raw = document.getElementById("setlist2-url").value.trim();
     
     if (!n1 || !u1 || !n2 || !raw) {
-      alert("Completa todos los campos");
+      setlistMessage.className = "error-message";
+      setlistMessage.textContent = "Completa todos los campos";
       return;
     }
     
-    setlistConfig.setlist1 = { name: n1, url: u1 };
-    setlistConfig.setlist2 = { name: n2, url: raw.startsWith("http") ? raw : `https://www.bandhelper.com/feed/set_list/${raw}` };
-    
-    await saveSetlistConfig();
-    await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
-    document.getElementById("setlist-config-screen").style.display = "none";
+    try {
+      setlistConfig.setlist1 = { name: n1, url: u1 };
+      setlistConfig.setlist2 = { name: n2, url: raw.startsWith("http") ? raw : `https://www.bandhelper.com/feed/set_list/${raw}` };
+      
+      await saveSetlistConfig();
+      await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
+      document.getElementById("setlist-config-screen").style.display = "none";
+      setlistMessage.className = "success-message";
+      setlistMessage.textContent = "Configuración guardada correctamente";
+    } catch (e) {
+      setlistMessage.className = "error-message";
+      setlistMessage.textContent = "Error al guardar configuración: " + e.message;
+    }
   };
 
   /* --- Usuarios screen */
@@ -494,21 +528,35 @@
 
   document.getElementById("close-rehearsal").onclick = () => {
     document.getElementById("rehearsal-screen").style.display = "none";
+    document.getElementById("rehearsal-message").textContent = "";
   };
 
   document.getElementById("add-rehearsal").onclick = async () => {
+    const rehearsalMessage = document.getElementById("rehearsal-message");
+    rehearsalMessage.textContent = "";
+
     const date = document.getElementById("rehearsal-date").value,
           time = document.getElementById("rehearsal-time").value,
           loc = document.getElementById("rehearsal-location").value.trim();
+    
     if (!date || !time || !loc) {
-      alert("Completa todos los campos");
+      rehearsalMessage.className = "error-message";
+      rehearsalMessage.textContent = "Completa todos los campos";
       return;
     }
-    rehearsals.push({ date, time, location: loc });
-    await saveRehearsals();
-    document.getElementById("rehearsal-date").value = "";
-    document.getElementById("rehearsal-time").value = "";
-    document.getElementById("rehearsal-location").value = "";
+
+    try {
+      rehearsals.push({ date, time, location: loc });
+      await saveRehearsals();
+      document.getElementById("rehearsal-date").value = "";
+      document.getElementById("rehearsal-time").value = "";
+      document.getElementById("rehearsal-location").value = "";
+      rehearsalMessage.className = "success-message";
+      rehearsalMessage.textContent = "Ensayo añadido correctamente";
+    } catch (e) {
+      rehearsalMessage.className = "error-message";
+      rehearsalMessage.textContent = "Error al añadir ensayo: " + e.message;
+    }
   };
 
   /* ---------- 10. Carga inicial ---------- */
