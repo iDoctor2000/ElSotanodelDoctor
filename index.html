@@ -52,6 +52,7 @@
     .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
                    overflow-y:auto;padding:60px 20px 20px}
     .config-screen h2{color:#0cf;text-align:center;margin:0 0 20px}
+    .config-screen h3{color:#0cf;margin:10px 0}
     .config-screen label{display:block;margin:10px 0 5px}
     .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
                                               border:1px solid #333;border-radius:5px}
@@ -63,8 +64,8 @@
     .config-screen .close-btn:hover{background:#333}
     /* Secciones */
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists,#second-setlist,#usuarios,#calendario{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
-    #setlists h2,#second-setlist h2,#usuarios h2,#calendario h2{text-align:center;color:#0cf;margin-bottom:15px}
+    #setlists,#rehearsals,#second-setlist,#calendario,#usuarios{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
+    #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px}
     table{width:100%;border-collapse:collapse;margin-top:20px;color:#fff;font-size:.95em}
     thead{background:#222;color:#0cf}th,td{padding:12px;border:1px solid #333;text-align:left}
     tr:nth-child(even){background:#1a1a1a}
@@ -102,7 +103,7 @@
   <div id="setlist-config-screen" class="config-screen">
     <button class="close-btn" id="close-setlist-config">Cerrar</button>
     <h2>Configuración de Setlists</h2>
-    <h3>Primer Setlist</h3>
+    <h3>Setlist Próximo Ensayo</h3>
     <label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025">
     <label>ID/URL feed</label><input id="setlist1-url" placeholder="URL">
     <h3>Segundo Setlist</h3>
@@ -159,32 +160,35 @@
       <p id="total-time"></p>
     </section>
 
-    <!-- 2) Segundo setlist -->
+    <!-- 2) Ensayos (movido después del primer setlist) -->
+    <section id="rehearsals">
+      <h2>Próximos Ensayos</h2>
+      <p style="text-align:center;color:#aaa">Lista de ensayos asignados manualmente.</p>
+      <table id="rehearsal-main-table">
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th></tr></thead>
+        <tbody id="rehearsal-main-body"></tbody>
+      </table>
+    </section>
+
+    <!-- 3) Segundo setlist -->
     <section id="second-setlist">
-      <h2 id="setlist2-title">Setlist Próximo Concierto</h2>
+      <h2>Setlist Próximo Concierto</h2>
       <p style="text-align:center;color:#aaa">Feed actual: <em id="url-actual"></em></p>
       <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
     </section>
 
-    <!-- 3) Calendario -->
+    <!-- 4) Calendario -->
     <section id="calendario">
-      <h2>Próximos Ensayos y Conciertos</h2>
-      <h3>Ensayos Programados</h3>
-      <p style="text-align:center;color:#aaa">Lista de ensayos asignados manualmente.</p>
-      <table id="rehearsal-main-table">
-        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th></tr></thead>
-        <tbody id="rehearsal-main-body"></tbody>
-      </table>
-      <h3>Conciertos Próximos (BandHelper)</h3>
+      <h2>Próximos Conciertos</h2>
       <p style="text-align:center;color:#aaa">Consulta los conciertos actualizados desde BandHelper.</p>
       <div id="bandhelper-concerts">
         <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
       </div>
     </section>
 
-    <!-- 4) Usuarios (movido al final) -->
+    <!-- 5) Usuarios -->
     <section id="usuarios">
       <h2>Usuarios Registrados</h2>
       <p style="text-align:center;color:#aaa">Lista de usuarios con acceso a la intranet.</p>
@@ -258,7 +262,7 @@
 
   function updateTitles() {
     document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
-    document.getElementById("setlist2-title").textContent = setlistConfig.setlist2.name;
+    // El título del segundo setlist siempre será "Setlist Próximo Concierto" en la página principal
   }
 
   async function loadSetlistConfig() {
@@ -275,7 +279,9 @@
   /* ---------- 4. Primer Setlist ---------- */
   async function cargarPrimerSetlist() {
     try {
-      const songs = (await (await fetch(setlistConfig.setlist1.url)).json()).filter(i => i.type === "song");
+      const response = await fetch(setlistConfig.setlist1.url);
+      if (!response.ok) throw new Error(`Error al cargar el primer setlist: ${response.statusText}`);
+      const songs = (await response.json()).filter(i => i.type === "song");
       const tbody = document.getElementById("setlist-body");
       tbody.innerHTML = "";
       let total = 0;
@@ -288,9 +294,10 @@
       document.getElementById("total-time").textContent = "Tiempo total del set: " + toHHMM(total);
       return songs;
     } catch (e) {
-      console.error(e);
+      console.error("Error cargando el primer setlist:", e);
       document.getElementById("setlist-body").innerHTML =
-        '<tr><td colspan="5">Error al cargar el primer setlist.</td></tr>';
+        '<tr><td colspan="5">No se pudo cargar el setlist de ensayos. Verifica la URL o la conexión.</td></tr>';
+      document.getElementById("total-time").textContent = "";
       return [];
     }
   }
@@ -299,7 +306,7 @@
   async function cargarSegundoSetlist() {
     try {
       const response = await fetch(setlistConfig.setlist2.url);
-      if (!response.ok) throw new Error('Error en la respuesta de la API');
+      if (!response.ok) throw new Error(`Error al cargar el segundo setlist: ${response.statusText}`);
       const data = await response.json();
       const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : [];
       
@@ -321,8 +328,9 @@
     } catch (e) {
       console.error("Error cargando segundo setlist:", e);
       document.getElementById("second-body").innerHTML =
-        '<tr><td colspan="5">No se pudo cargar el segundo setlist. Verifica la URL o la conexión.</td></tr>';
+        '<tr><td colspan="5">No se pudo cargar el setlist del concierto. Verifica la URL o la conexión.</td></tr>';
       document.getElementById("total-time-2").textContent = "";
+      document.getElementById("url-actual").textContent = setlistConfig.setlist2.url;
       return [];
     }
   }
@@ -605,13 +613,42 @@
   /* ---------- 10. Carga inicial ---------- */
   document.addEventListener("DOMContentLoaded", async () => {
     try {
+      // Cargar datos de Firestore (esto no debería fallar)
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
-      const [songs1, songs2] = await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
-      document.getElementById("download-btn").onclick = () => genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
-      document.getElementById("download-btn-2").onclick = () => genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf");
+
+      // Cargar los setlists, pero manejar errores de forma independiente
+      let songs1 = [], songs2 = [];
+      try {
+        songs1 = await cargarPrimerSetlist();
+      } catch (e) {
+        console.error("Fallo al cargar el primer setlist, continuando con la carga inicial:", e);
+      }
+
+      try {
+        songs2 = await cargarSegundoSetlist();
+      } catch (e) {
+        console.error("Fallo al cargar el segundo setlist, continuando con la carga inicial:", e);
+      }
+
+      // Asignar eventos a los botones de descarga, incluso si los setlists fallaron
+      document.getElementById("download-btn").onclick = () => {
+        if (songs1.length > 0) {
+          genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
+        } else {
+          alert("No hay canciones disponibles para descargar el PDF del setlist de ensayos.");
+        }
+      };
+
+      document.getElementById("download-btn-2").onclick = () => {
+        if (songs2.length > 0) {
+          genPDF(songs2, "Setlist Próximo Concierto", "setlist_concierto.pdf");
+        } else {
+          alert("No hay canciones disponibles para descargar el PDF del setlist del concierto.");
+        }
+      };
     } catch (e) {
-      console.error("Error en la carga inicial:", e);
-      alert("Error al cargar los datos iniciales. Revisa la consola para más detalles.");
+      console.error("Error en la carga inicial (Firestore):", e);
+      alert("Error al cargar los datos iniciales de Firestore. Revisa la consola para más detalles.");
     }
   });
   </script>
