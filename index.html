@@ -190,16 +190,22 @@
   const toHHMM = s => { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`; };
   const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
 
-  /* ---------- 2. Acceso Firestore ---------- */
-  async function loadDoc(id, fallback) {
-    try {
-      const snap = await db.collection("intranet").doc(id).get();
-      return snap.exists ? snap.data() : fallback;
-    } catch (e) { console.error(e); return fallback; }
+/* ---------- 2. Acceso Firestore ---------- */
+async function loadDoc(id, fallback) {
+  try {
+    const snap = await db.collection("intranet").doc(id).get();
+    return snap.exists ? snap.data() : fallback;
+  } catch (e) {
+    console.warn("Firestore read error:", e.code || e.message);
+    return fallback;                 // sigue usando lo que ya había
   }
-  function saveDoc(id, data) {
-    return db.collection("intranet").doc(id).set(data);
-  }
+}
+
+function saveDoc(id, data) {
+  return db.collection("intranet").doc(id).set(data)
+           .catch(e => alert("Error guardando en Firestore: " + (e.code || e.message)));
+}
+
 
   /* ---------- 3. Configuración Setlists ---------- */
   let setlistConfig = {
@@ -256,39 +262,36 @@
     }
   }
 
-  /* ---------- 6. Usuarios ---------- */
-  let users = [];
-  function renderUsers() {
-    const tbody = document.getElementById("user-table-body");
-    const main  = document.getElementById("users-body");
-    tbody.innerHTML = main.innerHTML = "";
-    users.forEach((u, i) => {
-      tbody.insertAdjacentHTML("beforeend",
-        `<tr><td>${u.name}</td><td>${u.role === "admin" ? "Administrador" : "Miembro"}</td>
-         <td><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`);
-      main.insertAdjacentHTML("beforeend",
-        `<tr><td>${u.name}</td><td>${u.role === "admin" ? "Administrador" : "Miembro"}</td></tr>`);
-    });
-    tbody.querySelectorAll(".delete-user").forEach(btn =>
-      btn.onclick = () => { users.splice(btn.dataset.i, 1); saveUsers(); });
-  }
-  async function loadUsers() { users = await loadDoc("users", []); renderUsers(); }
-  function saveUsers() { saveDoc("users", users); renderUsers(); }
 
-  /* ---------- 7. Ensayos ---------- */
-  let rehearsals = [];
-  function renderRehearsals() {
-    const tbody = document.getElementById("rehearsal-table-body"); tbody.innerHTML = "";
-    rehearsals.forEach((r, i) => {
-      tbody.insertAdjacentHTML("beforeend",
-        `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.location}</td>
-         <td><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
-    });
-    tbody.querySelectorAll(".delete-rehearsal").forEach(btn =>
-      btn.onclick = () => { rehearsals.splice(btn.dataset.i, 1); saveRehearsals(); });
-  }
-  async function loadRehearsals() { rehearsals = await loadDoc("rehearsals", []); renderRehearsals(); }
-  function saveRehearsals() { saveDoc("rehearsals", rehearsals); renderRehearsals(); }
+/* ---------- 6. Usuarios ---------- */
+document.getElementById("add-user").onclick = () => {
+  const name = document.getElementById("user-name").value.trim();
+  const role = document.getElementById("user-role").value;
+  if (!name) { alert("Introduce un nombre"); return; }
+
+  users.push({ name, role });
+  renderUsers();                 // pinta al instante
+  saveDoc("users", users);       // guarda; si falla, avisa
+  document.getElementById("user-name").value = "";
+};
+
+
+
+/* ---------- 7. Ensayos ---------- */
+document.getElementById("add-rehearsal").onclick = () => {
+  const date = document.getElementById("rehearsal-date").value;
+  const time = document.getElementById("rehearsal-time").value;
+  const loc  = document.getElementById("rehearsal-location").value.trim();
+  if (!date || !time || !loc) { alert("Completa todos los campos"); return; }
+
+  rehearsals.push({ date, time, location: loc });
+  renderRehearsals();            // pinta de inmediato
+  saveDoc("rehearsals", rehearsals);
+  document.getElementById("rehearsal-date").value =
+  document.getElementById("rehearsal-time").value =
+  document.getElementById("rehearsal-location").value = "";
+};
+
 
   /* ---------- 8. PDF ---------- */
   async function genPDF(songs, title, fileName) {
