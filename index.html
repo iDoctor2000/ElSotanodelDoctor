@@ -118,7 +118,7 @@
     <label>Rol</label>
     <select id="user-role"><option value="admin">Administrador</option><option value="member">Miembro</option></select>
     <button id="add-user">Añadir Usuario</button>
-    <p id="user-message" class="error-message"></p> <!-- Añadimos un elemento para mensajes -->
+    <p id="user-message" class="error-message"></p>
     <table id="user-table"><thead><tr><th>Nombre</th><th>Rol</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
   </div>
 
@@ -211,7 +211,7 @@
       return true;
     } catch (e) {
       console.error(`Error al guardar documento ${id}:`, e);
-      throw e; // Lanzamos el error para que el llamador lo maneje
+      throw e;
     }
   }
 
@@ -220,17 +220,21 @@
     setlist1: { name: "Setlist Ensayos -Año 2025-", url: "https://cold-limit-811a.jagomezc.workers.dev" },
     setlist2: { name: "Setlist Próximo Concierto", url: "https://www.bandhelper.com/feed/set_list/TXHvyb" }
   };
+
   function updateTitles() {
     document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
     document.getElementById("setlist2-title").textContent = setlistConfig.setlist2.name;
   }
+
   async function loadSetlistConfig() {
-    setlistConfig = await loadDoc("setlists", setlistConfig);
+    const data = await loadDoc("setlists", { config: setlistConfig });
+    setlistConfig = data.config || setlistConfig; // Extraemos el campo 'config'
     updateTitles();
   }
+
   function saveSetlistConfig() {
     updateTitles();
-    return saveDoc("setlists", setlistConfig);
+    return saveDoc("setlists", { config: setlistConfig }); // Guardamos como objeto con campo 'config'
   }
 
   /* ---------- 4. Primer Setlist ---------- */
@@ -290,6 +294,7 @@
 
   /* ---------- 6. Usuarios ---------- */
   let users = [];
+
   function renderUsers() {
     const tbody = document.getElementById("user-table-body");
     const main = document.getElementById("users-body");
@@ -309,13 +314,14 @@
   }
 
   async function loadUsers() {
-    users = await loadDoc("users", []);
+    const data = await loadDoc("users", { users: [] });
+    users = data.users || []; // Extraemos el campo 'users'
     renderUsers();
   }
 
   async function saveUsers() {
     try {
-      await saveDoc("users", users);
+      await saveDoc("users", { users }); // Guardamos como objeto con campo 'users'
       renderUsers();
       return true;
     } catch (e) {
@@ -326,6 +332,7 @@
 
   /* ---------- 7. Ensayos ---------- */
   let rehearsals = [];
+
   function renderRehearsals() {
     const tbody = document.getElementById("rehearsal-table-body");
     tbody.innerHTML = "";
@@ -342,12 +349,13 @@
   }
 
   async function loadRehearsals() {
-    rehearsals = await loadDoc("rehearsals", []);
+    const data = await loadDoc("rehearsals", { rehearsals: [] });
+    rehearsals = data.rehearsals || []; // Extraemos el campo 'rehearsals'
     renderRehearsals();
   }
 
   async function saveRehearsals() {
-    await saveDoc("rehearsals", rehearsals);
+    await saveDoc("rehearsals", { rehearsals }); // Guardamos como objeto con campo 'rehearsals'
     renderRehearsals();
   }
 
@@ -454,7 +462,7 @@
 
   document.getElementById("add-user").onclick = async () => {
     const userMessage = document.getElementById("user-message");
-    userMessage.textContent = ""; // Limpiar mensaje previo
+    userMessage.textContent = "";
 
     const name = document.getElementById("user-name").value.trim();
     const role = document.getElementById("user-role").value;
