@@ -515,16 +515,15 @@ function cleanString(str) {
       setlist2: { name: 'Setlist Próximo Concierto', url: 'https://www.bandhelper.com/feed/set_list/TXHvyb' }
     };
 
-    function loadSetlistConfig() {
-      const saved = localStorage.getItem('setlistConfig');
-      if (saved) setlistConfig = JSON.parse(saved);
-      updateSetlistTitles();
-    }
+		async function loadSetlistConfig() {
+  			setlistConfig = await loadDoc("setlists", setlistConfig); // ← Firestore
+  			updateSetlistTitles();
+		}
 
-    function saveSetlistConfig() {
-      localStorage.setItem('setlistConfig', JSON.stringify(setlistConfig));
-      updateSetlistTitles();
-    }
+		function saveSetlistConfig() {
+  			updateSetlistTitles();
+  			saveDoc("setlists", setlistConfig);                        // ← Firestore
+		}
 
     function updateSetlistTitles() {
       document.getElementById('setlist1-title').textContent = setlistConfig.setlist1.name;
@@ -752,16 +751,15 @@ function cleanString(str) {
     ------------------------------------------*/
     let users = [];
 
-    function loadUsers() {
-      const saved = localStorage.getItem('users');
-      if (saved) users = JSON.parse(saved);
-      renderUsers();
-    }
+		async function loadUsers() {
+  			users = await loadDoc("users", []);
+  			renderUsers();
+		}
+		function saveUsers() {
+  			saveDoc("users", users);
+  			renderUsers();
+		}
 
-    function saveUsers() {
-      localStorage.setItem('users', JSON.stringify(users));
-      renderUsers();
-    }
 
     function renderUsers() {
       const tbody = document.getElementById('user-table-body');
@@ -800,16 +798,14 @@ function cleanString(str) {
     ------------------------------------------*/
     let rehearsals = [];
 
-    function loadRehearsals() {
-      const saved = localStorage.getItem('rehearsals');
-      if (saved) rehearsals = JSON.parse(saved);
-      renderRehearsals();
-    }
-
-    function saveRehearsals() {
-      localStorage.setItem('rehearsals', JSON.stringify(rehearsals));
-      renderRehearsals();
-    }
+		async function loadRehearsals() {
+  			rehearsals = await loadDoc("rehearsals", []);
+			renderRehearsals();
+		}
+		function saveRehearsals() {
+  			saveDoc("rehearsals", rehearsals);
+  			renderRehearsals();
+		}
 
     function renderRehearsals() {
       const tbody = document.getElementById('rehearsal-table-body');
@@ -960,12 +956,18 @@ function cleanString(str) {
       8. CARGA INICIAL
     ------------------------------------------*/
     window.addEventListener('DOMContentLoaded', () => {
-      loadSetlistConfig();
-      loadUsers();
-      loadRehearsals();
       cargarPrimerSetlist();
       cargarSegundoSetlist();
     });
+
+		await Promise.all([          // <‑‑ carga los tres en paralelo
+  			loadSetlistConfig(),
+  			loadUsers(),
+ 			loadRehearsals()
+		]);
+
+
+
 
     document.getElementById('download-btn').addEventListener('click', descargarPDFprimerSetlist);
     document.getElementById('download-btn-2').addEventListener('click', descargarPDFsegundoSetlist);
