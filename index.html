@@ -105,6 +105,13 @@
     .attending-no { color: #f00; }
     /* Estilo para duración del ensayo */
     .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; }
+    /* Estilo para mensaje de conexión */
+    #connection-status {
+      position: fixed; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.8); color: #fff;
+      padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none;
+    }
+    #connection-status.offline { background: #f00; }
+    #connection-status.retrying { background: #ff9800; }
     /* Responsive */
     @media(max-width:768px){
       .hamburger div{width:20px}
@@ -114,11 +121,15 @@
       .attendance-form select { width: 100%; }
       /* Ajustar botones de acción en pantallas pequeñas */
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
+      #connection-status { top: 70px; right: 5px; font-size: 0.8em; }
     }
   </style>
 </head>
 
 <body>
+  <!-- ============ Indicador de conexión ============ -->
+  <div id="connection-status"></div>
+
   <!-- ============ CABECERA ============ -->
   <header>
     <div class="logo">
@@ -271,6 +282,12 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
+  // Habilitar modo offline de Firestore
+  firebase.firestore().enablePersistence()
+    .catch(err => {
+      console.warn("No se pudo habilitar la persistencia de Firestore:", err);
+    });
+
   /* ---------- 1. Utilidades ---------- */
   const parseDuration = str => {
     if (!str) return 0;
@@ -338,6 +355,45 @@
     URL.revokeObjectURL(url);
   }
 
+  /* ---------- 1.5. Manejo de conexión ---------- */
+  const connectionStatus = document.getElementById("connection-status");
+  let isOnline = navigator.onLine;
+
+  function updateConnectionStatus() {
+    isOnline = navigator.onLine;
+    if (!isOnline) {
+      connectionStatus.className = "offline";
+      connectionStatus.textContent = "Sin conexión: Mostrando datos en caché";
+      connectionStatus.style.display = "block";
+    } else {
+      connectionStatus.style.display = "none";
+    }
+  }
+
+  window.addEventListener("online", updateConnectionStatus);
+  window.addEventListener("offline", updateConnectionStatus);
+
+  // Función de reintento para operaciones de Firestore
+  async function withRetry(fn, maxRetries = 3, delay = 2000) {
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        if (!navigator.onLine) {
+          connectionStatus.className = "offline";
+          connectionStatus.textContent = "Sin conexión: Mostrando datos en caché";
+          connectionStatus.style.display = "block";
+          return await fn(); // Intentar con datos en caché
+        }
+        return await fn();
+      } catch (e) {
+        if (i === maxRetries - 1) throw e; // Último intento fallido
+        connectionStatus.className = "retrying";
+        connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`;
+        connectionStatus.style.display = "block";
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
   /* ---------- 2. Acceso Firestore ---------- */
   async function loadDoc(id, fallback) {
     try {
@@ -351,7 +407,7 @@
 
   async function saveDoc(id, data) {
     try {
-      await db.collection("intranet").doc(id).set(data);
+      await db.collection("intranet").doc(id). Ricci
       return true;
     } catch (e) {
       console.error(`Error al guardar documento ${id}:`, e.message);
@@ -372,7 +428,7 @@
 
   async function loadSetlistConfig() {
     try {
-      const data = await loadDoc("setlists", { config: setlistConfig });
+      const data = await withRetry(() => loadDoc("setlists", { config: setlistConfig }));
       setlistConfig = data.config || setlistConfig;
       updateTitles();
     } catch (e) {
@@ -383,7 +439,7 @@
 
   async function saveSetlistConfig() {
     updateTitles();
-    return await saveDoc("setlists", { config: setlistConfig });
+    return await withRetry(() => saveDoc("setlists", { config: setlistConfig }));
   }
 
   /* ---------- 4. Primer Setlist ---------- */
@@ -497,7 +553,7 @@
 
   async function loadUsers() {
     try {
-      const data = await loadDoc("users", { users: [] });
+      const data = await withRetry(() => loadDoc("users", { users: [] }));
       users = Array.isArray(data.users) ? data.users : [];
       users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles));
       renderUsers();
@@ -509,7 +565,7 @@
 
   async function saveUsers() {
     try {
-      await saveDoc("users", { users });
+      await withRetry(() => saveDoc("users", { users }));
       renderUsers();
       renderRehearsals();
       return true;
@@ -713,7 +769,7 @@
 
   async function loadRehearsals() {
     try {
-      const data = await loadDoc("rehearsals", { rehearsals: [] });
+      const data = await withRetry(() => loadDoc("rehearsals", { rehearsals: [] }));
       rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : [];
       renderRehearsals();
     } catch (e) {
@@ -724,7 +780,7 @@
 
   async function saveRehearsals() {
     try {
-      await saveDoc("rehearsals", { rehearsals });
+      await withRetry(() => saveDoc("rehearsals", { rehearsals }));
       renderRehearsals();
       return true;
     } catch (e) {
@@ -1057,11 +1113,13 @@
 
   /* ---------- 11. Carga inicial ---------- */
   document.addEventListener("DOMContentLoaded", async () => {
+    updateConnectionStatus(); // Verificar estado de conexión al cargar
+
     try {
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
     } catch (e) {
       console.error("Error al cargar datos de Firestore:", e);
-      alert(`Error al cargar los datos de Firestore: ${e.message}. Revisa la consola para más detalles y asegúrate de que las reglas de Firestore permitan acceso y que el dominio esté autorizado.`);
+      // El mensaje ya se muestra a través del indicador de conexión
     }
 
     let songs1 = [], songs2 = [];
