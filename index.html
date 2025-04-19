@@ -49,6 +49,8 @@
     .sidebar h2{color:#0cf;margin:0}
     .sidebar a{display:block;color:#fff;text-decoration:none;margin:10px 0;padding:5px 0;border-bottom:1px solid #222}
     .sidebar a:hover{color:#0cf}
+    .sidebar .submenu { margin-left: 15px; }
+    .sidebar .submenu a { padding: 5px 0; font-size: 0.95em; }
     /* Overlay */
     #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9998;display:none}
     #overlay.show{display:block}
@@ -153,10 +155,16 @@
   <div id="overlay"></div>
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
-    <a href="#" id="menu-setlist-config">Configurar Setlists</a>
-    <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
-    <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
+    <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
+    <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
+    <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#" id="menu-stats">Estadísticas</a>
+    <a href="#" id="menu-config">Configuración</a>
+    <div class="submenu" id="config-submenu" style="display: none;">
+      <a href="#" id="menu-setlist-config">Configurar Setlists</a>
+      <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
+      <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
+    </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
 
@@ -736,7 +744,7 @@
             <td>
               <div class="attendance-form">
                 <select class="attendance-user" data-i="${i}">
-                  <option value="" disabled selected>¿Nombre?</option>
+                  <option value="" disabled selected>Nombre</option>
                   ${userOptions}
                 </select>
                 <select class="attendance-response" data-i="${i}">
@@ -1022,6 +1030,7 @@
     });
     sidebar.classList.remove("show");
     overlay.classList.remove("show");
+    document.getElementById("config-submenu").style.display = "none";
     resetUserForm();
     resetRehearsalForm();
   }
@@ -1037,6 +1046,42 @@
   };
 
   overlay.onclick = closeAll;
+
+  // Nuevos ítems de acceso directo (sin contraseña)
+  document.getElementById("menu-rehearsals-section").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("rehearsals").scrollIntoView({ behavior: "smooth" });
+  };
+
+  document.getElementById("menu-second-setlist-section").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("second-setlist").scrollIntoView({ behavior: "smooth" });
+  };
+
+  document.getElementById("menu-concerts-section").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("calendario").scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Ítem Configuración (protegido por contraseña)
+  document.getElementById("menu-config").onclick = e => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+        isAuthenticated = true;
+        document.getElementById("config-submenu").style.display = "block";
+      } else {
+        alert("Contraseña incorrecta. Acceso denegado.");
+        return;
+      }
+    } else {
+      document.getElementById("config-submenu").style.display = "block";
+    }
+  };
 
   /* --- Setlists screen */
   document.getElementById("menu-setlist-config").onclick = e => {
