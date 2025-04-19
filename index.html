@@ -7,9 +7,6 @@
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="assets/favicon_ElSotanoDr.ico">
 
-  <!-- Deshabilitar Permissions-Policy obsoleta -->
-  <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
-
   <!-- ================= METADATOS ================= -->
   <meta property="og:title"       content="El Sótano del Doctor – Uso Interno">
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
@@ -56,14 +53,14 @@
     #overlay.show{display:block}
     /* Pantallas modales */
     .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
-                   overflow-y:auto;padding:60px 20px 20px}
-    .config-screen h2{color:#0cf;text-align:center;margin:0 0 20px}
-    .config-screen h3{color:#0cf;margin:10px 0}
+                   overflow-y:auto;padding:80px 20px 20px} /* Aumentado padding-top para más espacio */
+    .config-screen h2{color:#0cf;text-align:center;margin:20px 0} /* Aumentado margen para separar del botón Cerrar */
+    .config-screen h3{color:#0cf;margin:20px 0 10px} /* Más espacio para los subtítulos */
     .config-screen label{display:block;margin:10px 0 5px}
     .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
                                               border:1px solid #333;border-radius:5px}
     .config-screen select[multiple] { height: 150px; }
-    .config-screen button{margin-top:20px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
+    .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer} /* Más espacio antes del botón */
     .config-screen button:hover{background:#09b}
     .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;
                               color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
@@ -78,6 +75,7 @@
     .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
     #total-time,#total-time-2{color:#0cf;margin-top:10px;text-align:center}
+    #second-setlist-name {text-align:center;color:#aaa;margin-top:5px;font-style:italic} /* Estilo para el nombre del segundo setlist */
     footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
     /* Responsive */
     @media(max-width:768px){.hamburger div{width:20px}}
@@ -179,6 +177,7 @@
     <!-- 3) Segundo setlist -->
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
+      <p id="second-setlist-name"></p> <!-- Nuevo elemento para mostrar el nombre del segundo setlist -->
       <p style="text-align:center;color:#aaa">Feed actual: <em id="url-actual"></em></p>
       <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
@@ -211,7 +210,6 @@
     apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
     authDomain: "sotanointranet.firebaseapp.com",
     projectId: "sotanointranet",
-    storageBucket: "sotanointranet.firebasestorage.app",
     messagingSenderId: "756955233128",
     appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
   };
@@ -268,7 +266,7 @@
 
   function updateTitles() {
     document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
-    // El título del segundo setlist está fijo en el HTML como "Setlist Próximo Concierto"
+    document.getElementById("second-setlist-name").textContent = setlistConfig.setlist2.name; // Mostrar el nombre del segundo setlist
   }
 
   async function loadSetlistConfig() {
@@ -672,7 +670,7 @@
 
     document.getElementById("download-btn-2").onclick = () => {
       if (songs2.length > 0) {
-        genPDF(songs2, "Setlist Próximo Concierto", "setlist_concierto.pdf");
+        genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf"); // Usar el nombre dinámico del segundo setlist
       } else {
         alert("No hay canciones disponibles para descargar el PDF del setlist del concierto.");
       }
