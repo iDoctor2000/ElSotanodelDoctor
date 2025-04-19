@@ -78,6 +78,10 @@
     #total-time,#total-time-2{color:#0cf;margin-top:10px;text-align:center}
     #second-setlist-name {text-align:center;color:#aaa;margin-top:5px;font-style:italic}
     footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
+    /* Estilo para el botón de añadir al calendario */
+    .calendar-btn { background: none; border: none; cursor: pointer; padding: 5px; }
+    .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
+    .calendar-btn:hover svg { fill: #09b; }
     /* Responsive */
     @media(max-width:768px){
       .hamburger div{width:20px}
@@ -177,7 +181,7 @@
       <h2>Próximos Ensayos</h2>
       <p style="text-align:center;color:#aaa">¡Doctor Dice:</p>
       <table id="rehearsal-main-table">
-        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th></th></tr></thead>
         <tbody id="rehearsal-main-body"></tbody>
       </table>
     </section>
@@ -244,6 +248,45 @@
     const monthName = months[date.getMonth()];
     return `${dayName} ${day} de ${monthName}`;
   };
+
+  // Generar archivo .ics para añadir al calendario
+  function generateICS(title, date, time, location, description = "", durationHours = 1) {
+    // Combinar fecha y hora para crear un objeto Date
+    const startDate = new Date(`${date}T${time}`);
+    const endDate = new Date(startDate.getTime() + durationHours * 60 * 60 * 1000); // Añadir duración (por defecto 1 hora)
+
+    // Formatear fechas en formato iCalendar (YYYYMMDDTHHMMSSZ)
+    const formatDate = d => {
+      return d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    };
+    const start = formatDate(startDate);
+    const end = formatDate(endDate);
+
+    // Crear el contenido del archivo .ics
+    const icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "BEGIN:VEVENT",
+      `DTSTART:${start}`,
+      `DTEND:${end}`,
+      `SUMMARY:${title}`,
+      `DESCRIPTION:${description}`,
+      `LOCATION:${location}`,
+      "END:VEVENT",
+      "END:VCALENDAR"
+    ].join("\r\n");
+
+    // Crear un enlace de descarga
+    const blob = new Blob([icsContent], { type: "text/calendar" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${title.replace(/\s+/g, "_")}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 
   /* ---------- 2. Acceso Firestore ---------- */
   async function loadDoc(id, fallback) {
@@ -410,7 +453,19 @@
         `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.location}</td>
          <td><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
       tbodyMain.insertAdjacentHTML("beforeend",
-        `<tr><td>${formattedDate}</td><td>${r.time}</td><td>${r.location}</td></tr>`);
+        `<tr>
+          <td>${formattedDate}</td>
+          <td>${r.time}</td>
+          <td>${r.location}</td>
+          <td>
+            <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.time}", "${r.location}", "Ensayo de la banda El Sótano del Doctor")'>
+              <svg viewBox="0 0 24 24">
+                <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
+                <rect x="4" y="6" width="16" height="12" rx="2"/>
+              </svg>
+            </button>
+          </td>
+        </tr>`);
     });
     tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
       btn.onclick = async () => {
@@ -472,7 +527,56 @@
     doc.save(fileName);
   }
 
-  /* ---------- 9. Menú & pantallas ---------- */
+  /* ---------- 9. Modificar tabla de BandHelper (Próximos Conciertos) ---------- */
+  function modifyBandHelperTable() {
+    const table = document.querySelector("#bandhelper-concerts table");
+    if (!table) {
+      setTimeout(modifyBandHelperTable, 500); // Reintentar si la tabla aún no está cargada
+      return;
+    }
+
+    // Añadir columna vacía al encabezado
+    const headerRow = table.querySelector("thead tr");
+    if (headerRow) {
+      const newHeaderCell = document.createElement("th");
+      headerRow.appendChild(newHeaderCell);
+    }
+
+    // Añadir botón de calendario a cada fila
+    const rows = table.querySelectorAll("tbody tr");
+    rows.forEach(row => {
+      const cells = row.querySelectorAll("td");
+      if (cells.length < 2) return; // Ignorar filas sin datos suficientes
+
+      const dateCell = cells[0].textContent.trim(); // Fecha (ej: "Sábado 25 de Mayo")
+      const timeCell = cells[1].textContent.trim(); // Hora (ej: "20:00")
+      const locationCell = cells.length > 2 ? cells[2].textContent.trim() : "Lugar no especificado"; // Lugar
+
+      // Parsear fecha y hora
+      const dateParts = dateCell.match(/(\d+)\s+de\s+(\w+)/i);
+      if (!dateParts) return;
+      const day = dateParts[1];
+      const monthName = dateParts[2];
+      const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+      const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase()) + 1;
+      const year = new Date().getFullYear(); // Asumir año actual
+      const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const time = timeCell || "20:00"; // Hora por defecto si no está especificada
+
+      const newCell = document.createElement("td");
+      newCell.innerHTML = `
+        <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Concierto El Sótano del Doctor", "${date}", "${time}", "${locationCell}", "Concierto de la banda El Sótano del Doctor")'>
+          <svg viewBox="0 0 24 24">
+            <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
+            <rect x="4" y="6" width="16" height="12" rx="2"/>
+          </svg>
+        </button>
+      `;
+      row.appendChild(newCell);
+    });
+  }
+
+  /* ---------- 10. Menú & pantallas ---------- */
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
   const PASSWORD = "Sotano2014";
 
@@ -652,7 +756,7 @@
     }
   };
 
-  /* ---------- 10. Carga inicial ---------- */
+  /* ---------- 11. Carga inicial ---------- */
   document.addEventListener("DOMContentLoaded", async () => {
     try {
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
@@ -689,6 +793,9 @@
         alert("No hay canciones disponibles para descargar el PDF del setlist del concierto.");
       }
     };
+
+    // Modificar la tabla de BandHelper después de que se cargue
+    setTimeout(modifyBandHelperTable, 1000); // Esperar a que el widget cargue
   });
   </script>
 </body>
