@@ -72,9 +72,20 @@
     main section{max-width:1200px;margin:0 auto;padding:20px}
     #setlists,#rehearsals,#second-setlist,#calendario,#usuarios{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
     #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px}
+    /* Ajuste para tablas: envolvente para permitir desplazamiento horizontal */
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en dispositivos móviles */
+    }
     table{width:100%;border-collapse:collapse;margin-top:20px;color:#fff;font-size:.95em}
-    thead{background:#222;color:#0cf}th,td{padding:12px;border:1px solid #333;text-align:left}
+    thead{background:#222;color:#0cf}
+    th,td{padding:12px;border:1px solid #333;text-align:left;white-space: nowrap} /* Evita el salto de línea en celdas */
     tr:nth-child(even){background:#1a1a1a}
+    /* Ajuste específico para la tabla del segundo setlist */
+    #second-setlist .table-wrapper table {
+      min-width: 600px; /* Ancho mínimo para asegurar que las columnas no se compriman demasiado */
+    }
     .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
     #total-time,#total-time-2{color:#0cf;margin-top:10px;text-align:center}
@@ -278,7 +289,9 @@
     <!-- 1) Primer setlist -->
     <section id="setlists">
       <h2 id="setlist1-title">Setlist Ensayos -Año 2025-</h2>
-      <table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table>
+      <div class="table-wrapper">
+        <table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table>
+      </div>
       <button class="download-btn" id="download-btn">Descargar PDF</button>
       <p id="total-time"></p>
     </section>
@@ -286,24 +299,28 @@
     <!-- 2) Ensayos -->
     <section id="rehearsals">
       <h2>Próximos Ensayos</h2>
-      <table id="rehearsal-main-table">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Lugar</th>
-            <th>Confirmar Asistencia</th>
-          </tr>
-        </thead>
-        <tbody id="rehearsal-main-body"></tbody>
-      </table>
+      <div class="table-wrapper">
+        <table id="rehearsal-main-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Lugar</th>
+              <th>Confirmar Asistencia</th>
+            </tr>
+          </thead>
+          <tbody id="rehearsal-main-body"></tbody>
+        </table>
+      </div>
     </section>
 
     <!-- 3) Segundo setlist -->
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-name"></p>
-      <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
+      <div class="table-wrapper">
+        <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
+      </div>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
     </section>
@@ -319,7 +336,9 @@
     <!-- 5) Usuarios -->
     <section id="usuarios">
       <h2>Usuarios Registrados</h2>
-      <table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table>
+      <div class="table-wrapper">
+        <table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table>
+      </div>
     </section>
   </main>
 
