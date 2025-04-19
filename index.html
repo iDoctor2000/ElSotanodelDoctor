@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <title>El Sótano del Doctor – Uso Interno</title>
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="assets/favicon_ElSotanoDr.ico">
+
   <!-- ================= METADATOS ================= -->
   <meta property="og:title"       content="El Sótano del Doctor – Uso Interno">
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
@@ -427,7 +430,9 @@
         r.readAsDataURL(blob);
       });
       doc.addImage(base, "JPEG", 40, 30, 60, 60);
-    offended by content catch {}
+    } catch (e) {
+      console.error("Error al cargar el logo para el PDF:", e);
+    }
     doc.setFontSize(16);
     doc.text(`Setlist - ${title}`, 120, 50);
     const totalTime = toMMSS(songs.reduce((a, s) => a + parseDuration(s.duration), 0));
@@ -609,14 +614,43 @@
   /* ---------- 10. Carga inicial ---------- */
   document.addEventListener("DOMContentLoaded", async () => {
     try {
+      // Intentar cargar datos de Firestore
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
-      const [songs1, songs2] = await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
-      document.getElementById("download-btn").onclick = () => genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
-      document.getElementById("download-btn-2").onclick = () => genPDF(songs2, "Setlist Próximo Concierto", "setlist_concierto.pdf");
     } catch (e) {
-      console.error("Error en la carga inicial:", e);
-      alert("Error al cargar los datos iniciales. Revisa la consola para más detalles.");
+      console.error("Error al cargar datos de Firestore:", e);
+      alert("Error al cargar los datos de Firestore. Revisa la consola para más detalles y asegúrate de que las reglas de Firestore permitan acceso.");
     }
+
+    // Cargar setlists independientemente de Firestore
+    let songs1 = [], songs2 = [];
+    try {
+      songs1 = await cargarPrimerSetlist();
+    } catch (e) {
+      console.error("Fallo al cargar el primer setlist:", e);
+    }
+
+    try {
+      songs2 = await cargarSegundoSetlist();
+    } catch (e) {
+      console.error("Fallo al cargar el segundo setlist:", e);
+    }
+
+    // Asignar eventos a los botones de descarga
+    document.getElementById("download-btn").onclick = () => {
+      if (songs1.length > 0) {
+        genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
+      } else {
+        alert("No hay canciones disponibles para descargar el PDF del setlist de ensayos.");
+      }
+    };
+
+    document.getElementById("download-btn-2").onclick = () => {
+      if (songs2.length > 0) {
+        genPDF(songs2, "Setlist Próximo Concierto", "setlist_concierto.pdf");
+      } else {
+        alert("No hay canciones disponibles para descargar el PDF del setlist del concierto.");
+      }
+    };
   });
   </script>
 </body>
