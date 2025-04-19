@@ -118,6 +118,10 @@
     /* Estilo para la pantalla de estadísticas */
     .stats-table { margin-bottom: 40px; }
     .stats-table h3 { color: #0cf; margin: 20px 0 10px; text-align: center; }
+    /* Estilo para el selector de mes en estadísticas */
+    .stats-filter { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .stats-filter label { color: #0cf; }
+    .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
     /* Responsive */
     @media(max-width:768px){
       .hamburger div{width:20px}
@@ -228,6 +232,13 @@
   <div id="stats-screen" class="config-screen">
     <button class="close-btn" id="close-stats">Cerrar</button>
     <h2>Estadísticas</h2>
+    <div class="stats-filter">
+      <label>Filtrar por mes:</label>
+      <select id="stats-month-filter">
+        <option value="all">Todos los meses</option>
+        <!-- Opciones dinámicas se añadirán aquí -->
+      </select>
+    </div>
     <div class="stats-table">
       <h3>Tiempo Ensayado por Mes</h3>
       <table id="time-per-month-table">
@@ -862,15 +873,33 @@
   }
 
   /* ---------- 8. Estadísticas ---------- */
+  function updateMonthFilter() {
+    const select = document.getElementById("stats-month-filter");
+    select.innerHTML = '<option value="all">Todos los meses</option>';
+
+    const now = new Date();
+    const pastRehearsals = rehearsals.filter(r => new Date(r.date) < now);
+    const months = new Set(pastRehearsals.map(r => getMonthYear(r.date)));
+    Array.from(months).sort().forEach(month => {
+      select.insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`);
+    });
+  }
+
   function renderStats() {
     const now = new Date();
+    const selectedMonth = document.getElementById("stats-month-filter")?.value || "all";
 
-    // Filtrar ensayos pasados (para estadísticas, solo consideramos ensayos que ya ocurrieron)
-    const pastRehearsals = rehearsals.filter(r => new Date(r.date) < now);
+    // Filtrar ensayos pasados
+    let filteredRehearsals = rehearsals.filter(r => new Date(r.date) < now);
+
+    // Filtrar por mes seleccionado (si no es "all")
+    if (selectedMonth !== "all") {
+      filteredRehearsals = filteredRehearsals.filter(r => getMonthYear(r.date) === selectedMonth);
+    }
 
     // Tiempo ensayado por mes
     const timePerMonth = {};
-    pastRehearsals.forEach(r => {
+    filteredRehearsals.forEach(r => {
       const monthYear = getMonthYear(r.date);
       const duration = calculateDuration(r.startTime, r.endTime);
       timePerMonth[monthYear] = (timePerMonth[monthYear] || 0) + duration;
@@ -888,7 +917,7 @@
     const timePerUser = {};
     users.forEach(user => {
       timePerUser[user.name] = 0;
-      pastRehearsals.forEach(r => {
+      filteredRehearsals.forEach(r => {
         const attendance = r.attendance?.find(a => a.name === user.name);
         if (attendance && attendance.attending === "Sí") {
           const duration = calculateDuration(r.startTime, r.endTime);
@@ -1220,23 +1249,20 @@
   /* --- Estadísticas screen */
   document.getElementById("menu-stats").onclick = e => {
     e.preventDefault();
-    if (!isAuthenticated) {
-      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-        isAuthenticated = true;
-      } else {
-        alert("Contraseña incorrecta. Acceso denegado.");
-        return;
-      }
-    }
     closeAll();
     document.getElementById("stats-screen").style.display = "block";
+    updateMonthFilter(); // Actualizar las opciones del filtro de meses
     renderStats();
   };
 
   document.getElementById("close-stats").onclick = () => {
     document.getElementById("stats-screen").style.display = "none";
   };
+
+  // Añadir evento al filtro de meses
+  document.getElementById("stats-month-filter").addEventListener("change", () => {
+    renderStats();
+  });
 
   /* ---------- 12. Carga inicial ---------- */
   document.addEventListener("DOMContentLoaded", async () => {
