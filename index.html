@@ -35,39 +35,16 @@
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
     html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
-    /* Cabecera fija */
-    header {
-      background: #111;
-      padding: 10px 15px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      z-index: 10000;
-    }
-    .logo img.logo-main{width:120px;height:auto}
-    .logo-intranet{position:absolute;left:50%;transform:translateX(-50%);height:40px;width:auto}
+    /* Cabecera */
+    header{background:#111;padding:20px 20px;display:flex;align-items:center;justify-content:space-between;position:relative}
+    .logo img.logo-main{width:180px;height:auto} /* Logo principal */
+    .logo-intranet{position:absolute;left:50%;transform:translateX(-50%);height:60px;width:auto} /* Centrar logointranet.png */
     /* Hamburguesa */
-    .hamburger{cursor:pointer;border:1px solid #0cf;border-radius:4px;padding:4px}
-    .hamburger div{width:20px;height:3px;background:#0cf;margin:3px 0}
+    .hamburger{cursor:pointer;border:1px solid #0cf;border-radius:4px;padding:5px}
+    .hamburger div{width:25px;height:3px;background:#0cf;margin:4px 0}
     /* Sidebar */
-    .sidebar {
-      position: fixed;
-      top: 60px;
-      left: 0;
-      width: 250px;
-      height: calc(100% - 60px);
-      background: #111;
-      border-right: 1px solid #222;
-      padding: 20px;
-      box-shadow: 2px 0 10px rgba(0,255,255,.1);
-      transform: translateX(-250px);
-      transition: .3s;
-      z-index: 9999;
-    }
+    .sidebar{position:fixed;top:0;left:0;width:250px;height:100%;background:#111;border-right:1px solid #222;
+             padding:20px;box-shadow:2px 0 10px rgba(0,255,255,.1);transform:translateX(-250px);transition:.3s;z-index:9999}
     .sidebar.show{transform:translateX(0)}
     .sidebar h2{color:#0cf;margin:0}
     .sidebar a{display:block;color:#fff;text-decoration:none;margin:10px 0;padding:5px 0;border-bottom:1px solid #222}
@@ -78,65 +55,30 @@
     #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9998;display:none}
     #overlay.show{display:block}
     /* Pantallas modales */
-    .config-screen {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #000;
-      z-index: 9999;
-      overflow-y: auto;
-      padding: 80px 20px 20px;
-    }
+    .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
+                   overflow-y:auto;padding:80px 20px 20px}
     .config-screen h2{color:#0cf;text-align:center;margin:20px 0}
     .config-screen h3{color:#0cf;margin:20px 0 10px}
     .config-screen label{display:block;margin:10px 0 5px}
-    .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;border:1px solid #333;border-radius:5px}
+    .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
+                                              border:1px solid #333;border-radius:5px}
     .config-screen select[multiple] { height: 150px; }
-    /* Contenedor para botones (Guardar y Cerrar) */
-    .button-group {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      margin-top: 30px;
-      flex-wrap: wrap;
-    }
-    .config-screen button {
-      padding: 10px 20px;
-      background: #0cf;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+    .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .config-screen button:hover{background:#09b}
-    .config-screen .close-btn {
-      background: none;
-      border: 1px solid #0cf;
-      color: #0cf;
-      border-radius: 8px;
-      padding: 10px 20px;
-      cursor: pointer;
-    }
+    .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;
+                              color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
     .config-screen .close-btn:hover{background:#333}
     /* Secciones */
-    main {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      padding-top: 80px;
-    }
+    main section{max-width:1200px;margin:0 auto;padding:20px}
     #setlists,#rehearsals,#second-setlist,#calendario,#usuarios{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
-    #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px; margin-top: 20px;}
+    #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px}
     table{width:100%;border-collapse:collapse;margin-top:20px;color:#fff;font-size:.95em}
     thead{background:#222;color:#0cf}th,td{padding:12px;border:1px solid #333;text-align:left}
     tr:nth-child(even){background:#1a1a1a}
     .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
     #total-time,#total-time-2{color:#0cf;margin-top:10px;text-align:center}
-    #second-setlist-name {text-align:center;color:#aaa;margin-top:10px;font-style:italic}
+    #second-setlist-name {text-align:center;color:#aaa;margin-top:5px;font-style:italic}
     footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
     /* Estilo para el botón de añadir al calendario */
     .calendar-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; vertical-align: middle; }
@@ -147,7 +89,7 @@
       padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer;
     }
     .edit-user, .edit-rehearsal { background: #0cf; color: #000; }
-    .clear-attendance { background: #ff9800; }
+    .clear-attendance { background: #ff9800; } /* Color naranja para "Eliminar Asistentes" */
     .delete-user:hover, .delete-rehearsal:hover { background: #d00; }
     .edit-user:hover, .edit-rehearsal:hover { background: #09b; }
     .clear-attendance:hover { background: #e68900; }
@@ -167,16 +109,8 @@
     .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; }
     /* Estilo para mensaje de conexión */
     #connection-status {
-      position: fixed;
-      top: 60px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      color: #fff;
-      padding: 5px 10px;
-      border-radius: 5px;
-      font-size: 0.9em;
-      z-index: 10000;
-      display: none;
+      position: fixed; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.8); color: #fff;
+      padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none;
     }
     #connection-status.offline { background: #f00; }
     #connection-status.retrying { background: #ff9800; }
@@ -192,29 +126,14 @@
     .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
     /* Responsive */
     @media(max-width:768px){
-      .hamburger div{width:18px;height:2px;margin:3px 0}
-      .logo img.logo-main{width:100px}
-      .logo-intranet{height:35px}
-      main {
-        padding-top: 70px;
-      }
-      .sidebar {
-        top: 50px;
-        height: calc(100% - 50px);
-      }
-      .config-screen {
-        padding-top: 70px;
-      }
-      #connection-status {
-        top: 50px;
-        right: 5px;
-        font-size: 0.8em;
-      }
+      .hamburger div{width:20px}
+      .logo img.logo-main{width:150px} /* Reducir tamaño del logo en móviles */
+      .logo-intranet{height:50px} /* Ajustar altura de logointranet.png en móviles */
       .attendance-form { flex-direction: column; align-items: flex-start; }
       .attendance-form select { width: 100%; }
+      /* Ajustar botones de acción en pantallas pequeñas */
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
-      .button-group { flex-direction: column; align-items: center; }
-      .button-group button { width: 100%; max-width: 200px; }
+      #connection-status { top: 70px; right: 5px; font-size: 0.8em; }
     }
   </style>
 </head>
@@ -252,6 +171,7 @@
   <!-- ============ PANTALLAS DE CONFIGURACIÓN ============ -->
   <!-- Setlists -->
   <div id="setlist-config-screen" class="config-screen">
+    <button class="close-btn" id="close-setlist-config">Cerrar</button>
     <h2>Configuración de Setlists</h2>
     <h3>Setlist Próximo Ensayo</h3>
     <label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025">
@@ -259,15 +179,13 @@
     <h3>Segundo Setlist</h3>
     <label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad">
     <label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvyb o URL completa">
-    <div class="button-group">
-      <button id="guardar-setlist-config">Guardar Configuración</button>
-      <button class="close-btn" id="close-setlist-config">Cerrar</button>
-    </div>
+    <button id="guardar-setlist-config">Guardar Configuración</button>
     <p id="setlist-message" class="error-message"></p>
   </div>
 
   <!-- Usuarios -->
   <div id="user-mgmt-screen" class="config-screen">
+    <button class="close-btn" id="close-user-mgmt">Cerrar</button>
     <h2>Gestión de Usuarios</h2>
     <label>Nombre</label><input id="user-name" placeholder="Nombre">
     <label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)">
@@ -286,27 +204,22 @@
       <option value="Montador">Montador</option>
       <option value="Coros">Coros</option>
     </select>
-    <div class="button-group">
-      <button id="add-user">Añadir Usuario</button>
-      <button id="cancel-edit-user" style="display:none;">Cancelar Edición</button>
-      <button class="close-btn" id="close-user-mgmt">Cerrar</button>
-    </div>
+    <button id="add-user">Añadir Usuario</button>
+    <button id="cancel-edit-user" style="display:none;">Cancelar Edición</button>
     <p id="user-message" class="error-message"></p>
     <table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
   </div>
 
   <!-- Ensayos -->
   <div id="rehearsal-screen" class="config-screen">
+    <button class="close-btn" id="close-rehearsal">Cerrar</button>
     <h2>Asignación de Ensayos</h2>
     <label>Fecha</label><input type="date" id="rehearsal-date">
     <label>Hora Inicio</label><input type="time" id="rehearsal-start-time">
     <label>Hora Fin</label><input type="time" id="rehearsal-end-time">
     <label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1">
-    <div class="button-group">
-      <button id="add-rehearsal">Añadir Ensayo</button>
-      <button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button>
-      <button class="close-btn" id="close-rehearsal">Cerrar</button>
-    </div>
+    <button id="add-rehearsal">Añadir Ensayo</button>
+    <button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button>
     <p id="rehearsal-message" class="error-message"></p>
     <table id="rehearsal-table">
       <thead>
@@ -325,11 +238,13 @@
 
   <!-- Estadísticas -->
   <div id="stats-screen" class="config-screen">
+    <button class="close-btn" id="close-stats">Cerrar</button>
     <h2>Estadísticas</h2>
     <div class="stats-filter">
       <label>Filtrar por mes:</label>
       <select id="stats-month-filter">
         <option value="all">Todos los meses</option>
+        <!-- Opciones dinámicas se añadirán aquí -->
       </select>
     </div>
     <div class="stats-table">
@@ -355,9 +270,6 @@
         </thead>
         <tbody id="time-per-user-body"></tbody>
       </table>
-    </div>
-    <div class="button-group">
-      <button class="close-btn" id="close-stats">Cerrar</button>
     </div>
   </div>
 
@@ -426,6 +338,7 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
+  // Habilitar modo offline de Firestore
   firebase.firestore().enablePersistence()
     .catch(err => {
       console.warn("No se pudo habilitar la persistencia de Firestore:", err);
@@ -443,9 +356,10 @@
     const m = Math.floor((s % 3600) / 60);
     return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
   };
-  const toHours = s => (s / 3600).toFixed(2);
+  const toHours = s => (s / 3600).toFixed(2); // Convertir segundos a horas con 2 decimales
   const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
 
+  // Calcular duración entre dos horas (en segundos)
   const calculateDuration = (startTime, endTime) => {
     if (!startTime || !endTime) return 0;
     const [startH, startM] = startTime.split(":").map(Number);
@@ -453,10 +367,11 @@
     const startSeconds = startH * 3600 + startM * 60;
     const endSeconds = endH * 3600 + endM * 60;
     let duration = endSeconds - startSeconds;
-    if (duration < 0) duration += 24 * 3600;
+    if (duration < 0) duration += 24 * 3600; // Si la hora fin es menor (ej. cruza medianoche)
     return duration;
   };
 
+  // Formatear fecha como "Domingo 24 de Mayo"
   const formatDateWithDay = dateStr => {
     const date = new Date(dateStr);
     const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -467,12 +382,14 @@
     return `${dayName} ${day} de ${monthName}`;
   };
 
+  // Obtener el nombre del mes y año para estadísticas
   const getMonthYear = dateStr => {
     const date = new Date(dateStr);
     const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
     return `${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
+  // Generar archivo .ics para añadir al calendario
   function generateICS(title, date, startTime, location, description = "", durationSeconds) {
     const startDate = new Date(`${date}T${startTime}`);
     const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
@@ -520,6 +437,7 @@
   window.addEventListener("online", updateConnectionStatus);
   window.addEventListener("offline", updateConnectionStatus);
 
+  // Función de reintento para operaciones de Firestore
   async function withRetry(fn, maxRetries = 3, delay = 2000) {
     for (let i = 0; i < maxRetries; i++) {
       try {
@@ -527,11 +445,11 @@
           connectionStatus.className = "offline";
           connectionStatus.textContent = "Sin conexión: Mostrando datos en caché";
           connectionStatus.style.display = "block";
-          return await fn();
+          return await fn(); // Intentar con datos en caché
         }
         return await fn();
       } catch (e) {
-        if (i === maxRetries - 1) throw e;
+        if (i === maxRetries - 1) throw e; // Último intento fallido
         connectionStatus.className = "retrying";
         connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`;
         connectionStatus.style.display = "block";
@@ -671,6 +589,7 @@
       btn.onclick = async () => {
         const user = users[btn.dataset.i];
         if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${user.name}"? Esto también eliminará sus asistencias asociadas.`)) {
+          // Actualizar asistencias para eliminar al usuario
           rehearsals.forEach(r => {
             if (Array.isArray(r.attendance)) {
               r.attendance = r.attendance.filter(a => a.name !== user.name);
@@ -679,7 +598,7 @@
           users.splice(btn.dataset.i, 1);
           await saveUsers();
           await saveRehearsals();
-          renderStats();
+          renderStats(); // Actualizar estadísticas después de eliminar un usuario
         }
       });
 
@@ -716,7 +635,7 @@
       await withRetry(() => saveDoc("users", { users }));
       renderUsers();
       renderRehearsals();
-      renderStats();
+      renderStats(); // Actualizar estadísticas después de guardar usuarios
       return true;
     } catch (e) {
       console.error("Error al guardar usuarios:", e);
@@ -749,21 +668,23 @@
       ? users.map(user => `<option value="${user.name}">${user.name}</option>`).join("")
       : `<option value="" disabled>No hay usuarios registrados</option>`;
 
-    const now = new Date();
+    const now = new Date(); // Fecha actual para filtrar ensayos futuros
 
     rehearsals.forEach((r, i) => {
+      // Migrar datos antiguos: si existe `time`, convertir a `startTime` y `endTime`
       if (r.time && (!r.startTime || !r.endTime)) {
         r.startTime = r.time;
         const [hours, minutes] = r.time.split(":").map(Number);
-        const endHours = (hours + 2) % 24;
+        const endHours = (hours + 2) % 24; // Añadir 2 horas por defecto
         r.endTime = `${String(endHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-        delete r.time;
+        delete r.time; // Eliminar la propiedad antigua
       }
 
       const formattedDate = formatDateWithDay(r.date);
       const durationSeconds = calculateDuration(r.startTime, r.endTime);
       const durationText = toHHMM(durationSeconds);
 
+      // Resumen de asistencias (usar apodo)
       const attendance = Array.isArray(r.attendance) ? r.attendance : [];
       const attendingYes = attendance
         .filter(a => a.attending === "Sí")
@@ -786,6 +707,7 @@
         </div>
       `;
 
+      // Tabla de configuración (mostrar todos los ensayos)
       tbodyConfig.insertAdjacentHTML("beforeend",
         `<tr>
           <td>${r.date}</td>
@@ -800,8 +722,9 @@
           </td>
         </tr>`);
 
+      // Tabla principal (solo ensayos futuros)
       const rehearsalDate = new Date(r.date);
-      if (rehearsalDate >= now) {
+      if (rehearsalDate >= now) { // Filtrar ensayos futuros
         tbodyMain.insertAdjacentHTML("beforeend",
           `<tr>
             <td>
@@ -837,6 +760,7 @@
       }
     });
 
+    // Añadir eventos a los botones de editar (pantalla de configuración)
     tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn =>
       btn.onclick = () => {
         editingRehearsalIndex = btn.dataset.i;
@@ -850,15 +774,17 @@
         document.getElementById("cancel-edit-rehearsal").style.display = "inline-block";
       });
 
+    // Añadir eventos a los botones de eliminar (pantalla de configuración)
     tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
       btn.onclick = async () => {
         if (confirm("¿Estás seguro de que deseas eliminar este ensayo? Esto también eliminará todas las asistencias asociadas.")) {
           rehearsals.splice(btn.dataset.i, 1);
           await saveRehearsals();
-          renderStats();
+          renderStats(); // Actualizar estadísticas después de eliminar un ensayo
         }
       });
 
+    // Añadir eventos a los botones de eliminar asistentes
     tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn =>
       btn.onclick = async () => {
         const index = btn.dataset.i;
@@ -870,10 +796,11 @@
           const rehearsalMessage = document.getElementById("rehearsal-message");
           rehearsalMessage.className = "success-message";
           rehearsalMessage.textContent = "Asistencias eliminadas correctamente";
-          renderStats();
+          renderStats(); // Actualizar estadísticas después de eliminar asistencias
         }
       });
 
+    // Añadir eventos a los botones de confirmar asistencia (tabla principal)
     tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => {
       btn.onclick = async () => {
         const index = btn.dataset.i;
@@ -911,7 +838,7 @@
           await saveRehearsals();
           userSelect.value = "";
           responseSelect.value = "";
-          renderStats();
+          renderStats(); // Actualizar estadísticas después de confirmar asistencia
         } catch (e) {
           alert("Error al guardar la asistencia: " + e.message);
         }
@@ -934,7 +861,7 @@
     try {
       await withRetry(() => saveDoc("rehearsals", { rehearsals }));
       renderRehearsals();
-      renderStats();
+      renderStats(); // Actualizar estadísticas después de guardar ensayos
       return true;
     } catch (e) {
       console.error("Error al guardar ensayos:", e);
@@ -970,12 +897,15 @@
     const now = new Date();
     const selectedMonth = document.getElementById("stats-month-filter")?.value || "all";
 
+    // Filtrar ensayos pasados
     let filteredRehearsals = rehearsals.filter(r => new Date(r.date) < now);
 
+    // Filtrar por mes seleccionado (si no es "all")
     if (selectedMonth !== "all") {
       filteredRehearsals = filteredRehearsals.filter(r => getMonthYear(r.date) === selectedMonth);
     }
 
+    // Tiempo ensayado por mes
     const timePerMonth = {};
     filteredRehearsals.forEach(r => {
       const monthYear = getMonthYear(r.date);
@@ -991,6 +921,7 @@
         `<tr><td>${month}</td><td>${hours}</td></tr>`);
     });
 
+    // Tiempo ensayado por usuario
     const timePerUser = {};
     users.forEach(user => {
       timePerUser[user.name] = 0;
@@ -1116,6 +1047,7 @@
 
   overlay.onclick = closeAll;
 
+  // Nuevos ítems de acceso directo (sin contraseña)
   document.getElementById("menu-rehearsals-section").onclick = e => {
     e.preventDefault();
     closeAll();
@@ -1134,6 +1066,7 @@
     document.getElementById("calendario").scrollIntoView({ behavior: "smooth" });
   };
 
+  // Ítem Configuración (protegido por contraseña)
   document.getElementById("menu-config").onclick = e => {
     e.preventDefault();
     if (!isAuthenticated) {
@@ -1250,6 +1183,7 @@
       if (editingUserIndex !== null) {
         const oldName = users[editingUserIndex].name;
         users[editingUserIndex] = { name, nickname, roles };
+        // Actualizar asistencias si el nombre cambió
         if (oldName !== name) {
           rehearsals.forEach(r => {
             if (Array.isArray(r.attendance)) {
@@ -1318,6 +1252,7 @@
       return;
     }
 
+    // Validar que la hora de fin sea posterior a la hora de inicio
     const durationSeconds = calculateDuration(startTime, endTime);
     if (durationSeconds <= 0) {
       rehearsalMessage.className = "error-message";
@@ -1327,6 +1262,7 @@
 
     try {
       if (editingRehearsalIndex !== null) {
+        // Editar ensayo existente
         rehearsals[editingRehearsalIndex] = {
           date,
           startTime,
@@ -1337,6 +1273,7 @@
         rehearsalMessage.className = "success-message";
         rehearsalMessage.textContent = "Ensayo actualizado correctamente";
       } else {
+        // Añadir nuevo ensayo
         rehearsals.push({ date, startTime, endTime, location: loc, attendance: [] });
         rehearsalMessage.className = "success-message";
         rehearsalMessage.textContent = "Ensayo añadido correctamente";
@@ -1359,7 +1296,7 @@
     e.preventDefault();
     closeAll();
     document.getElementById("stats-screen").style.display = "block";
-    updateMonthFilter();
+    updateMonthFilter(); // Actualizar las opciones del filtro de meses
     renderStats();
   };
 
@@ -1367,18 +1304,20 @@
     document.getElementById("stats-screen").style.display = "none";
   };
 
+  // Añadir evento al filtro de meses
   document.getElementById("stats-month-filter").addEventListener("change", () => {
     renderStats();
   });
 
   /* ---------- 12. Carga inicial ---------- */
   document.addEventListener("DOMContentLoaded", async () => {
-    updateConnectionStatus();
+    updateConnectionStatus(); // Verificar estado de conexión al cargar
 
     try {
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
     } catch (e) {
       console.error("Error al cargar datos de Firestore:", e);
+      // El mensaje ya se muestra a través del indicador de conexión
     }
 
     let songs1 = [], songs2 = [];
