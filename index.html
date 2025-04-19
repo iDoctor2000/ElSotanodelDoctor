@@ -82,6 +82,14 @@
     .calendar-btn { background: none; border: none; cursor: pointer; padding: 5px; }
     .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
     .calendar-btn:hover svg { fill: #09b; }
+    /* Estilo para botones de acción en tablas */
+    .delete-user, .edit-user { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .edit-user { background: #0cf; color: #000; }
+    .delete-user:hover { background: #d00; }
+    .edit-user:hover { background: #09b; }
+    /* Botón de cancelar edición */
+    #cancel-edit-user { background: #666; color: #fff; }
+    #cancel-edit-user:hover { background: #555; }
     /* Responsive */
     @media(max-width:768px){
       .hamburger div{width:20px}
@@ -149,12 +157,21 @@
       <option value="Montador">Montador</option>
     </select>
     <button id="add-user">Añadir Usuario</button>
+    <button id="cancel-edit-user" style="display:none;">Cancelar Edición</button>
     <p id="user-message" class="error-message"></p>
     <table id="user-table"><thead><tr><th>Nombre</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
   </div>
 
   <!-- Ensayos -->
   <div id="rehearsal-screen" class="config-screen">
+    <button class="close-btn" id="close-rehearsal">Cerrar</button>
+    <h2>Asignación de Ensayos</h2>
+    <label>Fecha</label><input type="date" id="rehearsal-date">
+    <label>Hora</label><input type="time" id="rehearsal-time">
+    <label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1">
+    <button id="add-rehearsal">Añadir Ensayo</button>
+    <p id="rehearsal-message" class="error-message"></p>
+    <table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Acciones</th></tr></ screen">
     <button class="close-btn" id="close-rehearsal">Cerrar</button>
     <h2>Asignación de Ensayos</h2>
     <label>Fecha</label><input type="date" id="rehearsal-date">
@@ -387,6 +404,7 @@
 
   /* ---------- 6. Usuarios ---------- */
   let users = [];
+  let editingUserIndex = null; // Para rastrear el índice del usuario que se está editando
 
   function renderUsers() {
     const tbody = document.getElementById("user-table-body");
@@ -399,15 +417,38 @@
       }
       const rolesDisplay = u.roles.join(", ");
       tbody.insertAdjacentHTML("beforeend",
-        `<tr><td>${u.name}</td><td>${rolesDisplay}</td>
-         <td><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`);
+        `<tr>
+          <td>${u.name}</td>
+          <td>${rolesDisplay}</td>
+          <td>
+            <button data-i="${i}" class="edit-user">Editar</button>
+            <button data-i="${i}" class="delete-user">Eliminar</button>
+          </td>
+        </tr>`);
       main.insertAdjacentHTML("beforeend",
         `<tr><td>${u.name}</td><td>${rolesDisplay}</td></tr>`);
     });
+
+    // Añadir eventos a los botones de eliminar
     tbody.querySelectorAll(".delete-user").forEach(btn =>
       btn.onclick = async () => {
         users.splice(btn.dataset.i, 1);
         await saveUsers();
+      });
+
+    // Añadir eventos a los botones de editar
+    tbody.querySelectorAll(".edit-user").forEach(btn =>
+      btn.onclick = () => {
+        editingUserIndex = btn.dataset.i;
+        const user = users[editingUserIndex];
+        document.getElementById("user-name").value = user.name;
+        const roleSelect = document.getElementById("user-role");
+        Array.from(roleSelect.options).forEach(option => {
+          option.selected = user.roles.includes(option.value);
+        });
+        const addButton = document.getElementById("add-user");
+        addButton.textContent = "Guardar Cambios";
+        document.getElementById("cancel-edit-user").style.display = "inline-block";
       });
   }
 
@@ -432,6 +473,16 @@
       console.error("Error al guardar usuarios:", e);
       throw e;
     }
+  }
+
+  function resetUserForm() {
+    document.getElementById("user-name").value = "";
+    const roleSelect = document.getElementById("user-role");
+    Array.from(roleSelect.options).forEach(option => option.selected = false);
+    const addButton = document.getElementById("add-user");
+    addButton.textContent = "Añadir Usuario";
+    document.getElementById("cancel-edit-user").style.display = "none";
+    editingUserIndex = null;
   }
 
   /* ---------- 7. Ensayos ---------- */
@@ -530,13 +581,6 @@
       return;
     }
 
-    // Añadir columna vacía al encabezado
-    const headerRow = table.querySelector("thead tr");
-    if (headerRow) {
-      const newHeaderCell = document.createElement("th");
-      headerRow.appendChild(newHeaderCell);
-    }
-
     // Añadir botón de calendario a cada fila
     const rows = table.querySelectorAll("tbody tr");
     rows.forEach(row => {
@@ -574,6 +618,7 @@
   /* ---------- 10. Menú & pantallas ---------- */
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
   const PASSWORD = "Sotano2014";
+  let isAuthenticated = false; // Estado de autenticación
 
   function closeAll() {
     document.querySelectorAll(".config-screen").forEach(s => {
@@ -590,6 +635,7 @@
     });
     sidebar.classList.remove("show");
     overlay.classList.remove("show");
+    resetUserForm(); // Resetear el formulario de usuarios al cerrar
   }
 
   document.getElementById("hamburger-btn").onclick = () => {
@@ -607,18 +653,22 @@
   /* --- Setlists screen */
   document.getElementById("menu-setlist-config").onclick = e => {
     e.preventDefault();
-    const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-    if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-      closeAll();
-      const s = document.getElementById("setlist-config-screen");
-      s.style.display = "block";
-      document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
-      document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
-      document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
-      document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
-    } else {
-      alert("Contraseña incorrecta. Acceso denegado.");
+    if (!isAuthenticated) {
+      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+        isAuthenticated = true;
+      } else {
+        alert("Contraseña incorrecta. Acceso denegado.");
+        return;
+      }
     }
+    closeAll();
+    const s = document.getElementById("setlist-config-screen");
+    s.style.display = "block";
+    document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
+    document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
+    document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
+    document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
   };
 
   document.getElementById("close-setlist-config").onclick = () => {
@@ -659,18 +709,23 @@
   /* --- Usuarios screen */
   document.getElementById("menu-user-mgmt").onclick = e => {
     e.preventDefault();
-    const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-    if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-      closeAll();
-      document.getElementById("user-mgmt-screen").style.display = "block";
-    } else {
-      alert("Contraseña incorrecta. Acceso denegado.");
+    if (!isAuthenticated) {
+      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+        isAuthenticated = true;
+      } else {
+        alert("Contraseña incorrecta. Acceso denegado.");
+        return;
+      }
     }
+    closeAll();
+    document.getElementById("user-mgmt-screen").style.display = "block";
   };
 
   document.getElementById("close-user-mgmt").onclick = () => {
     document.getElementById("user-mgmt-screen").style.display = "none";
     document.getElementById("user-message").textContent = "";
+    resetUserForm();
   };
 
   document.getElementById("add-user").onclick = async () => {
@@ -694,28 +749,44 @@
     }
 
     try {
-      users.push({ name, roles });
+      if (editingUserIndex !== null) {
+        // Modo edición: actualizar usuario existente
+        users[editingUserIndex] = { name, roles };
+        userMessage.className = "success-message";
+        userMessage.textContent = "Usuario actualizado correctamente";
+      } else {
+        // Modo añadir: agregar nuevo usuario
+        users.push({ name, roles });
+        userMessage.className = "success-message";
+        userMessage.textContent = "Usuario añadido correctamente";
+      }
       await saveUsers();
-      document.getElementById("user-name").value = "";
-      Array.from(roleSelect.options).forEach(option => option.selected = false);
-      userMessage.className = "success-message";
-      userMessage.textContent = "Usuario añadido correctamente";
+      resetUserForm();
     } catch (e) {
       userMessage.className = "error-message";
-      userMessage.textContent = "Error al añadir usuario: " + e.message;
+      userMessage.textContent = "Error al guardar usuario: " + e.message;
     }
+  };
+
+  document.getElementById("cancel-edit-user").onclick = () => {
+    resetUserForm();
+    document.getElementById("user-message").textContent = "";
   };
 
   /* --- Ensayos screen */
   document.getElementById("menu-rehearsal").onclick = e => {
     e.preventDefault();
-    const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-    if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-      closeAll();
-      document.getElementById("rehearsal-screen").style.display = "block";
-    } else {
-      alert("Contraseña incorrecta. Acceso denegado.");
+    if (!isAuthenticated) {
+      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+        isAuthenticated = true;
+      } else {
+        alert("Contraseña incorrecta. Acceso denegado.");
+        return;
+      }
     }
+    closeAll();
+    document.getElementById("rehearsal-screen").style.display = "block";
   };
 
   document.getElementById("close-rehearsal").onclick = () => {
