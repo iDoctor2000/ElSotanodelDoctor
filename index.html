@@ -36,8 +36,10 @@
     *,*::before,*::after{box-sizing:border-box}
     html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
     /* Cabecera */
-    header{background:#111;padding:10px 20px;display:flex;align-items:center;justify-content:space-between}
-    .logo img{width:180px;height:auto}
+    header{background:#111;padding:20px 20px;display:flex;align-items:center;justify-content:space-between}
+    .logo{display:flex;flex-direction:column;align-items:center} /* Centrar logo y nueva imagen */
+    .logo img.logo-main{width:180px;height:auto} /* Logo principal */
+    .logo img.logo-intranet{height:60px;width:auto;margin-top:10px} /* Nueva imagen con altura 1/3 del logo */
     /* Hamburguesa */
     .hamburger{cursor:pointer;border:1px solid #0cf;border-radius:4px;padding:5px}
     .hamburger div{width:25px;height:3px;background:#0cf;margin:4px 0}
@@ -53,14 +55,14 @@
     #overlay.show{display:block}
     /* Pantallas modales */
     .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
-                   overflow-y:auto;padding:80px 20px 20px} /* Aumentado padding-top para más espacio */
-    .config-screen h2{color:#0cf;text-align:center;margin:20px 0} /* Aumentado margen para separar del botón Cerrar */
-    .config-screen h3{color:#0cf;margin:20px 0 10px} /* Más espacio para los subtítulos */
+                   overflow-y:auto;padding:80px 20px 20px}
+    .config-screen h2{color:#0cf;text-align:center;margin:20px 0}
+    .config-screen h3{color:#0cf;margin:20px 0 10px}
     .config-screen label{display:block;margin:10px 0 5px}
     .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
                                               border:1px solid #333;border-radius:5px}
     .config-screen select[multiple] { height: 150px; }
-    .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer} /* Más espacio antes del botón */
+    .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .config-screen button:hover{background:#09b}
     .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;
                               color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
@@ -75,10 +77,14 @@
     .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
     #total-time,#total-time-2{color:#0cf;margin-top:10px;text-align:center}
-    #second-setlist-name {text-align:center;color:#aaa;margin-top:5px;font-style:italic} /* Estilo para el nombre del segundo setlist */
+    #second-setlist-name {text-align:center;color:#aaa;margin-top:5px;font-style:italic}
     footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
     /* Responsive */
-    @media(max-width:768px){.hamburger div{width:20px}}
+    @media(max-width:768px){
+      .hamburger div{width:20px}
+      .logo img.logo-main{width:150px} /* Reducir tamaño del logo en móviles */
+      .logo img.logo-intranet{height:50px} /* Ajustar altura de la nueva imagen */
+    }
     /* Estilo para mensajes de error */
     .error-message { color: #f00; margin-top: 10px; text-align: center; }
     .success-message { color: #0cf; margin-top: 10px; text-align: center; }
@@ -88,7 +94,10 @@
 <body>
   <!-- ============ CABECERA ============ -->
   <header>
-    <div class="logo"><img src="assets/logo_blanco.png" alt="Logo"></div>
+    <div class="logo">
+      <img src="assets/logo_blanco.png" alt="Logo" class="logo-main">
+      <img src="assets/logointranet.png" alt="Logo Intranet" class="logo-intranet">
+    </div>
     <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
   </header>
 
@@ -177,7 +186,7 @@
     <!-- 3) Segundo setlist -->
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
-      <p id="second-setlist-name"></p> <!-- Nuevo elemento para mostrar el nombre del segundo setlist -->
+      <p id="second-setlist-name"></p>
       <p style="text-align:center;color:#aaa">Feed actual: <em id="url-actual"></em></p>
       <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
@@ -266,7 +275,7 @@
 
   function updateTitles() {
     document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
-    document.getElementById("second-setlist-name").textContent = setlistConfig.setlist2.name; // Mostrar el nombre del segundo setlist
+    document.getElementById("second-setlist-name").textContent = setlistConfig.setlist2.name;
   }
 
   async function loadSetlistConfig() {
@@ -348,10 +357,9 @@
     const main = document.getElementById("users-body");
     tbody.innerHTML = main.innerHTML = "";
     users.forEach((u, i) => {
-      // Validar que u sea un objeto válido y que roles sea un array
       if (!u || typeof u !== 'object' || !u.name || !Array.isArray(u.roles)) {
         console.warn(`Usuario inválido en la posición ${i}:`, u);
-        return; // Saltar este usuario
+        return;
       }
       const rolesDisplay = u.roles.join(", ");
       tbody.insertAdjacentHTML("beforeend",
@@ -370,9 +378,7 @@
   async function loadUsers() {
     try {
       const data = await loadDoc("users", { users: [] });
-      // Validar que data.users sea un array, si no, usar un array vacío
       users = Array.isArray(data.users) ? data.users : [];
-      // Filtrar usuarios inválidos
       users = users.filter(u => u && typeof u === 'object' && u.name && Array.isArray(u.roles));
       renderUsers();
     } catch (e) {
@@ -396,19 +402,15 @@
   let rehearsals = [];
 
   function renderRehearsals() {
-    // Ordenar ensayos por fecha (ascendente, más próximos primero)
     rehearsals.sort((a, b) => new Date(a.date) - new Date(b.date));
-
     const tbodyConfig = document.getElementById("rehearsal-table-body");
     const tbodyMain = document.getElementById("rehearsal-main-body");
     tbodyConfig.innerHTML = tbodyMain.innerHTML = "";
     rehearsals.forEach((r, i) => {
       const formattedDate = formatDateWithDay(r.date);
-      // Renderizar en la pantalla de configuración (sin formato de día de la semana)
       tbodyConfig.insertAdjacentHTML("beforeend",
         `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.location}</td>
          <td><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
-      // Renderizar en la página principal (con formato de día de la semana)
       tbodyMain.insertAdjacentHTML("beforeend",
         `<tr><td>${formattedDate}</td><td>${r.time}</td><td>${r.location}</td></tr>`);
     });
@@ -474,6 +476,8 @@
 
   /* ---------- 9. Menú & pantallas ---------- */
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
+  const PASSWORD = "Sotano2014"; // Contraseña para acceder a las pantallas de configuración
+
   function closeAll() {
     document.querySelectorAll(".config-screen").forEach(s => {
       s.style.display = "none";
@@ -506,13 +510,18 @@
   /* --- Setlists screen */
   document.getElementById("menu-setlist-config").onclick = e => {
     e.preventDefault();
-    closeAll();
-    const s = document.getElementById("setlist-config-screen");
-    s.style.display = "block";
-    document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
-    document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
-    document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
-    document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
+    const password = prompt("Introduce la contraseña para acceder a la configuración:");
+    if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+      closeAll();
+      const s = document.getElementById("setlist-config-screen");
+      s.style.display = "block";
+      document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
+      document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
+      document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
+      document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
+    } else {
+      alert("Contraseña incorrecta. Acceso denegado.");
+    }
   };
 
   document.getElementById("close-setlist-config").onclick = () => {
@@ -553,8 +562,13 @@
   /* --- Usuarios screen */
   document.getElementById("menu-user-mgmt").onclick = e => {
     e.preventDefault();
-    closeAll();
-    document.getElementById("user-mgmt-screen").style.display = "block";
+    const password = prompt("Introduce la contraseña para acceder a la configuración:");
+    if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+      closeAll();
+      document.getElementById("user-mgmt-screen").style.display = "block";
+    } else {
+      alert("Contraseña incorrecta. Acceso denegado.");
+    }
   };
 
   document.getElementById("close-user-mgmt").onclick = () => {
@@ -598,8 +612,13 @@
   /* --- Ensayos screen */
   document.getElementById("menu-rehearsal").onclick = e => {
     e.preventDefault();
-    closeAll();
-    document.getElementById("rehearsal-screen").style.display = "block";
+    const password = prompt("Introduce la contraseña para acceder a la configuración:");
+    if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+      closeAll();
+      document.getElementById("rehearsal-screen").style.display = "block";
+    } else {
+      alert("Contraseña incorrecta. Acceso denegado.");
+    }
   };
 
   document.getElementById("close-rehearsal").onclick = () => {
@@ -638,14 +657,12 @@
   /* ---------- 10. Carga inicial ---------- */
   document.addEventListener("DOMContentLoaded", async () => {
     try {
-      // Intentar cargar datos de Firestore
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
     } catch (e) {
       console.error("Error al cargar datos de Firestore:", e);
       alert(`Error al cargar los datos de Firestore: ${e.message}. Revisa la consola para más detalles y asegúrate de que las reglas de Firestore permitan acceso y que el dominio esté autorizado.`);
     }
 
-    // Cargar setlists independientemente de Firestore
     let songs1 = [], songs2 = [];
     try {
       songs1 = await cargarPrimerSetlist();
@@ -659,7 +676,6 @@
       console.error("Fallo al cargar el segundo setlist:", e);
     }
 
-    // Asignar eventos a los botones de descarga
     document.getElementById("download-btn").onclick = () => {
       if (songs1.length > 0) {
         genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
@@ -670,7 +686,7 @@
 
     document.getElementById("download-btn-2").onclick = () => {
       if (songs2.length > 0) {
-        genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf"); // Usar el nombre dinámico del segundo setlist
+        genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf");
       } else {
         alert("No hay canciones disponibles para descargar el PDF del setlist del concierto.");
       }
