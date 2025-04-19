@@ -79,7 +79,7 @@
     #second-setlist-name {text-align:center;color:#aaa;margin-top:5px;font-style:italic}
     footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
     /* Estilo para el botón de añadir al calendario */
-    .calendar-btn { background: none; border: none; cursor: pointer; padding: 5px; }
+    .calendar-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; vertical-align: middle; }
     .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
     .calendar-btn:hover svg { fill: #09b; }
     /* Estilo para botones de acción en tablas */
@@ -574,15 +574,16 @@
       return;
     }
 
-    // Añadir botón de calendario a cada fila
+    // Añadir botón de calendario a la celda de "Lugar" en cada fila
     const rows = table.querySelectorAll("tbody tr");
     rows.forEach(row => {
       const cells = row.querySelectorAll("td");
-      if (cells.length < 2) return; // Ignorar filas sin datos suficientes
+      if (cells.length < 3) return; // Ignorar filas sin datos suficientes
 
       const dateCell = cells[0].textContent.trim(); // Fecha (ej: "Sábado 25 de Mayo")
       const timeCell = cells[1].textContent.trim(); // Hora (ej: "20:00")
-      const locationCell = cells.length > 2 ? cells[2].textContent.trim() : "Lugar no especificado"; // Lugar
+      const locationCell = cells[2]; // Celda de "Lugar"
+      const locationText = locationCell.textContent.trim() || "Lugar no especificado"; // Lugar
 
       // Parsear fecha y hora
       const dateParts = dateCell.match(/(\d+)\s+de\s+(\w+)/i);
@@ -595,16 +596,16 @@
       const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       const time = timeCell || "20:00"; // Hora por defecto si no está especificada
 
-      const newCell = document.createElement("td");
-      newCell.innerHTML = `
-        <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Concierto El Sótano del Doctor", "${date}", "${time}", "${locationCell}", "Concierto de la banda El Sótano del Doctor")'>
+      // Añadir el botón de calendario dentro de la celda de "Lugar"
+      locationCell.innerHTML = `
+        ${locationText}
+        <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Concierto El Sótano del Doctor", "${date}", "${time}", "${locationText}", "Concierto de la banda El Sótano del Doctor")'>
           <svg viewBox="0 0 24 24">
             <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
             <rect x="4" y="6" width="16" height="12" rx="2"/>
           </svg>
         </button>
       `;
-      row.appendChild(newCell);
     });
   }
 
@@ -623,7 +624,7 @@
           input.value = "";
         }
       });
-      const message = s.querySelector("#user-message, #rehearsal-message, #setlist-message");
+      const message = s.querySelector("#user-message, #rehavioural-message, #setlist-message");
       if (message) message.textContent = "";
     });
     sidebar.classList.remove("show");
