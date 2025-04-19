@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>El Sótano del Doctor – Uso Interno</title>
+
+  <!-- ================= METADATOS ================= -->
+  <meta property="og:title"       content="El Sótano del Doctor – Uso Interno">
+  <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
+  <meta property="og:image"       content="assets/logo_negro copia.jpg">
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://tusitioweb.com">
+
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="El Sótano del Doctor – Uso Interno">
+  <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
+  <meta name="twitter:image"       content="assets/logo_negro copia.jpg">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ================= Librerías externas ================= -->
+  <!-- jsPDF + autoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Firebase 9 “compat” (sin ES‑modules) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- ================= ESTILOS ================= -->
+  <style>
+    /* Reset y fuente base */
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
+    /* Cabecera */
+    header{background:#111;padding:10px 20px;display:flex;align-items:center;justify-content:space-between}
+    .logo img{width:180px;height:auto}
+    /* Hamburguesa */
+    .hamburger{cursor:pointer;border:1px solid #0cf;border-radius:4px;padding:5px}
+    .hamburger div{width:25px;height:3px;background:#0cf;margin:4px 0}
+    /* Sidebar */
+    .sidebar{position:fixed;top:0;left:0;width:250px;height:100%;background:#111;border-right:1px solid #222;
+             padding:20px;box-shadow:2px 0 10px rgba(0,255,255,.1);transform:translateX(-250px);transition:.3s;z-index:9999}
+    .sidebar.show{transform:translateX(0)}
+    .sidebar h2{color:#0cf;margin:0}
+    .sidebar a{display:block;color:#fff;text-decoration:none;margin:10px 0;padding:5px 0;border-bottom:1px solid #222}
+    .sidebar a:hover{color:#0cf}
+    /* Overlay */
+    #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9998;display:none}
+    #overlay.show{display:block}
+    /* Pantallas modales */
+    .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
+                   overflow-y:auto;padding:60px 20px 20px}
+    .config-screen h2{color:#0cf;text-align:center;margin:0 0 20px}
+    .config-screen label{display:block;margin:10px 0 5px}
+    .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
+                                              border:1px solid #333;border-radius:5px}
+    .config-screen button{margin-top:20px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
+    .config-screen button:hover{background:#09b}
+    .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;
+                              color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
+    .config-screen .close-btn:hover{background:#333}
+    /* Secciones */
+    main section{max-width:1200px;margin:0 auto;padding:20px}
+    #setlists,#second-setlist,#usuarios,#calendario{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
+    #setlists h2,#second-setlist h2,#usuarios h2,#calendario h2{text-align:center;color:#0cf;margin-bottom:15px}
+    table{width:100%;border-collapse:collapse;margin-top:20px;color:#fff;font-size:.95em}
+    thead{background:#222;color:#0cf}th,td{padding:12px;border:1px solid #333;text-align:left}
+    tr:nth-child(even){background:#1a1a1a}
+    .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
+    .download-btn:hover{background:#09b}
+    #total-time,#total-time-2{color:#0cf;margin-top:10px;text-align:center}
+    footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
+    /* Responsive */
+    @media(max-width:768px){.hamburger div{width:20px}}
+    /* Estilo para mensajes de error */
+    .error-message { color: #f00; margin-top: 10px; text-align: center; }
+    .success-message { color: #0cf; margin-top: 10px; text-align: center; }
+  </style>
+</head>
+
+<body>
+  <!-- ============ CABECERA ============ -->
+  <header>
+    <div class="logo"><img src="assets/logo_blanco.png" alt="Logo"></div>
+    <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
+  </header>
+
+  <!-- ============ SIDEBAR & OVERLAY ============ -->
+  <div id="overlay"></div>
+  <nav class="sidebar" id="sidebar-menu">
+    <h2>Menú</h2>
+    <a href="#" id="menu-setlist-config">Configurar Setlists</a>
+    <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
+    <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
+    <a href="#" id="menu-cerrar">Cerrar Menú</a>
+  </nav>
+
+  <!-- ============ PANTALLAS DE CONFIGURACIÓN ============ -->
+  <!-- Setlists -->
+  <div id="setlist-config-screen" class="config-screen">
+    <button class="close-btn" id="close-setlist-config">Cerrar</button>
+    <h2>Configuración de Setlists</h2>
+    <h3>Primer Setlist</h3>
+    <label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025">
+    <label>ID/URL feed</label><input id="setlist1-url" placeholder="URL">
+    <h3>Segundo Setlist</h3>
+    <label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad">
+    <label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvyb o URL completa">
+    <button id="guardar-setlist-config">Guardar Configuración</button>
+    <p id="setlist-message" class="error-message"></p>
+  </div>
+
+  <!-- Usuarios -->
+  <div id="user-mgmt-screen" class="config-screen">
+    <button class="close-btn" id="close-user-mgmt">Cerrar</button>
+    <h2>Gestión de Usuarios</h2>
+    <label>Nombre</label><input id="user-name" placeholder="Nombre">
+    <label>Rol</label>
+    <select id="user-role"><option value="admin">Administrador</option><option value="member">Miembro</option></select>
+    <button id="add-user">Añadir Usuario</button>
+    <p id="user-message" class="error-message"></p>
+    <table id="user-table"><thead><tr><th>Nombre</th><th>Rol</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
+  </div>
+
+  <!-- Ensayos -->
+  <div id="rehearsal-screen" class="config-screen">
+    <button class="close-btn" id="close-rehearsal">Cerrar</button>
+    <h2>Asignación de Ensayos</h2>
+    <label>Fecha</label><input type="date" id="rehearsal-date">
+    <label>Hora</label><input type="time" id="rehearsal-time">
+    <label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1">
+    <button id="add-rehearsal">Añadir Ensayo</button>
+    <p id="rehearsal-message" class="error-message"></p>
+    <table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table>
+  </div>
+
+  <!-- ============ CONTENIDO PRINCIPAL ============ -->
+  <main>
+    <!-- 1) Primer setlist -->
+    <section id="setlists">
+      <h2 id="setlist1-title">Setlist Ensayos -Año 2025-</h2>
+      <p style="text-align:center;color:#aaa">Consulta y exporta el setlist de ensayos en tiempo real.</p>
+      <table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table>
+      <button class="download-btn" id="download-btn">Descargar PDF</button>
+      <p id="total-time"></p>
+    </section>
+
+    <!-- 2) Segundo setlist -->
+    <section id="second-setlist">
+      <h2 id="setlist2-title">Setlist Próximo Concierto</h2>
+      <p style="text-align:center;color:#aaa">Feed actual: <em id="url-actual"></em></p>
+      <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
+      <button class="download-btn" id="download-btn-2">Descargar PDF</button>
+      <p id="total-time-2"></p>
+    </section>
+
+    <!-- 3) Usuarios -->
+    <section id="usuarios">
+      <h2>Usuarios Registrados</h2>
+      <p style="text-align:center;color:#aaa">Lista de usuarios con acceso a la intranet.</p>
+      <table><thead><tr><th>Nombre</th><th>Rol</th></tr></thead><tbody id="users-body"></tbody></table>
+    </section>
+
+    <!-- 4) Calendario -->
+    <section id="calendario">
+      <h2>Próximos Ensayos y Conciertos</h2>
+      <h3>Ensayos Programados</h3>
+      <p style="text-align:center;color:#aaa">Lista de ensayos asignados manualmente.</p>
+      <table id="rehearsal-main-table">
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th></tr></thead>
+        <tbody id="rehearsal-main-body"></tbody>
+      </table>
+      <h3>Conciertos Próximos (BandHelper)</h3>
+      <p style="text-align:center;color:#aaa">Consulta los conciertos actualizados desde BandHelper.</p>
+      <div id="bandhelper-concerts">
+        <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
+      </div>
+    </section>
+  </main>
+
+  <footer>© 2025 El Sótano del Doctor. All Rights Reserved.</footer>
+
+  <!-- ============ JAVASCRIPT PRINCIPAL ============ -->
+  <script>
+  /* ---------- 0. Firebase ---------- */
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
+    authDomain: "sotanointranet.firebaseapp.com",
+    projectId: "sotanointranet",
+    storageBucket: "sotanointranet.appspot.com",
+    messagingSenderId: "756955233128",
+    appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  /* ---------- 1. Utilidades ---------- */
+  const parseDuration = str => {
+    if (!str) return 0;
+    if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; }
+    const n = parseInt(str, 10); return isNaN(n) ? 0 : n;
+  };
+  const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const toHHMM = s => { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`; };
+  const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
+
+  /* ---------- 2. Acceso Firestore ---------- */
+  async function loadDoc(id, fallback) {
+    try {
+      const snap = await db.collection("intranet").doc(id).get();
+      return snap.exists ? snap.data() : fallback;
+    } catch (e) {
+      console.error(`Error al cargar documento ${id}:`, e);
+      return fallback;
+    }
+  }
+
+  async function saveDoc(id, data) {
+    try {
+      await db.collection("intranet").doc(id).set(data);
+      return true;
+    } catch (e) {
+      console.error(`Error al guardar documento ${id}:`, e);
+      throw e;
+    }
+  }
+
+  /* ---------- 3. Configuración Setlists ---------- */
+  let setlistConfig = {
+    setlist1: { name: "Setlist Ensayos -Año 2025-", url: "https://cold-limit-811a.jagomezc.workers.dev" },
+    setlist2: { name: "Setlist Próximo Concierto", url: "https://www.bandhelper.com/feed/set_list/TXHvyb" }
+  };
+
+  function updateTitles() {
+    document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
+    document.getElementById("setlist2-title").textContent = setlistConfig.setlist2.name;
+  }
+
+  async function loadSetlistConfig() {
+    const data = await loadDoc("setlists", { config: setlistConfig });
+    setlistConfig = data.config || setlistConfig;
+    updateTitles();
+  }
+
+  async function saveSetlistConfig() {
+    updateTitles();
+    return await saveDoc("setlists", { config: setlistConfig });
+  }
+
+  /* ---------- 4. Primer Setlist ---------- */
+  async function cargarPrimerSetlist() {
+    try {
+      const songs = (await (await fetch(setlistConfig.setlist1.url)).json()).filter(i => i.type === "song");
+      const tbody = document.getElementById("setlist-body");
+      tbody.innerHTML = "";
+      let total = 0;
+      songs.forEach((s, i) => {
+        const secs = parseDuration(s.duration);
+        total += secs;
+        tbody.insertAdjacentHTML("beforeend",
+          `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.key || ""}</td><td>${s.tempo || ""}</td><td>${toMMSS(secs)}</td></tr>`);
+      });
+      document.getElementById("total-time").textContent = "Tiempo total del set: " + toHHMM(total);
+      return songs;
+    } catch (e) {
+      console.error(e);
+      document.getElementById("setlist-body").innerHTML =
+        '<tr><td colspan="5">Error al cargar el primer setlist.</td></tr>';
+      return [];
+    }
+  }
+
+  /* ---------- 5. Segundo Setlist ---------- */
+  async function cargarSegundoSetlist() {
+    try {
+      const response = await fetch(setlistConfig.setlist2.url);
+      if (!response.ok) throw new Error('Error en la respuesta de la API');
+      const data = await response.json();
+      const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : [];
+      
+      const tbody = document.getElementById("second-body");
+      tbody.innerHTML = "";
+      let total = 0;
+      
+      songs.forEach((s, i) => {
+        const secs = parseDuration(s.duration || "0");
+        total += secs;
+        tbody.insertAdjacentHTML("beforeend",
+          `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
+        );
+      });
+      
+      document.getElementById("url-actual").textContent = setlistConfig.setlist2.url;
+      document.getElementById("total-time-2").textContent = "Tiempo total del set: " + toHHMM(total);
+      return songs;
+    } catch (e) {
+      console.error("Error cargando segundo setlist:", e);
+      document.getElementById("second-body").innerHTML =
+        '<tr><td colspan="5">No se pudo cargar el segundo setlist. Verifica la URL o la conexión.</td></tr>';
+      document.getElementById("total-time-2").textContent = "";
+      return [];
+    }
+  }
+
+  /* ---------- 6. Usuarios ---------- */
+  let users = [];
+
+  function renderUsers() {
+    const tbody = document.getElementById("user-table-body");
+    const main = document.getElementById("users-body");
+    tbody.innerHTML = main.innerHTML = "";
+    users.forEach((u, i) => {
+      tbody.insertAdjacentHTML("beforeend",
+        `<tr><td>${u.name}</td><td>${u.role === "admin" ? "Administrador" : "Miembro"}</td>
+         <td><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`);
+      main.insertAdjacentHTML("beforeend",
+        `<tr><td>${u.name}</td><td>${u.role === "admin" ? "Administrador" : "Miembro"}</td></tr>`);
+    });
+    tbody.querySelectorAll(".delete-user").forEach(btn =>
+      btn.onclick = async () => {
+        users.splice(btn.dataset.i, 1);
+        await saveUsers();
+      });
+  }
+
+  async function loadUsers() {
+    const data = await loadDoc("users", { users: [] });
+    users = data.users || [];
+    renderUsers();
+  }
+
+  async function saveUsers() {
+    try {
+      await saveDoc("users", { users });
+      renderUsers();
+      return true;
+    } catch (e) {
+      console.error("Error al guardar usuarios:", e);
+      throw e;
+    }
+  }
+
+  /* ---------- 7. Ensayos ---------- */
+  let rehearsals = [];
+
+  function renderRehearsals() {
+    const tbodyConfig = document.getElementById("rehearsal-table-body");
+    const tbodyMain = document.getElementById("rehearsal-main-body");
+    tbodyConfig.innerHTML = tbodyMain.innerHTML = "";
+    rehearsals.forEach((r, i) => {
+      // Renderizar en la pantalla de configuración (con botón de eliminar)
+      tbodyConfig.insertAdjacentHTML("beforeend",
+        `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.location}</td>
+         <td><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
+      // Renderizar en la página principal (sin botón de eliminar)
+      tbodyMain.insertAdjacentHTML("beforeend",
+        `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.location}</td></tr>`);
+    });
+    tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
+      btn.onclick = async () => {
+        rehearsals.splice(btn.dataset.i, 1);
+        await saveRehearsals();
+      });
+  }
+
+  async function loadRehearsals() {
+    const data = await loadDoc("rehearsals", { rehearsals: [] });
+    rehearsals = data.rehearsals || [];
+    renderRehearsals();
+  }
+
+  async function saveRehearsals() {
+    try {
+      await saveDoc("rehearsals", { rehearsals });
+      renderRehearsals();
+      return true;
+    } catch (e) {
+      console.error("Error al guardar ensayos:", e);
+      throw e;
+    }
+  }
+
+  /* ---------- 8. PDF ---------- */
+  async function genPDF(songs, title, fileName) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "pt", format: "A4" });
+    try {
+      const blob = await (await fetch("assets/logo_negro copia.jpg")).blob();
+      const base = await new Promise((ok, ko) => {
+        const r = new FileReader();
+        r.onload = () => ok(r.result);
+        r.onerror = ko;
+        r.readAsDataURL(blob);
+      });
+      doc.addImage(base, "JPEG", 40, 30, 60, 60);
+    } catch {}
+    doc.setFontSize(16);
+    doc.text(`Setlist - ${title}`, 120, 50);
+    const totalTime = toMMSS(songs.reduce((a, s) => a + parseDuration(s.duration), 0));
+    doc.setFontSize(12);
+    doc.text(`${songs.length} canciones, ${totalTime} total`, 120, 70);
+    doc.autoTable({
+      startY: 100,
+      head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
+      body: songs.map((s, i) => [i + 1, s.name || "", s.key || "", s.tempo || "", toMMSS(parseDuration(s.duration))]),
+      headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: "bold" },
+      styles: { fontSize: 10, cellPadding: 5 }
+    });
+    doc.save(fileName);
+  }
+
+  /* ---------- 9. Menú & pantallas ---------- */
+  const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
+  function closeAll() {
+    document.querySelectorAll(".config-screen").forEach(s => {
+      s.style.display = "none";
+      s.querySelectorAll("input, select").forEach(input => input.value = "");
+      const message = s.querySelector("#user-message, #rehearsal-message, #setlist-message");
+      if (message) message.textContent = "";
+    });
+    sidebar.classList.remove("show");
+    overlay.classList.remove("show");
+  }
+
+  document.getElementById("hamburger-btn").onclick = () => {
+    sidebar.classList.add("show");
+    overlay.classList.add("show");
+  };
+
+  document.getElementById("menu-cerrar").onclick = e => {
+    e.preventDefault();
+    closeAll();
+  };
+
+  overlay.onclick = closeAll;
+
+  /* --- Setlists screen */
+  document.getElementById("menu-setlist-config").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    const s = document.getElementById("setlist-config-screen");
+    s.style.display = "block";
+    document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
+    document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
+    document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
+    document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
+  };
+
+  document.getElementById("close-setlist-config").onclick = () => {
+    document.getElementById("setlist-config-screen").style.display = "none";
+    document.getElementById("setlist-message").textContent = "";
+  };
+
+  document.getElementById("guardar-setlist-config").onclick = async () => {
+    const setlistMessage = document.getElementById("setlist-message");
+    setlistMessage.textContent = "";
+
+    const n1 = document.getElementById("setlist1-name").value.trim(),
+          u1 = document.getElementById("setlist1-url").value.trim(),
+          n2 = document.getElementById("setlist2-name").value.trim(),
+          raw = document.getElementById("setlist2-url").value.trim();
+    
+    if (!n1 || !u1 || !n2 || !raw) {
+      setlistMessage.className = "error-message";
+      setlistMessage.textContent = "Completa todos los campos";
+      return;
+    }
+    
+    try {
+      setlistConfig.setlist1 = { name: n1, url: u1 };
+      setlistConfig.setlist2 = { name: n2, url: raw.startsWith("http") ? raw : `https://www.bandhelper.com/feed/set_list/${raw}` };
+      
+      await saveSetlistConfig();
+      await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
+      document.getElementById("setlist-config-screen").style.display = "none";
+      setlistMessage.className = "success-message";
+      setlistMessage.textContent = "Configuración guardada correctamente";
+    } catch (e) {
+      setlistMessage.className = "error-message";
+      setlistMessage.textContent = "Error al guardar configuración: " + e.message;
+    }
+  };
+
+  /* --- Usuarios screen */
+  document.getElementById("menu-user-mgmt").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("user-mgmt-screen").style.display = "block";
+  };
+
+  document.getElementById("close-user-mgmt").onclick = () => {
+    document.getElementById("user-mgmt-screen").style.display = "none";
+    document.getElementById("user-message").textContent = "";
+  };
+
+  document.getElementById("add-user").onclick = async () => {
+    const userMessage = document.getElementById("user-message");
+    userMessage.textContent = "";
+
+    const name = document.getElementById("user-name").value.trim();
+    const role = document.getElementById("user-role").value;
+
+    if (!name) {
+      userMessage.className = "error-message";
+      userMessage.textContent = "Introduce un nombre válido";
+      return;
+    }
+
+    try {
+      users.push({ name, role });
+      await saveUsers();
+      document.getElementById("user-name").value = "";
+      userMessage.className = "success-message";
+      userMessage.textContent = "Usuario añadido correctamente";
+    } catch (e) {
+      userMessage.className = "error-message";
+      userMessage.textContent = "Error al añadir usuario: " + e.message;
+    }
+  };
+
+  /* --- Ensayos screen */
+  document.getElementById("menu-rehearsal").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("rehearsal-screen").style.display = "block";
+  };
+
+  document.getElementById("close-rehearsal").onclick = () => {
+    document.getElementById("rehearsal-screen").style.display = "none";
+    document.getElementById("rehearsal-message").textContent = "";
+  };
+
+  document.getElementById("add-rehearsal").onclick = async () => {
+    const rehearsalMessage = document.getElementById("rehearsal-message");
+    rehearsalMessage.textContent = "";
+
+    const date = document.getElementById("rehearsal-date").value,
+          time = document.getElementById("rehearsal-time").value,
+          loc = document.getElementById("rehearsal-location").value.trim();
+    
+    if (!date || !time || !loc) {
+      rehearsalMessage.className = "error-message";
+      rehearsalMessage.textContent = "Completa todos los campos";
+      return;
+    }
+
+    try {
+      rehearsals.push({ date, time, location: loc });
+      await saveRehearsals();
+      document.getElementById("rehearsal-date").value = "";
+      document.getElementById("rehearsal-time").value = "";
+      document.getElementById("rehearsal-location").value = "";
+      rehearsalMessage.className = "success-message";
+      rehearsalMessage.textContent = "Ensayo añadido correctamente";
+    } catch (e) {
+      rehearsalMessage.className = "error-message";
+      rehearsalMessage.textContent = "Error al añadir ensayo: " + e.message;
+    }
+  };
+
+  /* ---------- 10. Carga inicial ---------- */
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
+      const [songs1, songs2] = await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
+      document.getElementById("download-btn").onclick = () => genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
+      document.getElementById("download-btn-2").onclick = () => genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf");
+    } catch (e) {
+      console.error("Error en la carga inicial:", e);
+      alert("Error al cargar los datos iniciales. Revisa la consola para más detalles.");
+    }
+  });
+  </script>
+</body>
+</html>
