@@ -153,6 +153,7 @@
     <button class="close-btn" id="close-user-mgmt">Cerrar</button>
     <h2>Gestión de Usuarios</h2>
     <label>Nombre</label><input id="user-name" placeholder="Nombre">
+    <label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)">
     <label>Roles</label>
     <select id="user-role" multiple>
       <option value="Batería">Batería</option>
@@ -171,7 +172,7 @@
     <button id="add-user">Añadir Usuario</button>
     <button id="cancel-edit-user" style="display:none;">Cancelar Edición</button>
     <p id="user-message" class="error-message"></p>
-    <table id="user-table"><thead><tr><th>Nombre</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
+    <table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
   </div>
 
   <!-- Ensayos -->
@@ -225,7 +226,7 @@
     <!-- 5) Usuarios -->
     <section id="usuarios">
       <h2>Usuarios Registrados</h2>
-      <table><thead><tr><th>Nombre</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table>
+      <table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table>
     </section>
   </main>
 
@@ -403,7 +404,7 @@
     const main = document.getElementById("users-body");
     tbody.innerHTML = main.innerHTML = "";
     users.forEach((u, i) => {
-      if (!u || typeof u !== 'object' || !u.name || !Array.isArray(u.roles)) {
+      if (!u || typeof u !== 'object' || !u.name || !u.nickname || !Array.isArray(u.roles)) {
         console.warn(`Usuario inválido en la posición ${i}:`, u);
         return;
       }
@@ -411,6 +412,7 @@
       tbody.insertAdjacentHTML("beforeend",
         `<tr>
           <td>${u.name}</td>
+          <td>${u.nickname}</td>
           <td>${rolesDisplay}</td>
           <td>
             <button data-i="${i}" class="edit-user">Editar</button>
@@ -418,14 +420,21 @@
           </td>
         </tr>`);
       main.insertAdjacentHTML("beforeend",
-        `<tr><td>${u.name}</td><td>${rolesDisplay}</td></tr>`);
+        `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`);
     });
 
     tbody.querySelectorAll(".delete-user").forEach(btn =>
       btn.onclick = async () => {
+        const user = users[btn.dataset.i];
+        // Actualizar asistencias para eliminar al usuario
+        rehearsals.forEach(r => {
+          if (Array.isArray(r.attendance)) {
+            r.attendance = r.attendance.filter(a => a.name !== user.name);
+          }
+        });
         users.splice(btn.dataset.i, 1);
         await saveUsers();
-        renderRehearsals(); // Actualizar ensayos para reflejar cambios en usuarios
+        await saveRehearsals();
       });
 
     tbody.querySelectorAll(".edit-user").forEach(btn =>
@@ -433,6 +442,7 @@
         editingUserIndex = btn.dataset.i;
         const user = users[editingUserIndex];
         document.getElementById("user-name").value = user.name;
+        document.getElementById("user-nickname").value = user.nickname;
         const roleSelect = document.getElementById("user-role");
         Array.from(roleSelect.options).forEach(option => {
           option.selected = user.roles.includes(option.value);
@@ -447,7 +457,7 @@
     try {
       const data = await loadDoc("users", { users: [] });
       users = Array.isArray(data.users) ? data.users : [];
-      users = users.filter(u => u && typeof u === 'object' && u.name && Array.isArray(u.roles));
+      users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles));
       renderUsers();
     } catch (e) {
       console.error("Error al cargar usuarios:", e);
@@ -459,7 +469,7 @@
     try {
       await saveDoc("users", { users });
       renderUsers();
-      renderRehearsals(); // Actualizar ensayos para reflejar cambios en usuarios
+      renderRehearsals();
       return true;
     } catch (e) {
       console.error("Error al guardar usuarios:", e);
@@ -469,6 +479,7 @@
 
   function resetUserForm() {
     document.getElementById("user-name").value = "";
+    document.getElementById("user-nickname").value = "";
     const roleSelect = document.getElementById("user-role");
     Array.from(roleSelect.options).forEach(option => option.selected = false);
     const addButton = document.getElementById("add-user");
@@ -486,7 +497,6 @@
     const tbodyMain = document.getElementById("rehearsal-main-body");
     tbodyConfig.innerHTML = tbodyMain.innerHTML = "";
 
-    // Generar opciones para el combo de usuarios
     const userOptions = users.length > 0
       ? users.map(user => `<option value="${user.name}">${user.name}</option>`).join("")
       : `<option value="" disabled>No hay usuarios registrados</option>`;
@@ -494,10 +504,22 @@
     rehearsals.forEach((r, i) => {
       const formattedDate = formatDateWithDay(r.date);
 
-      // Resumen de asistencias
+      // Resumen de asistencias (usar apodo)
       const attendance = Array.isArray(r.attendance) ? r.attendance : [];
-      const attendingYes = attendance.filter(a => a.attending === "Sí").map(a => a.name).join(", ") || "Ninguno";
-      const attendingNo = attendance.filter(a => a.attending === "No").map(a => a.name).join(", ") || "Ninguno";
+      const attendingYes = attendance
+        .filter(a => a.attending === "Sí")
+        .map(a => {
+          const user = users.find(u => u.name === a.name);
+          return user ? user.nickname : a.name;
+        })
+        .join(", ") || "Ninguno";
+      const attendingNo = attendance
+        .filter(a => a.attending === "No")
+        .map(a => {
+          const user = users.find(u => u.name === a.name);
+          return user ? user.nickname : a.name;
+        })
+        .join(", ") || "Ninguno";
       const summary = `
         <div class="attendance-summary">
           <span class="attending-yes">Asisten: ${attendingYes}</span>
@@ -505,7 +527,6 @@
         </div>
       `;
 
-      // Tabla de configuración (pantalla de ensayos)
       tbodyConfig.insertAdjacentHTML("beforeend",
         `<tr>
           <td>${r.date}</td>
@@ -515,7 +536,6 @@
           <td><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td>
         </tr>`);
 
-      // Tabla principal (sección "Próximos Ensayos")
       tbodyMain.insertAdjacentHTML("beforeend",
         `<tr>
           <td>${formattedDate}</td>
@@ -546,14 +566,12 @@
         </tr>`);
     });
 
-    // Añadir eventos a los botones de eliminar (pantalla de configuración)
     tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
       btn.onclick = async () => {
         rehearsals.splice(btn.dataset.i, 1);
         await saveRehearsals();
       });
 
-    // Añadir eventos a los botones de confirmar asistencia (tabla principal)
     tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => {
       btn.onclick = async () => {
         const index = btn.dataset.i;
@@ -574,24 +592,23 @@
           : `¿No asistirás pues al ensayo del día ${formattedDate} a las ${rehearsal.time} en ${rehearsal.location}?`;
 
         if (!confirm(confirmMessage)) {
-          return; // El usuario canceló, no hacemos nada
+          return;
         }
 
-        // Actualizar o añadir la respuesta de asistencia
         if (!Array.isArray(rehearsal.attendance)) {
           rehearsal.attendance = [];
         }
         const existingResponse = rehearsal.attendance.find(a => a.name === name);
         if (existingResponse) {
-          existingResponse.attending = attending; // Actualizar respuesta existente
+          existingResponse.attending = attending;
         } else {
-          rehearsal.attendance.push({ name, attending }); // Añadir nueva respuesta
+          rehearsal.attendance.push({ name, attending });
         }
 
         try {
           await saveRehearsals();
-          userSelect.value = ""; // Resetear selección
-          responseSelect.value = ""; // Resetear selección
+          userSelect.value = "";
+          responseSelect.value = "";
         } catch (e) {
           alert("Error al guardar la asistencia: " + e.message);
         }
@@ -801,11 +818,17 @@
     const userMessage = document.getElementById("user-message");
     userMessage.textContent = "";
     const name = document.getElementById("user-name").value.trim();
+    const nickname = document.getElementById("user-nickname").value.trim();
     const roleSelect = document.getElementById("user-role");
     const roles = Array.from(roleSelect.selectedOptions).map(option => option.value);
     if (!name) {
       userMessage.className = "error-message";
       userMessage.textContent = "Introduce un nombre válido";
+      return;
+    }
+    if (!nickname) {
+      userMessage.className = "error-message";
+      userMessage.textContent = "Introduce un apodo válido";
       return;
     }
     if (roles.length === 0) {
@@ -815,11 +838,25 @@
     }
     try {
       if (editingUserIndex !== null) {
-        users[editingUserIndex] = { name, roles };
+        const oldName = users[editingUserIndex].name;
+        users[editingUserIndex] = { name, nickname, roles };
+        // Actualizar asistencias si el nombre cambió
+        if (oldName !== name) {
+          rehearsals.forEach(r => {
+            if (Array.isArray(r.attendance)) {
+              r.attendance.forEach(a => {
+                if (a.name === oldName) {
+                  a.name = name;
+                }
+              });
+            }
+          });
+          await saveRehearsals();
+        }
         userMessage.className = "success-message";
         userMessage.textContent = "Usuario actualizado correctamente";
       } else {
-        users.push({ name, roles });
+        users.push({ name, nickname, roles });
         userMessage.className = "success-message";
         userMessage.textContent = "Usuario añadido correctamente";
       }
