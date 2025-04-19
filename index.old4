@@ -83,10 +83,12 @@
     .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
     .calendar-btn:hover svg { fill: #09b; }
     /* Estilo para botones de acción en tablas */
-    .delete-user, .edit-user, .delete-rehearsal { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .delete-user, .edit-user, .delete-rehearsal, .clear-attendance { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
     .edit-user { background: #0cf; color: #000; }
+    .clear-attendance { background: #ff9800; } /* Color naranja para "Eliminar Asistentes" */
     .delete-user:hover, .delete-rehearsal:hover { background: #d00; }
     .edit-user:hover { background: #09b; }
+    .clear-attendance:hover { background: #e68900; }
     /* Botón de cancelar edición */
     #cancel-edit-user { background: #666; color: #fff; }
     #cancel-edit-user:hover { background: #555; }
@@ -533,7 +535,10 @@
           <td>${r.time}</td>
           <td>${r.location}</td>
           <td>${summary}</td>
-          <td><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td>
+          <td>
+            <button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button>
+            <button data-i="${i}" class="delete-rehearsal">Eliminar</button>
+          </td>
         </tr>`);
 
       tbodyMain.insertAdjacentHTML("beforeend",
@@ -566,12 +571,28 @@
         </tr>`);
     });
 
+    // Añadir eventos a los botones de eliminar (pantalla de configuración)
     tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
       btn.onclick = async () => {
-        rehearsals.splice(btn.dataset.i, 1);
-        await saveRehearsals();
+        if (confirm("¿Estás seguro de que deseas eliminar este ensayo? Esto también eliminará todas las asistencias asociadas.")) {
+          rehearsals.splice(btn.dataset.i, 1);
+          await saveRehearsals();
+        }
       });
 
+    // Añadir eventos a los botones de eliminar asistentes
+    tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn =>
+      btn.onclick = async () => {
+        const index = btn.dataset.i;
+        const rehearsal = rehearsals[index];
+        const formattedDate = formatDateWithDay(rehearsal.date);
+        if (confirm(`¿Estás seguro de que deseas eliminar todas las asistencias para el ensayo del día ${formattedDate} a las ${rehearsal.time} en ${rehearsal.location}? Los usuarios tendrán que volver a confirmar su asistencia.`)) {
+          rehearsal.attendance = [];
+          await saveRehearsals();
+        }
+      });
+
+    // Añadir eventos a los botones de confirmar asistencia (tabla principal)
     tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => {
       btn.onclick = async () => {
         const index = btn.dataset.i;
