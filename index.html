@@ -509,7 +509,7 @@
   /* --- Setlists screen */
   document.getElementById("menu-setlist-config").onclick = e => {
     e.preventDefault();
-    const password = prompt("Introduce la contraseña para acceder a la configuración:");
+    const password = prompt("¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
     if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
       closeAll();
       const s = document.getElementById("setlist-config-screen");
