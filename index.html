@@ -29,6 +29,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
+  <!-- Firebase 9 “compat” (sin ES‑modules) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
   <!-- ================= ESTILOS ================= -->
   <style>
     /* Reset y fuente base */
@@ -202,6 +206,18 @@
 
   <!-- ============ JAVASCRIPT PRINCIPAL ============ -->
   <script>
+  /* ---------- 0. Firebase ---------- */
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
+    authDomain: "sotanointranet.firebaseapp.com",
+    projectId: "sotanointranet",
+    storageBucket: "sotanointranet.firebasestorage.app", // Corregido
+    messagingSenderId: "756955233128",
+    appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
   /* ---------- 1. Utilidades ---------- */
   const parseDuration = str => {
     if (!str) return 0;
@@ -223,7 +239,28 @@
     return `${dayName} ${day} de ${monthName}`;
   };
 
-  /* ---------- 2. Configuración Setlists ---------- */
+  /* ---------- 2. Acceso Firestore ---------- */
+  async function loadDoc(id, fallback) {
+    try {
+      const snap = await db.collection("intranet").doc(id).get();
+      return snap.exists ? snap.data() : fallback;
+    } catch (e) {
+      console.error(`Error al cargar documento ${id}:`, e.message);
+      throw new Error(`No se pudo cargar el documento ${id}: ${e.message}`);
+    }
+  }
+
+  async function saveDoc(id, data) {
+    try {
+      await db.collection("intranet").doc(id).set(data);
+      return true;
+    } catch (e) {
+      console.error(`Error al guardar documento ${id}:`, e.message);
+      throw new Error(`No se pudo guardar el documento ${id}: ${e.message}`);
+    }
+  }
+
+  /* ---------- 3. Configuración Setlists ---------- */
   let setlistConfig = {
     setlist1: { name: "Setlist Ensayos -Año 2025-", url: "https://cold-limit-811a.jagomezc.workers.dev" },
     setlist2: { name: "Setlist Próximo Concierto", url: "https://www.bandhelper.com/feed/set_list/TXHvyb" }
@@ -234,18 +271,23 @@
     // El título del segundo setlist está fijo en el HTML como "Setlist Próximo Concierto"
   }
 
-  function loadSetlistConfig() {
-    // Por ahora, usamos los valores por defecto
-    updateTitles();
-    return Promise.resolve();
+  async function loadSetlistConfig() {
+    try {
+      const data = await loadDoc("setlists", { config: setlistConfig });
+      setlistConfig = data.config || setlistConfig;
+      updateTitles();
+    } catch (e) {
+      console.error("Error al cargar la configuración de setlists:", e);
+      throw e;
+    }
   }
 
-  function saveSetlistConfig() {
+  async function saveSetlistConfig() {
     updateTitles();
-    return Promise.resolve(true);
+    return await saveDoc("setlists", { config: setlistConfig });
   }
 
-  /* ---------- 3. Primer Setlist ---------- */
+  /* ---------- 4. Primer Setlist ---------- */
   async function cargarPrimerSetlist() {
     try {
       const songs = (await (await fetch(setlistConfig.setlist1.url)).json()).filter(i => i.type === "song");
@@ -268,7 +310,7 @@
     }
   }
 
-  /* ---------- 4. Segundo Setlist ---------- */
+  /* ---------- 5. Segundo Setlist ---------- */
   async function cargarSegundoSetlist() {
     try {
       const response = await fetch(setlistConfig.setlist2.url);
@@ -293,14 +335,14 @@
       return songs;
     } catch (e) {
       console.error("Error cargando segundo setlist:", e);
-      document.getElementWithTagName("second-body").innerHTML =
+      document.getElementById("second-body").innerHTML =
         '<tr><td colspan="5">No se pudo cargar el segundo setlist. Verifica la URL o la conexión.</td></tr>';
       document.getElementById("total-time-2").textContent = "";
       return [];
     }
   }
 
-  /* ---------- 5. Usuarios (almacenamiento en memoria) ---------- */
+  /* ---------- 6. Usuarios ---------- */
   let users = [];
 
   function renderUsers() {
@@ -316,25 +358,35 @@
         `<tr><td>${u.name}</td><td>${rolesDisplay}</td></tr>`);
     });
     tbody.querySelectorAll(".delete-user").forEach(btn =>
-      btn.onclick = () => {
+      btn.onclick = async () => {
         users.splice(btn.dataset.i, 1);
-        renderUsers();
+        await saveUsers();
       });
   }
 
-  function loadUsers() {
-    // Por ahora, usamos los datos en memoria
-    renderUsers();
-    return Promise.resolve();
+  async function loadUsers() {
+    try {
+      const data = await loadDoc("users", { users: [] });
+      users = data.users || [];
+      renderUsers();
+    } catch (e) {
+      console.error("Error al cargar usuarios:", e);
+      throw e;
+    }
   }
 
-  function saveUsers() {
-    // Por ahora, solo actualizamos la UI
-    renderUsers();
-    return Promise.resolve(true);
+  async function saveUsers() {
+    try {
+      await saveDoc("users", { users });
+      renderUsers();
+      return true;
+    } catch (e) {
+      console.error("Error al guardar usuarios:", e);
+      throw e;
+    }
   }
 
-  /* ---------- 6. Ensayos (almacenamiento en memoria) ---------- */
+  /* ---------- 7. Ensayos ---------- */
   let rehearsals = [];
 
   function renderRehearsals() {
@@ -355,25 +407,35 @@
         `<tr><td>${formattedDate}</td><td>${r.time}</td><td>${r.location}</td></tr>`);
     });
     tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
-      btn.onclick = () => {
+      btn.onclick = async () => {
         rehearsals.splice(btn.dataset.i, 1);
-        renderRehearsals();
+        await saveRehearsals();
       });
   }
 
-  function loadRehearsals() {
-    // Por ahora, usamos los datos en memoria
-    renderRehearsals();
-    return Promise.resolve();
+  async function loadRehearsals() {
+    try {
+      const data = await loadDoc("rehearsals", { rehearsals: [] });
+      rehearsals = data.rehearsals || [];
+      renderRehearsals();
+    } catch (e) {
+      console.error("Error al cargar ensayos:", e);
+      throw e;
+    }
   }
 
-  function saveRehearsals() {
-    // Por ahora, solo actualizamos la UI
-    renderRehearsals();
-    return Promise.resolve(true);
+  async function saveRehearsals() {
+    try {
+      await saveDoc("rehearsals", { rehearsals });
+      renderRehearsals();
+      return true;
+    } catch (e) {
+      console.error("Error al guardar ensayos:", e);
+      throw e;
+    }
   }
 
-  /* ---------- 7. PDF ---------- */
+  /* ---------- 8. PDF ---------- */
   async function genPDF(songs, title, fileName) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "pt", format: "A4" });
@@ -404,7 +466,7 @@
     doc.save(fileName);
   }
 
-  /* ---------- 8. Menú & pantallas ---------- */
+  /* ---------- 9. Menú & pantallas ---------- */
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
   function closeAll() {
     document.querySelectorAll(".config-screen").forEach(s => {
@@ -567,17 +629,17 @@
     }
   };
 
-  /* ---------- 9. Carga inicial ---------- */
+  /* ---------- 10. Carga inicial ---------- */
   document.addEventListener("DOMContentLoaded", async () => {
     try {
-      // Cargar configuraciones y datos (en memoria)
+      // Intentar cargar datos de Firestore
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
     } catch (e) {
-      console.error("Error al cargar datos iniciales:", e);
-      alert("Error al cargar los datos iniciales. Revisa la consola para más detalles.");
+      console.error("Error al cargar datos de Firestore:", e);
+      alert(`Error al cargar los datos de Firestore: ${e.message}. Revisa la consola para más detalles y asegúrate de que las reglas de Firestore permitan acceso y que el dominio esté autorizado.`);
     }
 
-    // Cargar setlists
+    // Cargar setlists independientemente de Firestore
     let songs1 = [], songs2 = [];
     try {
       songs1 = await cargarPrimerSetlist();
