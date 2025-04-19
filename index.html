@@ -83,18 +83,29 @@
     .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
     .calendar-btn:hover svg { fill: #09b; }
     /* Estilo para botones de acción en tablas */
-    .delete-user, .edit-user { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .delete-user, .edit-user, .delete-rehearsal { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
     .edit-user { background: #0cf; color: #000; }
-    .delete-user:hover { background: #d00; }
+    .delete-user:hover, .delete-rehearsal:hover { background: #d00; }
     .edit-user:hover { background: #09b; }
     /* Botón de cancelar edición */
     #cancel-edit-user { background: #666; color: #fff; }
     #cancel-edit-user:hover { background: #555; }
+    /* Estilo para el formulario de asistencia */
+    .attendance-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .attendance-form select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; }
+    .attendance-form button { padding: 5px 10px; background: #0cf; color: #000; border: none; border-radius: 4px; cursor: pointer; }
+    .attendance-form button:hover { background: #09b; }
+    .attendance-summary { margin-top: 10px; font-size: 0.9em; }
+    .attendance-summary span { display: block; }
+    .attending-yes { color: #0cf; }
+    .attending-no { color: #f00; }
     /* Responsive */
     @media(max-width:768px){
       .hamburger div{width:20px}
       .logo img.logo-main{width:150px} /* Reducir tamaño del logo en móviles */
       .logo-intranet{height:50px} /* Ajustar altura de logointranet.png en móviles */
+      .attendance-form { flex-direction: column; align-items: flex-start; }
+      .attendance-form select { width: 100%; }
     }
     /* Estilo para mensajes de error */
     .error-message { color: #f00; margin-top: 10px; text-align: center; }
@@ -172,7 +183,7 @@
     <label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1">
     <button id="add-rehearsal">Añadir Ensayo</button>
     <p id="rehearsal-message" class="error-message"></p>
-    <table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table>
+    <table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table>
   </div>
 
   <!-- ============ CONTENIDO PRINCIPAL ============ -->
@@ -189,7 +200,7 @@
     <section id="rehearsals">
       <h2>Próximos Ensayos</h2>
       <table id="rehearsal-main-table">
-        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th></th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Confirmar Asistencia</th></tr></thead>
         <tbody id="rehearsal-main-body"></tbody>
       </table>
     </section>
@@ -256,18 +267,11 @@
 
   // Generar archivo .ics para añadir al calendario
   function generateICS(title, date, time, location, description = "", durationHours = 1) {
-    // Combinar fecha y hora para crear un objeto Date
     const startDate = new Date(`${date}T${time}`);
-    const endDate = new Date(startDate.getTime() + durationHours * 60 * 60 * 1000); // Añadir duración (por defecto 1 hora)
-
-    // Formatear fechas en formato iCalendar (YYYYMMDDTHHMMSSZ)
-    const formatDate = d => {
-      return d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-    };
+    const endDate = new Date(startDate.getTime() + durationHours * 60 * 60 * 1000);
+    const formatDate = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
     const start = formatDate(startDate);
     const end = formatDate(endDate);
-
-    // Crear el contenido del archivo .ics
     const icsContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
@@ -280,8 +284,6 @@
       "END:VEVENT",
       "END:VCALENDAR"
     ].join("\r\n");
-
-    // Crear un enlace de descarga
     const blob = new Blob([icsContent], { type: "text/calendar" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -371,11 +373,9 @@
       if (!response.ok) throw new Error('Error en la respuesta de la API');
       const data = await response.json();
       const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : [];
-      
       const tbody = document.getElementById("second-body");
       tbody.innerHTML = "";
       let total = 0;
-      
       songs.forEach((s, i) => {
         const secs = parseDuration(s.duration || "0");
         total += secs;
@@ -383,7 +383,6 @@
           `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
         );
       });
-      
       document.getElementById("total-time-2").textContent = "Tiempo total del set: " + toHHMM(total);
       return songs;
     } catch (e) {
@@ -397,7 +396,7 @@
 
   /* ---------- 6. Usuarios ---------- */
   let users = [];
-  let editingUserIndex = null; // Para rastrear el índice del usuario que se está editando
+  let editingUserIndex = null;
 
   function renderUsers() {
     const tbody = document.getElementById("user-table-body");
@@ -422,14 +421,13 @@
         `<tr><td>${u.name}</td><td>${rolesDisplay}</td></tr>`);
     });
 
-    // Añadir eventos a los botones de eliminar
     tbody.querySelectorAll(".delete-user").forEach(btn =>
       btn.onclick = async () => {
         users.splice(btn.dataset.i, 1);
         await saveUsers();
+        renderRehearsals(); // Actualizar ensayos para reflejar cambios en usuarios
       });
 
-    // Añadir eventos a los botones de editar
     tbody.querySelectorAll(".edit-user").forEach(btn =>
       btn.onclick = () => {
         editingUserIndex = btn.dataset.i;
@@ -461,6 +459,7 @@
     try {
       await saveDoc("users", { users });
       renderUsers();
+      renderRehearsals(); // Actualizar ensayos para reflejar cambios en usuarios
       return true;
     } catch (e) {
       console.error("Error al guardar usuarios:", e);
@@ -486,17 +485,42 @@
     const tbodyConfig = document.getElementById("rehearsal-table-body");
     const tbodyMain = document.getElementById("rehearsal-main-body");
     tbodyConfig.innerHTML = tbodyMain.innerHTML = "";
+
+    // Generar opciones para el combo de usuarios
+    const userOptions = users.length > 0
+      ? users.map(user => `<option value="${user.name}">${user.name}</option>`).join("")
+      : `<option value="" disabled>No hay usuarios registrados</option>`;
+
     rehearsals.forEach((r, i) => {
       const formattedDate = formatDateWithDay(r.date);
+
+      // Resumen de asistencias
+      const attendance = Array.isArray(r.attendance) ? r.attendance : [];
+      const attendingYes = attendance.filter(a => a.attending === "Sí").map(a => a.name).join(", ") || "Ninguno";
+      const attendingNo = attendance.filter(a => a.attending === "No").map(a => a.name).join(", ") || "Ninguno";
+      const summary = `
+        <div class="attendance-summary">
+          <span class="attending-yes">Asisten: ${attendingYes}</span>
+          <span class="attending-no">No asisten: ${attendingNo}</span>
+        </div>
+      `;
+
+      // Tabla de configuración (pantalla de ensayos)
       tbodyConfig.insertAdjacentHTML("beforeend",
-        `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.location}</td>
-         <td><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
+        `<tr>
+          <td>${r.date}</td>
+          <td>${r.time}</td>
+          <td>${r.location}</td>
+          <td>${summary}</td>
+          <td><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td>
+        </tr>`);
+
+      // Tabla principal (sección "Próximos Ensayos")
       tbodyMain.insertAdjacentHTML("beforeend",
         `<tr>
           <td>${formattedDate}</td>
           <td>${r.time}</td>
-          <td>${r.location}</td>
-          <td>
+          <td>${r.location}
             <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.time}", "${r.location}", "Ensayo de la banda El Sótano del Doctor")'>
               <svg viewBox="0 0 24 24">
                 <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
@@ -504,13 +528,75 @@
               </svg>
             </button>
           </td>
+          <td>
+            <div class="attendance-form">
+              <select class="attendance-user" data-i="${i}">
+                <option value="" disabled selected>Selecciona tu nombre</option>
+                ${userOptions}
+              </select>
+              <select class="attendance-response" data-i="${i}">
+                <option value="" disabled selected>¿Asistirás?</option>
+                <option value="Sí">Sí</option>
+                <option value="No">No</option>
+              </select>
+              <button class="confirm-attendance" data-i="${i}">Confirmar</button>
+            </div>
+            ${summary}
+          </td>
         </tr>`);
     });
+
+    // Añadir eventos a los botones de eliminar (pantalla de configuración)
     tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
       btn.onclick = async () => {
         rehearsals.splice(btn.dataset.i, 1);
         await saveRehearsals();
       });
+
+    // Añadir eventos a los botones de confirmar asistencia (tabla principal)
+    tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => {
+      btn.onclick = async () => {
+        const index = btn.dataset.i;
+        const userSelect = document.querySelector(`.attendance-user[data-i="${index}"]`);
+        const responseSelect = document.querySelector(`.attendance-response[data-i="${index}"]`);
+        const name = userSelect.value;
+        const attending = responseSelect.value;
+
+        if (!name || !attending) {
+          alert("Por favor, selecciona tu nombre y una respuesta (Sí/No).");
+          return;
+        }
+
+        const rehearsal = rehearsals[index];
+        const formattedDate = formatDateWithDay(rehearsal.date);
+        const confirmMessage = attending === "Sí"
+          ? `¿Asistirás pues al ensayo del día ${formattedDate} a las ${rehearsal.time} en ${rehearsal.location}?`
+          : `¿No asistirás pues al ensayo del día ${formattedDate} a las ${rehearsal.time} en ${rehearsal.location}?`;
+
+        if (!confirm(confirmMessage)) {
+          return; // El usuario canceló, no hacemos nada
+        }
+
+        // Actualizar o añadir la respuesta de asistencia
+        if (!Array.isArray(rehearsal.attendance)) {
+          rehearsal.attendance = [];
+        }
+        const existingResponse = rehearsal.attendance.find(a => a.name === name);
+        if (existingResponse) {
+          existingResponse.attending = attending; // Actualizar respuesta existente
+        } else {
+          rehearsal.attendance.push({ name, attending }); // Añadir nueva respuesta
+        }
+
+        try {
+          await saveRehearsals();
+          userSelect.value = ""; // Resetear selección
+          responseSelect.value = ""; // Resetear selección
+        } catch (e) {
+          alert("Error al guardar la asistencia: " + e.message);
+        }
+      };
+    });
   }
 
   async function loadRehearsals() {
@@ -570,33 +656,26 @@
   function modifyBandHelperTable() {
     const table = document.querySelector("#bandhelper-concerts table");
     if (!table) {
-      setTimeout(modifyBandHelperTable, 500); // Reintentar si la tabla aún no está cargada
+      setTimeout(modifyBandHelperTable, 500);
       return;
     }
-
-    // Añadir botón de calendario a la celda de "Lugar" en cada fila
     const rows = table.querySelectorAll("tbody tr");
     rows.forEach(row => {
       const cells = row.querySelectorAll("td");
-      if (cells.length < 3) return; // Ignorar filas sin datos suficientes
-
-      const dateCell = cells[0].textContent.trim(); // Fecha (ej: "Sábado 25 de Mayo")
-      const timeCell = cells[1].textContent.trim(); // Hora (ej: "20:00")
-      const locationCell = cells[2]; // Celda de "Lugar"
-      const locationText = locationCell.textContent.trim() || "Lugar no especificado"; // Lugar
-
-      // Parsear fecha y hora
+      if (cells.length < 3) return;
+      const dateCell = cells[0].textContent.trim();
+      const timeCell = cells[1].textContent.trim();
+      const locationCell = cells[2];
+      const locationText = locationCell.textContent.trim() || "Lugar no especificado";
       const dateParts = dateCell.match(/(\d+)\s+de\s+(\w+)/i);
       if (!dateParts) return;
       const day = dateParts[1];
       const monthName = dateParts[2];
       const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
       const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase()) + 1;
-      const year = new Date().getFullYear(); // Asumir año actual
+      const year = new Date().getFullYear();
       const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      const time = timeCell || "20:00"; // Hora por defecto si no está especificada
-
-      // Añadir el botón de calendario dentro de la celda de "Lugar"
+      const time = timeCell || "20:00";
       locationCell.innerHTML = `
         ${locationText}
         <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Concierto El Sótano del Doctor", "${date}", "${time}", "${locationText}", "Concierto de la banda El Sótano del Doctor")'>
@@ -612,7 +691,7 @@
   /* ---------- 10. Menú & pantallas ---------- */
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
   const PASSWORD = "Sotano2014";
-  let isAuthenticated = false; // Estado de autenticación
+  let isAuthenticated = false;
 
   function closeAll() {
     document.querySelectorAll(".config-screen").forEach(s => {
@@ -624,12 +703,12 @@
           input.value = "";
         }
       });
-      const message = s.querySelector("#user-message, #rehavioural-message, #setlist-message");
+      const message = s.querySelector("#user-message, #rehearsal-message, #setlist-message");
       if (message) message.textContent = "";
     });
     sidebar.classList.remove("show");
     overlay.classList.remove("show");
-    resetUserForm(); // Resetear el formulario de usuarios al cerrar
+    resetUserForm();
   }
 
   document.getElementById("hamburger-btn").onclick = () => {
@@ -673,22 +752,18 @@
   document.getElementById("guardar-setlist-config").onclick = async () => {
     const setlistMessage = document.getElementById("setlist-message");
     setlistMessage.textContent = "";
-
     const n1 = document.getElementById("setlist1-name").value.trim(),
           u1 = document.getElementById("setlist1-url").value.trim(),
           n2 = document.getElementById("setlist2-name").value.trim(),
           raw = document.getElementById("setlist2-url").value.trim();
-    
     if (!n1 || !u1 || !n2 || !raw) {
       setlistMessage.className = "error-message";
       setlistMessage.textContent = "Completa todos los campos";
       return;
     }
-    
     try {
       setlistConfig.setlist1 = { name: n1, url: u1 };
       setlistConfig.setlist2 = { name: n2, url: raw.startsWith("http") ? raw : `https://www.bandhelper.com/feed/set_list/${raw}` };
-      
       await saveSetlistConfig();
       await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
       document.getElementById("setlist-config-screen").style.display = "none";
@@ -725,31 +800,25 @@
   document.getElementById("add-user").onclick = async () => {
     const userMessage = document.getElementById("user-message");
     userMessage.textContent = "";
-
     const name = document.getElementById("user-name").value.trim();
     const roleSelect = document.getElementById("user-role");
     const roles = Array.from(roleSelect.selectedOptions).map(option => option.value);
-
     if (!name) {
       userMessage.className = "error-message";
       userMessage.textContent = "Introduce un nombre válido";
       return;
     }
-
     if (roles.length === 0) {
       userMessage.className = "error-message";
       userMessage.textContent = "Selecciona al menos un rol";
       return;
     }
-
     try {
       if (editingUserIndex !== null) {
-        // Modo edición: actualizar usuario existente
         users[editingUserIndex] = { name, roles };
         userMessage.className = "success-message";
         userMessage.textContent = "Usuario actualizado correctamente";
       } else {
-        // Modo añadir: agregar nuevo usuario
         users.push({ name, roles });
         userMessage.className = "success-message";
         userMessage.textContent = "Usuario añadido correctamente";
@@ -791,19 +860,16 @@
   document.getElementById("add-rehearsal").onclick = async () => {
     const rehearsalMessage = document.getElementById("rehearsal-message");
     rehearsalMessage.textContent = "";
-
     const date = document.getElementById("rehearsal-date").value,
           time = document.getElementById("rehearsal-time").value,
           loc = document.getElementById("rehearsal-location").value.trim();
-    
     if (!date || !time || !loc) {
       rehearsalMessage.className = "error-message";
       rehearsalMessage.textContent = "Completa todos los campos";
       return;
     }
-
     try {
-      rehearsals.push({ date, time, location: loc });
+      rehearsals.push({ date, time, location: loc, attendance: [] });
       await saveRehearsals();
       document.getElementById("rehearsal-date").value = "";
       document.getElementById("rehearsal-time").value = "";
@@ -854,8 +920,7 @@
       }
     };
 
-    // Modificar la tabla de BandHelper después de que se cargue
-    setTimeout(modifyBandHelperTable, 1000); // Esperar a que el widget cargue
+    setTimeout(modifyBandHelperTable, 1000);
   });
   </script>
 </body>
