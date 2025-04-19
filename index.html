@@ -112,6 +112,12 @@
     }
     #connection-status.offline { background: #f00; }
     #connection-status.retrying { background: #ff9800; }
+    /* Estilo para mensajes de éxito/error */
+    .success-message { color: #0cf; margin-top: 10px; text-align: center; }
+    .error-message { color: #f00; margin-top: 10px; text-align: center; }
+    /* Estilo para la pantalla de estadísticas */
+    .stats-table { margin-bottom: 40px; }
+    .stats-table h3 { color: #0cf; margin: 20px 0 10px; text-align: center; }
     /* Responsive */
     @media(max-width:768px){
       .hamburger div{width:20px}
@@ -146,6 +152,7 @@
     <a href="#" id="menu-setlist-config">Configurar Setlists</a>
     <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
     <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
+    <a href="#" id="menu-stats">Estadísticas</a>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
 
@@ -215,6 +222,36 @@
       </thead>
       <tbody id="rehearsal-table-body"></tbody>
     </table>
+  </div>
+
+  <!-- Estadísticas -->
+  <div id="stats-screen" class="config-screen">
+    <button class="close-btn" id="close-stats">Cerrar</button>
+    <h2>Estadísticas</h2>
+    <div class="stats-table">
+      <h3>Tiempo Ensayado por Mes</h3>
+      <table id="time-per-month-table">
+        <thead>
+          <tr>
+            <th>Mes</th>
+            <th>Tiempo Total (horas)</th>
+          </tr>
+        </thead>
+        <tbody id="time-per-month-body"></tbody>
+      </table>
+    </div>
+    <div class="stats-table">
+      <h3>Tiempo Ensayado por Usuario</h3>
+      <table id="time-per-user-table">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Tiempo Total (horas)</th>
+          </tr>
+        </thead>
+        <tbody id="time-per-user-body"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- ============ CONTENIDO PRINCIPAL ============ -->
@@ -300,6 +337,7 @@
     const m = Math.floor((s % 3600) / 60);
     return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
   };
+  const toHours = s => (s / 3600).toFixed(2); // Convertir segundos a horas con 2 decimales
   const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
 
   // Calcular duración entre dos horas (en segundos)
@@ -323,6 +361,13 @@
     const day = date.getDate();
     const monthName = months[date.getMonth()];
     return `${dayName} ${day} de ${monthName}`;
+  };
+
+  // Obtener el nombre del mes y año para estadísticas
+  const getMonthYear = dateStr => {
+    const date = new Date(dateStr);
+    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    return `${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   // Generar archivo .ics para añadir al calendario
@@ -407,7 +452,7 @@
 
   async function saveDoc(id, data) {
     try {
-      await db.collection("intranet").doc(id). Ricci
+      await db.collection("intranet").doc(id).set(data);
       return true;
     } catch (e) {
       console.error(`Error al guardar documento ${id}:`, e.message);
@@ -524,15 +569,18 @@
     tbody.querySelectorAll(".delete-user").forEach(btn =>
       btn.onclick = async () => {
         const user = users[btn.dataset.i];
-        // Actualizar asistencias para eliminar al usuario
-        rehearsals.forEach(r => {
-          if (Array.isArray(r.attendance)) {
-            r.attendance = r.attendance.filter(a => a.name !== user.name);
-          }
-        });
-        users.splice(btn.dataset.i, 1);
-        await saveUsers();
-        await saveRehearsals();
+        if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${user.name}"? Esto también eliminará sus asistencias asociadas.`)) {
+          // Actualizar asistencias para eliminar al usuario
+          rehearsals.forEach(r => {
+            if (Array.isArray(r.attendance)) {
+              r.attendance = r.attendance.filter(a => a.name !== user.name);
+            }
+          });
+          users.splice(btn.dataset.i, 1);
+          await saveUsers();
+          await saveRehearsals();
+          renderStats(); // Actualizar estadísticas después de eliminar un usuario
+        }
       });
 
     tbody.querySelectorAll(".edit-user").forEach(btn =>
@@ -568,6 +616,7 @@
       await withRetry(() => saveDoc("users", { users }));
       renderUsers();
       renderRehearsals();
+      renderStats(); // Actualizar estadísticas después de guardar usuarios
       return true;
     } catch (e) {
       console.error("Error al guardar usuarios:", e);
@@ -599,6 +648,8 @@
     const userOptions = users.length > 0
       ? users.map(user => `<option value="${user.name}">${user.name}</option>`).join("")
       : `<option value="" disabled>No hay usuarios registrados</option>`;
+
+    const now = new Date(); // Fecha actual para filtrar ensayos futuros
 
     rehearsals.forEach((r, i) => {
       // Migrar datos antiguos: si existe `time`, convertir a `startTime` y `endTime`
@@ -637,7 +688,7 @@
         </div>
       `;
 
-      // Tabla de configuración
+      // Tabla de configuración (mostrar todos los ensayos)
       tbodyConfig.insertAdjacentHTML("beforeend",
         `<tr>
           <td>${r.date}</td>
@@ -652,39 +703,42 @@
           </td>
         </tr>`);
 
-      // Tabla principal
-      tbodyMain.insertAdjacentHTML("beforeend",
-        `<tr>
-          <td>
-            ${formattedDate}
-            <span class="rehearsal-duration">(${durationText})</span>
-          </td>
-          <td>${r.startTime} - ${r.endTime}</td>
-          <td>
-            ${r.location}
-            <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor", ${durationSeconds})'>
-              <svg viewBox="0 0 24 24">
-                <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
-                <rect x="4" y="6" width="16" height="12" rx="2"/>
-              </svg>
-            </button>
-          </td>
-          <td>
-            <div class="attendance-form">
-              <select class="attendance-user" data-i="${i}">
-                <option value="" disabled selected>Selecciona tu nombre</option>
-                ${userOptions}
-              </select>
-              <select class="attendance-response" data-i="${i}">
-                <option value="" disabled selected>¿Asistirás?</option>
-                <option value="Sí">Sí</option>
-                <option value="No">No</option>
-              </select>
-              <button class="confirm-attendance" data-i="${i}">Confirmar</button>
-            </div>
-            ${summary}
-          </td>
-        </tr>`);
+      // Tabla principal (solo ensayos futuros)
+      const rehearsalDate = new Date(r.date);
+      if (rehearsalDate >= now) { // Filtrar ensayos futuros
+        tbodyMain.insertAdjacentHTML("beforeend",
+          `<tr>
+            <td>
+              ${formattedDate}
+              <span class="rehearsal-duration">(${durationText})</span>
+            </td>
+            <td>${r.startTime} - ${r.endTime}</td>
+            <td>
+              ${r.location}
+              <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor", ${durationSeconds})'>
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
+                  <rect x="4" y="6" width="16" height="12" rx="2"/>
+                </svg>
+              </button>
+            </td>
+            <td>
+              <div class="attendance-form">
+                <select class="attendance-user" data-i="${i}">
+                  <option value="" disabled selected>Selecciona tu nombre</option>
+                  ${userOptions}
+                </select>
+                <select class="attendance-response" data-i="${i}">
+                  <option value="" disabled selected>¿Asistirás?</option>
+                  <option value="Sí">Sí</option>
+                  <option value="No">No</option>
+                </select>
+                <button class="confirm-attendance" data-i="${i}">Confirmar</button>
+              </div>
+              ${summary}
+            </td>
+          </tr>`);
+      }
     });
 
     // Añadir eventos a los botones de editar (pantalla de configuración)
@@ -707,6 +761,7 @@
         if (confirm("¿Estás seguro de que deseas eliminar este ensayo? Esto también eliminará todas las asistencias asociadas.")) {
           rehearsals.splice(btn.dataset.i, 1);
           await saveRehearsals();
+          renderStats(); // Actualizar estadísticas después de eliminar un ensayo
         }
       });
 
@@ -719,6 +774,10 @@
         if (confirm(`¿Estás seguro de que deseas eliminar todas las asistencias para el ensayo del día ${formattedDate} a las ${rehearsal.startTime} en ${rehearsal.location}? Los usuarios tendrán que volver a confirmar su asistencia.`)) {
           rehearsal.attendance = [];
           await saveRehearsals();
+          const rehearsalMessage = document.getElementById("rehearsal-message");
+          rehearsalMessage.className = "success-message";
+          rehearsalMessage.textContent = "Asistencias eliminadas correctamente";
+          renderStats(); // Actualizar estadísticas después de eliminar asistencias
         }
       });
 
@@ -760,6 +819,7 @@
           await saveRehearsals();
           userSelect.value = "";
           responseSelect.value = "";
+          renderStats(); // Actualizar estadísticas después de confirmar asistencia
         } catch (e) {
           alert("Error al guardar la asistencia: " + e.message);
         }
@@ -782,6 +842,7 @@
     try {
       await withRetry(() => saveDoc("rehearsals", { rehearsals }));
       renderRehearsals();
+      renderStats(); // Actualizar estadísticas después de guardar ensayos
       return true;
     } catch (e) {
       console.error("Error al guardar ensayos:", e);
@@ -800,7 +861,52 @@
     editingRehearsalIndex = null;
   }
 
-  /* ---------- 8. PDF ---------- */
+  /* ---------- 8. Estadísticas ---------- */
+  function renderStats() {
+    const now = new Date();
+
+    // Filtrar ensayos pasados (para estadísticas, solo consideramos ensayos que ya ocurrieron)
+    const pastRehearsals = rehearsals.filter(r => new Date(r.date) < now);
+
+    // Tiempo ensayado por mes
+    const timePerMonth = {};
+    pastRehearsals.forEach(r => {
+      const monthYear = getMonthYear(r.date);
+      const duration = calculateDuration(r.startTime, r.endTime);
+      timePerMonth[monthYear] = (timePerMonth[monthYear] || 0) + duration;
+    });
+
+    const tbodyMonth = document.getElementById("time-per-month-body");
+    tbodyMonth.innerHTML = "";
+    Object.keys(timePerMonth).sort().forEach(month => {
+      const hours = toHours(timePerMonth[month]);
+      tbodyMonth.insertAdjacentHTML("beforeend",
+        `<tr><td>${month}</td><td>${hours}</td></tr>`);
+    });
+
+    // Tiempo ensayado por usuario
+    const timePerUser = {};
+    users.forEach(user => {
+      timePerUser[user.name] = 0;
+      pastRehearsals.forEach(r => {
+        const attendance = r.attendance?.find(a => a.name === user.name);
+        if (attendance && attendance.attending === "Sí") {
+          const duration = calculateDuration(r.startTime, r.endTime);
+          timePerUser[user.name] += duration;
+        }
+      });
+    });
+
+    const tbodyUser = document.getElementById("time-per-user-body");
+    tbodyUser.innerHTML = "";
+    Object.keys(timePerUser).sort().forEach(user => {
+      const hours = toHours(timePerUser[user]);
+      tbodyUser.insertAdjacentHTML("beforeend",
+        `<tr><td>${user}</td><td>${hours}</td></tr>`);
+    });
+  }
+
+  /* ---------- 9. PDF ---------- */
   async function genPDF(songs, title, fileName) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "pt", format: "A4" });
@@ -831,7 +937,7 @@
     doc.save(fileName);
   }
 
-  /* ---------- 9. Modificar tabla de BandHelper (Próximos Conciertos) ---------- */
+  /* ---------- 10. Modificar tabla de BandHelper (Próximos Conciertos) ---------- */
   function modifyBandHelperTable() {
     const table = document.querySelector("#bandhelper-concerts table");
     if (!table) {
@@ -867,7 +973,7 @@
     });
   }
 
-  /* ---------- 10. Menú & pantallas ---------- */
+  /* ---------- 11. Menú & pantallas ---------- */
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
   const PASSWORD = "Sotano2014";
   let isAuthenticated = false;
@@ -1111,7 +1217,28 @@
     document.getElementById("rehearsal-message").textContent = "";
   };
 
-  /* ---------- 11. Carga inicial ---------- */
+  /* --- Estadísticas screen */
+  document.getElementById("menu-stats").onclick = e => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+        isAuthenticated = true;
+      } else {
+        alert("Contraseña incorrecta. Acceso denegado.");
+        return;
+      }
+    }
+    closeAll();
+    document.getElementById("stats-screen").style.display = "block";
+    renderStats();
+  };
+
+  document.getElementById("close-stats").onclick = () => {
+    document.getElementById("stats-screen").style.display = "none";
+  };
+
+  /* ---------- 12. Carga inicial ---------- */
   document.addEventListener("DOMContentLoaded", async () => {
     updateConnectionStatus(); // Verificar estado de conexión al cargar
 
