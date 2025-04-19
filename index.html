@@ -211,7 +211,7 @@
     apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
     authDomain: "sotanointranet.firebaseapp.com",
     projectId: "sotanointranet",
-    storageBucket: "sotanointranet.firebasestorage.app", // Corregido
+    storageBucket: "sotanointranet.firebasestorage.app",
     messagingSenderId: "756955233128",
     appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
   };
@@ -350,6 +350,11 @@
     const main = document.getElementById("users-body");
     tbody.innerHTML = main.innerHTML = "";
     users.forEach((u, i) => {
+      // Validar que u sea un objeto válido y que roles sea un array
+      if (!u || typeof u !== 'object' || !u.name || !Array.isArray(u.roles)) {
+        console.warn(`Usuario inválido en la posición ${i}:`, u);
+        return; // Saltar este usuario
+      }
       const rolesDisplay = u.roles.join(", ");
       tbody.insertAdjacentHTML("beforeend",
         `<tr><td>${u.name}</td><td>${rolesDisplay}</td>
@@ -367,7 +372,10 @@
   async function loadUsers() {
     try {
       const data = await loadDoc("users", { users: [] });
-      users = data.users || [];
+      // Validar que data.users sea un array, si no, usar un array vacío
+      users = Array.isArray(data.users) ? data.users : [];
+      // Filtrar usuarios inválidos
+      users = users.filter(u => u && typeof u === 'object' && u.name && Array.isArray(u.roles));
       renderUsers();
     } catch (e) {
       console.error("Error al cargar usuarios:", e);
@@ -416,7 +424,7 @@
   async function loadRehearsals() {
     try {
       const data = await loadDoc("rehearsals", { rehearsals: [] });
-      rehearsals = data.rehearsals || [];
+      rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : [];
       renderRehearsals();
     } catch (e) {
       console.error("Error al cargar ensayos:", e);
