@@ -561,7 +561,7 @@
   /* --- Usuarios screen */
   document.getElementById("menu-user-mgmt").onclick = e => {
     e.preventDefault();
-    const password = prompt("Introduce la contraseña para acceder a la configuración:");
+    const password = prompt("¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
     if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
       closeAll();
       document.getElementById("user-mgmt-screen").style.display = "block";
@@ -611,7 +611,7 @@
   /* --- Ensayos screen */
   document.getElementById("menu-rehearsal").onclick = e => {
     e.preventDefault();
-    const password = prompt("Introduce la contraseña para acceder a la configuración:");
+    const password = prompt("¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
     if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
       closeAll();
       document.getElementById("rehearsal-screen").style.display = "block";
