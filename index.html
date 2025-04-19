@@ -77,14 +77,25 @@
       width: 100%;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en dispositivos móviles */
+      display: flex;
+      justify-content: center; /* Centrar la tabla horizontalmente */
     }
-    table{width:100%;border-collapse:collapse;margin-top:20px;color:#fff;font-size:.95em}
+    table {
+      width: 100%;
+      max-width: 100%; /* Asegurar que la tabla no exceda el contenedor */
+      border-collapse: collapse;
+      margin-top: 20px;
+      color: #fff;
+      font-size: .95em;
+      margin-left: auto;
+      margin-right: auto; /* Centrar la tabla */
+    }
     thead{background:#222;color:#0cf}
-    th,td{padding:12px;border:1px solid #333;text-align:left;white-space: nowrap} /* Evita el salto de línea en celdas */
+    th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;} /* Permitir que el texto se ajuste */
     tr:nth-child(even){background:#1a1a1a}
     /* Ajuste específico para la tabla del segundo setlist */
     #second-setlist .table-wrapper table {
-      min-width: 600px; /* Ancho mínimo para asegurar que las columnas no se compriman demasiado */
+      min-width: 600px; /* Ancho mínimo para pantallas grandes */
     }
     .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
@@ -145,6 +156,29 @@
       /* Ajustar botones de acción en pantallas pequeñas */
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
       #connection-status { top: 70px; right: 5px; font-size: 0.8em; }
+      /* Ajustar tablas para móviles */
+      .table-wrapper {
+        overflow-x: hidden; /* Eliminar desplazamiento horizontal */
+      }
+      table {
+        width: 100%;
+        min-width: unset; /* Eliminar ancho mínimo en móviles */
+        font-size: 0.85em; /* Reducir tamaño de fuente */
+      }
+      th, td {
+        padding: 8px; /* Reducir padding para ahorrar espacio */
+        white-space: normal; /* Permitir que el texto se ajuste */
+        word-wrap: break-word; /* Asegurar que el texto largo se divida */
+        max-width: 150px; /* Limitar el ancho máximo de las celdas */
+      }
+      /* Ajuste específico para la tabla del segundo setlist */
+      #second-setlist .table-wrapper table {
+        min-width: unset; /* Eliminar el ancho mínimo en móviles */
+      }
+      /* Ajustar tablas de estadísticas */
+      .stats-table table {
+        font-size: 0.85em;
+      }
     }
   </style>
 </head>
@@ -189,7 +223,7 @@
     <label>ID/URL feed</label><input id="setlist1-url" placeholder="URL">
     <h3>Segundo Setlist</h3>
     <label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad">
-    <label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvyb o URL completa">
+    <label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa">
     <button id="guardar-setlist-config">Guardar Configuración</button>
     <p id="setlist-message" class="error-message"></p>
   </div>
