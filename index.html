@@ -35,16 +35,39 @@
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
     html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
-    /* Cabecera */
-    header{background:#111;padding:20px 20px;display:flex;align-items:center;justify-content:space-between;position:relative}
+    /* Cabecera fija */
+    header {
+      background: #111;
+      padding: 20px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: fixed; /* Cambiar a fixed para que se quede en la parte superior */
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 10000;
+    }
     .logo img.logo-main{width:180px;height:auto} /* Logo principal */
     .logo-intranet{position:absolute;left:50%;transform:translateX(-50%);height:60px;width:auto} /* Centrar logointranet.png */
     /* Hamburguesa */
     .hamburger{cursor:pointer;border:1px solid #0cf;border-radius:4px;padding:5px}
     .hamburger div{width:25px;height:3px;background:#0cf;margin:4px 0}
     /* Sidebar */
-    .sidebar{position:fixed;top:0;left:0;width:250px;height:100%;background:#111;border-right:1px solid #222;
-             padding:20px;box-shadow:2px 0 10px rgba(0,255,255,.1);transform:translateX(-250px);transition:.3s;z-index:9999}
+    .sidebar {
+      position: fixed;
+      top: 80px; /* Ajustar para que comience debajo de la cabecera */
+      left: 0;
+      width: 250px;
+      height: calc(100% - 80px); /* Ajustar la altura */
+      background: #111;
+      border-right: 1px solid #222;
+      padding: 20px;
+      box-shadow: 2px 0 10px rgba(0,255,255,.1);
+      transform: translateX(-250px);
+      transition: .3s;
+      z-index: 9999;
+    }
     .sidebar.show{transform:translateX(0)}
     .sidebar h2{color:#0cf;margin:0}
     .sidebar a{display:block;color:#fff;text-decoration:none;margin:10px 0;padding:5px 0;border-bottom:1px solid #222}
@@ -55,21 +78,34 @@
     #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9998;display:none}
     #overlay.show{display:block}
     /* Pantallas modales */
-    .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
-                   overflow-y:auto;padding:80px 20px 20px}
+    .config-screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 9999;
+      overflow-y: auto;
+      padding: 100px 20px 20px; /* Ajustar el padding superior */
+    }
     .config-screen h2{color:#0cf;text-align:center;margin:20px 0}
     .config-screen h3{color:#0cf;margin:20px 0 10px}
     .config-screen label{display:block;margin:10px 0 5px}
-    .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
-                                              border:1px solid #333;border-radius:5px}
+    .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;border:1px solid #333;border-radius:5px}
     .config-screen select[multiple] { height: 150px; }
     .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .config-screen button:hover{background:#09b}
-    .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;
-                              color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
+    .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
     .config-screen .close-btn:hover{background:#333}
     /* Secciones */
-    main section{max-width:1200px;margin:0 auto;padding:20px}
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      padding-top: 100px; /* Ajustar para que no quede oculto detrás de la cabecera */
+    }
     #setlists,#rehearsals,#second-setlist,#calendario,#usuarios{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
     #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px}
     table{width:100%;border-collapse:collapse;margin-top:20px;color:#fff;font-size:.95em}
@@ -109,8 +145,16 @@
     .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; }
     /* Estilo para mensaje de conexión */
     #connection-status {
-      position: fixed; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.8); color: #fff;
-      padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none;
+      position: fixed;
+      top: 90px; /* Ajustar para que esté debajo de la cabecera */
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 0.9em;
+      z-index: 10000;
+      display: none;
     }
     #connection-status.offline { background: #f00; }
     #connection-status.retrying { background: #ff9800; }
@@ -129,11 +173,25 @@
       .hamburger div{width:20px}
       .logo img.logo-main{width:150px} /* Reducir tamaño del logo en móviles */
       .logo-intranet{height:50px} /* Ajustar altura de logointranet.png en móviles */
+      main {
+        padding-top: 80px; /* Ajustar padding en móviles */
+      }
+      .sidebar {
+        top: 70px; /* Ajustar sidebar en móviles */
+        height: calc(100% - 70px);
+      }
+      .config-screen {
+        padding-top: 80px; /* Ajustar pantallas de configuración en móviles */
+      }
+      #connection-status {
+        top: 70px; /* Ajustar indicador de conexión en móviles */
+        right: 5px;
+        font-size: 0.8em;
+      }
       .attendance-form { flex-direction: column; align-items: flex-start; }
       .attendance-form select { width: 100%; }
       /* Ajustar botones de acción en pantallas pequeñas */
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
-      #connection-status { top: 70px; right: 5px; font-size: 0.8em; }
     }
   </style>
 </head>
