@@ -170,7 +170,6 @@
     <!-- 1) Primer setlist -->
     <section id="setlists">
       <h2 id="setlist1-title">Setlist Ensayos -Año 2025-</h2>
-      <p style="text-align:center;color:#aaa">¡Doctor Dice:</p>
       <table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table>
       <button class="download-btn" id="download-btn">Descargar PDF</button>
       <p id="total-time"></p>
@@ -179,7 +178,6 @@
     <!-- 2) Ensayos -->
     <section id="rehearsals">
       <h2>Próximos Ensayos</h2>
-      <p style="text-align:center;color:#aaa">¡Doctor Dice:</p>
       <table id="rehearsal-main-table">
         <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th></th></tr></thead>
         <tbody id="rehearsal-main-body"></tbody>
@@ -190,7 +188,6 @@
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-name"></p>
-      <p style="text-align:center;color:#aaa">¡Doctor Dice:</p>
       <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
@@ -199,7 +196,6 @@
     <!-- 4) Calendario -->
     <section id="calendario">
       <h2>Próximos Conciertos</h2>
-      <p style="text-align:center;color:#aaa">¡Doctor Dice:</p>
       <div id="bandhelper-concerts">
         <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
       </div>
@@ -208,7 +204,6 @@
     <!-- 5) Usuarios -->
     <section id="usuarios">
       <h2>Usuarios Registrados</h2>
-      <p style="text-align:center;color:#aaa">¡Doctor Dice:</p>
       <table><thead><tr><th>Nombre</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table>
     </section>
   </main>
@@ -612,7 +607,7 @@
   /* --- Setlists screen */
   document.getElementById("menu-setlist-config").onclick = e => {
     e.preventDefault();
-    const password = prompt("¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+    const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
     if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
       closeAll();
       const s = document.getElementById("setlist-config-screen");
@@ -664,7 +659,7 @@
   /* --- Usuarios screen */
   document.getElementById("menu-user-mgmt").onclick = e => {
     e.preventDefault();
-    const password = prompt("¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+    const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
     if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
       closeAll();
       document.getElementById("user-mgmt-screen").style.display = "block";
@@ -714,7 +709,7 @@
   /* --- Ensayos screen */
   document.getElementById("menu-rehearsal").onclick = e => {
     e.preventDefault();
-    const password = prompt("¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+    const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
     if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
       closeAll();
       document.getElementById("rehearsal-screen").style.display = "block";
