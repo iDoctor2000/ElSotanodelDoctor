@@ -721,7 +721,8 @@
       ? users.map(user => `<option value="${user.name}">${user.name}</option>`).join("")
       : `<option value="" disabled>No hay usuarios registrados</option>`;
 
-    const now = new Date(); // Fecha actual para filtrar ensayos futuros
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Truncar a solo fecha (sin hora)
 
     rehearsals.forEach((r, i) => {
       // Migrar datos antiguos: si existe `time`, convertir a `startTime` y `endTime`
@@ -775,9 +776,10 @@
           </td>
         </tr>`);
 
-      // Tabla principal (solo ensayos futuros)
+      // Tabla principal (solo ensayos del día actual o futuros)
       const rehearsalDate = new Date(r.date);
-      if (rehearsalDate >= now) { // Filtrar ensayos futuros
+      const rehearsalDay = new Date(rehearsalDate.getFullYear(), rehearsalDate.getMonth(), rehearsalDate.getDate()); // Truncar a solo fecha
+      if (rehearsalDay >= today) { // Incluir ensayos del día actual o futuros
         tbodyMain.insertAdjacentHTML("beforeend",
           `<tr>
             <td>
