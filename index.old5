@@ -72,9 +72,31 @@
     main section{max-width:1200px;margin:0 auto;padding:20px}
     #setlists,#rehearsals,#second-setlist,#calendario,#usuarios{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
     #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px}
-    table{width:100%;border-collapse:collapse;margin-top:20px;color:#fff;font-size:.95em}
-    thead{background:#222;color:#0cf}th,td{padding:12px;border:1px solid #333;text-align:left}
+    /* Ajuste para tablas: envolvente para permitir desplazamiento horizontal */
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en dispositivos móviles */
+      display: flex;
+      justify-content: center; /* Centrar la tabla horizontalmente */
+    }
+    table {
+      width: 100%;
+      max-width: 100%; /* Asegurar que la tabla no exceda el contenedor */
+      border-collapse: collapse;
+      margin-top: 20px;
+      color: #fff;
+      font-size: .95em;
+      margin-left: auto;
+      margin-right: auto; /* Centrar la tabla */
+    }
+    thead{background:#222;color:#0cf}
+    th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;} /* Permitir que el texto se ajuste */
     tr:nth-child(even){background:#1a1a1a}
+    /* Ajuste específico para la tabla del segundo setlist */
+    #second-setlist .table-wrapper table {
+      min-width: 600px; /* Ancho mínimo para pantallas grandes */
+    }
     .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
     #total-time,#total-time-2{color:#0cf;margin-top:10px;text-align:center}
@@ -134,6 +156,29 @@
       /* Ajustar botones de acción en pantallas pequeñas */
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
       #connection-status { top: 70px; right: 5px; font-size: 0.8em; }
+      /* Ajustar tablas para móviles */
+      .table-wrapper {
+        overflow-x: hidden; /* Eliminar desplazamiento horizontal */
+      }
+      table {
+        width: 100%;
+        min-width: unset; /* Eliminar ancho mínimo en móviles */
+        font-size: 0.85em; /* Reducir tamaño de fuente */
+      }
+      th, td {
+        padding: 8px; /* Reducir padding para ahorrar espacio */
+        white-space: normal; /* Permitir que el texto se ajuste */
+        word-wrap: break-word; /* Asegurar que el texto largo se divida */
+        max-width: 150px; /* Limitar el ancho máximo de las celdas */
+      }
+      /* Ajuste específico para la tabla del segundo setlist */
+      #second-setlist .table-wrapper table {
+        min-width: unset; /* Eliminar el ancho mínimo en móviles */
+      }
+      /* Ajustar tablas de estadísticas */
+      .stats-table table {
+        font-size: 0.85em;
+      }
     }
   </style>
 </head>
@@ -178,7 +223,7 @@
     <label>ID/URL feed</label><input id="setlist1-url" placeholder="URL">
     <h3>Segundo Setlist</h3>
     <label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad">
-    <label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvyb o URL completa">
+    <label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa">
     <button id="guardar-setlist-config">Guardar Configuración</button>
     <p id="setlist-message" class="error-message"></p>
   </div>
@@ -278,7 +323,9 @@
     <!-- 1) Primer setlist -->
     <section id="setlists">
       <h2 id="setlist1-title">Setlist Ensayos -Año 2025-</h2>
-      <table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table>
+      <div class="table-wrapper">
+        <table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table>
+      </div>
       <button class="download-btn" id="download-btn">Descargar PDF</button>
       <p id="total-time"></p>
     </section>
@@ -286,24 +333,28 @@
     <!-- 2) Ensayos -->
     <section id="rehearsals">
       <h2>Próximos Ensayos</h2>
-      <table id="rehearsal-main-table">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Lugar</th>
-            <th>Confirmar Asistencia</th>
-          </tr>
-        </thead>
-        <tbody id="rehearsal-main-body"></tbody>
-      </table>
+      <div class="table-wrapper">
+        <table id="rehearsal-main-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Lugar</th>
+              <th>Confirmar Asistencia</th>
+            </tr>
+          </thead>
+          <tbody id="rehearsal-main-body"></tbody>
+        </table>
+      </div>
     </section>
 
     <!-- 3) Segundo setlist -->
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-name"></p>
-      <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
+      <div class="table-wrapper">
+        <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
+      </div>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
     </section>
@@ -319,7 +370,9 @@
     <!-- 5) Usuarios -->
     <section id="usuarios">
       <h2>Usuarios Registrados</h2>
-      <table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table>
+      <div class="table-wrapper">
+        <table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table>
+      </div>
     </section>
   </main>
 
@@ -744,7 +797,7 @@
             <td>
               <div class="attendance-form">
                 <select class="attendance-user" data-i="${i}">
-                  <option value="" disabled selected>Nombre</option>
+                  <option value="" disabled selected>¿Nombre?</option>
                   ${userOptions}
                 </select>
                 <select class="attendance-response" data-i="${i}">
