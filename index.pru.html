@@ -522,10 +522,15 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    firebase.firestore().enablePersistence()
-      .catch(err => {
-        console.warn("No se pudo habilitar la persistencia de Firestore:", err);
-      });
+    // Habilitar persistencia offline solo si el entorno lo permite
+    if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+      firebase.firestore().enablePersistence()
+        .catch(err => {
+          console.warn("No se pudo habilitar la persistencia de Firestore:", err);
+        });
+    } else {
+      console.warn("Persistencia offline no habilitada: la página debe ejecutarse en un servidor (http:// o https://).");
+    }
 
     /* ---------- 1. Utilidades ---------- */
     const parseDuration = str => {
@@ -643,7 +648,7 @@
         return snap.exists ? snap.data() : fallback;
       } catch (e) {
         console.error(`Error al cargar documento ${id}:`, e.message);
-        throw new Error(`No se pudo cargar el documento ${id}: ${e.message}`);
+        return fallback;
       }
     }
 
@@ -653,7 +658,7 @@
         return true;
       } catch (e) {
         console.error(`Error al guardar documento ${id}:`, e.message);
-        throw new Error(`No se pudo guardar el documento ${id}: ${e.message}`);
+        return false;
       }
     }
 
@@ -664,8 +669,12 @@
     };
 
     function updateTitles() {
-      document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
-      document.getElementById("second-setlist-name").textContent = setlistConfig.setlist2.name;
+      try {
+        document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
+        document.getElementById("second-setlist-name").textContent = setlistConfig.setlist2.name;
+      } catch (e) {
+        console.error("Error al actualizar títulos de setlists:", e);
+      }
     }
 
     async function loadSetlistConfig() {
@@ -675,12 +684,21 @@
         updateTitles();
       } catch (e) {
         console.error("Error al cargar la configuración de setlists:", e);
+        updateTitles();
       }
     }
 
     async function saveSetlistConfig() {
-      updateTitles();
-      return await withRetry(() => saveDoc("setlists", { config: setlistConfig }));
+      try {
+        const success = await withRetry(() => saveDoc("setlists", { config: setlistConfig }));
+        if (success) {
+          updateTitles();
+        }
+        return success;
+      } catch (e) {
+        console.error("Error al guardar configuración de setlists:", e);
+        return false;
+      }
     }
 
     /* ---------- 4. Primer Setlist ---------- */
@@ -739,60 +757,64 @@
     let editingUserIndex = null;
 
     function renderUsers() {
-      const tbody = document.getElementById("user-table-body");
-      const main = document.getElementById("users-body");
-      tbody.innerHTML = main.innerHTML = "";
-      users.forEach((u, i) => {
-        if (!u || typeof u !== 'object' || !u.name || !u.nickname || !Array.isArray(u.roles)) {
-          console.warn(`Usuario inválido en la posición ${i}:`, u);
-          return;
-        }
-        const rolesDisplay = u.roles.join(", ");
-        tbody.insertAdjacentHTML("beforeend",
-          `<tr>
-            <td>${u.name}</td>
-            <td>${u.nickname}</td>
-            <td>${rolesDisplay}</td>
-            <td>
-              <button data-i="${i}" class="edit-user">Editar</button>
-              <button data-i="${i}" class="delete-user">Eliminar</button>
-            </td>
-          </tr>`);
-        main.insertAdjacentHTML("beforeend",
-          `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`);
-      });
-
-      tbody.querySelectorAll(".delete-user").forEach(btn =>
-        btn.onclick = async () => {
-          const user = users[btn.dataset.i];
-          if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${user.name}"? Esto también eliminará sus asistencias asociadas.`)) {
-            rehearsals.forEach(r => {
-              if (Array.isArray(r.attendance)) {
-                r.attendance = r.attendance.filter(a => a.name !== user.name);
-              }
-            });
-            users.splice(btn.dataset.i, 1);
-            await saveUsers();
-            await saveRehearsals();
-            renderStats();
-            renderTimeline();
+      try {
+        const tbody = document.getElementById("user-table-body");
+        const main = document.getElementById("users-body");
+        tbody.innerHTML = main.innerHTML = "";
+        users.forEach((u, i) => {
+          if (!u || typeof u !== 'object' || !u.name || !u.nickname || !Array.isArray(u.roles)) {
+            console.warn(`Usuario inválido en la posición ${i}:`, u);
+            return;
           }
+          const rolesDisplay = u.roles.join(", ");
+          tbody.insertAdjacentHTML("beforeend",
+            `<tr>
+              <td>${u.name}</td>
+              <td>${u.nickname}</td>
+              <td>${rolesDisplay}</td>
+              <td>
+                <button data-i="${i}" class="edit-user">Editar</button>
+                <button data-i="${i}" class="delete-user">Eliminar</button>
+              </td>
+            </tr>`);
+          main.insertAdjacentHTML("beforeend",
+            `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`);
         });
 
-      tbody.querySelectorAll(".edit-user").forEach(btn =>
-        btn.onclick = () => {
-          editingUserIndex = btn.dataset.i;
-          const user = users[editingUserIndex];
-          document.getElementById("user-name").value = user.name;
-          document.getElementById("user-nickname").value = user.nickname;
-          const roleSelect = document.getElementById("user-role");
-          Array.from(roleSelect.options).forEach(option => {
-            option.selected = user.roles.includes(option.value);
+        tbody.querySelectorAll(".delete-user").forEach(btn =>
+          btn.onclick = async () => {
+            const user = users[btn.dataset.i];
+            if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${user.name}"? Esto también eliminará sus asistencias asociadas.`)) {
+              rehearsals.forEach(r => {
+                if (Array.isArray(r.attendance)) {
+                  r.attendance = r.attendance.filter(a => a.name !== user.name);
+                }
+              });
+              users.splice(btn.dataset.i, 1);
+              await saveUsers();
+              await saveRehearsals();
+              renderStats();
+              renderTimeline();
+            }
           });
-          const addButton = document.getElementById("add-user");
-          addButton.textContent = "Guardar Cambios";
-          document.getElementById("cancel-edit-user").style.display = "inline-block";
-        });
+
+        tbody.querySelectorAll(".edit-user").forEach(btn =>
+          btn.onclick = () => {
+            editingUserIndex = btn.dataset.i;
+            const user = users[editingUserIndex];
+            document.getElementById("user-name").value = user.name;
+            document.getElementById("user-nickname").value = user.nickname;
+            const roleSelect = document.getElementById("user-role");
+            Array.from(roleSelect.options).forEach(option => {
+              option.selected = user.roles.includes(option.value);
+            });
+            const addButton = document.getElementById("add-user");
+            addButton.textContent = "Guardar Cambios";
+            document.getElementById("cancel-edit-user").style.display = "inline-block";
+          });
+      } catch (e) {
+        console.error("Error al renderizar usuarios:", e);
+      }
     }
 
     async function loadUsers() {
@@ -808,27 +830,33 @@
 
     async function saveUsers() {
       try {
-        await withRetry(() => saveDoc("users", { users }));
-        renderUsers();
-        renderRehearsals();
-        renderStats();
-        renderTimeline();
-        return true;
+        const success = await withRetry(() => saveDoc("users", { users }));
+        if (success) {
+          renderUsers();
+          renderRehearsals();
+          renderStats();
+          renderTimeline();
+        }
+        return success;
       } catch (e) {
         console.error("Error al guardar usuarios:", e);
-        throw e;
+        return false;
       }
     }
 
     function resetUserForm() {
-      document.getElementById("user-name").value = "";
-      document.getElementById("user-nickname").value = "";
-      const roleSelect = document.getElementById("user-role");
-      Array.from(roleSelect.options).forEach(option => option.selected = false);
-      const addButton = document.getElementById("add-user");
-      addButton.textContent = "Añadir Usuario";
-      document.getElementById("cancel-edit-user").style.display = "none";
-      editingUserIndex = null;
+      try {
+        document.getElementById("user-name").value = "";
+        document.getElementById("user-nickname").value = "";
+        const roleSelect = document.getElementById("user-role");
+        Array.from(roleSelect.options).forEach(option => option.selected = false);
+        const addButton = document.getElementById("add-user");
+        addButton.textContent = "Añadir Usuario";
+        document.getElementById("cancel-edit-user").style.display = "none";
+        editingUserIndex = null;
+      } catch (e) {
+        console.error("Error al resetear formulario de usuario:", e);
+      }
     }
 
     /* ---------- 7. Ensayos ---------- */
@@ -1032,44 +1060,55 @@
         renderTimeline();
       } catch (e) {
         console.error("Error al cargar ensayos:", e);
+        rehearsals = [];
       }
     }
 
     async function saveRehearsals() {
       try {
-        await withRetry(() => saveDoc("rehearsals", { rehearsals }));
-        renderRehearsals();
-        renderStats();
-        renderTimeline();
-        return true;
+        const success = await withRetry(() => saveDoc("rehearsals", { rehearsals }));
+        if (success) {
+          renderRehearsals();
+          renderStats();
+          renderTimeline();
+        }
+        return success;
       } catch (e) {
         console.error("Error al guardar ensayos:", e);
-        throw e;
+        return false;
       }
     }
 
     function resetRehearsalForm() {
-      document.getElementById("rehearsal-date").value = "";
-      document.getElementById("rehearsal-start-time").value = "";
-      document.getElementById("rehearsal-end-time").value = "";
-      document.getElementById("rehearsal-location").value = "";
-      const addButton = document.getElementById("add-rehearsal");
-      addButton.textContent = "Añadir Ensayo";
-      document.getElementById("cancel-edit-rehearsal").style.display = "none";
-      editingRehearsalIndex = null;
+      try {
+        document.getElementById("rehearsal-date").value = "";
+        document.getElementById("rehearsal-start-time").value = "";
+        document.getElementById("rehearsal-end-time").value = "";
+        document.getElementById("rehearsal-location").value = "";
+        const addButton = document.getElementById("add-rehearsal");
+        addButton.textContent = "Añadir Ensayo";
+        document.getElementById("cancel-edit-rehearsal").style.display = "none";
+        editingRehearsalIndex = null;
+      } catch (e) {
+        console.error("Error al resetear formulario de ensayo:", e);
+      }
     }
 
     /* ---------- 8. Estadísticas ---------- */
     function updateMonthFilter() {
-      const select = document.getElementById("stats-month-filter");
-      select.innerHTML = '<option value="all">Todos los meses</option>';
+      try {
+        const select = document.getElementById("stats-month-filter");
+        select.innerHTML = '<option value="all">Todos los meses</option>';
 
-      const now = new Date();
-      const pastRehearsals = rehearsals.filter(r => new Date(r.date) < now);
-      const months = new Set(pastRehearsals.map(r => getMonthYear(r.date)));
-      Array.from(months).sort().forEach(month => {
-        select.insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`);
-      });
+        const now = new Date();
+        const pastRehearsals = rehearsals.filter(r => new Date(r.date) < now);
+        const months = new Set(pastRehearsals.map(r => getMonthYear(r.date)));
+        Array.from(months).sort().forEach(month => {
+          select.insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`);
+        });
+      } catch (e) {
+        console.error("Error al actualizar filtro de meses:", e);
+      }
     }
 
     function renderStats() {
@@ -1449,86 +1488,4 @@
           }
         };
 
-        document.getElementById("menu-setlist-config").onclick = e => {
-          e.preventDefault();
-          if (!isAuthenticated) {
-            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-              isAuthenticated = true;
-            } else {
-              alert("Contraseña incorrecta. Acceso denegado.");
-              return;
-            }
-          }
-          closeAll();
-          const s = document.getElementById("setlist-config-screen");
-          s.style.display = "block";
-          document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
-          document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
-          document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
-          document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
-        };
-
-        document.getElementById("close-setlist-config").onclick = () => {
-          document.getElementById("setlist-config-screen").style.display = "none";
-          document.getElementById("setlist-message").textContent = "";
-        };
-
-        document.getElementById("guardar-setlist-config").onclick = async () => {
-          const setlistMessage = document.getElementById("setlist-message");
-          setlistMessage.textContent = "";
-          const n1 = document.getElementById("setlist1-name").value.trim(),
-                u1 = document.getElementById("setlist1-url").value.trim(),
-                n2 = document.getElementById("setlist2-name").value.trim(),
-                raw = document.getElementById("setlist2-url").value.trim();
-          if (!n1 || !u1 || !n2 || !raw) {
-            setlistMessage.className = "error-message";
-            setlistMessage.textContent = "Completa todos los campos";
-            return;
-          }
-          try {
-            setlistConfig.setlist1 = { name: n1, url: u1 };
-            setlistConfig.setlist2 = { name: n2, url: raw.startsWith("http") ? raw : `https://www.bandhelper.com/feed/set_list/${raw}` };
-            await saveSetlistConfig();
-            await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
-            document.getElementById("setlist-config-screen").style.display = "none";
-            setlistMessage.className = "success-message";
-            setlistMessage.textContent = "Configuración guardada correctamente";
-          } catch (e) {
-            setlistMessage.className = "error-message";
-            setlistMessage.textContent = "Error al guardar configuración: " + e.message;
-          }
-        };
-
-        document.getElementById("menu-user-mgmt").onclick = e => {
-          e.preventDefault();
-          if (!isAuthenticated) {
-            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-              isAuthenticated = true;
-            } else {
-              alert("Contraseña incorrecta. Acceso denegado.");
-              return;
-            }
-          }
-          closeAll();
-          document.getElementById("user-mgmt-screen").style.display = "block";
-        };
-
-        document.getElementById("close-user-mgmt").onclick = () => {
-          document.getElementById("user-mgmt-screen").style.display = "none";
-          document.getElementById("user-message").textContent = "";
-          resetUserForm();
-        };
-
-        document.getElementById("add-user").onclick = async () => {
-          const userMessage = document.getElementById("user-message");
-          userMessage.textContent = "";
-          const name = document.getElementById("user-name").value.trim();
-          const nickname = document.getElementById("user-nickname").value.trim();
-          const roleSelect = document.getElementById("user-role");
-          const roles = Array.from(roleSelect.selectedOptions).map(option => option.value);
-          if (!name) {
-            userMessage.className = "error-message";
-            userMessage.textContent = "Introduce un nombre válido";
-            return;
+        document.getElementById("menu-setlist-config").onclick = e
