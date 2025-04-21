@@ -32,10 +32,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- Vis.js CSS y JS -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
-
   <!-- ================= ESTILOS ================= -->
   <style>
     /* Reset y fuente base */
@@ -76,8 +72,8 @@
     .config-screen .close-btn:hover{background:#333}
     /* Secciones */
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists,#rehearsals,#second-setlist,#calendario,#usuarios,#timeline{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
-    #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2,#timeline h2{text-align:center;color:#0cf;margin-bottom:15px}
+    #setlists,#rehearsals,#second-setlist,#calendario,#usuarios{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
+    #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px}
     /* Ajuste para tablas: envolvente para permitir desplazamiento horizontal */
     .table-wrapper {
       width: 100%;
@@ -152,48 +148,6 @@
     .stats-filter { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px; }
     .stats-filter label { color: #0cf; }
     .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
-    /* Estilos para la línea temporal */
-    #timeline {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      background: #111;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-      margin-bottom: 40px;
-    }
-    #timeline h2 {
-      text-align: center;
-      color: #0cf;
-      margin-bottom: 15px;
-    }
-    #timeline-message {
-      color: #f00;
-      text-align: center;
-      margin-top: 10px;
-    }
-    .vis-panel {
-      background: #111 !important; /* Fondo oscuro para la línea temporal */
-    }
-    .vis-timeline {
-      border: 1px solid #333 !important;
-    }
-    .vis-time-axis .vis-text {
-      color: #0cf !important; /* Texto de fechas en cian */
-    }
-    .vis-time-axis .vis-grid {
-      border-left: 1px solid #333 !important;
-    }
-    .vis-item.rehearsal {
-      background-color: #aaf; /* Azul claro para ensayos */
-      border-color: #88f;
-      color: #000;
-    }
-    .vis-item.concert {
-      background-color: #faa; /* Rojo claro para conciertos */
-      border-color: #f88;
-      color: #000;
-    }
     /* Responsive */
     @media(max-width:768px){
       .hamburger div{width:20px}
@@ -227,10 +181,6 @@
       .stats-table table {
         font-size: 0.85em;
       }
-      /* Ajustar línea temporal para móviles */
-      #visualization {
-        height: 300px; /* Reducir altura en móviles */
-      }
     }
   </style>
 </head>
@@ -255,7 +205,6 @@
     <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
-    <a href="#timeline" id="menu-timeline">Línea Temporal</a>
     <a href="#" id="menu-stats">Estadísticas</a>
     <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
@@ -396,7 +345,7 @@
         <table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table>
       </div>
       <button class="download-btn" id="download-btn">Descargar PDF</button>
-      <p id="total-time"></p>
+      <p id="total-time"></-part>
     </section>
 
     <!-- 2) Ensayos -->
@@ -436,14 +385,7 @@
       </div>
     </section>
 
-    <!-- 5) Línea Temporal -->
-    <section id="timeline">
-      <h2>Línea Temporal de Eventos</h2>
-      <div id="visualization"></div>
-      <p id="timeline-message" class="error-message"></p>
-    </section>
-
-    <!-- 6) Usuarios -->
+    <!-- 5) Usuarios -->
     <section id="usuarios">
       <h2>Usuarios Registrados</h2>
       <div class="table-wrapper">
@@ -728,7 +670,6 @@
           await saveUsers();
           await saveRehearsals();
           renderStats(); // Actualizar estadísticas después de eliminar un usuario
-          createTimeline(); // Actualizar línea temporal
         }
       });
 
@@ -766,7 +707,6 @@
       renderUsers();
       renderRehearsals();
       renderStats(); // Actualizar estadísticas después de guardar usuarios
-      createTimeline(); // Actualizar línea temporal
       return true;
     } catch (e) {
       console.error("Error al guardar usuarios:", e);
@@ -914,7 +854,6 @@
           rehearsals.splice(btn.dataset.i, 1);
           await saveRehearsals();
           renderStats(); // Actualizar estadísticas después de eliminar un ensayo
-          createTimeline(); // Actualizar línea temporal
         }
       });
 
@@ -931,7 +870,6 @@
           rehearsalMessage.className = "success-message";
           rehearsalMessage.textContent = "Asistencias eliminadas correctamente";
           renderStats(); // Actualizar estadísticas después de eliminar asistencias
-          createTimeline(); // Actualizar línea temporal
         }
       });
 
@@ -974,7 +912,6 @@
           userSelect.value = "";
           responseSelect.value = "";
           renderStats(); // Actualizar estadísticas después de confirmar asistencia
-          createTimeline(); // Actualizar línea temporal
         } catch (e) {
           alert("Error al guardar la asistencia: " + e.message);
         }
@@ -987,7 +924,6 @@
       const data = await withRetry(() => loadDoc("rehearsals", { rehearsals: [] }));
       rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : [];
       renderRehearsals();
-      createTimeline(); // Crear línea temporal después de cargar ensayos
     } catch (e) {
       console.error("Error al cargar ensayos:", e);
       throw e;
@@ -999,7 +935,6 @@
       await withRetry(() => saveDoc("rehearsals", { rehearsals }));
       renderRehearsals();
       renderStats(); // Actualizar estadísticas después de guardar ensayos
-      createTimeline(); // Actualizar línea temporal
       return true;
     } catch (e) {
       console.error("Error al guardar ensayos:", e);
@@ -1190,7 +1125,6 @@
         </button>
       `;
     });
-    createTimeline(); // Crear línea temporal después de modificar la tabla
   }
 
   /* ---------- 11. Menú & pantallas ---------- */
@@ -1247,12 +1181,6 @@
     e.preventDefault();
     closeAll();
     document.getElementById("calendario").scrollIntoView({ behavior: "smooth" });
-  };
-
-  document.getElementById("menu-timeline").onclick = e => {
-    e.preventDefault();
-    closeAll();
-    document.getElementById("timeline").scrollIntoView({ behavior: "smooth" });
   };
 
   // Ítem Configuración (protegido por contraseña)
@@ -1430,4 +1358,116 @@
   document.getElementById("add-rehearsal").onclick = async () => {
     const rehearsalMessage = document.getElementById("rehearsal-message");
     rehearsalMessage.textContent = "";
-    const date = document.getElementBy
+    const date = document.getElementById("rehearsal-date").value;
+    const startTime = document.getElementById("rehearsal-start-time").value;
+    const endTime = document.getElementById("rehearsal-end-time").value;
+    const loc = document.getElementById("rehearsal-location").value.trim();
+
+    if (!date || !startTime || !endTime || !loc) {
+      rehearsalMessage.className = "error-message";
+      rehearsalMessage.textContent = "Completa todos los campos";
+      return;
+    }
+
+    // Validar que la hora de fin sea posterior a la hora de inicio
+    const durationSeconds = calculateDuration(startTime, endTime);
+    if (durationSeconds <= 0) {
+      rehearsalMessage.className = "error-message";
+      rehearsalMessage.textContent = "La hora de fin debe ser posterior a la hora de inicio";
+      return;
+    }
+
+    try {
+      if (editingRehearsalIndex !== null) {
+        // Editar ensayo existente
+        rehearsals[editingRehearsalIndex] = {
+          date,
+          startTime,
+          endTime,
+          location: loc,
+          attendance: rehearsals[editingRehearsalIndex].attendance || []
+        };
+        rehearsalMessage.className = "success-message";
+        rehearsalMessage.textContent = "Ensayo actualizado correctamente";
+      } else {
+        // Añadir nuevo ensayo
+        rehearsals.push({ date, startTime, endTime, location: loc, attendance: [] });
+        rehearsalMessage.className = "success-message";
+        rehearsalMessage.textContent = "Ensayo añadido correctamente";
+      }
+      await saveRehearsals();
+      resetRehearsalForm();
+    } catch (e) {
+      rehearsalMessage.className = "error-message";
+      rehearsalMessage.textContent = "Error al guardar ensayo: " + e.message;
+    }
+  };
+
+  document.getElementById("cancel-edit-rehearsal").onclick = () => {
+    resetRehearsalForm();
+    document.getElementById("rehearsal-message").textContent = "";
+  };
+
+  /* --- Estadísticas screen */
+  document.getElementById("menu-stats").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("stats-screen").style.display = "block";
+    updateMonthFilter(); // Actualizar las opciones del filtro de meses
+    renderStats();
+  };
+
+  document.getElementById("close-stats").onclick = () => {
+    document.getElementById("stats-screen").style.display = "none";
+  };
+
+  // Añadir evento al filtro de meses
+  document.getElementById("stats-month-filter").addEventListener("change", () => {
+    renderStats();
+  });
+
+  /* ---------- 12. Carga inicial ---------- */
+  document.addEventListener("DOMContentLoaded", async () => {
+    updateConnectionStatus(); // Verificar estado de conexión al cargar
+
+    try {
+      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
+    } catch (e) {
+      console.error("Error al cargar datos de Firestore:", e);
+      // El mensaje ya se muestra a través del indicador de conexión
+    }
+
+    let songs1 = [], songs2 = [];
+    try {
+      songs1 = await cargarPrimerSetlist();
+    } catch (e) {
+      console.error("Fallo al cargar el primer setlist:", e);
+    }
+
+    try {
+      songs2 = await cargarSegundoSetlist();
+    } catch (e) {
+      console.error("Fallo al cargar el segundo setlist:", e);
+    }
+
+    document.getElementById("download-btn").onclick = () => {
+      if (songs1.length > 0) {
+        genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
+      } else {
+        alert("No hay canciones disponibles para descargar el PDF del setlist de ensayos.");
+      }
+    };
+
+    document.getElementById("download-btn-2").onclick = () => {
+      if (songs2.length > 0) {
+        genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf");
+      } else {
+        alert("No hay canciones disponibles para descargar el PDF del setlist del concierto.");
+      }
+    };
+
+    setTimeout(modifyBandHelperTable, 1000);
+  });
+  </script>
+</body>
+</html>
