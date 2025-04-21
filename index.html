@@ -63,25 +63,37 @@
     .action-btn.edit{background:#0cf}
     #total-time,#total-time-2{color:#0cf;margin-top:10px;text-align:center}
     #second-setlist-name{text-align:center;color:#aaa;margin-top:5px;font-style:italic}
-    #timeline ul{list-style-type:none;padding:0}
-    #timeline li{margin-bottom:10px}
-    #timeline .rehearsal{font-style:italic}
-    #timeline .concert{font-weight:bold}
+    #timeline-container{overflow-x:auto;white-space:nowrap;padding:20px 0}
+    #timeline{display:flex;flex-direction:row;align-items:center;height:150px;position:relative}
+    .event{margin:0 20px;position:relative}
+    .event span{display:inline-block;transform:rotate(-45deg);transform-origin:bottom left;font-size:0.9em;white-space:nowrap}
+    .rehearsal span{font-style:italic}
+    .concert span{font-weight:bold}
     .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
                    overflow-y:auto;padding:80px 20px 20px}
     .config-screen h2{color:#0cf;text-align:center;margin:20px 0}
     .config-screen label{display:block;margin:10px 0 5px}
     .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
                                               border:1px solid #333;border-radius:5px}
+    .config-screen select[multiple]{height:150px}
     .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;
                               color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
+    .attendance-form{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .attendance-form select,.attendance-form button{padding:5px;background:#222;color:#fff;border:1px solid #333;border-radius:4px}
+    .attendance-form button{background:#0cf;color:#000}
+    .attendance-summary{margin-top:10px;font-size:0.9em}
+    .attendance-summary span{display:block}
+    .attending-yes{color:#0cf}
+    .attending-no{color:#f00}
     @media(max-width:768px){
       .hamburger div{width:20px}
       .logo img.logo-main{width:150px}
       .logo-intranet{height:50px}
       table{font-size:0.85em}
       th,td{padding:8px}
+      .attendance-form{flex-direction:column;align-items:flex-start}
+      .attendance-form select{width:100%}
     }
   </style>
 </head>
@@ -185,7 +197,17 @@
     <section id="rehearsals">
       <h2>Próximos Ensayos</h2>
       <div class="table-wrapper">
-        <table><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table>
+        <table id="rehearsal-main-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Lugar</th>
+              <th>Confirmar Asistencia</th>
+            </tr>
+          </thead>
+          <tbody id="rehearsal-main-body"></tbody>
+        </table>
       </div>
     </section>
 
@@ -193,7 +215,7 @@
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-name"></p>
       <div class="table-wrapper">
-        <table><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
+        <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
       </div>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
@@ -208,7 +230,9 @@
 
     <section id="timeline">
       <h2>Línea Temporal de Eventos</h2>
-      <ul id="timeline-list"></ul>
+      <div id="timeline-container">
+        <div id="timeline"></div>
+      </div>
     </section>
 
     <section id="usuarios">
@@ -425,6 +449,8 @@
     const tbodyMain = document.getElementById("rehearsal-main-body");
     tbodyConfig.innerHTML = tbodyMain.innerHTML = "";
     const now = new Date();
+    const userOptions = users.map(u => `<option value="${u.name}">${u.name}</option>`).join("");
+
     rehearsals.forEach((r, i) => {
       const formattedDate = formatDateWithDay(r.date);
       tbodyConfig.insertAdjacentHTML("beforeend",
@@ -438,12 +464,43 @@
             <button data-i="${i}" class="delete-rehearsal action-btn">Eliminar</button>
           </td>
         </tr>`);
+
       if (new Date(r.date) >= now) {
+        const attendance = r.attendance || [];
+        const yes = attendance.filter(a => a.response === "Sí").map(a => a.user).join(", ");
+        const no = attendance.filter(a => a.response === "No").map(a => a.user).join(", ");
+        const summary = `
+          <div class="attendance-summary">
+            <span class="attending-yes">Asisten: ${yes || "Ninguno"}</span>
+            <span class="attending-no">No asisten: ${no || "Ninguno"}</span>
+          </div>
+        `;
+
         tbodyMain.insertAdjacentHTML("beforeend",
-          `<tr><td>${formattedDate}</td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td></tr>`);
+          `<tr>
+            <td>${formattedDate}</td>
+            <td>${r.startTime} - ${r.endTime}</td>
+            <td>${r.location}</td>
+            <td>
+              <div class="attendance-form">
+                <select class="attendance-user" data-i="${i}">
+                  <option value="">Selecciona usuario</option>
+                  ${userOptions}
+                </select>
+                <select class="attendance-response" data-i="${i}">
+                  <option value="">¿Asistirás?</option>
+                  <option value="Sí">Sí</option>
+                  <option value="No">No</option>
+                </select>
+                <button class="confirm-attendance" data-i="${i}">Confirmar</button>
+              </div>
+              ${summary}
+            </td>
+          </tr>`);
       }
     });
 
+    // Añadir eventos a botones de editar y eliminar en configuración
     tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn =>
       btn.onclick = () => {
         editingRehearsalIndex = btn.dataset.i;
@@ -465,6 +522,31 @@
           await saveRehearsals();
         }
       });
+
+    // Añadir eventos a botones de confirmar asistencia
+    document.querySelectorAll(".confirm-attendance").forEach(btn => {
+      btn.onclick = async () => {
+        const index = btn.dataset.i;
+        const userSelect = document.querySelector(`.attendance-user[data-i="${index}"]`);
+        const responseSelect = document.querySelector(`.attendance-response[data-i="${index}"]`);
+        const user = userSelect.value;
+        const response = responseSelect.value;
+        if (!user || !response) {
+          alert("Selecciona usuario y respuesta");
+          return;
+        }
+        const rehearsal = rehearsals[index];
+        if (!rehearsal.attendance) rehearsal.attendance = [];
+        const existing = rehearsal.attendance.find(a => a.user === user);
+        if (existing) {
+          existing.response = response;
+        } else {
+          rehearsal.attendance.push({ user, response });
+        }
+        await saveRehearsals();
+        renderRehearsals(); // Actualizar resumen
+      };
+    });
   }
 
   async function saveRehearsals() {
@@ -494,8 +576,8 @@
   ]; // Simulados, reemplaza con tus datos reales
 
   function renderTimeline() {
-    const timelineList = document.getElementById("timeline-list");
-    timelineList.innerHTML = "";
+    const timeline = document.getElementById("timeline");
+    timeline.innerHTML = "";
     const rehearsalEvents = rehearsals.map(r => ({
       date: r.date,
       type: "rehearsal",
@@ -504,14 +586,15 @@
     const concertEvents = concerts.map(c => ({
       date: c.date,
       type: "concert",
-      text: `Concierto - ${formatDateWithDay(c.date)}`
+      text: `Concierto - ${c.name} - ${formatDateWithDay(c.date)}`
     }));
     const allEvents = [...rehearsalEvents, ...concertEvents].sort((a, b) => new Date(a.date) - new Date(b.date));
+
     allEvents.forEach(event => {
-      const li = document.createElement("li");
-      li.className = event.type;
-      li.textContent = event.text;
-      timelineList.appendChild(li);
+      const div = document.createElement("div");
+      div.className = `event ${event.type}`;
+      div.innerHTML = `<span>${event.text}</span>`;
+      timeline.appendChild(div);
     });
   }
 
@@ -540,11 +623,13 @@
   };
   document.getElementById("menu-cerrar").onclick = e => {
     e.preventDefault();
+    closeAll();
     sidebar.classList.remove("show");
     overlay.classList.remove("show");
     document.getElementById("config-submenu").classList.remove("show");
   };
   overlay.onclick = () => {
+    closeAll();
     sidebar.classList.remove("show");
     overlay.classList.remove("show");
     document.getElementById("config-submenu").classList.remove("show");
@@ -647,10 +732,10 @@
       return;
     }
     if (editingRehearsalIndex !== null) {
-      rehearsals[editingRehearsalIndex] = { date, startTime, endTime, location };
+      rehearsals[editingRehearsalIndex] = { date, startTime, endTime, location, attendance: rehearsals[editingRehearsalIndex].attendance || [] };
       editingRehearsalIndex = null;
     } else {
-      rehearsals.push({ date, startTime, endTime, location });
+      rehearsals.push({ date, startTime, endTime, location, attendance: [] });
     }
     await saveRehearsals();
     resetRehearsalForm();
