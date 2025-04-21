@@ -32,6 +32,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+  <!-- Vis.js CSS y JS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+
   <!-- ================= ESTILOS ================= -->
   <style>
     /* Reset y fuente base */
@@ -72,8 +76,8 @@
     .config-screen .close-btn:hover{background:#333}
     /* Secciones */
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists,#rehearsals,#second-setlist,#calendario,#usuarios{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
-    #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px}
+    #setlists,#rehearsals,#second-setlist,#calendario,#usuarios,#timeline{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
+    #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2,#timeline h2{text-align:center;color:#0cf;margin-bottom:15px}
     /* Ajuste para tablas: envolvente para permitir desplazamiento horizontal */
     .table-wrapper {
       width: 100%;
@@ -148,6 +152,31 @@
     .stats-filter { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px; }
     .stats-filter label { color: #0cf; }
     .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
+    /* Estilos para la línea temporal */
+    #timeline {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #111;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+      margin-bottom: 40px;
+    }
+    #timeline h2 {
+      text-align: center;
+      color: #0cf;
+      margin-bottom: 15px;
+    }
+    .vis-item.rehearsal {
+      background-color: #aaf; /* Azul claro para ensayos */
+      border-color: #88f;
+      color: #000;
+    }
+    .vis-item.concert {
+      background-color: #faa; /* Rojo claro para conciertos */
+      border-color: #f88;
+      color: #000;
+    }
     /* Responsive */
     @media(max-width:768px){
       .hamburger div{width:20px}
@@ -181,6 +210,10 @@
       .stats-table table {
         font-size: 0.85em;
       }
+      /* Ajustar línea temporal para móviles */
+      #visualization {
+        height: 300px; /* Reducir altura en móviles */
+      }
     }
   </style>
 </head>
@@ -205,6 +238,7 @@
     <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
+    <a href="#timeline" id="menu-timeline">Línea Temporal</a>
     <a href="#" id="menu-stats">Estadísticas</a>
     <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
@@ -345,7 +379,7 @@
         <table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table>
       </div>
       <button class="download-btn" id="download-btn">Descargar PDF</button>
-      <p id="total-time"></-part>
+      <p id="total-time"></p>
     </section>
 
     <!-- 2) Ensayos -->
@@ -385,7 +419,13 @@
       </div>
     </section>
 
-    <!-- 5) Usuarios -->
+    <!-- 5) Línea Temporal -->
+    <section id="timeline">
+      <h2>Línea Temporal de Eventos</h2>
+      <div id="visualization"></div>
+    </section>
+
+    <!-- 6) Usuarios -->
     <section id="usuarios">
       <h2>Usuarios Registrados</h2>
       <div class="table-wrapper">
@@ -670,6 +710,7 @@
           await saveUsers();
           await saveRehearsals();
           renderStats(); // Actualizar estadísticas después de eliminar un usuario
+          createTimeline(); // Actualizar línea temporal
         }
       });
 
@@ -707,6 +748,7 @@
       renderUsers();
       renderRehearsals();
       renderStats(); // Actualizar estadísticas después de guardar usuarios
+      createTimeline(); // Actualizar línea temporal
       return true;
     } catch (e) {
       console.error("Error al guardar usuarios:", e);
@@ -854,6 +896,7 @@
           rehearsals.splice(btn.dataset.i, 1);
           await saveRehearsals();
           renderStats(); // Actualizar estadísticas después de eliminar un ensayo
+          createTimeline(); // Actualizar línea temporal
         }
       });
 
@@ -870,6 +913,7 @@
           rehearsalMessage.className = "success-message";
           rehearsalMessage.textContent = "Asistencias eliminadas correctamente";
           renderStats(); // Actualizar estadísticas después de eliminar asistencias
+          createTimeline(); // Actualizar línea temporal
         }
       });
 
@@ -912,6 +956,7 @@
           userSelect.value = "";
           responseSelect.value = "";
           renderStats(); // Actualizar estadísticas después de confirmar asistencia
+          createTimeline(); // Actualizar línea temporal
         } catch (e) {
           alert("Error al guardar la asistencia: " + e.message);
         }
@@ -924,6 +969,7 @@
       const data = await withRetry(() => loadDoc("rehearsals", { rehearsals: [] }));
       rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : [];
       renderRehearsals();
+      createTimeline(); // Crear línea temporal después de cargar ensayos
     } catch (e) {
       console.error("Error al cargar ensayos:", e);
       throw e;
@@ -935,6 +981,7 @@
       await withRetry(() => saveDoc("rehearsals", { rehearsals }));
       renderRehearsals();
       renderStats(); // Actualizar estadísticas después de guardar ensayos
+      createTimeline(); // Actualizar línea temporal
       return true;
     } catch (e) {
       console.error("Error al guardar ensayos:", e);
@@ -1125,6 +1172,7 @@
         </button>
       `;
     });
+    createTimeline(); // Crear línea temporal después de modificar la tabla
   }
 
   /* ---------- 11. Menú & pantallas ---------- */
@@ -1181,6 +1229,12 @@
     e.preventDefault();
     closeAll();
     document.getElementById("calendario").scrollIntoView({ behavior: "smooth" });
+  };
+
+  document.getElementById("menu-timeline").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("timeline").scrollIntoView({ behavior: "smooth" });
   };
 
   // Ítem Configuración (protegido por contraseña)
@@ -1434,7 +1488,6 @@
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
     } catch (e) {
       console.error("Error al cargar datos de Firestore:", e);
-      // El mensaje ya se muestra a través del indicador de conexión
     }
 
     let songs1 = [], songs2 = [];
@@ -1468,6 +1521,104 @@
 
     setTimeout(modifyBandHelperTable, 1000);
   });
+
+  /* ---------- 13. Función para extraer conciertos de BandHelper ---------- */
+  function extractConcertsFromBandHelper(callback) {
+    const concertTable = document.querySelector("#bandhelper-concerts table");
+    if (concertTable) {
+      const concertRows = concertTable.querySelectorAll("tbody tr");
+      const concerts = [];
+      concertRows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+        if (cells.length >= 3) {
+          const dateCell = cells[0].textContent.trim();
+          const timeCell = cells[1].textContent.trim();
+          const locationCell = cells[2].textContent.trim() || "Lugar no especificado";
+          const year = new Date().getFullYear();
+          const dateParts = dateCell.match(/(\d+)\s+de\s+(\w+)/i);
+          if (dateParts) {
+            const day = dateParts[1];
+            const monthName = dateParts[2];
+            const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase()) + 1;
+            const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            concerts.push({
+              type: "concierto",
+              date: date,
+              time: timeCell || "20:00",
+              location: locationCell
+            });
+          }
+        }
+      });
+      callback(concerts);
+    } else {
+      setTimeout(() => extractConcertsFromBandHelper(callback), 500);
+    }
+  }
+
+  /* ---------- 14. Función para crear la línea temporal ---------- */
+  function createTimeline() {
+    extractConcertsFromBandHelper(concerts => {
+      // Mapear ensayos
+      const rehearsalEvents = rehearsals.map(r => ({
+        type: "ensayo",
+        date: r.date,
+        startTime: r.startTime,
+        endTime: r.endTime,
+        location: r.location
+      }));
+
+      // Combinar ensayos y conciertos
+      const events = [...rehearsalEvents, ...concerts];
+
+      // Ordenar por fecha
+      events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      // Crear items para Vis.js
+      const items = events.map((event, index) => {
+        const startDateTime = new Date(`${event.date}T${event.startTime || event.time || "00:00"}`);
+        let endDateTime;
+        if (event.type === "ensayo") {
+          endDateTime = new Date(`${event.date}T${event.endTime}`);
+        } else {
+          // Para conciertos, asumir 2 horas de duración
+          endDateTime = new Date(startDateTime.getTime() + 2 * 60 * 60 * 1000);
+        }
+        const content = event.type === "ensayo"
+          ? `<i>Ensayo en ${event.location}</i>` // Ensayos en cursiva
+          : `<b>Concierto en ${event.location}</b>`; // Conciertos en negrita
+        return {
+          id: index + 1,
+          content: content,
+          start: startDateTime,
+          end: endDateTime,
+          type: "range", // Mostrar eventos con duración
+          className: event.type === "ensayo" ? "rehearsal" : "concert" // Clases para estilos
+        };
+      });
+
+      // Crear el DataSet de Vis.js
+      const itemsDataSet = new vis.DataSet(items);
+
+      // Configurar opciones para que sea responsive y atractiva
+      const options = {
+        width: "100%",
+        height: "400px",
+        margin: { item: 20 },
+        orientation: "top",
+        stack: true,
+        zoomMin: 1000 * 60 * 60 * 24, // Zoom mínimo: 1 día
+        zoomMax: 1000 * 60 * 60 * 24 * 31 * 12, // Zoom máximo: 1 año
+        start: new Date(), // Comenzar en la fecha actual
+        end: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30) // Mostrar 1 mes por defecto
+      };
+
+      // Renderizar la línea temporal
+      const container = document.getElementById("visualization");
+      const timeline = new vis.Timeline(container, itemsDataSet, options);
+    });
+  }
   </script>
 </body>
 </html>
