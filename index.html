@@ -58,14 +58,24 @@
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space:normal;word-wrap:break-word}
     tr:nth-child(even){background:#1a1a1a}
-    .download-btn{display:block;margin:20px auto 0;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
-    .download-btn:hover{background:#09b}
+    .download-btn,.action-btn{display:block;margin:20px auto 0;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
+    .action-btn{background:#f00}
+    .action-btn.edit{background:#0cf}
     #total-time,#total-time-2{color:#0cf;margin-top:10px;text-align:center}
     #second-setlist-name{text-align:center;color:#aaa;margin-top:5px;font-style:italic}
     #timeline ul{list-style-type:none;padding:0}
     #timeline li{margin-bottom:10px}
     #timeline .rehearsal{font-style:italic}
     #timeline .concert{font-weight:bold}
+    .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
+                   overflow-y:auto;padding:80px 20px 20px}
+    .config-screen h2{color:#0cf;text-align:center;margin:20px 0}
+    .config-screen label{display:block;margin:10px 0 5px}
+    .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
+                                              border:1px solid #333;border-radius:5px}
+    .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
+    .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;
+                              color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
     @media(max-width:768px){
       .hamburger div{width:20px}
       .logo img.logo-main{width:150px}
@@ -95,9 +105,72 @@
     <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu">
       <a href="#" id="menu-setlist-config">Configurar Setlists</a>
+      <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
+      <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
+
+  <!-- Pantallas de configuración -->
+  <div id="setlist-config-screen" class="config-screen">
+    <button class="close-btn" id="close-setlist-config">Cerrar</button>
+    <h2>Configuración de Setlists</h2>
+    <label>Nombre Setlist 1</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025">
+    <label>URL Setlist 1</label><input id="setlist1-url" placeholder="URL">
+    <label>Nombre Setlist 2</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad">
+    <label>URL Setlist 2</label><input id="setlist2-url" placeholder="Ej: TXHvyb">
+    <button id="guardar-setlist-config">Guardar Configuración</button>
+  </div>
+
+  <div id="user-mgmt-screen" class="config-screen">
+    <button class="close-btn" id="close-user-mgmt">Cerrar</button>
+    <h2>Gestión de Usuarios</h2>
+    <label>Nombre</label><input id="user-name" placeholder="Nombre">
+    <label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)">
+    <label>Roles</label>
+    <select id="user-role" multiple>
+      <option value="Batería">Batería</option>
+      <option value="Teclados">Teclados</option>
+      <option value="Voz">Voz</option>
+      <option value="Guitarra eléctrica">Guitarra eléctrica</option>
+      <option value="Guitarra Acústica">Guitarra Acústica</option>
+      <option value="Bajo">Bajo</option>
+      <option value="Percusión">Percusión</option>
+      <option value="Saxo">Saxo</option>
+      <option value="Dirección Musical">Dirección Musical</option>
+      <option value="Técnico de Sonido">Técnico de Sonido</option>
+      <option value="Montador">Montador</option>
+      <option value="Coros">Coros</option>
+    </select>
+    <button id="add-user">Añadir Usuario</button>
+    <button id="cancel-edit-user" style="display:none;">Cancelar Edición</button>
+    <p id="user-message" class="error-message"></p>
+    <table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
+  </div>
+
+  <div id="rehearsal-screen" class="config-screen">
+    <button class="close-btn" id="close-rehearsal">Cerrar</button>
+    <h2>Asignación de Ensayos</h2>
+    <label>Fecha</label><input type="date" id="rehearsal-date">
+    <label>Hora Inicio</label><input type="time" id="rehearsal-start-time">
+    <label>Hora Fin</label><input type="time" id="rehearsal-end-time">
+    <label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1">
+    <button id="add-rehearsal">Añadir Ensayo</button>
+    <button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button>
+    <p id="rehearsal-message" class="error-message"></p>
+    <table id="rehearsal-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Hora Inicio</th>
+          <th>Hora Fin</th>
+          <th>Lugar</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="rehearsal-table-body"></tbody>
+    </table>
+  </div>
 
   <main>
     <section id="setlists">
@@ -191,6 +264,7 @@
   async function saveDoc(id, data) {
     try {
       await db.collection("intranet").doc(id).set(data);
+      console.log(`Documento ${id} guardado correctamente.`);
       return true;
     } catch (e) {
       console.error(`Error al guardar documento ${id}:`, e);
@@ -258,17 +332,160 @@
     }
   }
 
+  let users = [];
+  let editingUserIndex = null;
+
+  async function loadUsers() {
+    const data = await loadDoc("users", { users: [] });
+    users = Array.isArray(data.users) ? data.users : [];
+    renderUsers();
+  }
+
+  function renderUsers() {
+    const tbody = document.getElementById("user-table-body");
+    const main = document.getElementById("users-body");
+    tbody.innerHTML = main.innerHTML = "";
+    users.forEach((u, i) => {
+      if (!u || typeof u !== 'object' || !u.name || !u.nickname || !Array.isArray(u.roles)) {
+        console.warn(`Usuario inválido en la posición ${i}:`, u);
+        return;
+      }
+      const rolesDisplay = u.roles.join(", ");
+      tbody.insertAdjacentHTML("beforeend",
+        `<tr>
+          <td>${u.name}</td>
+          <td>${u.nickname}</td>
+          <td>${rolesDisplay}</td>
+          <td>
+            <button data-i="${i}" class="edit-user action-btn edit">Editar</button>
+            <button data-i="${i}" class="delete-user action-btn">Eliminar</button>
+          </td>
+        </tr>`);
+      main.insertAdjacentHTML("beforeend",
+        `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`);
+    });
+
+    tbody.querySelectorAll(".delete-user").forEach(btn =>
+      btn.onclick = async () => {
+        const index = btn.dataset.i;
+        if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${users[index].name}"?`)) {
+          users.splice(index, 1);
+          await saveUsers();
+        }
+      });
+
+    tbody.querySelectorAll(".edit-user").forEach(btn =>
+      btn.onclick = () => {
+        editingUserIndex = btn.dataset.i;
+        const user = users[editingUserIndex];
+        document.getElementById("user-name").value = user.name;
+        document.getElementById("user-nickname").value = user.nickname;
+        const roleSelect = document.getElementById("user-role");
+        Array.from(roleSelect.options).forEach(option => {
+          option.selected = user.roles.includes(option.value);
+        });
+        const addButton = document.getElementById("add-user");
+        addButton.textContent = "Guardar Cambios";
+        document.getElementById("cancel-edit-user").style.display = "inline-block";
+      });
+  }
+
+  async function saveUsers() {
+    const success = await saveDoc("users", { users });
+    if (success) {
+      renderUsers();
+      alert("Usuarios guardados correctamente.");
+    } else {
+      alert("Error al guardar usuarios.");
+    }
+  }
+
+  function resetUserForm() {
+    document.getElementById("user-name").value = "";
+    document.getElementById("user-nickname").value = "";
+    const roleSelect = document.getElementById("user-role");
+    Array.from(roleSelect.options).forEach(option => option.selected = false);
+    const addButton = document.getElementById("add-user");
+    addButton.textContent = "Añadir Usuario";
+    document.getElementById("cancel-edit-user").style.display = "none";
+    editingUserIndex = null;
+  }
+
   let rehearsals = [];
+  let editingRehearsalIndex = null;
+
   async function loadRehearsals() {
     const data = await loadDoc("rehearsals", { rehearsals: [] });
     rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : [];
-    const tbody = document.getElementById("rehearsal-main-body");
-    tbody.innerHTML = "";
+    renderRehearsals();
+  }
+
+  function renderRehearsals() {
+    const tbodyConfig = document.getElementById("rehearsal-table-body");
+    const tbodyMain = document.getElementById("rehearsal-main-body");
+    tbodyConfig.innerHTML = tbodyMain.innerHTML = "";
     const now = new Date();
-    rehearsals.filter(r => new Date(r.date) >= now).forEach(r => {
-      tbody.insertAdjacentHTML("beforeend",
-        `<tr><td>${formatDateWithDay(r.date)}</td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td></tr>`);
+    rehearsals.forEach((r, i) => {
+      const formattedDate = formatDateWithDay(r.date);
+      tbodyConfig.insertAdjacentHTML("beforeend",
+        `<tr>
+          <td>${r.date}</td>
+          <td>${r.startTime}</td>
+          <td>${r.endTime}</td>
+          <td>${r.location}</td>
+          <td>
+            <button data-i="${i}" class="edit-rehearsal action-btn edit">Editar</button>
+            <button data-i="${i}" class="delete-rehearsal action-btn">Eliminar</button>
+          </td>
+        </tr>`);
+      if (new Date(r.date) >= now) {
+        tbodyMain.insertAdjacentHTML("beforeend",
+          `<tr><td>${formattedDate}</td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td></tr>`);
+      }
     });
+
+    tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn =>
+      btn.onclick = () => {
+        editingRehearsalIndex = btn.dataset.i;
+        const rehearsal = rehearsals[editingRehearsalIndex];
+        document.getElementById("rehearsal-date").value = rehearsal.date;
+        document.getElementById("rehearsal-start-time").value = rehearsal.startTime;
+        document.getElementById("rehearsal-end-time").value = rehearsal.endTime;
+        document.getElementById("rehearsal-location").value = rehearsal.location;
+        const addButton = document.getElementById("add-rehearsal");
+        addButton.textContent = "Guardar Cambios";
+        document.getElementById("cancel-edit-rehearsal").style.display = "inline-block";
+      });
+
+    tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
+      btn.onclick = async () => {
+        const index = btn.dataset.i;
+        if (confirm(`¿Estás seguro de que deseas eliminar el ensayo del día ${rehearsals[index].date}?`)) {
+          rehearsals.splice(index, 1);
+          await saveRehearsals();
+        }
+      });
+  }
+
+  async function saveRehearsals() {
+    const success = await saveDoc("rehearsals", { rehearsals });
+    if (success) {
+      renderRehearsals();
+      alert("Ensayos guardados correctamente.");
+    } else {
+      alert("Error al guardar ensayos.");
+    }
+  }
+
+  function resetRehearsalForm() {
+    document.getElementById("rehearsal-date").value = "";
+    document.getElementById("rehearsal-start-time").value = "";
+    document.getElementById("rehearsal-end-time").value = "";
+    document.getElementById("rehearsal-location").value = "";
+    const addButton = document.getElementById("add-rehearsal");
+    addButton.textContent = "Añadir Ensayo";
+    document.getElementById("cancel-edit-rehearsal").style.display = "none";
+    editingRehearsalIndex = null;
   }
 
   let concerts = [
@@ -338,8 +555,118 @@
     submenu.classList.toggle("show");
   };
 
+  document.getElementById("menu-setlist-config").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    const s = document.getElementById("setlist-config-screen");
+    s.style.display = "block";
+    document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
+    document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
+    document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
+    document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
+  };
+
+  document.getElementById("close-setlist-config").onclick = () => {
+    document.getElementById("setlist-config-screen").style.display = "none";
+  };
+
+  document.getElementById("guardar-setlist-config").onclick = async () => {
+    const n1 = document.getElementById("setlist1-name").value.trim(),
+          u1 = document.getElementById("setlist1-url").value.trim(),
+          n2 = document.getElementById("setlist2-name").value.trim(),
+          raw = document.getElementById("setlist2-url").value.trim();
+    if (!n1 || !u1 || !n2 || !raw) {
+      alert("Completa todos los campos");
+      return;
+    }
+    setlistConfig.setlist1 = { name: n1, url: u1 };
+    setlistConfig.setlist2 = { name: n2, url: raw.startsWith("http") ? raw : `https://www.bandhelper.com/feed/set_list/${raw}` };
+    if (await saveDoc("setlists", { config: setlistConfig })) {
+      await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
+      document.getElementById("setlist-config-screen").style.display = "none";
+      alert("Configuración guardada correctamente");
+    } else {
+      alert("Error al guardar configuración");
+    }
+  };
+
+  document.getElementById("menu-user-mgmt").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("user-mgmt-screen").style.display = "block";
+    loadUsers();
+  };
+
+  document.getElementById("close-user-mgmt").onclick = () => {
+    document.getElementById("user-mgmt-screen").style.display = "none";
+    resetUserForm();
+  };
+
+  document.getElementById("add-user").onclick = async () => {
+    const name = document.getElementById("user-name").value.trim();
+    const nickname = document.getElementById("user-nickname").value.trim();
+    const roleSelect = document.getElementById("user-role");
+    const roles = Array.from(roleSelect.selectedOptions).map(option => option.value);
+    if (!name || !nickname || roles.length === 0) {
+      alert("Completa todos los campos");
+      return;
+    }
+    if (editingUserIndex !== null) {
+      users[editingUserIndex] = { name, nickname, roles };
+      editingUserIndex = null;
+    } else {
+      users.push({ name, nickname, roles });
+    }
+    await saveUsers();
+    resetUserForm();
+  };
+
+  document.getElementById("cancel-edit-user").onclick = () => {
+    resetUserForm();
+  };
+
+  document.getElementById("menu-rehearsal").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("rehearsal-screen").style.display = "block";
+    loadRehearsals();
+  };
+
+  document.getElementById("close-rehearsal").onclick = () => {
+    document.getElementById("rehearsal-screen").style.display = "none";
+    resetRehearsalForm();
+  };
+
+  document.getElementById("add-rehearsal").onclick = async () => {
+    const date = document.getElementById("rehearsal-date").value;
+    const startTime = document.getElementById("rehearsal-start-time").value;
+    const endTime = document.getElementById("rehearsal-end-time").value;
+    const location = document.getElementById("rehearsal-location").value.trim();
+    if (!date || !startTime || !endTime || !location) {
+      alert("Completa todos los campos");
+      return;
+    }
+    if (editingRehearsalIndex !== null) {
+      rehearsals[editingRehearsalIndex] = { date, startTime, endTime, location };
+      editingRehearsalIndex = null;
+    } else {
+      rehearsals.push({ date, startTime, endTime, location });
+    }
+    await saveRehearsals();
+    resetRehearsalForm();
+  };
+
+  document.getElementById("cancel-edit-rehearsal").onclick = () => {
+    resetRehearsalForm();
+  };
+
+  function closeAll() {
+    document.querySelectorAll(".config-screen").forEach(s => s.style.display = "none");
+  }
+
   document.addEventListener("DOMContentLoaded", async () => {
     await loadSetlistConfig();
+    await loadUsers();
     await loadRehearsals();
     let songs1 = await cargarPrimerSetlist();
     let songs2 = await cargarSegundoSetlist();
