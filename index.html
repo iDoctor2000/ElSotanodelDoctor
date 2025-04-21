@@ -167,6 +167,23 @@
       color: #0cf;
       margin-bottom: 15px;
     }
+    #timeline-message {
+      color: #f00;
+      text-align: center;
+      margin-top: 10px;
+    }
+    .vis-panel {
+      background: #111 !important; /* Fondo oscuro para la línea temporal */
+    }
+    .vis-timeline {
+      border: 1px solid #333 !important;
+    }
+    .vis-time-axis .vis-text {
+      color: #0cf !important; /* Texto de fechas en cian */
+    }
+    .vis-time-axis .vis-grid {
+      border-left: 1px solid #333 !important;
+    }
     .vis-item.rehearsal {
       background-color: #aaf; /* Azul claro para ensayos */
       border-color: #88f;
@@ -423,6 +440,7 @@
     <section id="timeline">
       <h2>Línea Temporal de Eventos</h2>
       <div id="visualization"></div>
+      <p id="timeline-message" class="error-message"></p>
     </section>
 
     <!-- 6) Usuarios -->
@@ -1412,213 +1430,4 @@
   document.getElementById("add-rehearsal").onclick = async () => {
     const rehearsalMessage = document.getElementById("rehearsal-message");
     rehearsalMessage.textContent = "";
-    const date = document.getElementById("rehearsal-date").value;
-    const startTime = document.getElementById("rehearsal-start-time").value;
-    const endTime = document.getElementById("rehearsal-end-time").value;
-    const loc = document.getElementById("rehearsal-location").value.trim();
-
-    if (!date || !startTime || !endTime || !loc) {
-      rehearsalMessage.className = "error-message";
-      rehearsalMessage.textContent = "Completa todos los campos";
-      return;
-    }
-
-    // Validar que la hora de fin sea posterior a la hora de inicio
-    const durationSeconds = calculateDuration(startTime, endTime);
-    if (durationSeconds <= 0) {
-      rehearsalMessage.className = "error-message";
-      rehearsalMessage.textContent = "La hora de fin debe ser posterior a la hora de inicio";
-      return;
-    }
-
-    try {
-      if (editingRehearsalIndex !== null) {
-        // Editar ensayo existente
-        rehearsals[editingRehearsalIndex] = {
-          date,
-          startTime,
-          endTime,
-          location: loc,
-          attendance: rehearsals[editingRehearsalIndex].attendance || []
-        };
-        rehearsalMessage.className = "success-message";
-        rehearsalMessage.textContent = "Ensayo actualizado correctamente";
-      } else {
-        // Añadir nuevo ensayo
-        rehearsals.push({ date, startTime, endTime, location: loc, attendance: [] });
-        rehearsalMessage.className = "success-message";
-        rehearsalMessage.textContent = "Ensayo añadido correctamente";
-      }
-      await saveRehearsals();
-      resetRehearsalForm();
-    } catch (e) {
-      rehearsalMessage.className = "error-message";
-      rehearsalMessage.textContent = "Error al guardar ensayo: " + e.message;
-    }
-  };
-
-  document.getElementById("cancel-edit-rehearsal").onclick = () => {
-    resetRehearsalForm();
-    document.getElementById("rehearsal-message").textContent = "";
-  };
-
-  /* --- Estadísticas screen */
-  document.getElementById("menu-stats").onclick = e => {
-    e.preventDefault();
-    closeAll();
-    document.getElementById("stats-screen").style.display = "block";
-    updateMonthFilter(); // Actualizar las opciones del filtro de meses
-    renderStats();
-  };
-
-  document.getElementById("close-stats").onclick = () => {
-    document.getElementById("stats-screen").style.display = "none";
-  };
-
-  // Añadir evento al filtro de meses
-  document.getElementById("stats-month-filter").addEventListener("change", () => {
-    renderStats();
-  });
-
-  /* ---------- 12. Carga inicial ---------- */
-  document.addEventListener("DOMContentLoaded", async () => {
-    updateConnectionStatus(); // Verificar estado de conexión al cargar
-
-    try {
-      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
-    } catch (e) {
-      console.error("Error al cargar datos de Firestore:", e);
-    }
-
-    let songs1 = [], songs2 = [];
-    try {
-      songs1 = await cargarPrimerSetlist();
-    } catch (e) {
-      console.error("Fallo al cargar el primer setlist:", e);
-    }
-
-    try {
-      songs2 = await cargarSegundoSetlist();
-    } catch (e) {
-      console.error("Fallo al cargar el segundo setlist:", e);
-    }
-
-    document.getElementById("download-btn").onclick = () => {
-      if (songs1.length > 0) {
-        genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
-      } else {
-        alert("No hay canciones disponibles para descargar el PDF del setlist de ensayos.");
-      }
-    };
-
-    document.getElementById("download-btn-2").onclick = () => {
-      if (songs2.length > 0) {
-        genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf");
-      } else {
-        alert("No hay canciones disponibles para descargar el PDF del setlist del concierto.");
-      }
-    };
-
-    setTimeout(modifyBandHelperTable, 1000);
-  });
-
-  /* ---------- 13. Función para extraer conciertos de BandHelper ---------- */
-  function extractConcertsFromBandHelper(callback) {
-    const concertTable = document.querySelector("#bandhelper-concerts table");
-    if (concertTable) {
-      const concertRows = concertTable.querySelectorAll("tbody tr");
-      const concerts = [];
-      concertRows.forEach(row => {
-        const cells = row.querySelectorAll("td");
-        if (cells.length >= 3) {
-          const dateCell = cells[0].textContent.trim();
-          const timeCell = cells[1].textContent.trim();
-          const locationCell = cells[2].textContent.trim() || "Lugar no especificado";
-          const year = new Date().getFullYear();
-          const dateParts = dateCell.match(/(\d+)\s+de\s+(\w+)/i);
-          if (dateParts) {
-            const day = dateParts[1];
-            const monthName = dateParts[2];
-            const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-            const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase()) + 1;
-            const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            concerts.push({
-              type: "concierto",
-              date: date,
-              time: timeCell || "20:00",
-              location: locationCell
-            });
-          }
-        }
-      });
-      callback(concerts);
-    } else {
-      setTimeout(() => extractConcertsFromBandHelper(callback), 500);
-    }
-  }
-
-  /* ---------- 14. Función para crear la línea temporal ---------- */
-  function createTimeline() {
-    extractConcertsFromBandHelper(concerts => {
-      // Mapear ensayos
-      const rehearsalEvents = rehearsals.map(r => ({
-        type: "ensayo",
-        date: r.date,
-        startTime: r.startTime,
-        endTime: r.endTime,
-        location: r.location
-      }));
-
-      // Combinar ensayos y conciertos
-      const events = [...rehearsalEvents, ...concerts];
-
-      // Ordenar por fecha
-      events.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      // Crear items para Vis.js
-      const items = events.map((event, index) => {
-        const startDateTime = new Date(`${event.date}T${event.startTime || event.time || "00:00"}`);
-        let endDateTime;
-        if (event.type === "ensayo") {
-          endDateTime = new Date(`${event.date}T${event.endTime}`);
-        } else {
-          // Para conciertos, asumir 2 horas de duración
-          endDateTime = new Date(startDateTime.getTime() + 2 * 60 * 60 * 1000);
-        }
-        const content = event.type === "ensayo"
-          ? `<i>Ensayo en ${event.location}</i>` // Ensayos en cursiva
-          : `<b>Concierto en ${event.location}</b>`; // Conciertos en negrita
-        return {
-          id: index + 1,
-          content: content,
-          start: startDateTime,
-          end: endDateTime,
-          type: "range", // Mostrar eventos con duración
-          className: event.type === "ensayo" ? "rehearsal" : "concert" // Clases para estilos
-        };
-      });
-
-      // Crear el DataSet de Vis.js
-      const itemsDataSet = new vis.DataSet(items);
-
-      // Configurar opciones para que sea responsive y atractiva
-      const options = {
-        width: "100%",
-        height: "400px",
-        margin: { item: 20 },
-        orientation: "top",
-        stack: true,
-        zoomMin: 1000 * 60 * 60 * 24, // Zoom mínimo: 1 día
-        zoomMax: 1000 * 60 * 60 * 24 * 31 * 12, // Zoom máximo: 1 año
-        start: new Date(), // Comenzar en la fecha actual
-        end: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30) // Mostrar 1 mes por defecto
-      };
-
-      // Renderizar la línea temporal
-      const container = document.getElementById("visualization");
-      const timeline = new vis.Timeline(container, itemsDataSet, options);
-    });
-  }
-  </script>
-</body>
-</html>
+    const date = document.getElementBy
