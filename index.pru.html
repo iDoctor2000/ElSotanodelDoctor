@@ -10,16 +10,16 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
   <!-- ================= METADATOS ================= -->
-  <meta property="og:title"       content="El Sótano del Doctor – Uso Interno">
+  <meta property="og:title" content="El Sótano del Doctor – Uso Interno">
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
-  <meta property="og:image"       content="assets/logo_negro copia.jpg">
-  <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://tusitioweb.com">
+  <meta property="og:image" content="assets/logo_negro copia.jpg">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tusitioweb.com">
 
-  <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="El Sótano del Doctor – Uso Interno">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="El Sótano del Doctor – Uso Interno">
   <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
-  <meta name="twitter:image"       content="assets/logo_negro copia.jpg">
+  <meta name="twitter:image" content="assets/logo_negro copia.jpg">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -72,55 +72,50 @@
     .config-screen .close-btn:hover{background:#333}
     /* Secciones */
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists,#rehearsals,#second-setlist,#calendario,#usuarios{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
-    #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px}
+    #setlists,#rehearsals,#timeline,#second-setlist,#calendario,#usuarios{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
+    #setlists h2,#rehearsals h2,#timeline h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px}
     /* Ajuste para tablas: envolvente para permitir desplazamiento horizontal */
     .table-wrapper {
       width: 100%;
       overflow-x: auto;
-      -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en dispositivos móviles */
+      -webkit-overflow-scrolling: touch;
       display: flex;
-      justify-content: center; /* Centrar la tabla horizontalmente */
+      justify-content: center;
     }
     table {
       width: 100%;
-      max-width: 100%; /* Asegurar que la tabla no exceda el contenedor */
+      max-width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
       color: #fff;
       font-size: .95em;
       margin-left: auto;
-      margin-right: auto; /* Centrar la tabla */
+      margin-right: auto;
     }
     thead{background:#222;color:#0cf}
-    th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;} /* Permitir que el texto se ajuste */
+    th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
     tr:nth-child(even){background:#1a1a1a}
-    /* Ajuste específico para la tabla del segundo setlist */
     #second-setlist .table-wrapper table {
-      min-width: 600px; /* Ancho mínimo para pantallas grandes */
+      min-width: 600px;
     }
     .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
     #total-time,#total-time-2{color:#0cf;margin-top:10px;text-align:center}
     #second-setlist-name {text-align:center;color:#aaa;margin-top:5px;font-style:italic}
     footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
-    /* Estilo para el botón de añadir al calendario */
     .calendar-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; vertical-align: middle; }
     .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
     .calendar-btn:hover svg { fill: #09b; }
-    /* Estilo para botones de acción en tablas */
     .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal {
       padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer;
     }
     .edit-user, .edit-rehearsal { background: #0cf; color: #000; }
-    .clear-attendance { background: #ff9800; } /* Color naranja para "Eliminar Asistentes" */
+    .clear-attendance { background: #ff9800; }
     .delete-user:hover, .delete-rehearsal:hover { background: #d00; }
     .edit-user:hover, .edit-rehearsal:hover { background: #09b; }
     .clear-attendance:hover { background: #e68900; }
-    /* Botón de cancelar edición */
     #cancel-edit-user, #cancel-edit-rehearsal { background: #666; color: #fff; }
     #cancel-edit-user:hover, #cancel-edit-rehearsal:hover { background: #555; }
-    /* Estilo para el formulario de asistencia */
     .attendance-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .attendance-form select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; }
     .attendance-form button { padding: 5px 10px; background: #0cf; color: #000; border: none; border-radius: 4px; cursor: pointer; }
@@ -129,57 +124,161 @@
     .attendance-summary span { display: block; }
     .attending-yes { color: #0cf; }
     .attending-no { color: #f00; }
-    /* Estilo para duración del ensayo */
     .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; }
-    /* Estilo para mensaje de conexión */
     #connection-status {
       position: fixed; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.8); color: #fff;
       padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none;
     }
     #connection-status.offline { background: #f00; }
     #connection-status.retrying { background: #ff9800; }
-    /* Estilo para mensajes de éxito/error */
     .success-message { color: #0cf; margin-top: 10px; text-align: center; }
     .error-message { color: #f00; margin-top: 10px; text-align: center; }
-    /* Estilo para la pantalla de estadísticas */
     .stats-table { margin-bottom: 40px; }
     .stats-table h3 { color: #0cf; margin: 20px 0 10px; text-align: center; }
-    /* Estilo para el selector de mes en estadísticas */
     .stats-filter { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px; }
     .stats-filter label { color: #0cf; }
     .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
+
+    /* Estilos de la línea temporal */
+    .timeline-container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .filter-buttons {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .filter-buttons button {
+      padding: 10px 20px;
+      margin: 0 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #3498db;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.3s, background-color 0.3s;
+    }
+    .filter-buttons button:hover {
+      transform: scale(1.1);
+      background-color: #2980b9;
+    }
+    .filter-buttons button.active {
+      background-color: #2ecc71;
+    }
+    .timeline {
+      position: relative;
+      padding: 20px 0;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      width: 6px;
+      background-color: #3498db;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      margin-left: -3px;
+    }
+    .timeline-item {
+      padding: 10px 40px;
+      position: relative;
+      background-color: inherit;
+      width: 50%;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease forwards;
+    }
+    .timeline-item:nth-child(odd) {
+      left: 0;
+    }
+    .timeline-item:nth-child(even) {
+      left: 50%;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      right: -10px;
+      background-color: #fff;
+      border: 4px solid #3498db;
+      top: 15px;
+      border-radius: 50%;
+      z-index: 1;
+    }
+    .timeline-item:nth-child(even)::before {
+      left: -10px;
+    }
+    .timeline-item.ensayo .content {
+      background-color: #e74c3c;
+      color: white;
+    }
+    .timeline-item.concierto .content {
+      background-color: #2ecc71;
+      color: white;
+    }
+    .content {
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+      position: relative;
+      transition: transform 0.3s;
+    }
+    .content:hover {
+      transform: scale(1.05);
+    }
+    .hidden {
+      display: none;
+    }
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
     /* Responsive */
     @media(max-width:768px){
       .hamburger div{width:20px}
-      .logo img.logo-main{width:150px} /* Reducir tamaño del logo en móviles */
-      .logo-intranet{height:50px} /* Ajustar altura de logointranet.png en móviles */
+      .logo img.logo-main{width:150px}
+      .logo-intranet{height:50px}
       .attendance-form { flex-direction: column; align-items: flex-start; }
       .attendance-form select { width: 100%; }
-      /* Ajustar botones de acción en pantallas pequeñas */
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
       #connection-status { top: 70px; right: 5px; font-size: 0.8em; }
-      /* Ajustar tablas para móviles */
       .table-wrapper {
-        overflow-x: hidden; /* Eliminar desplazamiento horizontal */
+        overflow-x: hidden;
       }
       table {
         width: 100%;
-        min-width: unset; /* Eliminar ancho mínimo en móviles */
-        font-size: 0.85em; /* Reducir tamaño de fuente */
+        min-width: unset;
+        font-size: 0.85em;
       }
       th, td {
-        padding: 8px; /* Reducir padding para ahorrar espacio */
-        white-space: normal; /* Permitir que el texto se ajuste */
-        word-wrap: break-word; /* Asegurar que el texto largo se divida */
-        max-width: 150px; /* Limitar el ancho máximo de las celdas */
+        padding: 8px;
+        white-space: normal;
+        word-wrap: break-word;
+        max-width: 150px;
       }
-      /* Ajuste específico para la tabla del segundo setlist */
       #second-setlist .table-wrapper table {
-        min-width: unset; /* Eliminar el ancho mínimo en móviles */
+        min-width: unset;
       }
-      /* Ajustar tablas de estadísticas */
       .stats-table table {
         font-size: 0.85em;
+      }
+      .timeline::before {
+        left: 20px;
+      }
+      .timeline-item {
+        width: 100%;
+        padding-left: 70px;
+        padding-right: 25px;
+      }
+      .timeline-item:nth-child(even) {
+        left: 0;
+      }
+      .timeline-item::before {
+        left: 10px;
       }
     }
   </style>
@@ -203,6 +302,7 @@
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
     <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
+    <a href="#timeline" id="menu-timeline-section">Línea Temporal</a>
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#" id="menu-stats">Estadísticas</a>
@@ -291,7 +391,6 @@
       <label>Filtrar por mes:</label>
       <select id="stats-month-filter">
         <option value="all">Todos los meses</option>
-        <!-- Opciones dinámicas se añadirán aquí -->
       </select>
     </div>
     <div class="stats-table">
@@ -345,7 +444,7 @@
         <table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table>
       </div>
       <button class="download-btn" id="download-btn">Descargar PDF</button>
-      <p id="total-time"></-part>
+      <p id="total-time"></p>
     </section>
 
     <!-- 2) Ensayos -->
@@ -366,7 +465,22 @@
       </div>
     </section>
 
-    <!-- 3) Segundo setlist -->
+    <!-- 3) Línea Temporal -->
+    <section id="timeline">
+      <h2>Línea Temporal de Eventos</h2>
+      <div class="timeline-container">
+        <div class="filter-buttons">
+          <button class="filter-btn active" data-filter="all">Todos</button>
+          <button class="filter-btn" data-filter="ensayo">Ensayos</button>
+          <button class="filter-btn" data-filter="concierto">Conciertos</button>
+        </div>
+        <div class="timeline">
+          <!-- Los eventos se renderizarán aquí dinámicamente -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 4) Segundo setlist -->
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-name"></p>
@@ -377,7 +491,7 @@
       <p id="total-time-2"></p>
     </section>
 
-    <!-- 4) Calendario -->
+    <!-- 5) Calendario -->
     <section id="calendario">
       <h2>Próximos Conciertos</h2>
       <div id="bandhelper-concerts">
@@ -385,7 +499,7 @@
       </div>
     </section>
 
-    <!-- 5) Usuarios -->
+    <!-- 6) Usuarios -->
     <section id="usuarios">
       <h2>Usuarios Registrados</h2>
       <div class="table-wrapper">
@@ -398,1076 +512,1063 @@
 
   <!-- ============ JAVASCRIPT PRINCIPAL ============ -->
   <script>
-  /* ---------- 0. Firebase ---------- */
-  const firebaseConfig = {
-    apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
-    authDomain: "sotanointranet.firebaseapp.com",
-    projectId: "sotanointranet",
-    messagingSenderId: "756955233128",
-    appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+    /* ---------- 0. Firebase ---------- */
+    const firebaseConfig = {
+      apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
+      authDomain: "sotanointranet.firebaseapp.com",
+      projectId: "sotanointranet",
+      messagingSenderId: "756955233128",
+      appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-  // Habilitar modo offline de Firestore
-  firebase.firestore().enablePersistence()
-    .catch(err => {
-      console.warn("No se pudo habilitar la persistencia de Firestore:", err);
-    });
+    firebase.firestore().enablePersistence()
+      .catch(err => {
+        console.warn("No se pudo habilitar la persistencia de Firestore:", err);
+      });
 
-  /* ---------- 1. Utilidades ---------- */
-  const parseDuration = str => {
-    if (!str) return 0;
-    if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; }
-    const n = parseInt(str, 10); return isNaN(n) ? 0 : n;
-  };
-  const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  const toHHMM = s => {
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
-  };
-  const toHours = s => (s / 3600).toFixed(2); // Convertir segundos a horas con 2 decimales
-  const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
+    /* ---------- 1. Utilidades ---------- */
+    const parseDuration = str => {
+      if (!str) return 0;
+      if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; }
+      const n = parseInt(str, 10); return isNaN(n) ? 0 : n;
+    };
+    const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    const toHHMM = s => {
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
+    };
+    const toHours = s => (s / 3600).toFixed(2);
+    const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
 
-  // Calcular duración entre dos horas (en segundos)
-  const calculateDuration = (startTime, endTime) => {
-    if (!startTime || !endTime) return 0;
-    const [startH, startM] = startTime.split(":").map(Number);
-    const [endH, endM] = endTime.split(":").map(Number);
-    const startSeconds = startH * 3600 + startM * 60;
-    const endSeconds = endH * 3600 + endM * 60;
-    let duration = endSeconds - startSeconds;
-    if (duration < 0) duration += 24 * 3600; // Si la hora fin es menor (ej. cruza medianoche)
-    return duration;
-  };
+    const calculateDuration = (startTime, endTime) => {
+      if (!startTime || !endTime) return 0;
+      const [startH, startM] = startTime.split(":").map(Number);
+      const [endH, endM] = endTime.split(":").map(Number);
+      const startSeconds = startH * 3600 + startM * 60;
+      const endSeconds = endH * 3600 + endM * 60;
+      let duration = endSeconds - startSeconds;
+      if (duration < 0) duration += 24 * 3600;
+      return duration;
+    };
 
-  // Formatear fecha como "Domingo 24 de Mayo"
-  const formatDateWithDay = dateStr => {
-    const date = new Date(dateStr);
-    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    const dayName = days[date.getDay()];
-    const day = date.getDate();
-    const monthName = months[date.getMonth()];
-    return `${dayName} ${day} de ${monthName}`;
-  };
+    const formatDateWithDay = dateStr => {
+      const date = new Date(dateStr);
+      const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+      const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+      const dayName = days[date.getDay()];
+      const day = date.getDate();
+      const monthName = months[date.getMonth()];
+      return `${dayName} ${day} de ${monthName}`;
+    };
 
-  // Obtener el nombre del mes y año para estadísticas
-  const getMonthYear = dateStr => {
-    const date = new Date(dateStr);
-    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    return `${months[date.getMonth()]} ${date.getFullYear()}`;
-  };
+    const getMonthYear = dateStr => {
+      const date = new Date(dateStr);
+      const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+      return `${months[date.getMonth()]} ${date.getFullYear()}`;
+    };
 
-  // Generar archivo .ics para añadir al calendario
-  function generateICS(title, date, startTime, location, description = "", durationSeconds) {
-    const startDate = new Date(`${date}T${startTime}`);
-    const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
-    const formatDate = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-    const start = formatDate(startDate);
-    const end = formatDate(endDate);
-    const icsContent = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "BEGIN:VEVENT",
-      `DTSTART:${start}`,
-      `DTEND:${end}`,
-      `SUMMARY:${title}`,
-      `DESCRIPTION:${description}`,
-      `LOCATION:${location}`,
-      "END:VEVENT",
-      "END:VCALENDAR"
-    ].join("\r\n");
-    const blob = new Blob([icsContent], { type: "text/calendar" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${title.replace(/\s+/g, "_")}.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }
-
-  /* ---------- 1.5. Manejo de conexión ---------- */
-  const connectionStatus = document.getElementById("connection-status");
-  let isOnline = navigator.onLine;
-
-  function updateConnectionStatus() {
-    isOnline = navigator.onLine;
-    if (!isOnline) {
-      connectionStatus.className = "offline";
-      connectionStatus.textContent = "Sin conexión: Mostrando datos en caché";
-      connectionStatus.style.display = "block";
-    } else {
-      connectionStatus.style.display = "none";
+    function generateICS(title, date, startTime, location, description = "", durationSeconds) {
+      const startDate = new Date(`${date}T${startTime}`);
+      const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
+      const formatDate = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+      const start = formatDate(startDate);
+      const end = formatDate(endDate);
+      const icsContent = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "BEGIN:VEVENT",
+        `DTSTART:${start}`,
+        `DTEND:${end}`,
+        `SUMMARY:${title}`,
+        `DESCRIPTION:${description}`,
+        `LOCATION:${location}`,
+        "END:VEVENT",
+        "END:VCALENDAR"
+      ].join("\r\n");
+      const blob = new Blob([icsContent], { type: "text/calendar" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${title.replace(/\s+/g, "_")}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
-  }
 
-  window.addEventListener("online", updateConnectionStatus);
-  window.addEventListener("offline", updateConnectionStatus);
+    /* ---------- 1.5. Manejo de conexión ---------- */
+    const connectionStatus = document.getElementById("connection-status");
+    let isOnline = navigator.onLine;
 
-  // Función de reintento para operaciones de Firestore
-  async function withRetry(fn, maxRetries = 3, delay = 2000) {
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        if (!navigator.onLine) {
-          connectionStatus.className = "offline";
-          connectionStatus.textContent = "Sin conexión: Mostrando datos en caché";
-          connectionStatus.style.display = "block";
-          return await fn(); // Intentar con datos en caché
-        }
-        return await fn();
-      } catch (e) {
-        if (i === maxRetries - 1) throw e; // Último intento fallido
-        connectionStatus.className = "retrying";
-        connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`;
+    function updateConnectionStatus() {
+      isOnline = navigator.onLine;
+      if (!isOnline) {
+        connectionStatus.className = "offline";
+        connectionStatus.textContent = "Sin conexión: Mostrando datos en caché";
         connectionStatus.style.display = "block";
-        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        connectionStatus.style.display = "none";
       }
     }
-  }
 
-  /* ---------- 2. Acceso Firestore ---------- */
-  async function loadDoc(id, fallback) {
-    try {
-      const snap = await db.collection("intranet").doc(id).get();
-      return snap.exists ? snap.data() : fallback;
-    } catch (e) {
-      console.error(`Error al cargar documento ${id}:`, e.message);
-      throw new Error(`No se pudo cargar el documento ${id}: ${e.message}`);
+    window.addEventListener("online", updateConnectionStatus);
+    window.addEventListener("offline", updateConnectionStatus);
+
+    async function withRetry(fn, maxRetries = 3, delay = 2000) {
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          if (!navigator.onLine) {
+            connectionStatus.className = "offline";
+            connectionStatus.textContent = "Sin conexión: Mostrando datos en caché";
+            connectionStatus.style.display = "block";
+            return await fn();
+          }
+          return await fn();
+        } catch (e) {
+          if (i === maxRetries - 1) throw e;
+          connectionStatus.className = "retrying";
+          connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`;
+          connectionStatus.style.display = "block";
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
     }
-  }
 
-  async function saveDoc(id, data) {
-    try {
-      await db.collection("intranet").doc(id).set(data);
-      return true;
-    } catch (e) {
-      console.error(`Error al guardar documento ${id}:`, e.message);
-      throw new Error(`No se pudo guardar el documento ${id}: ${e.message}`);
+    /* ---------- 2. Acceso Firestore ---------- */
+    async function loadDoc(id, fallback) {
+      try {
+        const snap = await db.collection("intranet").doc(id).get();
+        return snap.exists ? snap.data() : fallback;
+      } catch (e) {
+        console.error(`Error al cargar documento ${id}:`, e.message);
+        throw new Error(`No se pudo cargar el documento ${id}: ${e.message}`);
+      }
     }
-  }
 
-  /* ---------- 3. Configuración Setlists ---------- */
-  let setlistConfig = {
-    setlist1: { name: "Setlist Ensayos -Año 2025-", url: "https://cold-limit-811a.jagomezc.workers.dev" },
-    setlist2: { name: "Setlist Próximo Concierto", url: "https://www.bandhelper.com/feed/set_list/TXHvyb" }
-  };
+    async function saveDoc(id, data) {
+      try {
+        await db.collection("intranet").doc(id).set(data);
+        return true;
+      } catch (e) {
+        console.error(`Error al guardar documento ${id}:`, e.message);
+        throw new Error(`No se pudo guardar el documento ${id}: ${e.message}`);
+      }
+    }
 
-  function updateTitles() {
-    document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
-    document.getElementById("second-setlist-name").textContent = setlistConfig.setlist2.name;
-  }
+    /* ---------- 3. Configuración Setlists ---------- */
+    let setlistConfig = {
+      setlist1: { name: "Setlist Ensayos -Año 2025-", url: "https://cold-limit-811a.jagomezc.workers.dev" },
+      setlist2: { name: "Setlist Próximo Concierto", url: "https://www.bandhelper.com/feed/set_list/TXHvyb" }
+    };
 
-  async function loadSetlistConfig() {
-    try {
-      const data = await withRetry(() => loadDoc("setlists", { config: setlistConfig }));
-      setlistConfig = data.config || setlistConfig;
+    function updateTitles() {
+      document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
+      document.getElementById("second-setlist-name").textContent = setlistConfig.setlist2.name;
+    }
+
+    async function loadSetlistConfig() {
+      try {
+        const data = await withRetry(() => loadDoc("setlists", { config: setlistConfig }));
+        setlistConfig = data.config || setlistConfig;
+        updateTitles();
+      } catch (e) {
+        console.error("Error al cargar la configuración de setlists:", e);
+        throw e;
+      }
+    }
+
+    async function saveSetlistConfig() {
       updateTitles();
-    } catch (e) {
-      console.error("Error al cargar la configuración de setlists:", e);
-      throw e;
+      return await withRetry(() => saveDoc("setlists", { config: setlistConfig }));
     }
-  }
 
-  async function saveSetlistConfig() {
-    updateTitles();
-    return await withRetry(() => saveDoc("setlists", { config: setlistConfig }));
-  }
-
-  /* ---------- 4. Primer Setlist ---------- */
-  async function cargarPrimerSetlist() {
-    try {
-      const songs = (await (await fetch(setlistConfig.setlist1.url)).json()).filter(i => i.type === "song");
-      const tbody = document.getElementById("setlist-body");
-      tbody.innerHTML = "";
-      let total = 0;
-      songs.forEach((s, i) => {
-        const secs = parseDuration(s.duration);
-        total += secs;
-        tbody.insertAdjacentHTML("beforeend",
-          `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.key || ""}</td><td>${s.tempo || ""}</td><td>${toMMSS(secs)}</td></tr>`);
-      });
-      document.getElementById("total-time").textContent = "Tiempo total del set: " + toHHMM(total);
-      return songs;
-    } catch (e) {
-      console.error(e);
-      document.getElementById("setlist-body").innerHTML =
-        '<tr><td colspan="5">Error al cargar el primer setlist.</td></tr>';
-      return [];
-    }
-  }
-
-  /* ---------- 5. Segundo Setlist ---------- */
-  async function cargarSegundoSetlist() {
-    try {
-      const response = await fetch(setlistConfig.setlist2.url);
-      if (!response.ok) throw new Error('Error en la respuesta de la API');
-      const data = await response.json();
-      const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : [];
-      const tbody = document.getElementById("second-body");
-      tbody.innerHTML = "";
-      let total = 0;
-      songs.forEach((s, i) => {
-        const secs = parseDuration(s.duration || "0");
-        total += secs;
-        tbody.insertAdjacentHTML("beforeend",
-          `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
-        );
-      });
-      document.getElementById("total-time-2").textContent = "Tiempo total del set: " + toHHMM(total);
-      return songs;
-    } catch (e) {
-      console.error("Error cargando segundo setlist:", e);
-      document.getElementById("second-body").innerHTML =
-        '<tr><td colspan="5">No se pudo cargar el segundo setlist. Verifica la URL o la conexión.</td></tr>';
-      document.getElementById("total-time-2").textContent = "";
-      return [];
-    }
-  }
-
-  /* ---------- 6. Usuarios ---------- */
-  let users = [];
-  let editingUserIndex = null;
-
-  function renderUsers() {
-    const tbody = document.getElementById("user-table-body");
-    const main = document.getElementById("users-body");
-    tbody.innerHTML = main.innerHTML = "";
-    users.forEach((u, i) => {
-      if (!u || typeof u !== 'object' || !u.name || !u.nickname || !Array.isArray(u.roles)) {
-        console.warn(`Usuario inválido en la posición ${i}:`, u);
-        return;
+    /* ---------- 4. Primer Setlist ---------- */
+    async function cargarPrimerSetlist() {
+      try {
+        const songs = (await (await fetch(setlistConfig.setlist1.url)).json()).filter(i => i.type === "song");
+        const tbody = document.getElementById("setlist-body");
+        tbody.innerHTML = "";
+        let total = 0;
+        songs.forEach((s, i) => {
+          const secs = parseDuration(s.duration);
+          total += secs;
+          tbody.insertAdjacentHTML("beforeend",
+            `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.key || ""}</td><td>${s.tempo || ""}</td><td>${toMMSS(secs)}</td></tr>`);
+        });
+        document.getElementById("total-time").textContent = "Tiempo total del set: " + toHHMM(total);
+        return songs;
+      } catch (e) {
+        console.error(e);
+        document.getElementById("setlist-body").innerHTML =
+          '<tr><td colspan="5">Error al cargar el primer setlist.</td></tr>';
+        return [];
       }
-      const rolesDisplay = u.roles.join(", ");
-      tbody.insertAdjacentHTML("beforeend",
-        `<tr>
-          <td>${u.name}</td>
-          <td>${u.nickname}</td>
-          <td>${rolesDisplay}</td>
-          <td>
-            <button data-i="${i}" class="edit-user">Editar</button>
-            <button data-i="${i}" class="delete-user">Eliminar</button>
-          </td>
-        </tr>`);
-      main.insertAdjacentHTML("beforeend",
-        `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`);
-    });
+    }
 
-    tbody.querySelectorAll(".delete-user").forEach(btn =>
-      btn.onclick = async () => {
-        const user = users[btn.dataset.i];
-        if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${user.name}"? Esto también eliminará sus asistencias asociadas.`)) {
-          // Actualizar asistencias para eliminar al usuario
-          rehearsals.forEach(r => {
-            if (Array.isArray(r.attendance)) {
-              r.attendance = r.attendance.filter(a => a.name !== user.name);
-            }
+    /* ---------- 5. Segundo Setlist ---------- */
+    async function cargarSegundoSetlist() {
+      try {
+        const response = await fetch(setlistConfig.setlist2.url);
+        if (!response.ok) throw new Error('Error en la respuesta de la API');
+        const data = await response.json();
+        const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : [];
+        const tbody = document.getElementById("second-body");
+        tbody.innerHTML = "";
+        let total = 0;
+        songs.forEach((s, i) => {
+          const secs = parseDuration(s.duration || "0");
+          total += secs;
+          tbody.insertAdjacentHTML("beforeend",
+            `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
+          );
+        });
+        document.getElementById("total-time-2").textContent = "Tiempo total del set: " + toHHMM(total);
+        return songs;
+      } catch (e) {
+        console.error("Error cargando segundo setlist:", e);
+        document.getElementById("second-body").innerHTML =
+          '<tr><td colspan="5">No se pudo cargar el segundo setlist. Verifica la URL o la conexión.</td></tr>';
+        document.getElementById("total-time-2").textContent = "";
+        return [];
+      }
+    }
+
+    /* ---------- 6. Usuarios ---------- */
+    let users = [];
+    let editingUserIndex = null;
+
+    function renderUsers() {
+      const tbody = document.getElementById("user-table-body");
+      const main = document.getElementById("users-body");
+      tbody.innerHTML = main.innerHTML = "";
+      users.forEach((u, i) => {
+        if (!u || typeof u !== 'object' || !u.name || !u.nickname || !Array.isArray(u.roles)) {
+          console.warn(`Usuario inválido en la posición ${i}:`, u);
+          return;
+        }
+        const rolesDisplay = u.roles.join(", ");
+        tbody.insertAdjacentHTML("beforeend",
+          `<tr>
+            <td>${u.name}</td>
+            <td>${u.nickname}</td>
+            <td>${rolesDisplay}</td>
+            <td>
+              <button data-i="${i}" class="edit-user">Editar</button>
+              <button data-i="${i}" class="delete-user">Eliminar</button>
+            </td>
+          </tr>`);
+        main.insertAdjacentHTML("beforeend",
+          `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`);
+      });
+
+      tbody.querySelectorAll(".delete-user").forEach(btn =>
+        btn.onclick = async () => {
+          const user = users[btn.dataset.i];
+          if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${user.name}"? Esto también eliminará sus asistencias asociadas.`)) {
+            rehearsals.forEach(r => {
+              if (Array.isArray(r.attendance)) {
+                r.attendance = r.attendance.filter(a => a.name !== user.name);
+              }
+            });
+            users.splice(btn.dataset.i, 1);
+            await saveUsers();
+            await saveRehearsals();
+            renderStats();
+            renderTimeline();
+          }
+        });
+
+      tbody.querySelectorAll(".edit-user").forEach(btn =>
+        btn.onclick = () => {
+          editingUserIndex = btn.dataset.i;
+          const user = users[editingUserIndex];
+          document.getElementById("user-name").value = user.name;
+          document.getElementById("user-nickname").value = user.nickname;
+          const roleSelect = document.getElementById("user-role");
+          Array.from(roleSelect.options).forEach(option => {
+            option.selected = user.roles.includes(option.value);
           });
-          users.splice(btn.dataset.i, 1);
-          await saveUsers();
-          await saveRehearsals();
-          renderStats(); // Actualizar estadísticas después de eliminar un usuario
+          const addButton = document.getElementById("add-user");
+          addButton.textContent = "Guardar Cambios";
+          document.getElementById("cancel-edit-user").style.display = "inline-block";
+        });
+    }
+
+    async function loadUsers() {
+      try {
+        const data = await withRetry(() => loadDoc("users", { users: [] }));
+        users = Array.isArray(data.users) ? data.users : [];
+        users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles));
+        renderUsers();
+      } catch (e) {
+        console.error("Error al cargar usuarios:", e);
+        throw e;
+      }
+    }
+
+    async function saveUsers() {
+      try {
+        await withRetry(() => saveDoc("users", { users }));
+        renderUsers();
+        renderRehearsals();
+        renderStats();
+        renderTimeline();
+        return true;
+      } catch (e) {
+        console.error("Error al guardar usuarios:", e);
+        throw e;
+      }
+    }
+
+    function resetUserForm() {
+      document.getElementById("user-name").value = "";
+      document.getElementById("user-nickname").value = "";
+      const roleSelect = document.getElementById("user-role");
+      Array.from(roleSelect.options).forEach(option => option.selected = false);
+      const addButton = document.getElementById("add-user");
+      addButton.textContent = "Añadir Usuario";
+      document.getElementById("cancel-edit-user").style.display = "none";
+      editingUserIndex = null;
+    }
+
+    /* ---------- 7. Ensayos ---------- */
+    let rehearsals = [];
+    let editingRehearsalIndex = null;
+
+    function renderRehearsals() {
+      rehearsals.sort((a, b) => new Date(a.date) - new Date(b.date));
+      const tbodyConfig = document.getElementById("rehearsal-table-body");
+      const tbodyMain = document.getElementById("rehearsal-main-body");
+      tbodyConfig.innerHTML = tbodyMain.innerHTML = "";
+
+      const userOptions = users.length > 0
+        ? users.map(user => `<option value="${user.name}">${user.name}</option>`).join("")
+        : `<option value="" disabled>No hay usuarios registrados</option>`;
+
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      rehearsals.forEach((r, i) => {
+        if (r.time && (!r.startTime || !r.endTime)) {
+          r.startTime = r.time;
+          const [hours, minutes] = r.time.split(":").map(Number);
+          const endHours = (hours + 2) % 24;
+          r.endTime = `${String(endHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+          delete r.time;
+        }
+
+        const formattedDate = formatDateWithDay(r.date);
+        const durationSeconds = calculateDuration(r.startTime, r.endTime);
+        const durationText = toHHMM(durationSeconds);
+
+        const attendance = Array.isArray(r.attendance) ? r.attendance : [];
+        const attendingYes = attendance
+          .filter(a => a.attending === "Sí")
+          .map(a => {
+            const user = users.find(u => u.name === a.name);
+            return user ? user.nickname : a.name;
+          })
+          .join(", ") || "Ninguno";
+        const attendingNo = attendance
+          .filter(a => a.attending === "No")
+          .map(a => {
+            const user = users.find(u => u.name === a.name);
+            return user ? user.nickname : a.name;
+          })
+          .join(", ") || "Ninguno";
+        const summary = `
+          <div class="attendance-summary">
+            <span class="attending-yes">Asisten: ${attendingYes}</span>
+            <span class="attending-no">No asisten: ${attendingNo}</span>
+          </div>
+        `;
+
+        tbodyConfig.insertAdjacentHTML("beforeend",
+          `<tr>
+            <td>${r.date}</td>
+            <td>${r.startTime}</td>
+            <td>${r.endTime}</td>
+            <td>${r.location}</td>
+            <td>${summary}</td>
+            <td>
+              <button data-i="${i}" class="edit-rehearsal">Editar</button>
+              <button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button>
+              <button data-i="${i}" class="delete-rehearsal">Eliminar</button>
+            </td>
+          </tr>`);
+
+        const rehearsalDate = new Date(r.date);
+        const rehearsalDay = new Date(rehearsalDate.getFullYear(), rehearsalDate.getMonth(), rehearsalDate.getDate());
+        if (rehearsalDay >= today) {
+          tbodyMain.insertAdjacentHTML("beforeend",
+            `<tr>
+              <td>
+                ${formattedDate}
+                <span class="rehearsal-duration">(${durationText})</span>
+              </td>
+              <td>${r.startTime} - ${r.endTime}</td>
+              <td>
+                ${r.location}
+                <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor", ${durationSeconds})'>
+                  <svg viewBox="0 0 24 24">
+                    <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
+                    <rect x="4" y="6" width="16" height="12" rx="2"/>
+                  </svg>
+                </button>
+              </td>
+              <td>
+                <div class="attendance-form">
+                  <select class="attendance-user" data-i="${i}">
+                    <option value="" disabled selected>¿Nombre?</option>
+                    ${userOptions}
+                  </select>
+                  <select class="attendance-response" data-i="${i}">
+                    <option value="" disabled selected>¿Asistirás?</option>
+                    <option value="Sí">Sí</option>
+                    <option value="No">No</option>
+                  </select>
+                  <button class="confirm-attendance" data-i="${i}">Confirmar</button>
+                </div>
+                ${summary}
+              </td>
+            </tr>`);
         }
       });
 
-    tbody.querySelectorAll(".edit-user").forEach(btn =>
-      btn.onclick = () => {
-        editingUserIndex = btn.dataset.i;
-        const user = users[editingUserIndex];
-        document.getElementById("user-name").value = user.name;
-        document.getElementById("user-nickname").value = user.nickname;
-        const roleSelect = document.getElementById("user-role");
-        Array.from(roleSelect.options).forEach(option => {
-          option.selected = user.roles.includes(option.value);
+      tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn =>
+        btn.onclick = () => {
+          editingRehearsalIndex = btn.dataset.i;
+          const rehearsal = rehearsals[editingRehearsalIndex];
+          document.getElementById("rehearsal-date").value = rehearsal.date;
+          document.getElementById("rehearsal-start-time").value = rehearsal.startTime;
+          document.getElementById("rehearsal-end-time").value = rehearsal.endTime;
+          document.getElementById("rehearsal-location").value = rehearsal.location;
+          const addButton = document.getElementById("add-rehearsal");
+          addButton.textContent = "Guardar Cambios";
+          document.getElementById("cancel-edit-rehearsal").style.display = "inline-block";
         });
-        const addButton = document.getElementById("add-user");
-        addButton.textContent = "Guardar Cambios";
-        document.getElementById("cancel-edit-user").style.display = "inline-block";
+
+      tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
+        btn.onclick = async () => {
+          if (confirm("¿Estás seguro de que deseas eliminar este ensayo? Esto también eliminará todas las asistencias asociadas.")) {
+            rehearsals.splice(btn.dataset.i, 1);
+            await saveRehearsals();
+            renderStats();
+            renderTimeline();
+          }
+        });
+
+      tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn =>
+        btn.onclick = async () => {
+          const index = btn.dataset.i;
+          const rehearsal = rehearsals[index];
+          const formattedDate = formatDateWithDay(rehearsal.date);
+          if (confirm(`¿Estás seguro de que deseas eliminar todas las asistencias para el ensayo del día ${formattedDate} a las ${rehearsal.startTime} en ${rehearsal.location}? Los usuarios tendrán que volver a confirmar su asistencia.`)) {
+            rehearsal.attendance = [];
+            await saveRehearsals();
+            const rehearsalMessage = document.getElementById("rehearsal-message");
+            rehearsalMessage.className = "success-message";
+            rehearsalMessage.textContent = "Asistencias eliminadas correctamente";
+            renderStats();
+            renderTimeline();
+          }
+        });
+
+      tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => {
+        btn.onclick = async () => {
+          const index = btn.dataset.i;
+          const userSelect = document.querySelector(`.attendance-user[data-i="${index}"]`);
+          const responseSelect = document.querySelector(`.attendance-response[data-i="${index}"]`);
+          const name = userSelect.value;
+          const attending = responseSelect.value;
+
+          if (!name || !attending) {
+            alert("Por favor, selecciona tu nombre y una respuesta (Sí/No).");
+            return;
+          }
+
+          const rehearsal = rehearsals[index];
+          const formattedDate = formatDateWithDay(rehearsal.date);
+          const confirmMessage = attending === "Sí"
+            ? `¿Asistirás pues al ensayo del día ${formattedDate} de ${rehearsal.startTime} a ${rehearsal.endTime} en ${rehearsal.location}?`
+            : `¿No asistirás pues al ensayo del día ${formattedDate} de ${rehearsal.startTime} a ${rehearsal.endTime} en ${rehearsal.location}?`;
+
+          if (!confirm(confirmMessage)) {
+            return;
+          }
+
+          if (!Array.isArray(rehearsal.attendance)) {
+            rehearsal.attendance = [];
+          }
+          const existingResponse = rehearsal.attendance.find(a => a.name === name);
+          if (existingResponse) {
+            existingResponse.attending = attending;
+          } else {
+            rehearsal.attendance.push({ name, attending });
+          }
+
+          try {
+            await saveRehearsals();
+            userSelect.value = "";
+            responseSelect.value = "";
+            renderStats();
+            renderTimeline();
+          } catch (e) {
+            alert("Error al guardar la asistencia: " + e.message);
+          }
+        };
       });
-  }
-
-  async function loadUsers() {
-    try {
-      const data = await withRetry(() => loadDoc("users", { users: [] }));
-      users = Array.isArray(data.users) ? data.users : [];
-      users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles));
-      renderUsers();
-    } catch (e) {
-      console.error("Error al cargar usuarios:", e);
-      throw e;
     }
-  }
 
-  async function saveUsers() {
-    try {
-      await withRetry(() => saveDoc("users", { users }));
-      renderUsers();
-      renderRehearsals();
-      renderStats(); // Actualizar estadísticas después de guardar usuarios
-      return true;
-    } catch (e) {
-      console.error("Error al guardar usuarios:", e);
-      throw e;
+    async function loadRehearsals() {
+      try {
+        const data = await withRetry(() => loadDoc("rehearsals", { rehearsals: [] }));
+        rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : [];
+        renderRehearsals();
+        renderTimeline();
+      } catch (e) {
+        console.error("Error al cargar ensayos:", e);
+        throw e;
+      }
     }
-  }
 
-  function resetUserForm() {
-    document.getElementById("user-name").value = "";
-    document.getElementById("user-nickname").value = "";
-    const roleSelect = document.getElementById("user-role");
-    Array.from(roleSelect.options).forEach(option => option.selected = false);
-    const addButton = document.getElementById("add-user");
-    addButton.textContent = "Añadir Usuario";
-    document.getElementById("cancel-edit-user").style.display = "none";
-    editingUserIndex = null;
-  }
+    async function saveRehearsals() {
+      try {
+        await withRetry(() => saveDoc("rehearsals", { rehearsals }));
+        renderRehearsals();
+        renderStats();
+        renderTimeline();
+        return true;
+      } catch (e) {
+        console.error("Error al guardar ensayos:", e);
+        throw e;
+      }
+    }
 
-  /* ---------- 7. Ensayos ---------- */
-  let rehearsals = [];
-  let editingRehearsalIndex = null;
+    function resetRehearsalForm() {
+      document.getElementById("rehearsal-date").value = "";
+      document.getElementById("rehearsal-start-time").value = "";
+      document.getElementById("rehearsal-end-time").value = "";
+      document.getElementById("rehearsal-location").value = "";
+      const addButton = document.getElementById("add-rehearsal");
+      addButton.textContent = "Añadir Ensayo";
+      document.getElementById("cancel-edit-rehearsal").style.display = "none";
+      editingRehearsalIndex = null;
+    }
 
-  function renderRehearsals() {
-    rehearsals.sort((a, b) => new Date(a.date) - new Date(b.date));
-    const tbodyConfig = document.getElementById("rehearsal-table-body");
-    const tbodyMain = document.getElementById("rehearsal-main-body");
-    tbodyConfig.innerHTML = tbodyMain.innerHTML = "";
+    /* ---------- 8. Estadísticas ---------- */
+    function updateMonthFilter() {
+      const select = document.getElementById("stats-month-filter");
+      select.innerHTML = '<option value="all">Todos los meses</option>';
 
-    const userOptions = users.length > 0
-      ? users.map(user => `<option value="${user.name}">${user.name}</option>`).join("")
-      : `<option value="" disabled>No hay usuarios registrados</option>`;
+      const now = new Date();
+      const pastRehearsals = rehearsals.filter(r => new Date(r.date) < now);
+      const months = new Set(pastRehearsals.map(r => getMonthYear(r.date)));
+      Array.from(months).sort().forEach(month => {
+        select.insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`);
+      });
+    }
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Truncar a solo fecha (sin hora)
+    function renderStats() {
+      const now = new Date();
+      const selectedMonth = document.getElementById("stats-month-filter")?.value || "all";
 
-    rehearsals.forEach((r, i) => {
-      // Migrar datos antiguos: si existe `time`, convertir a `startTime` y `endTime`
-      if (r.time && (!r.startTime || !r.endTime)) {
-        r.startTime = r.time;
-        const [hours, minutes] = r.time.split(":").map(Number);
-        const endHours = (hours + 2) % 24; // Añadir 2 horas por defecto
-        r.endTime = `${String(endHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-        delete r.time; // Eliminar la propiedad antigua
+      let filteredRehearsals = rehearsals.filter(r => new Date(r.date) < now);
+
+      if (selectedMonth !== "all") {
+        filteredRehearsals = filteredRehearsals.filter(r => getMonthYear(r.date) === selectedMonth);
       }
 
-      const formattedDate = formatDateWithDay(r.date);
-      const durationSeconds = calculateDuration(r.startTime, r.endTime);
-      const durationText = toHHMM(durationSeconds);
+      const timePerMonth = {};
+      filteredRehearsals.forEach(r => {
+        const monthYear = getMonthYear(r.date);
+        const duration = calculateDuration(r.startTime, r.endTime);
+        timePerMonth[monthYear] = (timePerMonth[monthYear] || 0) + duration;
+      });
 
-      // Resumen de asistencias (usar apodo)
-      const attendance = Array.isArray(r.attendance) ? r.attendance : [];
-      const attendingYes = attendance
-        .filter(a => a.attending === "Sí")
-        .map(a => {
-          const user = users.find(u => u.name === a.name);
-          return user ? user.nickname : a.name;
-        })
-        .join(", ") || "Ninguno";
-      const attendingNo = attendance
-        .filter(a => a.attending === "No")
-        .map(a => {
-          const user = users.find(u => u.name === a.name);
-          return user ? user.nickname : a.name;
-        })
-        .join(", ") || "Ninguno";
-      const summary = `
-        <div class="attendance-summary">
-          <span class="attending-yes">Asisten: ${attendingYes}</span>
-          <span class="attending-no">No asisten: ${attendingNo}</span>
-        </div>
-      `;
+      const tbodyMonth = document.getElementById("time-per-month-body");
+      tbodyMonth.innerHTML = "";
+      Object.keys(timePerMonth).sort().forEach(month => {
+        const hours = toHours(timePerMonth[month]);
+        tbodyMonth.insertAdjacentHTML("beforeend",
+          `<tr><td>${month}</td><td>${hours}</td></tr>`);
+      });
 
-      // Tabla de configuración (mostrar todos los ensayos)
-      tbodyConfig.insertAdjacentHTML("beforeend",
-        `<tr>
-          <td>${r.date}</td>
-          <td>${r.startTime}</td>
-          <td>${r.endTime}</td>
-          <td>${r.location}</td>
-          <td>${summary}</td>
-          <td>
-            <button data-i="${i}" class="edit-rehearsal">Editar</button>
-            <button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button>
-            <button data-i="${i}" class="delete-rehearsal">Eliminar</button>
-          </td>
-        </tr>`);
+      const timePerUser = {};
+      users.forEach(user => {
+        timePerUser[user.name] = 0;
+        filteredRehearsals.forEach(r => {
+          const attendance = r.attendance?.find(a => a.name === user.name);
+          if (attendance && attendance.attending === "Sí") {
+            const duration = calculateDuration(r.startTime, r.endTime);
+            timePerUser[user.name] += duration;
+          }
+        });
+      });
 
-      // Tabla principal (solo ensayos del día actual o futuros)
-      const rehearsalDate = new Date(r.date);
-      const rehearsalDay = new Date(rehearsalDate.getFullYear(), rehearsalDate.getMonth(), rehearsalDate.getDate()); // Truncar a solo fecha
-      if (rehearsalDay >= today) { // Incluir ensayos del día actual o futuros
-        tbodyMain.insertAdjacentHTML("beforeend",
+      const tbodyUser = document.getElementById("time-per-user-body");
+      tbodyUser.innerHTML = "";
+      Object.keys(timePerUser).sort().forEach(user => {
+        const hours = toHours(timePerUser[user]);
+        tbodyUser.insertAdjacentHTML("beforeend",
+          `<tr><td>${user}</td><td>${hours}</td></tr>`);
+      });
+
+      const tbodyPast = document.getElementById("past-rehearsals-body");
+      tbodyPast.innerHTML = "";
+      filteredRehearsals.sort((a, b) => new Date(b.date) - new Date(a.date));
+      filteredRehearsals.forEach(r => {
+        const formattedDate = formatDateWithDay(r.date);
+        const durationSeconds = calculateDuration(r.startTime, r.endTime);
+        const durationText = toHHMM(durationSeconds);
+
+        const attendance = Array.isArray(r.attendance) ? r.attendance : [];
+        const attendingYes = attendance
+          .filter(a => a.attending === "Sí")
+          .map(a => {
+            const user = users.find(u => u.name === a.name);
+            return user ? user.nickname : a.name;
+          })
+          .join(", ") || "Ninguno";
+        const attendingNo = attendance
+          .filter(a => a.attending === "No")
+          .map(a => {
+            const user = users.find(u => u.name === a.name);
+            return user ? user.nickname : a.name;
+          })
+          .join(", ") || "Ninguno";
+        const summary = `
+          <div class="attendance-summary">
+            <span class="attending-yes">Asisten: ${attendingYes}</span>
+            <span class="attending-no">No asisten: ${attendingNo}</span>
+          </div>
+        `;
+
+        tbodyPast.insertAdjacentHTML("beforeend",
           `<tr>
             <td>
               ${formattedDate}
               <span class="rehearsal-duration">(${durationText})</span>
             </td>
             <td>${r.startTime} - ${r.endTime}</td>
-            <td>
-              ${r.location}
-              <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor", ${durationSeconds})'>
-                <svg viewBox="0 0 24 24">
-                  <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
-                  <rect x="4" y="6" width="16" height="12" rx="2"/>
-                </svg>
-              </button>
-            </td>
-            <td>
-              <div class="attendance-form">
-                <select class="attendance-user" data-i="${i}">
-                  <option value="" disabled selected>¿Nombre?</option>
-                  ${userOptions}
-                </select>
-                <select class="attendance-response" data-i="${i}">
-                  <option value="" disabled selected>¿Asistirás?</option>
-                  <option value="Sí">Sí</option>
-                  <option value="No">No</option>
-                </select>
-                <button class="confirm-attendance" data-i="${i}">Confirmar</button>
-              </div>
-              ${summary}
-            </td>
+            <td>${r.location}</td>
+            <td>${summary}</td>
           </tr>`);
+      });
+    }
+
+    /* ---------- 9. PDF ---------- */
+    async function genPDF(songs, title, fileName) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: "pt", format: "A4" });
+      try {
+        const blob = await (await fetch("assets/logo_negro copia.jpg")).blob();
+        const base = await new Promise((ok, ko) => {
+          const r = new FileReader();
+          r.onload = () => ok(r.result);
+          r.onerror = ko;
+          r.readAsDataURL(blob);
+        });
+        doc.addImage(base, "JPEG", 40, 30, 60, 60);
+      } catch (e) {
+        console.error("Error al cargar el logo para el PDF:", e);
       }
-    });
-
-    // Añadir eventos a los botones de editar (pantalla de configuración)
-    tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn =>
-      btn.onclick = () => {
-        editingRehearsalIndex = btn.dataset.i;
-        const rehearsal = rehearsals[editingRehearsalIndex];
-        document.getElementById("rehearsal-date").value = rehearsal.date;
-        document.getElementById("rehearsal-start-time").value = rehearsal.startTime;
-        document.getElementById("rehearsal-end-time").value = rehearsal.endTime;
-        document.getElementById("rehearsal-location").value = rehearsal.location;
-        const addButton = document.getElementById("add-rehearsal");
-        addButton.textContent = "Guardar Cambios";
-        document.getElementById("cancel-edit-rehearsal").style.display = "inline-block";
+      doc.setFontSize(16);
+      doc.text(`Setlist - ${title}`, 120, 50);
+      const totalTime = toMMSS(songs.reduce((a, s) => a + parseDuration(s.duration), 0));
+      doc.setFontSize(12);
+      doc.text(`${songs.length} canciones, ${totalTime} total`, 120, 70);
+      doc.autoTable({
+        startY: 100,
+        head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
+        body: songs.map((s, i) => [i + 1, s.name || "", s.key || "", s.tempo || "", toMMSS(parseDuration(s.duration))]),
+        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: "bold" },
+        styles: { fontSize: 10, cellPadding: 5 }
       });
-
-    // Añadir eventos a los botones de eliminar (pantalla de configuración)
-    tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
-      btn.onclick = async () => {
-        if (confirm("¿Estás seguro de que deseas eliminar este ensayo? Esto también eliminará todas las asistencias asociadas.")) {
-          rehearsals.splice(btn.dataset.i, 1);
-          await saveRehearsals();
-          renderStats(); // Actualizar estadísticas después de eliminar un ensayo
-        }
-      });
-
-    // Añadir eventos a los botones de eliminar asistentes
-    tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn =>
-      btn.onclick = async () => {
-        const index = btn.dataset.i;
-        const rehearsal = rehearsals[index];
-        const formattedDate = formatDateWithDay(rehearsal.date);
-        if (confirm(`¿Estás seguro de que deseas eliminar todas las asistencias para el ensayo del día ${formattedDate} a las ${rehearsal.startTime} en ${rehearsal.location}? Los usuarios tendrán que volver a confirmar su asistencia.`)) {
-          rehearsal.attendance = [];
-          await saveRehearsals();
-          const rehearsalMessage = document.getElementById("rehearsal-message");
-          rehearsalMessage.className = "success-message";
-          rehearsalMessage.textContent = "Asistencias eliminadas correctamente";
-          renderStats(); // Actualizar estadísticas después de eliminar asistencias
-        }
-      });
-
-    // Añadir eventos a los botones de confirmar asistencia (tabla principal)
-    tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => {
-      btn.onclick = async () => {
-        const index = btn.dataset.i;
-        const userSelect = document.querySelector(`.attendance-user[data-i="${index}"]`);
-        const responseSelect = document.querySelector(`.attendance-response[data-i="${index}"]`);
-        const name = userSelect.value;
-        const attending = responseSelect.value;
-
-        if (!name || !attending) {
-          alert("Por favor, selecciona tu nombre y una respuesta (Sí/No).");
-          return;
-        }
-
-        const rehearsal = rehearsals[index];
-        const formattedDate = formatDateWithDay(rehearsal.date);
-        const confirmMessage = attending === "Sí"
-          ? `¿Asistirás pues al ensayo del día ${formattedDate} de ${rehearsal.startTime} a ${rehearsal.endTime} en ${rehearsal.location}?`
-          : `¿No asistirás pues al ensayo del día ${formattedDate} de ${rehearsal.startTime} a ${rehearsal.endTime} en ${rehearsal.location}?`;
-
-        if (!confirm(confirmMessage)) {
-          return;
-        }
-
-        if (!Array.isArray(rehearsal.attendance)) {
-          rehearsal.attendance = [];
-        }
-        const existingResponse = rehearsal.attendance.find(a => a.name === name);
-        if (existingResponse) {
-          existingResponse.attending = attending;
-        } else {
-          rehearsal.attendance.push({ name, attending });
-        }
-
-        try {
-          await saveRehearsals();
-          userSelect.value = "";
-          responseSelect.value = "";
-          renderStats(); // Actualizar estadísticas después de confirmar asistencia
-        } catch (e) {
-          alert("Error al guardar la asistencia: " + e.message);
-        }
-      };
-    });
-  }
-
-  async function loadRehearsals() {
-    try {
-      const data = await withRetry(() => loadDoc("rehearsals", { rehearsals: [] }));
-      rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : [];
-      renderRehearsals();
-    } catch (e) {
-      console.error("Error al cargar ensayos:", e);
-      throw e;
-    }
-  }
-
-  async function saveRehearsals() {
-    try {
-      await withRetry(() => saveDoc("rehearsals", { rehearsals }));
-      renderRehearsals();
-      renderStats(); // Actualizar estadísticas después de guardar ensayos
-      return true;
-    } catch (e) {
-      console.error("Error al guardar ensayos:", e);
-      throw e;
-    }
-  }
-
-  function resetRehearsalForm() {
-    document.getElementById("rehearsal-date").value = "";
-    document.getElementById("rehearsal-start-time").value = "";
-    document.getElementById("rehearsal-end-time").value = "";
-    document.getElementById("rehearsal-location").value = "";
-    const addButton = document.getElementById("add-rehearsal");
-    addButton.textContent = "Añadir Ensayo";
-    document.getElementById("cancel-edit-rehearsal").style.display = "none";
-    editingRehearsalIndex = null;
-  }
-
-  /* ---------- 8. Estadísticas ---------- */
-  function updateMonthFilter() {
-    const select = document.getElementById("stats-month-filter");
-    select.innerHTML = '<option value="all">Todos los meses</option>';
-
-    const now = new Date();
-    const pastRehearsals = rehearsals.filter(r => new Date(r.date) < now);
-    const months = new Set(pastRehearsals.map(r => getMonthYear(r.date)));
-    Array.from(months).sort().forEach(month => {
-      select.insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`);
-    });
-  }
-
-  function renderStats() {
-    const now = new Date();
-    const selectedMonth = document.getElementById("stats-month-filter")?.value || "all";
-
-    // Filtrar ensayos pasados
-    let filteredRehearsals = rehearsals.filter(r => new Date(r.date) < now);
-
-    // Filtrar por mes seleccionado (si no es "all")
-    if (selectedMonth !== "all") {
-      filteredRehearsals = filteredRehearsals.filter(r => getMonthYear(r.date) === selectedMonth);
+      doc.save(fileName);
     }
 
-    // Tiempo ensayado por mes
-    const timePerMonth = {};
-    filteredRehearsals.forEach(r => {
-      const monthYear = getMonthYear(r.date);
-      const duration = calculateDuration(r.startTime, r.endTime);
-      timePerMonth[monthYear] = (timePerMonth[monthYear] || 0) + duration;
-    });
+    /* ---------- 10. Línea Temporal ---------- */
+    async function loadTimelineEvents() {
+      const rehearsalEvents = rehearsals.map(r => ({
+        type: 'ensayo',
+        date: r.date,
+        startTime: r.startTime,
+        endTime: r.endTime,
+        location: r.location
+      }));
 
-    const tbodyMonth = document.getElementById("time-per-month-body");
-    tbodyMonth.innerHTML = "";
-    Object.keys(timePerMonth).sort().forEach(month => {
-      const hours = toHours(timePerMonth[month]);
-      tbodyMonth.insertAdjacentHTML("beforeend",
-        `<tr><td>${month}</td><td>${hours}</td></tr>`);
-    });
+      const concertEvents = [];
+      const concertTable = document.querySelector('#bandhelper-concerts table');
+      if (concertTable) {
+        const rows = concertTable.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+          const cells = row.querySelectorAll('td');
+          if (cells.length >= 3) {
+            const dateText = cells[0].textContent.trim();
+            const timeText = cells[1].textContent.trim();
+            const locationText = cells[2].textContent.trim() || 'Lugar no especificado';
 
-    // Tiempo ensayado por usuario
-    const timePerUser = {};
-    users.forEach(user => {
-      timePerUser[user.name] = 0;
-      filteredRehearsals.forEach(r => {
-        const attendance = r.attendance?.find(a => a.name === user.name);
-        if (attendance && attendance.attending === "Sí") {
-          const duration = calculateDuration(r.startTime, r.endTime);
-          timePerUser[user.name] += duration;
-        }
-      });
-    });
+            const dateMatch = dateText.match(/(\d+)\s+de\s+(\w+)/i);
+            if (dateMatch) {
+              const day = dateMatch[1];
+              const monthName = dateMatch[2];
+              const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+              const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase()) + 1;
+              const year = new Date().getFullYear();
+              const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const startTime = timeText || "20:00";
 
-    const tbodyUser = document.getElementById("time-per-user-body");
-    tbodyUser.innerHTML = "";
-    Object.keys(timePerUser).sort().forEach(user => {
-      const hours = toHours(timePerUser[user]);
-      tbodyUser.insertAdjacentHTML("beforeend",
-        `<tr><td>${user}</td><td>${hours}</td></tr>`);
-    });
-
-    // Ensayos pasados
-    const tbodyPast = document.getElementById("past-rehearsals-body");
-    tbodyPast.innerHTML = "";
-    filteredRehearsals.sort((a, b) => new Date(b.date) - new Date(a.date)); // Ordenar de más reciente a más antiguo
-    filteredRehearsals.forEach(r => {
-      const formattedDate = formatDateWithDay(r.date);
-      const durationSeconds = calculateDuration(r.startTime, r.endTime);
-      const durationText = toHHMM(durationSeconds);
-
-      // Resumen de asistencias (usar apodo)
-      const attendance = Array.isArray(r.attendance) ? r.attendance : [];
-      const attendingYes = attendance
-        .filter(a => a.attending === "Sí")
-        .map(a => {
-          const user = users.find(u => u.name === a.name);
-          return user ? user.nickname : a.name;
-        })
-        .join(", ") || "Ninguno";
-      const attendingNo = attendance
-        .filter(a => a.attending === "No")
-        .map(a => {
-          const user = users.find(u => u.name === a.name);
-          return user ? user.nickname : a.name;
-        })
-        .join(", ") || "Ninguno";
-      const summary = `
-        <div class="attendance-summary">
-          <span class="attending-yes">Asisten: ${attendingYes}</span>
-          <span class="attending-no">No asisten: ${attendingNo}</span>
-        </div>
-      `;
-
-      tbodyPast.insertAdjacentHTML("beforeend",
-        `<tr>
-          <td>
-            ${formattedDate}
-            <span class="rehearsal-duration">(${durationText})</span>
-          </td>
-          <td>${r.startTime} - ${r.endTime}</td>
-          <td>${r.location}</td>
-          <td>${summary}</td>
-        </tr>`);
-    });
-  }
-
-  /* ---------- 9. PDF ---------- */
-  async function genPDF(songs, title, fileName) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "pt", format: "A4" });
-    try {
-      const blob = await (await fetch("assets/logo_negro copia.jpg")).blob();
-      const base = await new Promise((ok, ko) => {
-        const r = new FileReader();
-        r.onload = () => ok(r.result);
-        r.onerror = ko;
-        r.readAsDataURL(blob);
-      });
-      doc.addImage(base, "JPEG", 40, 30, 60, 60);
-    } catch (e) {
-      console.error("Error al cargar el logo para el PDF:", e);
-    }
-    doc.setFontSize(16);
-    doc.text(`Setlist - ${title}`, 120, 50);
-    const totalTime = toMMSS(songs.reduce((a, s) => a + parseDuration(s.duration), 0));
-    doc.setFontSize(12);
-    doc.text(`${songs.length} canciones, ${totalTime} total`, 120, 70);
-    doc.autoTable({
-      startY: 100,
-      head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
-      body: songs.map((s, i) => [i + 1, s.name || "", s.key || "", s.tempo || "", toMMSS(parseDuration(s.duration))]),
-      headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: "bold" },
-      styles: { fontSize: 10, cellPadding: 5 }
-    });
-    doc.save(fileName);
-  }
-
-  /* ---------- 10. Modificar tabla de BandHelper (Próximos Conciertos) ---------- */
-  function modifyBandHelperTable() {
-    const table = document.querySelector("#bandhelper-concerts table");
-    if (!table) {
-      setTimeout(modifyBandHelperTable, 500);
-      return;
-    }
-    const rows = table.querySelectorAll("tbody tr");
-    rows.forEach(row => {
-      const cells = row.querySelectorAll("td");
-      if (cells.length < 3) return;
-      const dateCell = cells[0].textContent.trim();
-      const timeCell = cells[1].textContent.trim();
-      const locationCell = cells[2];
-      const locationText = locationCell.textContent.trim() || "Lugar no especificado";
-      const dateParts = dateCell.match(/(\d+)\s+de\s+(\w+)/i);
-      if (!dateParts) return;
-      const day = dateParts[1];
-      const monthName = dateParts[2];
-      const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-      const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase()) + 1;
-      const year = new Date().getFullYear();
-      const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      const time = timeCell || "20:00";
-      locationCell.innerHTML = `
-        ${locationText}
-        <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Concierto El Sótano del Doctor", "${date}", "${time}", "${locationText}", "Concierto de la banda El Sótano del Doctor", 7200)'>
-          <svg viewBox="0 0 24 24">
-            <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
-            <rect x="4" y="6" width="16" height="12" rx="2"/>
-          </svg>
-        </button>
-      `;
-    });
-  }
-
-  /* ---------- 11. Menú & pantallas ---------- */
-  const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
-  const PASSWORD = "Sotano2014";
-  let isAuthenticated = false;
-
-  function closeAll() {
-    document.querySelectorAll(".config-screen").forEach(s => {
-      s.style.display = "none";
-      s.querySelectorAll("input, select").forEach(input => {
-        if (input.tagName === "SELECT" && input.hasAttribute("multiple")) {
-          Array.from(input.options).forEach(option => option.selected = false);
-        } else {
-          input.value = "";
-        }
-      });
-      const message = s.querySelector("#user-message, #rehearsal-message, #setlist-message");
-      if (message) message.textContent = "";
-    });
-    sidebar.classList.remove("show");
-    overlay.classList.remove("show");
-    document.getElementById("config-submenu").style.display = "none";
-    resetUserForm();
-    resetRehearsalForm();
-  }
-
-  document.getElementById("hamburger-btn").onclick = () => {
-    sidebar.classList.add("show");
-    overlay.classList.add("show");
-  };
-
-  document.getElementById("menu-cerrar").onclick = e => {
-    e.preventDefault();
-    closeAll();
-  };
-
-  overlay.onclick = closeAll;
-
-  // Nuevos ítems de acceso directo (sin contraseña)
-  document.getElementById("menu-rehearsals-section").onclick = e => {
-    e.preventDefault();
-    closeAll();
-    document.getElementById("rehearsals").scrollIntoView({ behavior: "smooth" });
-  };
-
-  document.getElementById("menu-second-setlist-section").onclick = e => {
-    e.preventDefault();
-    closeAll();
-    document.getElementById("second-setlist").scrollIntoView({ behavior: "smooth" });
-  };
-
-  document.getElementById("menu-concerts-section").onclick = e => {
-    e.preventDefault();
-    closeAll();
-    document.getElementById("calendario").scrollIntoView({ behavior: "smooth" });
-  };
-
-  // Ítem Configuración (protegido por contraseña)
-  document.getElementById("menu-config").onclick = e => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-        isAuthenticated = true;
-        document.getElementById("config-submenu").style.display = "block";
-      } else {
-        alert("Contraseña incorrecta. Acceso denegado.");
-        return;
-      }
-    } else {
-      document.getElementById("config-submenu").style.display = "block";
-    }
-  };
-
-  /* --- Setlists screen */
-  document.getElementById("menu-setlist-config").onclick = e => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-        isAuthenticated = true;
-      } else {
-        alert("Contraseña incorrecta. Acceso denegado.");
-        return;
-      }
-    }
-    closeAll();
-    const s = document.getElementById("setlist-config-screen");
-    s.style.display = "block";
-    document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
-    document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
-    document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
-    document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
-  };
-
-  document.getElementById("close-setlist-config").onclick = () => {
-    document.getElementById("setlist-config-screen").style.display = "none";
-    document.getElementById("setlist-message").textContent = "";
-  };
-
-  document.getElementById("guardar-setlist-config").onclick = async () => {
-    const setlistMessage = document.getElementById("setlist-message");
-    setlistMessage.textContent = "";
-    const n1 = document.getElementById("setlist1-name").value.trim(),
-          u1 = document.getElementById("setlist1-url").value.trim(),
-          n2 = document.getElementById("setlist2-name").value.trim(),
-          raw = document.getElementById("setlist2-url").value.trim();
-    if (!n1 || !u1 || !n2 || !raw) {
-      setlistMessage.className = "error-message";
-      setlistMessage.textContent = "Completa todos los campos";
-      return;
-    }
-    try {
-      setlistConfig.setlist1 = { name: n1, url: u1 };
-      setlistConfig.setlist2 = { name: n2, url: raw.startsWith("http") ? raw : `https://www.bandhelper.com/feed/set_list/${raw}` };
-      await saveSetlistConfig();
-      await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
-      document.getElementById("setlist-config-screen").style.display = "none";
-      setlistMessage.className = "success-message";
-      setlistMessage.textContent = "Configuración guardada correctamente";
-    } catch (e) {
-      setlistMessage.className = "error-message";
-      setlistMessage.textContent = "Error al guardar configuración: " + e.message;
-    }
-  };
-
-  /* --- Usuarios screen */
-  document.getElementById("menu-user-mgmt").onclick = e => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-        isAuthenticated = true;
-      } else {
-        alert("Contraseña incorrecta. Acceso denegado.");
-        return;
-      }
-    }
-    closeAll();
-    document.getElementById("user-mgmt-screen").style.display = "block";
-  };
-
-  document.getElementById("close-user-mgmt").onclick = () => {
-    document.getElementById("user-mgmt-screen").style.display = "none";
-    document.getElementById("user-message").textContent = "";
-    resetUserForm();
-  };
-
-  document.getElementById("add-user").onclick = async () => {
-    const userMessage = document.getElementById("user-message");
-    userMessage.textContent = "";
-    const name = document.getElementById("user-name").value.trim();
-    const nickname = document.getElementById("user-nickname").value.trim();
-    const roleSelect = document.getElementById("user-role");
-    const roles = Array.from(roleSelect.selectedOptions).map(option => option.value);
-    if (!name) {
-      userMessage.className = "error-message";
-      userMessage.textContent = "Introduce un nombre válido";
-      return;
-    }
-    if (!nickname) {
-      userMessage.className = "error-message";
-      userMessage.textContent = "Introduce un apodo válido";
-      return;
-    }
-    if (roles.length === 0) {
-      userMessage.className = "error-message";
-      userMessage.textContent = "Selecciona al menos un rol";
-      return;
-    }
-    try {
-      if (editingUserIndex !== null) {
-        const oldName = users[editingUserIndex].name;
-        users[editingUserIndex] = { name, nickname, roles };
-        // Actualizar asistencias si el nombre cambió
-        if (oldName !== name) {
-          rehearsals.forEach(r => {
-            if (Array.isArray(r.attendance)) {
-              r.attendance.forEach(a => {
-                if (a.name === oldName) {
-                  a.name = name;
-                }
+              concertEvents.push({
+                type: 'concierto',
+                date,
+                startTime,
+                location: locationText
               });
             }
-          });
-          await saveRehearsals();
-        }
-        userMessage.className = "success-message";
-        userMessage.textContent = "Usuario actualizado correctamente";
-      } else {
-        users.push({ name, nickname, roles });
-        userMessage.className = "success-message";
-        userMessage.textContent = "Usuario añadido correctamente";
+          }
+        });
       }
-      await saveUsers();
-      resetUserForm();
-    } catch (e) {
-      userMessage.className = "error-message";
-      userMessage.textContent = "Error al guardar usuario: " + e.message;
+
+      const allEvents = [...rehearsalEvents, ...concertEvents].sort((a, b) => new Date(a.date) - new Date(b.date));
+      return allEvents;
     }
-  };
 
-  document.getElementById("cancel-edit-user").onclick = () => {
-    resetUserForm();
-    document.getElementById("user-message").textContent = "";
-  };
+    function renderTimeline() {
+      loadTimelineEvents().then(events => {
+        const timelineContainer = document.querySelector('#timeline .timeline');
+        timelineContainer.innerHTML = '';
 
-  /* --- Ensayos screen */
-  document.getElementById("menu-rehearsal").onclick = e => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-        isAuthenticated = true;
-      } else {
-        alert("Contraseña incorrecta. Acceso denegado.");
+        events.forEach((event, index) => {
+          const item = document.createElement('div');
+          item.classList.add('timeline-item', event.type);
+
+          const content = document.createElement('div');
+          content.classList.add('content');
+
+          const title = document.createElement('h2');
+          title.textContent = `${event.type.charAt(0).toUpperCase() + event.type.slice(1)} - ${formatDateWithDay(event.date)}`;
+
+          const description = document.createElement('p');
+          if (event.type === 'ensayo') {
+            description.textContent = `Ensayo de ${event.startTime} a ${event.endTime} en ${event.location}`;
+          } else {
+            description.textContent = `Concierto a las ${event.startTime} en ${event.location}`;
+          }
+
+          content.appendChild(title);
+          content.appendChild(description);
+          item.appendChild(content);
+          timelineContainer.appendChild(item);
+        });
+
+        setupTimelineFilters();
+      }).catch(e => {
+        console.error("Error al renderizar la línea temporal:", e);
+        const timelineContainer = document.querySelector('#timeline .timeline');
+        timelineContainer.innerHTML = '<p class="error-message">Error al cargar los eventos.</p>';
+      });
+    }
+
+    function setupTimelineFilters() {
+      const filterButtons = document.querySelectorAll('.filter-btn');
+      filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          filterButtons.forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+
+          const filter = button.getAttribute('data-filter');
+          const timelineItems = document.querySelectorAll('.timeline-item');
+
+          timelineItems.forEach(item => {
+            if (filter === 'all') {
+              item.classList.remove('hidden');
+            } else {
+              if (item.classList.contains(filter)) {
+                item.classList.remove('hidden');
+              } else {
+                item.classList.add('hidden');
+              }
+            }
+          });
+        });
+      });
+    }
+
+    /* ---------- 11. Modificar tabla de BandHelper (Próximos Conciertos) ---------- */
+    function modifyBandHelperTable() {
+      const table = document.querySelector("#bandhelper-concerts table");
+      if (!table) {
+        setTimeout(modifyBandHelperTable, 500);
         return;
       }
-    }
-    closeAll();
-    document.getElementById("rehearsal-screen").style.display = "block";
-  };
-
-  document.getElementById("close-rehearsal").onclick = () => {
-    document.getElementById("rehearsal-screen").style.display = "none";
-    document.getElementById("rehearsal-message").textContent = "";
-    resetRehearsalForm();
-  };
-
-  document.getElementById("add-rehearsal").onclick = async () => {
-    const rehearsalMessage = document.getElementById("rehearsal-message");
-    rehearsalMessage.textContent = "";
-    const date = document.getElementById("rehearsal-date").value;
-    const startTime = document.getElementById("rehearsal-start-time").value;
-    const endTime = document.getElementById("rehearsal-end-time").value;
-    const loc = document.getElementById("rehearsal-location").value.trim();
-
-    if (!date || !startTime || !endTime || !loc) {
-      rehearsalMessage.className = "error-message";
-      rehearsalMessage.textContent = "Completa todos los campos";
-      return;
-    }
-
-    // Validar que la hora de fin sea posterior a la hora de inicio
-    const durationSeconds = calculateDuration(startTime, endTime);
-    if (durationSeconds <= 0) {
-      rehearsalMessage.className = "error-message";
-      rehearsalMessage.textContent = "La hora de fin debe ser posterior a la hora de inicio";
-      return;
+      const rows = table.querySelectorAll("tbody tr");
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+        if (cells.length < 3) return;
+        const dateCell = cells[0].textContent.trim();
+        const timeCell = cells[1].textContent.trim();
+        const locationCell = cells[2];
+        const locationText = locationCell.textContent.trim() || "Lugar no especificado";
+        const dateParts = dateCell.match(/(\d+)\s+de\s+(\w+)/i);
+        if (!dateParts) return;
+        const day = dateParts[1];
+        const monthName = dateParts[2];
+        const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase()) + 1;
+        const year = new Date().getFullYear();
+        const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const time = timeCell || "20:00";
+        locationCell.innerHTML = `
+          ${locationText}
+          <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Concierto El Sótano del Doctor", "${date}", "${time}", "${locationText}", "Concierto de la banda El Sótano del Doctor", 7200)'>
+            <svg viewBox="0 0 24 24">
+              <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
+              <rect x="4" y="6" width="16" height="12" rx="2"/>
+            </svg>
+          </button>
+        `;
+      });
+      renderTimeline();
     }
 
-    try {
-      if (editingRehearsalIndex !== null) {
-        // Editar ensayo existente
-        rehearsals[editingRehearsalIndex] = {
-          date,
-          startTime,
-          endTime,
-          location: loc,
-          attendance: rehearsals[editingRehearsalIndex].attendance || []
-        };
-        rehearsalMessage.className = "success-message";
-        rehearsalMessage.textContent = "Ensayo actualizado correctamente";
-      } else {
-        // Añadir nuevo ensayo
-        rehearsals.push({ date, startTime, endTime, location: loc, attendance: [] });
-        rehearsalMessage.className = "success-message";
-        rehearsalMessage.textContent = "Ensayo añadido correctamente";
-      }
-      await saveRehearsals();
+    /* ---------- 12. Menú & pantallas ---------- */
+    const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
+    const PASSWORD = "Sotano2014";
+    let isAuthenticated = false;
+
+    function closeAll() {
+      document.querySelectorAll(".config-screen").forEach(s => {
+        s.style.display = "none";
+        s.querySelectorAll("input, select").forEach(input => {
+          if (input.tagName === "SELECT" && input.hasAttribute("multiple")) {
+            Array.from(input.options).forEach(option => option.selected = false);
+          } else {
+            input.value = "";
+          }
+        });
+        const message = s.querySelector("#user-message, #rehearsal-message, #setlist-message");
+        if (message) message.textContent = "";
+      });
+      sidebar.classList.remove("show");
+      overlay.classList.remove("show");
+      document.getElementById("config-submenu").style.display = "none";
+      resetUserForm();
       resetRehearsalForm();
-    } catch (e) {
-      rehearsalMessage.className = "error-message";
-      rehearsalMessage.textContent = "Error al guardar ensayo: " + e.message;
-    }
-  };
-
-  document.getElementById("cancel-edit-rehearsal").onclick = () => {
-    resetRehearsalForm();
-    document.getElementById("rehearsal-message").textContent = "";
-  };
-
-  /* --- Estadísticas screen */
-  document.getElementById("menu-stats").onclick = e => {
-    e.preventDefault();
-    closeAll();
-    document.getElementById("stats-screen").style.display = "block";
-    updateMonthFilter(); // Actualizar las opciones del filtro de meses
-    renderStats();
-  };
-
-  document.getElementById("close-stats").onclick = () => {
-    document.getElementById("stats-screen").style.display = "none";
-  };
-
-  // Añadir evento al filtro de meses
-  document.getElementById("stats-month-filter").addEventListener("change", () => {
-    renderStats();
-  });
-
-  /* ---------- 12. Carga inicial ---------- */
-  document.addEventListener("DOMContentLoaded", async () => {
-    updateConnectionStatus(); // Verificar estado de conexión al cargar
-
-    try {
-      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
-    } catch (e) {
-      console.error("Error al cargar datos de Firestore:", e);
-      // El mensaje ya se muestra a través del indicador de conexión
     }
 
-    let songs1 = [], songs2 = [];
-    try {
-      songs1 = await cargarPrimerSetlist();
-    } catch (e) {
-      console.error("Fallo al cargar el primer setlist:", e);
-    }
+    document.getElementById("hamburger-btn").onclick = () => {
+      sidebar.classList.add("show");
+      overlay.classList.add("show");
+    };
 
-    try {
-      songs2 = await cargarSegundoSetlist();
-    } catch (e) {
-      console.error("Fallo al cargar el segundo setlist:", e);
-    }
+    document.getElementById("menu-cerrar").onclick = e => {
+      e.preventDefault();
+      closeAll();
+    };
 
-    document.getElementById("download-btn").onclick = () => {
-      if (songs1.length > 0) {
-        genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
+    overlay.onclick = closeAll;
+
+    document.getElementById("menu-rehearsals-section").onclick = e => {
+      e.preventDefault();
+      closeAll();
+      document.getElementById("rehearsals").scrollIntoView({ behavior: "smooth" });
+    };
+
+    document.getElementById("menu-timeline-section").onclick = e => {
+      e.preventDefault();
+      closeAll();
+      document.getElementById("timeline").scrollIntoView({ behavior: "smooth" });
+    };
+
+    document.getElementById("menu-second-setlist-section").onclick = e => {
+      e.preventDefault();
+      closeAll();
+      document.getElementById("second-setlist").scrollIntoView({ behavior: "smooth" });
+    };
+
+    document.getElementById("menu-concerts-section").onclick = e => {
+      e.preventDefault();
+      closeAll();
+      document.getElementById("calendario").scrollIntoView({ behavior: "smooth" });
+    };
+
+    document.getElementById("menu-config").onclick = e => {
+      e.preventDefault();
+      if (!isAuthenticated) {
+        const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+        if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+          isAuthenticated = true;
+          document.getElementById("config-submenu").style.display = "block";
+        } else {
+          alert("Contraseña incorrecta. Acceso denegado.");
+          return;
+        }
       } else {
-        alert("No hay canciones disponibles para descargar el PDF del setlist de ensayos.");
+        document.getElementById("config-submenu").style.display = "block";
       }
     };
 
-    document.getElementById("download-btn-2").onclick = () => {
-      if (songs2.length > 0) {
-        genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf");
-      } else {
-        alert("No hay canciones disponibles para descargar el PDF del setlist del concierto.");
+    document.getElementById("menu-setlist-config").onclick = e => {
+      e.preventDefault();
+      if (!isAuthenticated) {
+        const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+        if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+          isAuthenticated = true;
+        } else {
+          alert("Contraseña incorrecta. Acceso denegado.");
+          return;
+        }
+      }
+      closeAll();
+      const s = document.getElementById("setlist-config-screen");
+      s.style.display = "block";
+      document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
+      document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
+      document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
+      document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
+    };
+
+    document.getElementById("close-setlist-config").onclick = () => {
+      document.getElementById("setlist-config-screen").style.display = "none";
+      document.getElementById("setlist-message").textContent = "";
+    };
+
+    document.getElementById("guardar-setlist-config").onclick = async () => {
+      const setlistMessage = document.getElementById("setlist-message");
+      setlistMessage.textContent = "";
+      const n1 = document.getElementById("setlist1-name").value.trim(),
+            u1 = document.getElementById("setlist1-url").value.trim(),
+            n2 = document.getElementById("setlist2-name").value.trim(),
+            raw = document.getElementById("setlist2-url").value.trim();
+      if (!n1 || !u1 || !n2 || !raw) {
+        setlistMessage.className = "error-message";
+        setlistMessage.textContent = "Completa todos los campos";
+        return;
+      }
+      try {
+        setlistConfig.setlist1 = { name: n1, url: u1 };
+        setlistConfig.setlist2 = { name: n2, url: raw.startsWith("http") ? raw : `https://www.bandhelper.com/feed/set_list/${raw}` };
+        await saveSetlistConfig();
+        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
+        document.getElementById("setlist-config-screen").style.display = "none";
+        setlistMessage.className = "success-message";
+        setlistMessage.textContent = "Configuración guardada correctamente";
+      } catch (e) {
+        setlistMessage.className = "error-message";
+        setlistMessage.textContent = "Error al guardar configuración: " + e.message;
       }
     };
 
-    setTimeout(modifyBandHelperTable, 1000);
-  });
-  </script>
-</body>
-</html>
+    document.getElementById("menu-user-mgmt").onclick = e => {
+      e.preventDefault();
+      if (!isAuthenticated) {
+        const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+        if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+          isAuthenticated = true;
+        } else {
+          alert("Contraseña incorrecta. Acceso denegado.");
+          return;
+        }
+      }
+      closeAll();
+      document.getElementById("user-mgmt-screen").style.display = "block";
+    };
+
+    document.getElementById("close-user-mgmt").onclick = () => {
+      document.getElementById("user-mgmt-screen").style.display = "none";
+      document.getElementById("user-message").textContent = "";
+      resetUserForm();
+    };
+
+    document.getElementById("add-user").onclick = async () => {
+      const userMessage = document.getElementById("user-message");
+      userMessage.textContent = "";
+      const name = document.getElementById("user-name").value.trim();
+      const nickname = document.getElementById("user-nickname").value.trim();
+      const roleSelect = document.getElementById("user-role");
+      const roles = Array.from(roleSelect.selectedOptions).map(option => option.value);
+      if (!name) {
+        userMessage.className = "error-message";
+        userMessage.textContent = "Introduce un nombre válido";
+        return;
+      }
+      if (!nickname) {
+        userMessage.className = "error-message";
+        userMessage.textContent = "Introduce un apodo válido";
+        return;
+      }
+      if (roles.length === 0) {
+        userMessage.className = "error-message";
+        userMessage.textContent = "Selecciona al menos un rol";
+        return;
+      }
+      try {
+        if (editingUserIndex !== null) {
+          const oldName = users[editingUserIndex].name;
+          users[editingUserIndex] = { name, nickname, roles };
+          if (oldName !== name) {
+            rehearsals.forEach(r => {
+              if (Array.isArray(r.attendance)) {
+                r.attendance.forEach(a => {
+                  if (a.name === oldName) {
+                    a.name = name;
+                  }
+                });
+              }
+            });
+            await saveRehearsals();
+          }
+          userMessage.className = "success-message";
+          userMessage.textContent = "Usuario actualizado correctamente";
+        } else {
+          users.push({ name, nickname, roles });
+          userMessage.className = "success-message";
+          userMessage.textContent = "Usuario añadido correctamente";
+        }
+        await saveUsers();
+        resetUserForm();
+      } catch (e) {
+        userMessage.className = "error-message";
+        userMessage.textContent = "Error al guardar usuario: " + e.message;
+      }
+    };
+
+    document.getElementById("cancel-edit-user").onclick = () => {
+      resetUserForm();
+      document.getElementById("user-message").textContent = "";
+    };
+
+    document.getElementById("menu-rehearsal").onclick = e => {
+      e.preventDefault();
+      if (!isAuthenticated) {
+        const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+        if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+          isAuthenticated = true;
+        } else {
+          alert("Contraseña incorrecta. Acceso denegado.");
+          return;
+        }
+      }
+      closeAll();
+      document.getElementById("rehearsal-screen").style.display = "block";
+    };
+
+    document.getElementById("close-rehearsal").onclick = () => {
+      document.getElementById("rehearsal-screen").style.display = "none";
+      document.getElementById("rehearsal-message").textContent = "";
+      resetRehearsalForm();
+    };
+
+    document.getElementById("add-rehearsal").onclick = async () => {
+      const rehearsalMessage = document.getElementById("rehearsal-message");
+      rehearsalMessage.textContent = "";
+      const date = document.getElementById("rehearsal-date").value;
+      const startTime = document.getElementById("rehearsal-start-time").value;
+      const endTime = document.getElementById("rehearsal-end-time").value;
+      const loc = document.getElementById("rehearsal-location").value.trim();
+
+      if (!date || !startTime || !end
