@@ -318,6 +318,22 @@
         <tbody id="time-per-user-body"></tbody>
       </table>
     </div>
+    <div class="stats-table">
+      <h3>Ensayos Pasados</h3>
+      <div class="table-wrapper">
+        <table id="past-rehearsals-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Lugar</th>
+              <th>Asistencias</th>
+            </tr>
+          </thead>
+          <tbody id="past-rehearsals-body"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- ============ CONTENIDO PRINCIPAL ============ -->
@@ -329,7 +345,7 @@
         <table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table>
       </div>
       <button class="download-btn" id="download-btn">Descargar PDF</button>
-      <p id="total-time"></p>
+      <p id="total-time"></-part>
     </section>
 
     <!-- 2) Ensayos -->
@@ -997,6 +1013,50 @@
       const hours = toHours(timePerUser[user]);
       tbodyUser.insertAdjacentHTML("beforeend",
         `<tr><td>${user}</td><td>${hours}</td></tr>`);
+    });
+
+    // Ensayos pasados
+    const tbodyPast = document.getElementById("past-rehearsals-body");
+    tbodyPast.innerHTML = "";
+    filteredRehearsals.sort((a, b) => new Date(b.date) - new Date(a.date)); // Ordenar de más reciente a más antiguo
+    filteredRehearsals.forEach(r => {
+      const formattedDate = formatDateWithDay(r.date);
+      const durationSeconds = calculateDuration(r.startTime, r.endTime);
+      const durationText = toHHMM(durationSeconds);
+
+      // Resumen de asistencias (usar apodo)
+      const attendance = Array.isArray(r.attendance) ? r.attendance : [];
+      const attendingYes = attendance
+        .filter(a => a.attending === "Sí")
+        .map(a => {
+          const user = users.find(u => u.name === a.name);
+          return user ? user.nickname : a.name;
+        })
+        .join(", ") || "Ninguno";
+      const attendingNo = attendance
+        .filter(a => a.attending === "No")
+        .map(a => {
+          const user = users.find(u => u.name === a.name);
+          return user ? user.nickname : a.name;
+        })
+        .join(", ") || "Ninguno";
+      const summary = `
+        <div class="attendance-summary">
+          <span class="attending-yes">Asisten: ${attendingYes}</span>
+          <span class="attending-no">No asisten: ${attendingNo}</span>
+        </div>
+      `;
+
+      tbodyPast.insertAdjacentHTML("beforeend",
+        `<tr>
+          <td>
+            ${formattedDate}
+            <span class="rehearsal-duration">(${durationText})</span>
+          </td>
+          <td>${r.startTime} - ${r.endTime}</td>
+          <td>${r.location}</td>
+          <td>${summary}</td>
+        </tr>`);
     });
   }
 
