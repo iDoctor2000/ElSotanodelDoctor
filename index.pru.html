@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <link title="timeline-styles" rel="stylesheet" href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
+  <script src="https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js"></script>
+  
   <meta charset="UTF-8" />
   <title>El Sótano del Doctor – Uso Interno</title>
 
@@ -183,10 +186,35 @@
         font-size: 0.85em;
       }
     }
+
+  #timeline-screen {
+    background: #000;
+    color: #fff;
+    padding: 20px;
+  }
+  #timeline-embed {
+    width: 100%;
+    height: 600px;
+    overflow-x: auto;
+  }
+  .close-btn {
+    background: #ff4444;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+  }
+
   </style>
 </head>
 
 <body>
+
+  <div id="timeline-screen" class="config-screen" style="display: none;">
+  <button class="close-btn" id="close-timeline">Cerrar</button>
+  <h2>Línea Temporal de Eventos</h2>
+  <div id="timeline-embed" style="width: 100%; height: 600px;"></div>
+  </div>
   <!-- ============ Indicador de conexión ============ -->
   <div id="connection-status"></div>
 
@@ -207,6 +235,7 @@
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#" id="menu-stats">Estadísticas</a>
+    <a href="#" id="menu-timeline">Línea Temporal</a>
     <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
       <a href="#" id="menu-setlist-config">Configurar Setlists</a>
@@ -1469,6 +1498,104 @@
 
     setTimeout(modifyBandHelperTable, 1000);
   });
-  </script>
+</script>
+
+<script>
+  function getTimelineData() {
+  const timelineEvents = [];
+
+  // Añadir ensayos (asegúrate de que "rehearsals" existe en tu código)
+  rehearsals.forEach(r => {
+    const formattedDate = formatDateWithDay(r.date); // Asegúrate de tener esta función
+    const attendance = Array.isArray(r.attendance) ? r.attendance : [];
+    const attendingYes = attendance.filter(a => a.attending === "Sí").map(a => a.name).join(", ") || "Ninguno";
+    const attendingNo = attendance.filter(a => a.attending === "No").map(a => a.name).join(", ") || "Ninguno";
+    const dateParts = r.date.split("-");
+    timelineEvents.push({
+      start_date: {
+        year: dateParts[0],
+        month: dateParts[1],
+        day: dateParts[2]
+      },
+      text: {
+        headline: `Ensayo - ${formattedDate}`,
+        text: `<p><strong>Hora:</strong> ${r.startTime} - ${r.endTime}</p>
+               <p><strong>Lugar:</strong> ${r.location}</p>
+               <p><strong>Asisten:</strong> ${attendingYes}</p>
+               <p><strong>No asisten:</strong> ${attendingNo}</p>`
+      },
+      group: "Ensayos"
+    });
+  });
+
+  // Añadir conciertos desde BandHelper
+  const concertRows = document.querySelectorAll("#bandhelper-concerts table tbody tr");
+  concertRows.forEach(row => {
+    const cells = row.querySelectorAll("td");
+    if (cells.length < 3) return;
+    const dateCell = cells[0].textContent.trim();
+    const timeCell = cells[1].textContent.trim();
+    const locationText = cells[2].textContent.trim() || "Lugar no especificado";
+    const dateParts = dateCell.match(/(\d+)\s+de\s+(\w+)/i);
+    if (!dateParts) return;
+    const day = dateParts[1];
+    const monthName = dateParts[2];
+    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase()) + 1;
+    const year = new Date().getFullYear();
+    timelineEvents.push({
+      start_date: {
+        year: year,
+        month: month,
+        day: day
+      },
+      text: {
+        headline: `Concierto - ${dateCell}`,
+        text: `<p><strong>Hora:</strong> ${timeCell || "20:00"}</p>
+               <p><strong>Lugar:</strong> ${locationText}</p>`
+      },
+      group: "Conciertos"
+    });
+  });
+
+  return {
+    title: {
+      text: {
+        headline: "Línea Temporal de El Sótano del Doctor",
+        text: "<p>Explora los ensayos y conciertos de la banda.</p>"
+      }
+    },
+    events: timelineEvents
+  };
+}
+
+function renderTimeline() {
+  const timelineData = getTimelineData();
+  if (timelineData.events.length === 0) {
+    document.getElementById("timeline-embed").innerHTML = '<p style="color: #fff; text-align: center;">No hay eventos disponibles para mostrar en la línea temporal.</p>';
+    return;
+  }
+  new TL.Timeline("timeline-embed", timelineData, {
+    initial_zoom: 2,
+    marker_height_min: 50,
+    timenav_height: 150,
+    default_bg_color: { r: 17, g: 17, b: 17 }
+  });
+}
+
+// Abrir la línea temporal desde el menú
+document.getElementById("menu-timeline").onclick = e => {
+  e.preventDefault();
+  // Cierra otras pantallas si las tienes (ajusta según tu código)
+  document.querySelectorAll(".config-screen").forEach(screen => screen.style.display = "none");
+  document.getElementById("timeline-screen").style.display = "block";
+  renderTimeline();
+};
+
+// Cerrar la línea temporal
+document.getElementById("close-timeline").onclick = () => {
+  document.getElementById("timeline-screen").style.display = "none";
+};
+</script>
 </body>
 </html>
