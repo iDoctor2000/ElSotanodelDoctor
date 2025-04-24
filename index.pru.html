@@ -1488,4 +1488,274 @@
           }
         };
 
-        document.getElementById("menu-setlist-config").onclick = e
+  /* --- Setlists screen */
+  document.getElementById("menu-setlist-config").onclick = e => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+        isAuthenticated = true;
+      } else {
+        alert("Contraseña incorrecta. Acceso denegado.");
+        return;
+      }
+    }
+    closeAll();
+    const s = document.getElementById("setlist-config-screen");
+    s.style.display = "block";
+    document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
+    document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
+    document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
+    document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
+  };
+
+  document.getElementById("close-setlist-config").onclick = () => {
+    document.getElementById("setlist-config-screen").style.display = "none";
+    document.getElementById("setlist-message").textContent = "";
+  };
+
+  document.getElementById("guardar-setlist-config").onclick = async () => {
+    const setlistMessage = document.getElementById("setlist-message");
+    setlistMessage.textContent = "";
+    const n1 = document.getElementById("setlist1-name").value.trim(),
+          u1 = document.getElementById("setlist1-url").value.trim(),
+          n2 = document.getElementById("setlist2-name").value.trim(),
+          raw = document.getElementById("setlist2-url").value.trim();
+    if (!n1 || !u1 || !n2 || !raw) {
+      setlistMessage.className = "error-message";
+      setlistMessage.textContent = "Completa todos los campos";
+      return;
+    }
+    try {
+      setlistConfig.setlist1 = { name: n1, url: u1 };
+      setlistConfig.setlist2 = { name: n2, url: raw.startsWith("http") ? raw : `https://www.bandhelper.com/feed/set_list/${raw}` };
+      await saveSetlistConfig();
+      await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
+      document.getElementById("setlist-config-screen").style.display = "none";
+      setlistMessage.className = "success-message";
+      setlistMessage.textContent = "Configuración guardada correctamente";
+    } catch (e) {
+      setlistMessage.className = "error-message";
+      setlistMessage.textContent = "Error al guardar configuración: " + e.message;
+    }
+  };
+
+  /* --- Usuarios screen */
+  document.getElementById("menu-user-mgmt").onclick = e => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+        isAuthenticated = true;
+      } else {
+        alert("Contraseña incorrecta. Acceso denegado.");
+        return;
+      }
+    }
+    closeAll();
+    document.getElementById("user-mgmt-screen").style.display = "block";
+  };
+
+  document.getElementById("close-user-mgmt").onclick = () => {
+    document.getElementById("user-mgmt-screen").style.display = "none";
+    document.getElementById("user-message").textContent = "";
+    resetUserForm();
+  };
+
+  document.getElementById("add-user").onclick = async () => {
+    const userMessage = document.getElementById("user-message");
+    userMessage.textContent = "";
+    const name = document.getElementById("user-name").value.trim();
+    const nickname = document.getElementById("user-nickname").value.trim();
+    const roleSelect = document.getElementById("user-role");
+    const roles = Array.from(roleSelect.selectedOptions).map(option => option.value);
+    if (!name) {
+      userMessage.className = "error-message";
+      userMessage.textContent = "Introduce un nombre válido";
+      return;
+    }
+    if (!nickname) {
+      userMessage.className = "error-message";
+      userMessage.textContent = "Introduce un apodo válido";
+      return;
+    }
+    if (roles.length === 0) {
+      userMessage.className = "error-message";
+      userMessage.textContent = "Selecciona al menos un rol";
+      return;
+    }
+    try {
+      if (editingUserIndex !== null) {
+        const oldName = users[editingUserIndex].name;
+        users[editingUserIndex] = { name, nickname, roles };
+        // Actualizar asistencias si el nombre cambió
+        if (oldName !== name) {
+          rehearsals.forEach(r => {
+            if (Array.isArray(r.attendance)) {
+              r.attendance.forEach(a => {
+                if (a.name === oldName) {
+                  a.name = name;
+                }
+              });
+            }
+          });
+          await saveRehearsals();
+        }
+        userMessage.className = "success-message";
+        userMessage.textContent = "Usuario actualizado correctamente";
+      } else {
+        users.push({ name, nickname, roles });
+        userMessage.className = "success-message";
+        userMessage.textContent = "Usuario añadido correctamente";
+      }
+      await saveUsers();
+      resetUserForm();
+    } catch (e) {
+      userMessage.className = "error-message";
+      userMessage.textContent = "Error al guardar usuario: " + e.message;
+    }
+  };
+
+  document.getElementById("cancel-edit-user").onclick = () => {
+    resetUserForm();
+    document.getElementById("user-message").textContent = "";
+  };
+
+  /* --- Ensayos screen */
+  document.getElementById("menu-rehearsal").onclick = e => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
+      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+        isAuthenticated = true;
+      } else {
+        alert("Contraseña incorrecta. Acceso denegado.");
+        return;
+      }
+    }
+    closeAll();
+    document.getElementById("rehearsal-screen").style.display = "block";
+  };
+
+  document.getElementById("close-rehearsal").onclick = () => {
+    document.getElementById("rehearsal-screen").style.display = "none";
+    document.getElementById("rehearsal-message").textContent = "";
+    resetRehearsalForm();
+  };
+
+  document.getElementById("add-rehearsal").onclick = async () => {
+    const rehearsalMessage = document.getElementById("rehearsal-message");
+    rehearsalMessage.textContent = "";
+    const date = document.getElementById("rehearsal-date").value;
+    const startTime = document.getElementById("rehearsal-start-time").value;
+    const endTime = document.getElementById("rehearsal-end-time").value;
+    const loc = document.getElementById("rehearsal-location").value.trim();
+
+    if (!date || !startTime || !endTime || !loc) {
+      rehearsalMessage.className = "error-message";
+      rehearsalMessage.textContent = "Completa todos los campos";
+      return;
+    }
+
+    // Validar que la hora de fin sea posterior a la hora de inicio
+    const durationSeconds = calculateDuration(startTime, endTime);
+    if (durationSeconds <= 0) {
+      rehearsalMessage.className = "error-message";
+      rehearsalMessage.textContent = "La hora de fin debe ser posterior a la hora de inicio";
+      return;
+    }
+
+    try {
+      if (editingRehearsalIndex !== null) {
+        // Editar ensayo existente
+        rehearsals[editingRehearsalIndex] = {
+          date,
+          startTime,
+          endTime,
+          location: loc,
+          attendance: rehearsals[editingRehearsalIndex].attendance || []
+        };
+        rehearsalMessage.className = "success-message";
+        rehearsalMessage.textContent = "Ensayo actualizado correctamente";
+      } else {
+        // Añadir nuevo ensayo
+        rehearsals.push({ date, startTime, endTime, location: loc, attendance: [] });
+        rehearsalMessage.className = "success-message";
+        rehearsalMessage.textContent = "Ensayo añadido correctamente";
+      }
+      await saveRehearsals();
+      resetRehearsalForm();
+    } catch (e) {
+      rehearsalMessage.className = "error-message";
+      rehearsalMessage.textContent = "Error al guardar ensayo: " + e.message;
+    }
+  };
+
+  document.getElementById("cancel-edit-rehearsal").onclick = () => {
+    resetRehearsalForm();
+    document.getElementById("rehearsal-message").textContent = "";
+  };
+
+  /* --- Estadísticas screen */
+  document.getElementById("menu-stats").onclick = e => {
+    e.preventDefault();
+    closeAll();
+    document.getElementById("stats-screen").style.display = "block";
+    updateMonthFilter(); // Actualizar las opciones del filtro de meses
+    renderStats();
+  };
+
+  document.getElementById("close-stats").onclick = () => {
+    document.getElementById("stats-screen").style.display = "none";
+  };
+
+  // Añadir evento al filtro de meses
+  document.getElementById("stats-month-filter").addEventListener("change", () => {
+    renderStats();
+  });
+
+  /* ---------- 12. Carga inicial ---------- */
+  document.addEventListener("DOMContentLoaded", async () => {
+    updateConnectionStatus(); // Verificar estado de conexión al cargar
+
+    try {
+      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
+    } catch (e) {
+      console.error("Error al cargar datos de Firestore:", e);
+      // El mensaje ya se muestra a través del indicador de conexión
+    }
+
+    let songs1 = [], songs2 = [];
+    try {
+      songs1 = await cargarPrimerSetlist();
+    } catch (e) {
+      console.error("Fallo al cargar el primer setlist:", e);
+    }
+
+    try {
+      songs2 = await cargarSegundoSetlist();
+    } catch (e) {
+      console.error("Fallo al cargar el segundo setlist:", e);
+    }
+
+    document.getElementById("download-btn").onclick = () => {
+      if (songs1.length > 0) {
+        genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
+      } else {
+        alert("No hay canciones disponibles para descargar el PDF del setlist de ensayos.");
+      }
+    };
+
+    document.getElementById("download-btn-2").onclick = () => {
+      if (songs2.length > 0) {
+        genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf");
+      } else {
+        alert("No hay canciones disponibles para descargar el PDF del setlist del concierto.");
+      }
+    };
+
+    setTimeout(modifyBandHelperTable, 1000);
+  });
+  </script>
+</body>
+</html>
