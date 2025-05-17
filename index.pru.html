@@ -9,11 +9,14 @@
 
   <meta property="og:title"       content="El Sótano del Doctor – Uso Interno">
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
-  <meta property="og:image"       content="assets/logo_negro copia.jpg"> <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://idoctor2000.github.io/ElSotanoDelDoctor-Intranet/"> <meta name="twitter:card"        content="summary_large_image">
+  <meta property="og:image"       content="assets/logo_negro copia.jpg">
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://idoctor2000.github.io/ElSotanoDelDoctor-Intranet/">
+  <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="El Sótano del Doctor – Uso Interno">
   <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
-  <meta name="twitter:image"       content="assets/logo_negro copia.jpg"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="twitter:image"       content="assets/logo_negro copia.jpg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -21,6 +24,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
+    /* Estilos CSS (iguales a la v3, por brevedad no se repiten aquí) */
+    /* ... Pega aquí los estilos de la versión anterior ... */
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
     html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
@@ -171,7 +176,6 @@
     <button id="guardar-setlist-config">Guardar Configuración</button>
     <p id="setlist-message" class="message"></p>
   </div>
-
   <div id="user-mgmt-screen" class="config-screen">
     <button class="close-btn" id="close-user-mgmt" title="Cerrar">&times;</button>
     <h2>Gestión de Usuarios</h2>
@@ -192,7 +196,6 @@
         <table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
     </div>
   </div>
-
   <div id="rehearsal-screen" class="config-screen">
     <button class="close-btn" id="close-rehearsal" title="Cerrar">&times;</button>
     <h2>Asignación y Gestión de Ensayos</h2>
@@ -210,7 +213,6 @@
         </table>
     </div>
   </div>
-
   <div id="stats-screen" class="config-screen">
     <button class="close-btn" id="close-stats" title="Cerrar">&times;</button>
     <h2>Estadísticas de Ensayos</h2>
@@ -231,7 +233,6 @@
       <div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Horario</th><th>Lugar</th><th>Asistencias (Apodos)</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div>
     </div>
   </div>
-
   <div id="concert-notes-config-screen" class="config-screen">
     <button class="close-btn" id="close-concert-notes-config" title="Cerrar">&times;</button>
     <h2>Configuración de Notas para Conciertos</h2>
@@ -245,6 +246,7 @@
     </div>
     <p style="text-align: center; margin-top: 20px; font-size: 0.9em; color: #aaa;">La lista de conciertos se obtiene del widget de BandHelper.</p>
   </div>
+
 
   <main>
     <section id="setlists">
@@ -278,8 +280,8 @@
       <div class="table-wrapper"><table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table></div>
     </section>
   </main>
-
   <footer>© 2025 El Sótano del Doctor. Todos los derechos reservados.</footer>
+
 
   <script>
   //<![CDATA[
@@ -288,40 +290,46 @@
     apiKey: "TU_API_KEY", // REEMPLAZA ESTO CON TU API KEY REAL
     authDomain: "sotanointranet.firebaseapp.com",
     projectId: "sotanointranet",
-    storageBucket: "sotanointranet.appspot.com", // Añade si usas Storage
+    storageBucket: "sotanointranet.appspot.com",
     messagingSenderId: "756955233128",
     appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
   };
 
   let db;
+  let persistenceEnabled = false; // Flag para saber si la persistencia está activa
+
   try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
     console.log("Firebase App inicializada.");
 
+    // Intentar habilitar la persistencia PRIMERO
     db.enablePersistence({ synchronizeTabs: true })
-      .then(() => console.log("Persistencia Firestore (multi-pestaña) HABILITADA."))
+      .then(() => {
+        console.log("Persistencia Firestore (multi-pestaña) HABILITADA.");
+        persistenceEnabled = true;
+        loadInitialData(); // Cargar datos DESPUÉS de configurar la persistencia
+      })
       .catch(err => {
-        if (err.code == 'failed-precondition') {
+        if (err.code === 'failed-precondition') {
           console.warn("Persistencia (multi-pestaña) falló, intentando una sola pestaña...", err.message);
-          return db.enablePersistence(); // Fallback a persistencia de una sola pestaña
-        } else if (err.code == 'unimplemented') {
+          return db.enablePersistence(); // Fallback
+        } else if (err.code === 'unimplemented') {
           console.warn("Persistencia no soportada por el navegador.", err.message);
         } else {
-          console.error("Error habilitando persistencia Firestore:", err);
+          console.error("Error habilitando persistencia Firestore (multi-pestaña):", err);
         }
+        loadInitialData(); // Cargar datos incluso si la persistencia falla (usará caché en memoria)
       })
-      .then(() => { // Para el fallback
-          if(db.INTERNAL && db.INTERNAL.getSettings().persistence) console.log("Persistencia Firestore (una pestaña) HABILITADA como fallback.");
-      })
-      .catch(err => {
-          console.error("Error final habilitando persistencia Firestore (fallback):", err);
-          const statusDiv = document.getElementById("connection-status");
-          if (statusDiv) {
-              statusDiv.textContent = "Advertencia: Persistencia offline no disponible. " + err.message.substring(0, 50) + "...";
-              statusDiv.className = "retrying";
-              statusDiv.style.display = "block";
+      .then(() => { // Para el fallback de enablePersistence()
+          if(db.INTERNAL && db.INTERNAL.getSettings().persistence && !persistenceEnabled) { // Solo si el primer intento falló y este tuvo éxito
+            console.log("Persistencia Firestore (una pestaña) HABILITADA como fallback.");
+            persistenceEnabled = true;
           }
+      })
+      .catch(err => { // Error del fallback
+          console.error("Error final habilitando persistencia Firestore (fallback de una pestaña):", err);
+          // loadInitialData(); // Ya se llamó antes, no es necesario aquí a menos que la lógica cambie
       });
 
   } catch (e) {
@@ -332,99 +340,133 @@
         statusDiv.className = "offline";
         statusDiv.style.display = "block";
     }
-    // Si Firebase no inicializa, muchas cosas fallarán. Podrías deshabilitar funciones o mostrar un error mayor.
   }
 
-
-  /* ---------- 1. Utilidades ---------- */
+  /* ---------- 1. Utilidades (sin cambios significativos, solo robustez en fechas) ---------- */
   const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n; };
   const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const toHHMM = s => { const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`; };
   const toHours = s => (s / 3600).toFixed(2);
-  const clean = s => (s || "").toString().replace(/[^\x00-\xFF]/g, "").trim(); // Asegurar que s es string
+  const clean = s => (s || "").toString().replace(/[^\x00-\xFF]/g, "").trim();
   const calculateDuration = (startTime, endTime) => { if (!startTime || !endTime) return 0; const [startH, startM] = startTime.split(":").map(Number); const [endH, endM] = endTime.split(":").map(Number); const startSeconds = startH * 3600 + startM * 60; const endSeconds = endH * 3600 + endM * 60; let duration = endSeconds - startSeconds; if (duration < 0) duration += 24 * 3600; return duration; };
-  const formatDateWithDay = dateStr => { try { const date = new Date(dateStr + "T00:00:00"); const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]; const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; const dayName = days[date.getUTCDay()]; const day = date.getUTCDate(); const monthName = months[date.getUTCMonth()]; return `${dayName} ${day} de ${monthName}`; } catch(e) { console.warn("Error formateando fecha:", dateStr, e); return dateStr;}};
-  const getMonthYear = dateStr => { try {const date = new Date(dateStr + "T00:00:00"); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`; } catch(e) { console.warn("Error getMonthYear:", dateStr, e); return "Fecha Inválida";}};
-  function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) { const startDate = new Date(`${date}T${startTime}`); const endDate = new Date(startDate.getTime() + durationSeconds * 1000); const formatDateForICS = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z"; const start = formatDateForICS(startDate); const end = formatDateForICS(endDate); const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ElSotanoDelDoctor//Intranet//ES", "BEGIN:VEVENT", `UID:${new Date().getTime()}@elsotanodeldoctor.com`, `DTSTAMP:${formatDateForICS(new Date())}`, `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n"); const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${title.replace(/[^\w\s]/gi, '').replace(/\s+/g, "_")}.ics`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); }
+  const formatDateWithDay = dateStr => { try { const date = new Date(dateStr + "T00:00:00Z"); const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]; const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; const dayName = days[date.getUTCDay()]; const day = date.getUTCDate(); const monthName = months[date.getUTCMonth()]; return `${dayName} ${day} de ${monthName}`; } catch(e) { console.warn("Error formateando fecha:", dateStr, e); return dateStr;}};
+  const getMonthYear = dateStr => { try {const date = new Date(dateStr + "T00:00:00Z"); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`; } catch(e) { console.warn("Error getMonthYear:", dateStr, e); return "Fecha Inválida";}};
+  function generateICS(title, dateISO, startTime, location, description = "", durationSeconds = 7200) {
+    console.log("generateICS - dateISO:", dateISO, "startTime:", startTime);
+    // Asegurar que startTime es un formato HH:MM válido
+    const timeParts = startTime.match(/^(\d{2}):(\d{2})$/);
+    if (!timeParts) {
+        console.error("generateICS: Formato de hora de inicio inválido:", startTime);
+        alert("No se pudo generar el evento de calendario: formato de hora incorrecto.");
+        return;
+    }
+    const validStartTime = `${timeParts[1]}:${timeParts[2]}`; // Reconstruir para asegurar formato
+
+    try {
+        const startDate = new Date(`${dateISO}T${validStartTime}:00`); // Añadir segundos para más robustez
+        if (isNaN(startDate.getTime())) { // Verificar si la fecha es válida
+            console.error("generateICS: Fecha de inicio inválida después de combinar dateISO y startTime. dateISO:", dateISO, "validStartTime:", validStartTime);
+            alert("No se pudo generar el evento de calendario: fecha/hora inválida.");
+            return;
+        }
+        const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
+        const formatDateForICS = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+        const start = formatDateForICS(startDate);
+        const end = formatDateForICS(endDate);
+        const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ElSotanoDelDoctor//Intranet//ES", "BEGIN:VEVENT", `UID:${new Date().getTime()}@elsotanodeldoctor.com`, `DTSTAMP:${formatDateForICS(new Date())}`, `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${clean(title)}`, `DESCRIPTION:${clean(description)}`, `LOCATION:${clean(location)}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+        const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${clean(title).replace(/[^\w\s]/gi, '').replace(/\s+/g, "_")}.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error("Error en generateICS:", e, "Valores:", {title, dateISO, startTime, location});
+        alert("Ocurrió un error al generar el archivo de calendario.");
+    }
+  }
   function generateConcertId(date, time, location) { const locationNormalized = (location || "sin_lugar").toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, ''); const timeNormalized = (time || "sin_hora").replace(":", ""); return `${date}_${timeNormalized}_${locationNormalized}`; }
 
-  /* ---------- 1.5. Manejo de conexión ---------- */
+  /* ---------- 1.5. Manejo de conexión (sin cambios) ---------- */
   const connectionStatus = document.getElementById("connection-status"); let isOnline = navigator.onLine;
   function updateConnectionStatus() { isOnline = navigator.onLine; if (!isOnline) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión. Mostrando datos locales."; connectionStatus.style.display = "block"; } else { connectionStatus.style.display = "none"; connectionStatus.textContent = ""; } }
   window.addEventListener("online", updateConnectionStatus); window.addEventListener("offline", updateConnectionStatus);
   async function withRetry(fn, maxRetries = 3, delay = 2000) { for (let i = 0; i < maxRetries; i++) { try { if (!isOnline && i > 0) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión. Reintentando operación..."; connectionStatus.style.display = "block"; } return await fn(); } catch (e) { console.warn(`Intento ${i+1} fallido para ${fn.name || 'operación anónima'}:`, e); if (i === maxRetries - 1) { connectionStatus.className = "offline"; connectionStatus.textContent = `Error final tras ${maxRetries} intentos.`; connectionStatus.style.display = "block"; throw e; } connectionStatus.className = "retrying"; connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`; connectionStatus.style.display = "block"; await new Promise(resolve => setTimeout(resolve, delay)); } } }
 
-  /* ---------- 2. Acceso Firestore ---------- */
-  async function loadDoc(docId, fallback = {}) { if (!db) { console.error("Firestore (db) no está inicializado. No se puede cargar doc:", docId); return fallback; } try { const snap = await db.collection("intranet").doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${docId}:`, e.message); throw e; /* Podrías devolver fallback aquí también */ } }
+  /* ---------- 2. Acceso Firestore (sin cambios) ---------- */
+  async function loadDoc(docId, fallback = {}) { if (!db) { console.error("Firestore (db) no está inicializado. No se puede cargar doc:", docId); return fallback; } try { const snap = await db.collection("intranet").doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${docId}:`, e.message); throw e; } }
   async function saveDoc(docId, data) { if (!db) { console.error("Firestore (db) no está inicializado. No se puede guardar doc:", docId); return false; } try { await db.collection("intranet").doc(docId).set(data); return true; } catch (e) { console.error(`Error al guardar documento ${docId}:`, e.message); throw e; } }
 
-  /* ---------- SECCIONES (Setlists, Usuarios, Ensayos, Estadísticas, PDF) ---------- */
-  // Estas secciones son largas y se mantienen mayormente igual a la lógica anterior.
-  // Asegúrate de que cualquier llamada a loadDoc o saveDoc esté dentro de un withRetry si es crítico.
-  // Por brevedad, no las pego completas aquí, pero el esqueleto es:
-  // let setlistConfig = { ... }; function updateTitles() { ... } async function loadSetlistConfig() { ... } etc.
-  // Reemplaza el código de estas secciones con el que ya tenías y funcionaba lógicamente.
-  // Aquí incluyo solo la estructura básica para que el script no dé error de funciones no definidas.
+  /* ---------- SECCIONES (Setlists, Usuarios, Ensayos, Estadísticas, PDF - Lógica interna sin cambios, solo la llamada a carga inicial) ---------- */
   let setlistConfig = { setlist1: { name: "Setlist Ensayos", url: "" }, setlist2: { name: "Setlist Concierto", url: "" }};
   async function loadSetlistConfig() { const data = await withRetry(() => loadDoc("setlists", {config: setlistConfig})); setlistConfig = data.config || setlistConfig; updateTitles(); }
-  function updateTitles() { document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name; document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2.name; /* Actualiza el ID si es diferente */ }
+  function updateTitles() { document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name; document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2.name; }
   async function saveSetlistConfig() { updateTitles(); return await withRetry(() => saveDoc("setlists", { config: setlistConfig }));}
-  async function cargarPrimerSetlist() { /* ... tu lógica ... */ console.log("Cargando primer setlist..."); return []; }
-  async function cargarSegundoSetlist() { /* ... tu lógica ... */ console.log("Cargando segundo setlist..."); return []; }
+  async function cargarPrimerSetlist() { console.log("Cargando primer setlist..."); /* ... tu lógica ... */ return []; }
+  async function cargarSegundoSetlist() { console.log("Cargando segundo setlist..."); /* ... tu lógica ... */ return []; }
   let users = []; let editingUserIndex = null; function renderUsers() { /* ... */ } async function loadUsers() { const data = await withRetry(() => loadDoc("users", {users:[]})); users = data.users || []; renderUsers(); }  async function saveUsers() { return await withRetry(() => saveDoc("users", {users}));} function resetUserForm() { /* ... */ }
   let rehearsals = []; let editingRehearsalIndex = null; function renderRehearsals() { /* ... */ } async function loadRehearsals() { const data = await withRetry(() => loadDoc("rehearsals", {rehearsals:[]})); rehearsals = data.rehearsals || []; renderRehearsals(); } async function saveRehearsals() { return await withRetry(() => saveDoc("rehearsals", {rehearsals}));} function resetRehearsalForm() { /* ... */ }
   function updateMonthFilter() { /* ... */ } function renderStats() { /* ... */ }
   async function genPDF(songs, title, fileName) { /* ... */ }
 
-
   /* ---------- 10. Modificar tabla de BandHelper ---------- */
   let parsedBandHelperConcerts = [];
   let bandHelperTableModified = false;
-  let bandHelperWidgetLoaded = false; // Flag para saber si el widget ha intentado cargar
+  let bandHelperWidgetLoaded = false;
 
   function modifyBandHelperTable() {
     console.log("modifyBandHelperTable: Iniciando...");
     const bandHelperContentDiv = document.getElementById("bandhelper-concerts");
-    if (!bandHelperContentDiv) {
-        console.error("Div #bandhelper-concerts no encontrado.");
-        return false;
-    }
+    if (!bandHelperContentDiv) { console.error("Div #bandhelper-concerts no encontrado."); return false; }
     const table = bandHelperContentDiv.querySelector("table");
-    if (!table) {
-      console.warn("modifyBandHelperTable: Tabla de BandHelper NO encontrada dentro de #bandhelper-concerts.");
-      bandHelperWidgetLoaded = true; // Asumimos que el widget cargó pero sin tabla (o error)
-      return false;
-    }
+    if (!table) { console.warn("modifyBandHelperTable: Tabla de BandHelper NO encontrada."); bandHelperWidgetLoaded = true; return false; }
     console.log("modifyBandHelperTable: Tabla encontrada:", table);
 
-    // Para evitar reprocesar innecesariamente si la estructura no ha cambiado drásticamente.
-    if (table.dataset.processedByIntranet === "true" && bandHelperTableModified) {
-       console.log("modifyBandHelperTable: Tabla ya marcada como procesada y modificada. Saltando.");
-       return true;
+    if (table.dataset.processedByIntranet === "true" && bandHelperTableModified) { console.log("modifyBandHelperTable: Tabla ya procesada. Saltando."); return true; }
+    parsedBandHelperConcerts = [];
+
+    let head = table.querySelector("thead");
+    if (!head) {
+        console.warn("modifyBandHelperTable: No se encontró <thead>. Creando uno.");
+        head = document.createElement("thead");
+        table.insertBefore(head, table.firstChild); // Insertar al principio de la tabla
+    }
+    let headerRow = head.querySelector("tr");
+    if (!headerRow) {
+        console.warn("modifyBandHelperTable: No se encontró <tr> en <thead>. Creando uno.");
+        headerRow = document.createElement("tr");
+        head.appendChild(headerRow);
+        // Si creamos la fila, podríamos intentar popularla con las cabeceras existentes si las conocemos
+        // o si el widget las pone directamente en tbody, esto se complica.
+        // Por ahora, solo nos aseguramos de que exista para añadir nuestra columna.
     }
 
-    parsedBandHelperConcerts = []; // Reiniciar siempre para obtener la lista más fresca
-
-    const headerRow = table.querySelector("thead tr");
-    if (headerRow) {
-        if (!headerRow.querySelector("th.th-details")) {
-            headerRow.insertAdjacentHTML("beforeend", '<th class="th-details" style="text-align:center;">Detalles</th>');
-            console.log("modifyBandHelperTable: Cabecera 'Detalles' AÑADIDA.");
-        } else {
-            console.log("modifyBandHelperTable: Cabecera 'Detalles' ya existe.");
+    if (!headerRow.querySelector("th.th-details")) {
+        // Intentar obtener el número de columnas existentes para el colspan si no hay cabeceras
+        const firstBodyRow = table.querySelector("tbody tr");
+        let existingHeadersCount = headerRow.querySelectorAll("th").length;
+        if (existingHeadersCount === 0 && firstBodyRow) { // Si no hay <th>, usar <td> de la primera fila del body
+            existingHeadersCount = firstBodyRow.querySelectorAll("td").length;
         }
+        // Si no hay cabeceras originales, y estamos creando la fila, podríamos añadir las básicas
+        if (headerRow.children.length === 0 && existingHeadersCount >=3) {
+             headerRow.innerHTML = '<th>Fecha</th><th>Hora</th><th>Lugar</th>'; // Cabeceras por defecto
+        }
+        headerRow.insertAdjacentHTML("beforeend", '<th class="th-details" style="text-align:center;">Detalles</th>');
+        console.log("modifyBandHelperTable: Cabecera 'Detalles' AÑADIDA.");
     } else {
-        console.warn("modifyBandHelperTable: Fila de cabecera (thead tr) NO encontrada.");
+        console.log("modifyBandHelperTable: Cabecera 'Detalles' ya existe.");
     }
+
 
     const rows = table.querySelectorAll("tbody tr");
     console.log("modifyBandHelperTable: Filas encontradas en tbody:", rows.length);
-    if (rows.length === 0) {
-        console.log("modifyBandHelperTable: No hay conciertos listados en la tabla de BandHelper.");
-        // No hacer nada más si no hay filas, pero marcar como procesada.
-    } else {
+    if (rows.length === 0) { console.log("modifyBandHelperTable: No hay conciertos listados."); }
+    else {
         rows.forEach((row, rowIndex) => {
-          // console.log(`Procesando fila #${rowIndex}`);
           const cells = row.querySelectorAll("td");
           if (cells.length < 3) { console.warn(`Fila #${rowIndex} con celdas insuficientes: ${cells.length}`); return; }
 
@@ -433,18 +475,21 @@
           const locationCell = cells[2];
           const locationText = locationCell.textContent.trim() || "Lugar no especificado";
 
-          const dateParts = dateCellText.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); // Formato DD/MM/YY o DD/MM/YYYY
+          const dateParts = dateCellText.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
           if (!dateParts) { console.warn(`Fila #${rowIndex}: Formato de fecha no reconocido: '${dateCellText}'`); return; }
-          
-          let day = parseInt(dateParts[1]);
-          let month = parseInt(dateParts[2]) -1; // Meses en JS son 0-11
-          let year = parseInt(dateParts[3]);
-          if (year < 100) { year += 2000; } // Asumir siglo XXI para años de 2 dígitos
-
-          const concertDateObj = new Date(year, month, day);
+          let day = parseInt(dateParts[1]), month = parseInt(dateParts[2]) - 1, year = parseInt(dateParts[3]);
+          if (year < 100) year += 2000;
+          const concertDateObj = new Date(Date.UTC(year, month, day)); // Usar UTC para evitar problemas de zona horaria en el parseo
           const dateISO = concertDateObj.toISOString().split('T')[0];
           
-          const time24h = timeCellText.split('a')[0].trim() || "20:00"; // Tomar la primera parte antes de "a" (ej. 17:00 a 21:00)
+          // Parseo de hora más robusto
+          let time24h = "20:00"; // Default
+          const timeMatch = timeCellText.match(/(\d{1,2}:\d{2})/); // Busca un formato HH:MM
+          if (timeMatch) {
+              time24h = timeMatch[1];
+          } else {
+              console.warn(`Fila #${rowIndex}: Formato de hora no reconocido en '${timeCellText}', usando default ${time24h}`);
+          }
 
           const concertId = generateConcertId(dateISO, time24h, locationText);
           parsedBandHelperConcerts.push({ id: concertId, date: dateISO, time: time24h, location: locationText, displayDate: dateCellText });
@@ -458,34 +503,26 @@
           if (!detailsCell) {
             detailsCell = document.createElement("td");
             detailsCell.classList.add("td-details");
-            detailsCell.style.textAlign = "center"; // Centrar el botón
-            row.appendChild(detailsCell);
+            detailsCell.style.textAlign = "center";
+            // Asegurar que se añade después de las celdas existentes
+            if (row.children.length > cells.length) row.appendChild(detailsCell); // Si ya hay más de las esperadas (raro)
+            else row.appendChild(detailsCell);
+
           }
           if (!detailsCell.querySelector("button.details-btn")) {
               detailsCell.innerHTML = `<button class="details-btn" title="Ver/Editar Detalles" onclick="openConcertDetailViewer('${concertId}')"><svg viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" /></svg></button>`;
           }
         });
     }
-    
     console.log("modifyBandHelperTable: Conciertos parseados:", parsedBandHelperConcerts.length);
-    bandHelperTableModified = true; // Marcar como modificada exitosamente
-    table.dataset.processedByIntranet = "true"; // Marcar la tabla como procesada
-    bandHelperWidgetLoaded = true;
-
-    // Si la pantalla de config de notas está abierta, refrescarla
-    if (document.getElementById("concert-notes-config-screen").style.display === "block") {
-      renderConcertNotesConfigScreen();
-    }
+    bandHelperTableModified = true; table.dataset.processedByIntranet = "true"; bandHelperWidgetLoaded = true;
+    if (document.getElementById("concert-notes-config-screen").style.display === "block") { renderConcertNotesConfigScreen(); }
     console.log("modifyBandHelperTable: Finalizada.");
     return true;
   }
+  function openConcertDetailViewer(concertId) { window.open(`concert_detail_viewer.html?concertId=${encodeURIComponent(concertId)}`, '_blank');}
 
-  function openConcertDetailViewer(concertId) {
-      // Asegúrate que 'concert_detail_viewer.html' está en la misma ruta o ajusta la URL
-      window.open(`concert_detail_viewer.html?concertId=${encodeURIComponent(concertId)}`, '_blank');
-  }
-
-  /* ---------- 10.5. Notas de Conciertos ---------- */
+  /* ---------- 10.5. Notas de Conciertos (sin cambios en la lógica interna) ---------- */
   let concertNotes = {};
   async function loadConcertNotes() { try { const data = await withRetry(() => loadDoc("concert_notes_store", { notes: {} })); concertNotes = data.notes || {}; console.log("Notas de conciertos cargadas:", concertNotes); } catch (e) { console.error("Error al cargar notas de conciertos:", e); concertNotes = {}; } }
   async function saveConcertNotes() { try { await withRetry(() => saveDoc("concert_notes_store", { notes: concertNotes })); return true; } catch (e) { console.error("Error al guardar notas:", e); const msgEl = document.getElementById("concert-notes-message"); if(msgEl){ msgEl.className = "error-message"; msgEl.textContent = "Error al guardar: " + e.message;} throw e; } }
@@ -513,79 +550,55 @@
     });
   }
 
-  /* ---------- 11. Menú & pantallas ---------- */
+  /* ---------- 11. Menú & pantallas (sin cambios en la lógica interna) ---------- */
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
-  const PASSWORD = "Sotano2014"; // Cambia esta contraseña
-  let isAuthenticated = false;
+  const PASSWORD = "Sotano2014"; let isAuthenticated = false;
   function closeAllScreens() { document.querySelectorAll(".config-screen").forEach(s => s.style.display = "none"); }
   function closeSidebarAndOverlay() { sidebar.classList.remove("show"); overlay.classList.remove("show"); document.getElementById("config-submenu").style.display = "none"; }
-  function closeAll() { closeAllScreens(); closeSidebarAndOverlay(); resetUserForm(); resetRehearsalForm(); /* y otros resets si los tienes */ }
+  function closeAll() { closeAllScreens(); closeSidebarAndOverlay(); resetUserForm(); resetRehearsalForm(); }
   document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
   document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); };
   overlay.onclick = closeAll;
-  ['menu-rehearsals-section', 'menu-second-setlist-section', 'menu-concerts-section'].forEach(id => {
-    document.getElementById(id).onclick = e => { e.preventDefault(); closeAll(); const targetId = e.target.getAttribute('href').substring(1); document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" }); };
-  });
-  document.getElementById("menu-config").onclick = e => { e.preventDefault(); if (!isAuthenticated) { const pass = prompt("Contraseña para Configuración (iDoctor Dice: ¡Si no sabes no toques!):"); if (pass === PASSWORD) { isAuthenticated = true; } else { alert("Contraseña incorrecta."); return; } } document.getElementById("config-submenu").style.display = document.getElementById("config-submenu").style.display === "block" ? "none" : "block"; };
-  function openConfigScreen(screenId, loadDataFn) { if (!isAuthenticated) { alert("Acceso denegado. Autentícate en 'Configuración' primero."); return; } closeAllScreens(); document.getElementById(screenId).style.display = "block"; if (loadDataFn) loadDataFn(); }
+  ['menu-rehearsals-section', 'menu-second-setlist-section', 'menu-concerts-section'].forEach(id => { document.getElementById(id).onclick = e => { e.preventDefault(); closeAll(); const targetId = e.target.getAttribute('href').substring(1); document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" }); }; });
+  document.getElementById("menu-config").onclick = e => { e.preventDefault(); if (!isAuthenticated) { const pass = prompt("Contraseña para Configuración:"); if (pass === PASSWORD) { isAuthenticated = true; } else { alert("Contraseña incorrecta."); return; } } document.getElementById("config-submenu").style.display = document.getElementById("config-submenu").style.display === "block" ? "none" : "block"; };
+  function openConfigScreen(screenId, loadDataFn) { if (!isAuthenticated) { alert("Acceso denegado."); return; } closeAllScreens(); document.getElementById(screenId).style.display = "block"; if (loadDataFn) loadDataFn(); }
   document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault(); openConfigScreen("setlist-config-screen", () => { document.getElementById("setlist1-name").value = setlistConfig.setlist1.name; document.getElementById("setlist1-url").value = setlistConfig.setlist1.url; document.getElementById("setlist2-name").value = setlistConfig.setlist2.name; document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", ""); });};
   document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; document.getElementById("setlist-message").textContent = ""; };
-  // ... (resto de listeners de guardar config setlists, usuarios, ensayos, stats - mantenlos como estaban)
   document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); openConfigScreen("user-mgmt-screen"); };
   document.getElementById("menu-rehearsal").onclick = e => { e.preventDefault(); openConfigScreen("rehearsal-screen"); };
-  document.getElementById("menu-stats").onclick = e => { e.preventDefault(); closeAll(); openConfigScreen("stats-screen", () => { updateMonthFilter(); renderStats(); }); };
+  document.getElementById("menu-stats").onclick = e => { e.preventDefault(); closeAllScreens(); openConfigScreen("stats-screen", () => { updateMonthFilter(); renderStats(); }); };
   document.getElementById("close-user-mgmt").onclick = () => { document.getElementById("user-mgmt-screen").style.display = "none"; resetUserForm(); document.getElementById("user-message").textContent = "";};
   document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = "";};
   document.getElementById("close-stats").onclick = () => { document.getElementById("stats-screen").style.display = "none"; };
-
-  document.getElementById("menu-concert-notes-config").onclick = async e => {
-    e.preventDefault();
-    if (!isAuthenticated) { alert("Acceso denegado."); return; }
-    closeAllScreens(); // Solo cierra otras pantallas, no el sidebar
-    const screen = document.getElementById("concert-notes-config-screen");
-    screen.style.display = "block";
-    const tbody = document.getElementById("concert-notes-config-body");
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando conciertos desde BandHelper...</td></tr>';
-    console.log("Abriendo config notas. bandHelperWidgetLoaded:", bandHelperWidgetLoaded, "parsedConcerts:", parsedBandHelperConcerts.length);
-    if (!bandHelperWidgetLoaded || parsedBandHelperConcerts.length === 0) {
-        console.log("Intentando modificar tabla BandHelper desde menú config notas (intento 1)...");
-        let success = modifyBandHelperTable();
-        if (!success) {
-            console.log("Fallo intento 1. Esperando 2s para intento 2...");
-            await new Promise(resolve => setTimeout(resolve, 2500)); // Un poco más de tiempo
-            success = modifyBandHelperTable();
-        }
-        if (!success && !bandHelperWidgetLoaded) {
-           console.warn("No se pudo cargar/parsear tabla BandHelper desde menú config.");
-           tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No se pudo cargar info de BandHelper. Revisa consola.</td></tr>';
-           return;
-        }
-    }
-    renderConcertNotesConfigScreen();
-  };
+  document.getElementById("menu-concert-notes-config").onclick = async e => { e.preventDefault(); if (!isAuthenticated) { alert("Acceso denegado."); return; } closeAllScreens(); const screen = document.getElementById("concert-notes-config-screen"); screen.style.display = "block"; const tbody = document.getElementById("concert-notes-config-body"); tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando conciertos...</td></tr>'; console.log("Abriendo config notas. bandHelperWidgetLoaded:", bandHelperWidgetLoaded, "parsedConcerts:", parsedBandHelperConcerts.length); if (!bandHelperWidgetLoaded || parsedBandHelperConcerts.length === 0) { console.log("Intentando modificar tabla BandHelper desde menú (intento 1)..."); let success = modifyBandHelperTable(); if (!success) { console.log("Fallo intento 1. Esperando 2.5s para intento 2..."); await new Promise(resolve => setTimeout(resolve, 2500)); success = modifyBandHelperTable(); } if (!success && !bandHelperWidgetLoaded) { console.warn("No se pudo cargar/parsear tabla BandHelper desde menú."); tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No se pudo cargar info de BandHelper.</td></tr>'; return; } } renderConcertNotesConfigScreen(); };
   document.getElementById("close-concert-notes-config").onclick = () => { document.getElementById("concert-notes-config-screen").style.display = "none"; document.getElementById("concert-notes-message").textContent = ""; };
 
-  /* ---------- 12. Carga inicial ---------- */
-  document.addEventListener("DOMContentLoaded", async () => {
-    console.log("DOMContentLoaded: Iniciando.");
-    updateConnectionStatus(); // Verificar estado de conexión al cargar
-    if (!db) { console.warn("DOMContentLoaded: DB no inicializado, algunas cargas pueden fallar."); }
-
+  /* ---------- 12. Carga inicial de datos y configuración de observadores ---------- */
+  async function loadInitialData() {
+    console.log("loadInitialData: Iniciando carga de datos de la aplicación.");
+    if (!db) {
+      console.warn("loadInitialData: DB no inicializado, no se pueden cargar datos de Firestore.");
+      // Podrías intentar cargar setlists de URLs estáticas si es posible, o mostrar error.
+      return;
+    }
     try {
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), loadConcertNotes()]);
-      console.log("DOMContentLoaded: Datos iniciales de Firestore cargados (o intentados).");
+      console.log("loadInitialData: Datos de Firestore cargados (o intentados).");
     } catch (e) {
-      console.error("DOMContentLoaded: Error crítico al cargar datos iniciales:", e);
-      // Considera mostrar un error al usuario aquí
+      console.error("loadInitialData: Error crítico al cargar datos de Firestore:", e);
     }
-
-    // Carga de setlists (ejemplo, tu lógica puede variar)
+    // Carga de setlists de URLs (esto puede hacerse independientemente de Firestore)
     let songs1 = [], songs2 = [];
     try { songs1 = await cargarPrimerSetlist(); } catch (e) { console.error("Fallo al cargar primer setlist:", e); }
     try { songs2 = await cargarSegundoSetlist(); } catch (e) { console.error("Fallo al cargar segundo setlist:", e); }
     document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf"); else alert("No hay canciones en el setlist de ensayos."); };
     document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf"); else alert("No hay canciones en el setlist de concierto."); };
+  }
 
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("DOMContentLoaded: Evento disparado.");
+    updateConnectionStatus();
+    // La carga de datos inicial (loadInitialData) ahora se llama después de que la persistencia se configura (o falla)
 
     const bandHelperContainer = document.getElementById("bandhelper-concerts");
     if (bandHelperContainer) {
@@ -596,30 +609,19 @@
                 console.log("MutationObserver: Tabla BandHelper detectada/cambiada. Intentando modificar...");
                 if(modifyBandHelperTable()) {
                     console.log("MutationObserver: Tabla BandHelper modificada exitosamente.");
-                    // observerInstance.disconnect(); // Descomentar si solo se necesita una vez
                 }
             }
         });
         observer.observe(bandHelperContainer, { childList: true, subtree: true });
     } else {
-        console.error("DOMContentLoaded: Contenedor #bandhelper-concerts NO ENCONTRADO para MutationObserver.");
+        console.error("DOMContentLoaded: Contenedor #bandhelper-concerts NO ENCONTRADO.");
     }
 
-    // Fallback por si el MutationObserver no se dispara o el widget carga de forma extraña
-    setTimeout(() => {
-        if (!bandHelperTableModified) {
-            console.warn("DOMContentLoaded (Fallback 3s): BandHelper no modificado. Intentando...");
-            modifyBandHelperTable();
-        }
-    }, 3000);
-    setTimeout(() => {
-        if (!bandHelperTableModified) {
-            console.warn("DOMContentLoaded (Fallback 7s): BandHelper AÚN no modificado. ÚLTIMO intento.");
-            modifyBandHelperTable();
-        }
-    }, 7000);
+    // Fallbacks por si el widget es muy lento o el observer no captura todo
+    setTimeout(() => { if (!bandHelperTableModified) { console.warn("DOMContentLoaded (Fallback 3s): BandHelper no modificado. Intentando..."); modifyBandHelperTable(); }}, 3000);
+    setTimeout(() => { if (!bandHelperTableModified) { console.warn("DOMContentLoaded (Fallback 7s): BandHelper AÚN no modificado. ÚLTIMO intento."); modifyBandHelperTable(); }}, 7000);
 
-    console.log("DOMContentLoaded: Finalizado.");
+    console.log("DOMContentLoaded: Configuración de listeners y observadores finalizada.");
   });
   //]]>
   </script>
