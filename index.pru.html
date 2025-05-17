@@ -24,7 +24,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Estilos CSS (iguales a la v3/v4, por brevedad no se repiten aquí) */
+    /* Estilos CSS (iguales a la v3/v4/v5, por brevedad no se repiten aquí) */
     /* ... Pega aquí los estilos de la versión anterior ... */
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
@@ -140,13 +140,11 @@
 </head>
 <body>
   <div id="connection-status"></div>
-
   <header>
     <div class="logo"><img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main"></div>
     <img src="assets/logointranet.png" alt="Logo Intranet" class="logo-intranet">
     <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
   </header>
-
   <div id="overlay"></div>
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú Principal</h2>
@@ -163,7 +161,6 @@
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
-
   <div id="setlist-config-screen" class="config-screen">
     <button class="close-btn" id="close-setlist-config" title="Cerrar">&times;</button>
     <h2>Configuración de Setlists</h2>
@@ -246,7 +243,6 @@
     </div>
     <p style="text-align: center; margin-top: 20px; font-size: 0.9em; color: #aaa;">La lista de conciertos se obtiene del widget de BandHelper.</p>
   </div>
-
   <main>
     <section id="setlists">
       <h2 id="setlist1-title">Setlist Ensayos</h2>
@@ -254,33 +250,28 @@
       <button class="download-btn" id="download-btn">Descargar PDF</button>
       <p id="total-time"></p>
     </section>
-
     <section id="rehearsals">
       <h2>Próximos Ensayos</h2>
       <div class="table-wrapper"><table id="rehearsal-main-table"><thead><tr><th>Fecha y Duración</th><th>Horario</th><th>Lugar y Calendario</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div>
     </section>
-
     <section id="second-setlist">
       <h2 id="setlist2-title-placeholder">Setlist Próximo Concierto</h2> <p id="second-setlist-name"></p>
       <div class="table-wrapper"><table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table></div>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
     </section>
-
     <section id="calendario">
       <h2>Próximos Conciertos</h2>
       <div id="bandhelper-concerts">
         <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
       </div>
     </section>
-
     <section id="usuarios">
       <h2>Usuarios Registrados</h2>
       <div class="table-wrapper"><table id="users-main-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table></div>
     </section>
   </main>
   <footer>© 2025 El Sótano del Doctor. Todos los derechos reservados.</footer>
-
 
   <script>
   //<![CDATA[
@@ -289,57 +280,44 @@
     apiKey: "TU_API_KEY", // ¡¡¡REEMPLAZA ESTO CON TU API KEY REAL!!!
     authDomain: "sotanointranet.firebaseapp.com",
     projectId: "sotanointranet",
-    storageBucket: "sotanointranet.appspot.com", // Asegúrate que este bucket exista si usas Firebase Storage
+    storageBucket: "sotanointranet.appspot.com",
     messagingSenderId: "756955233128",
     appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
   };
 
   let db;
-  let persistencePromise; // Promesa para la configuración de la persistencia
+  let persistencePromise;
 
   try {
-    firebase.initializeApp(firebaseConfig);
+    if (firebase.apps.length === 0) { // Evitar reinicializar la app
+        firebase.initializeApp(firebaseConfig);
+        console.log("Firebase App inicializada.");
+    } else {
+        console.log("Firebase App ya inicializada.");
+    }
     db = firebase.firestore();
-    console.log("Firebase App inicializada.");
 
-    // Intentar habilitar la persistencia y guardar la promesa
     persistencePromise = db.enablePersistence({ synchronizeTabs: true })
-      .then(() => {
-        console.log("Persistencia Firestore (multi-pestaña) HABILITADA.");
-      })
+      .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); })
       .catch(err => {
         if (err.code === 'failed-precondition') {
           console.warn("Persistencia (multi-pestaña) falló, intentando una sola pestaña...", err.message);
-          return db.enablePersistence(); // Fallback
+          return db.enablePersistence();
         }
-        // Si es 'unimplemented' u otro error, se registrará y la persistencia no se habilitará.
         console.error("Error habilitando persistencia Firestore (multi-pestaña):", err);
-        throw err; // Relanzar para que el catch exterior de persistencePromise lo maneje
+        throw err;
       })
-      .then((result) => { // Para el fallback de enablePersistence()
-          // El resultado aquí puede ser undefined si el primer then tuvo éxito, o si el fallback tuvo éxito.
-          // Necesitamos una forma de saber si la persistencia está realmente activa.
-          // Firestore no expone un flag directo fácil, pero si no hay error, asumimos que está activa o en memoria.
-          console.log("Intento de configuración de persistencia completado.");
-      })
-      .catch(err => {
-          console.error("Error final configurando persistencia Firestore:", err);
-          // La aplicación continuará con caché en memoria si la persistencia falla.
-      });
-
+      .then(() => { console.log("Intento de configuración de persistencia completado (o fallback tuvo éxito)."); })
+      .catch(err => { console.error("Error final configurando persistencia Firestore:", err); });
   } catch (e) {
-    console.error("Error GRAVE: Firebase App no pudo inicializarse. Verifica tu config.", e);
+    console.error("Error GRAVE: Firebase App no pudo inicializarse.", e);
     const statusDiv = document.getElementById("connection-status");
-    if (statusDiv) {
-        statusDiv.textContent = "Error GRAVE: Firebase App no pudo inicializarse.";
-        statusDiv.className = "offline";
-        statusDiv.style.display = "block";
-    }
-    // Detener la ejecución si Firebase no inicializa, ya que nada más funcionará.
-    persistencePromise = Promise.reject(e); // Para que loadInitialData no intente ejecutarse
+    if (statusDiv) { statusDiv.textContent = "Error GRAVE: Firebase no inicializado."; statusDiv.className = "offline"; statusDiv.style.display = "block"; }
+    persistencePromise = Promise.reject(e);
   }
 
   /* ---------- 1. Utilidades ---------- */
+  // ... (Funciones de utilidad como parseDuration, toMMSS, etc. - SIN CAMBIOS DESDE v5)
   const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n; };
   const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const toHHMM = s => { const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`; };
@@ -354,7 +332,7 @@
     if (!timeParts) { console.error("generateICS: Formato de hora inválido:", startTime); alert("Formato de hora incorrecto para evento de calendario."); return; }
     const validStartTime = `${String(timeParts[1]).padStart(2, '0')}:${timeParts[2]}`;
     try {
-        const startDate = new Date(`${dateISO}T${validStartTime}:00Z`); // Asumir UTC para la fecha y hora de entrada
+        const startDate = new Date(`${dateISO}T${validStartTime}:00Z`); 
         if (isNaN(startDate.getTime())) { console.error("generateICS: Fecha de inicio inválida:", startDate); alert("Fecha/hora inválida para evento de calendario."); return; }
         const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
         const formatDateForICS = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
@@ -367,42 +345,46 @@
   }
   function generateConcertId(date, time, location) { const locNorm = (location || "sin_lugar").toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, ''); const timeNorm = (time || "sin_hora").replace(":", ""); return `${date}_${timeNorm}_${locNorm}`; }
 
-  /* ---------- 1.5. Manejo de conexión ---------- */
+
+  /* ---------- 1.5. Manejo de conexión (sin cambios) ---------- */
   const connectionStatus = document.getElementById("connection-status"); let isOnline = navigator.onLine;
   function updateConnectionStatus() { isOnline = navigator.onLine; if (!isOnline) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión. Mostrando datos locales."; connectionStatus.style.display = "block"; } else { connectionStatus.style.display = "none"; connectionStatus.textContent = ""; } }
   window.addEventListener("online", updateConnectionStatus); window.addEventListener("offline", updateConnectionStatus);
   async function withRetry(fn, operationName = 'operación anónima', maxRetries = 3, delay = 2000) { for (let i = 0; i < maxRetries; i++) { try { if (!isOnline && i > 0) { connectionStatus.className = "offline"; connectionStatus.textContent = `Sin conexión. Reintentando ${operationName}...`; connectionStatus.style.display = "block"; } return await fn(); } catch (e) { console.warn(`Intento ${i+1} fallido para ${operationName}:`, e); if (i === maxRetries - 1) { connectionStatus.className = "offline"; connectionStatus.textContent = `Error final en ${operationName} tras ${maxRetries} intentos.`; connectionStatus.style.display = "block"; throw e; } connectionStatus.className = "retrying"; connectionStatus.textContent = `Reintentando ${operationName} (${i + 1}/${maxRetries})...`; connectionStatus.style.display = "block"; await new Promise(resolve => setTimeout(resolve, delay)); } } }
 
-  /* ---------- 2. Acceso Firestore ---------- */
-  async function loadDoc(docId, fallback = {}) { if (!db) { console.error("DB no inicializado. No se puede cargar:", docId); return fallback; } console.log(`Intentando cargar doc: ${docId}`); try { const snap = await db.collection("intranet").doc(docId).get(); if (snap.exists) { console.log(`Doc ${docId} cargado:`, snap.data()); return snap.data(); } else { console.warn(`Doc ${docId} no encontrado. Usando fallback.`); return fallback; } } catch (e) { console.error(`Error al cargar doc ${docId}:`, e.message); throw e; } }
-  async function saveDoc(docId, data) { if (!db) { console.error("DB no inicializado. No se puede guardar:", docId); return false; } console.log(`Intentando guardar doc: ${docId}`); try { await db.collection("intranet").doc(docId).set(data); console.log(`Doc ${docId} guardado.`); return true; } catch (e) { console.error(`Error al guardar doc ${docId}:`, e.message); throw e; } }
+  /* ---------- 2. Acceso Firestore (con logs mejorados) ---------- */
+  async function loadDoc(docId, fallback = {}) { if (!db) { console.error("DB no inicializado. No se puede cargar:", docId); return fallback; } console.log(`Intentando cargar doc: ${docId}`); try { const snap = await db.collection("intranet").doc(docId).get(); if (snap.exists) { console.log(`Doc ${docId} cargado OK.`, snap.data()); return snap.data(); } else { console.warn(`Doc ${docId} NO ENCONTRADO. Usando fallback.`); return fallback; } } catch (e) { console.error(`Error FATAL al cargar doc ${docId}:`, e.message, e); throw e; } }
+  async function saveDoc(docId, data) { if (!db) { console.error("DB no inicializado. No se puede guardar:", docId); return false; } console.log(`Intentando guardar doc: ${docId}`); try { await db.collection("intranet").doc(docId).set(data); console.log(`Doc ${docId} guardado OK.`); return true; } catch (e) { console.error(`Error FATAL al guardar doc ${docId}:`, e.message, e); throw e; } }
 
-  /* ---------- SECCIONES (Setlists, Usuarios, Ensayos, Estadísticas, PDF) ---------- */
-  let setlistConfig = { setlist1: { name: "Setlist Ensayos", url: "URL_POR_DEFECTO_SETLIST1" }, setlist2: { name: "Setlist Concierto", url: "URL_POR_DEFECTO_SETLIST2" }};
-  async function loadSetlistConfig() { console.log("Cargando config de setlists..."); const data = await withRetry(() => loadDoc("setlists", {config: setlistConfig}), "configuración de setlists"); setlistConfig = data.config || setlistConfig; updateTitles(); console.log("Config de setlists cargada:", setlistConfig); }
+  /* ---------- SECCIONES (Setlists, Usuarios, Ensayos, etc. con logs en carga) ---------- */
+  let setlistConfig = { setlist1: { name: "Setlist Ensayos", url: "" }, setlist2: { name: "Setlist Concierto", url: "" }};
+  async function loadSetlistConfig() { console.log("loadSetlistConfig: Iniciando..."); const data = await withRetry(() => loadDoc("setlists", {config: setlistConfig}), "configuración de setlists"); setlistConfig = data.config || setlistConfig; updateTitles(); console.log("loadSetlistConfig: Finalizado. Config:", setlistConfig); }
   function updateTitles() { document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name; document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2.name; }
   async function saveSetlistConfig() { updateTitles(); return await withRetry(() => saveDoc("setlists", { config: setlistConfig }), "guardar config setlists");}
-  async function cargarPrimerSetlist() { console.log("Cargando primer setlist desde:", setlistConfig.setlist1.url); if(!setlistConfig.setlist1.url) { console.warn("URL para primer setlist no definida."); return [];} try { const response = await fetch(setlistConfig.setlist1.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const songs = (await response.json()).filter(i => i.type === "song"); const tbody = document.getElementById("setlist-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.key || ""}</td><td>${s.tempo || ""}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time").textContent = "Tiempo total: " + toHHMM(total); console.log("Primer setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando primer setlist:", e); document.getElementById("setlist-body").innerHTML = '<tr><td colspan="5">Error al cargar.</td></tr>'; return []; } }
-  async function cargarSegundoSetlist() { console.log("Cargando segundo setlist desde:", setlistConfig.setlist2.url); if(!setlistConfig.setlist2.url) { console.warn("URL para segundo setlist no definida."); return [];} try { const response = await fetch(setlistConfig.setlist2.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : []; const tbody = document.getElementById("second-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration || "0"); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time-2").textContent = "Tiempo total: " + toHHMM(total); console.log("Segundo setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando segundo setlist:", e); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">Error al cargar.</td></tr>'; document.getElementById("total-time-2").textContent = ""; return []; } }
-  
-  let users = []; let editingUserIndex = null; 
-  function renderUsers() { const tbody = document.getElementById("user-table-body"); const mainTbody = document.getElementById("users-body"); tbody.innerHTML = ""; mainTbody.innerHTML = ""; users.forEach((u,i)=>{/* tu lógica de renderizado */ tbody.insertAdjacentHTML("beforeend", `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${u.roles.join(', ')}</td><td><button class="action-btn edit-btn" data-i="${i}">Editar</button><button class="action-btn delete-btn" data-i="${i}">Eliminar</button></td></tr>`); mainTbody.insertAdjacentHTML("beforeend", `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${u.roles.join(', ')}</td></tr>`);}); /* ... (añade listeners para editar/eliminar) ... */ } 
-  async function loadUsers() { console.log("Cargando usuarios..."); const data = await withRetry(() => loadDoc("users", {users:[]}), "carga de usuarios"); users = data.users || []; renderUsers(); console.log("Usuarios cargados:", users.length); }  
-  async function saveUsers() { console.log("Guardando usuarios..."); return await withRetry(() => saveDoc("users", {users}), "guardar usuarios");} 
+  async function cargarPrimerSetlist() { console.log("cargarPrimerSetlist desde:", setlistConfig.setlist1.url); if(!setlistConfig.setlist1.url) { console.warn("URL para primer setlist no definida."); return [];} try { const response = await fetch(setlistConfig.setlist1.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const songs = (await response.json()).filter(i => i.type === "song"); const tbody = document.getElementById("setlist-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.key || ""}</td><td>${s.tempo || ""}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time").textContent = "Tiempo total: " + toHHMM(total); console.log("Primer setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando primer setlist:", e); document.getElementById("setlist-body").innerHTML = '<tr><td colspan="5">Error al cargar.</td></tr>'; return []; } }
+  async function cargarSegundoSetlist() { console.log("cargarSegundoSetlist desde:", setlistConfig.setlist2.url); if(!setlistConfig.setlist2.url) { console.warn("URL para segundo setlist no definida."); return [];} try { const response = await fetch(setlistConfig.setlist2.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : []; const tbody = document.getElementById("second-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration || "0"); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time-2").textContent = "Tiempo total: " + toHHMM(total); console.log("Segundo setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando segundo setlist:", e); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">Error al cargar.</td></tr>'; document.getElementById("total-time-2").textContent = ""; return []; } }
+
+  let users = []; let editingUserIndex = null;
+  function renderUsers() { const tbodyCfg = document.getElementById("user-table-body"); const tbodyMain = document.getElementById("users-body"); tbodyCfg.innerHTML = ""; tbodyMain.innerHTML = ""; users.forEach((user, index) => { const roles = Array.isArray(user.roles) ? user.roles.join(", ") : "Sin roles"; const rowHTML = `<tr><td>${user.name || "N/A"}</td><td>${user.nickname || "N/A"}</td><td>${roles}</td></tr>`; tbodyMain.insertAdjacentHTML("beforeend", rowHTML); const actionsHTML = `<td><button class="action-btn edit-btn edit-user" data-i="${index}">Editar</button><button class="action-btn delete-btn delete-user" data-i="${index}">Eliminar</button></td>`; tbodyCfg.insertAdjacentHTML("beforeend", `<tr><td>${user.name || "N/A"}</td><td>${user.nickname || "N/A"}</td><td>${roles}</td>${actionsHTML}</tr>`); }); /* ... (añade listeners para editar/eliminar) ... */ }
+  async function loadUsers() { console.log("loadUsers: Iniciando..."); const data = await withRetry(() => loadDoc("users", {users:[]}), "carga de usuarios"); users = data.users || []; renderUsers(); console.log("loadUsers: Finalizado. Usuarios:", users.length); }
+  async function saveUsers() { console.log("Guardando usuarios..."); return await withRetry(() => saveDoc("users", {users}), "guardar usuarios");}
   function resetUserForm() { /* ... */ }
-  
-  let rehearsals = []; let editingRehearsalIndex = null; 
-  function renderRehearsals() { /* ... (tu lógica de renderizado de ensayos) ... */ } 
-  async function loadRehearsals() { console.log("Cargando ensayos..."); const data = await withRetry(() => loadDoc("rehearsals", {rehearsals:[]}), "carga de ensayos"); rehearsals = data.rehearsals || []; renderRehearsals(); console.log("Ensayos cargados:", rehearsals.length); } 
-  async function saveRehearsals() { console.log("Guardando ensayos..."); return await withRetry(() => saveDoc("rehearsals", {rehearsals}), "guardar ensayos");} 
+
+  let rehearsals = []; let editingRehearsalIndex = null;
+  function renderRehearsals() { /* ... (tu lógica de renderizado de ensayos) ... */ }
+  async function loadRehearsals() { console.log("loadRehearsals: Iniciando..."); const data = await withRetry(() => loadDoc("rehearsals", {rehearsals:[]}), "carga de ensayos"); rehearsals = data.rehearsals || []; renderRehearsals(); console.log("loadRehearsals: Finalizado. Ensayos:", rehearsals.length); }
+  async function saveRehearsals() { console.log("Guardando rehearsals..."); return await withRetry(() => saveDoc("rehearsals", {rehearsals}), "guardar ensayos");}
   function resetRehearsalForm() { /* ... */ }
-  
+
   function updateMonthFilter() { /* ... */ } function renderStats() { /* ... */ }
   async function genPDF(songs, title, fileName) { /* ... */ }
 
-  /* ---------- 10. Modificar tabla de BandHelper ---------- */
-  // (Lógica igual a v4, con los console.log ya incluidos)
-  // ... Pega aquí la función modifyBandHelperTable y openConcertDetailViewer de la v4 ...
+  /* ---------- 10. Modificar tabla de BandHelper (igual a v5, con logs) ---------- */
+  // ... Pega aquí la función modifyBandHelperTable y openConcertDetailViewer de la v5 ...
+  // (Esta función ya tiene logs detallados)
+  let parsedBandHelperConcerts = [];
+  let bandHelperTableModified = false;
+  let bandHelperWidgetLoaded = false; 
   function modifyBandHelperTable() {
     console.log("modifyBandHelperTable: Iniciando...");
     const bandHelperContentDiv = document.getElementById("bandhelper-concerts");
@@ -433,8 +415,8 @@
         if (existingHeadersCount === 0 && firstBodyRow) { 
             existingHeadersCount = firstBodyRow.querySelectorAll("td").length;
         }
-        if (headerRow.children.length === 0 && existingHeadersCount >=3) {
-             headerRow.innerHTML = '<th>Fecha</th><th>Hora</th><th>Lugar</th>'; 
+        if (headerRow.children.length === 0 && existingHeadersCount >=3) { // Si la fila de cabecera está vacía y hay al menos 3 columnas en el cuerpo
+             headerRow.innerHTML = '<th>Fecha</th><th>Hora</th><th>Lugar</th>'; // Añadir cabeceras por defecto
         }
         headerRow.insertAdjacentHTML("beforeend", '<th class="th-details" style="text-align:center;">Detalles</th>');
         console.log("modifyBandHelperTable: Cabecera 'Detalles' AÑADIDA.");
@@ -500,14 +482,14 @@
   function openConcertDetailViewer(concertId) { window.open(`concert_detail_viewer.html?concertId=${encodeURIComponent(concertId)}`, '_blank');}
 
 
-  /* ---------- 10.5. Notas de Conciertos (sin cambios en la lógica interna) ---------- */
+  /* ---------- 10.5. Notas de Conciertos (con logs) ---------- */
   let concertNotes = {};
-  async function loadConcertNotes() { console.log("Cargando notas de conciertos..."); try { const data = await withRetry(() => loadDoc("concert_notes_store", { notes: {} }), "carga de notas de concierto"); concertNotes = data.notes || {}; console.log("Notas de conciertos cargadas:", concertNotes); } catch (e) { console.error("Error al cargar notas de conciertos:", e); concertNotes = {}; } }
+  async function loadConcertNotes() { console.log("loadConcertNotes: Iniciando..."); const data = await withRetry(() => loadDoc("concert_notes_store", { notes: {} }), "carga de notas de concierto"); concertNotes = data.notes || {}; console.log("loadConcertNotes: Finalizado. Notas:", concertNotes); }
   async function saveConcertNotes() { console.log("Guardando notas de conciertos..."); try { await withRetry(() => saveDoc("concert_notes_store", { notes: concertNotes }), "guardar notas de concierto"); return true; } catch (e) { console.error("Error al guardar notas:", e); const msgEl = document.getElementById("concert-notes-message"); if(msgEl){ msgEl.className = "error-message"; msgEl.textContent = "Error al guardar: " + e.message;} throw e; } }
-  function renderConcertNotesConfigScreen() { /* ... (igual a v4) ... */ }
+  function renderConcertNotesConfigScreen() { /* ... (igual a v5, ya tiene logs) ... */ }
 
   /* ---------- 11. Menú & pantallas (sin cambios en la lógica interna) ---------- */
-  // ... (igual a v4) ...
+  // ... (igual a v5) ...
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
   const PASSWORD = "Sotano2014"; let isAuthenticated = false;
   function closeAllScreens() { document.querySelectorAll(".config-screen").forEach(s => s.style.display = "none"); }
@@ -535,83 +517,55 @@
   async function loadInitialData() {
     console.log("loadInitialData: Iniciando...");
     if (!db) { console.warn("loadInitialData: DB no inicializado. Abortando carga de datos de Firestore."); return; }
-
     const statusDiv = document.getElementById("connection-status");
     try {
-      // Mostrar un mensaje de "cargando datos"
-      if(statusDiv) {
-        statusDiv.textContent = "Cargando datos de la intranet...";
-        statusDiv.className = "retrying"; // Usar un estilo de "cargando"
-        statusDiv.style.display = "block";
-      }
-
-      await Promise.all([
-        loadSetlistConfig(),
-        loadUsers(),
-        loadRehearsals(),
-        loadConcertNotes()
-      ]);
-      console.log("loadInitialData: Todas las cargas de Firestore completadas (o intentadas).");
-
-      // Carga de setlists de URLs externas (después de que config esté cargada)
+      if(statusDiv) { statusDiv.textContent = "Cargando datos..."; statusDiv.className = "retrying"; statusDiv.style.display = "block"; }
+      await Promise.all([ loadSetlistConfig(), loadUsers(), loadRehearsals(), loadConcertNotes() ]);
+      console.log("loadInitialData: Cargas de Firestore completadas (o intentadas).");
       let songs1 = [], songs2 = [];
       try { songs1 = await cargarPrimerSetlist(); } catch (e) { console.error("Fallo al cargar primer setlist desde URL:", e); }
       try { songs2 = await cargarSegundoSetlist(); } catch (e) { console.error("Fallo al cargar segundo setlist desde URL:", e); }
       document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf"); else alert("No hay canciones en el setlist de ensayos."); };
       document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf"); else alert("No hay canciones en el setlist de concierto."); };
-      
-      if(statusDiv) statusDiv.style.display = "none"; // Ocultar mensaje de "cargando"
-
+      if(statusDiv) statusDiv.style.display = "none";
     } catch (e) {
-      console.error("loadInitialData: Error crítico durante la carga de datos de Firestore:", e);
-      if(statusDiv) {
-        statusDiv.textContent = "Error al cargar datos. Intenta recargar.";
-        statusDiv.className = "offline";
-        statusDiv.style.display = "block";
-      }
+      console.error("loadInitialData: Error crítico durante la carga de datos:", e);
+      if(statusDiv) { statusDiv.textContent = "Error al cargar datos. Recarga la página."; statusDiv.className = "offline"; statusDiv.style.display = "block"; }
     }
   }
 
   document.addEventListener("DOMContentLoaded", () => {
     console.log("DOMContentLoaded: Evento disparado.");
     updateConnectionStatus();
-
-    // Esperar a que la configuración de persistencia termine (o falle) antes de cargar datos
     if (persistencePromise) {
         persistencePromise.finally(() => {
-            console.log("DOMContentLoaded: Promesa de persistencia resuelta/rechazada. Procediendo a cargar datos iniciales.");
-            loadInitialData();
+            console.log("DOMContentLoaded: Promesa de persistencia finalizada. Procediendo a cargar datos iniciales.");
+            loadInitialData(); // Llamar a cargar datos aquí
         });
-    } else if (db) { // Si persistencePromise no se definió (Firebase no inicializó), pero db sí (improbable)
-        console.warn("DOMContentLoaded: persistencePromise no definida, pero db existe. Intentando cargar datos iniciales.");
+    } else if (db) {
+        console.warn("DOMContentLoaded: persistencePromise no definida, pero db existe. Cargando datos iniciales.");
         loadInitialData();
     } else {
-        console.error("DOMContentLoaded: Ni persistencePromise ni db definidos. No se cargarán datos iniciales.");
+        console.error("DOMContentLoaded: Firebase (db) no está disponible. No se cargarán datos iniciales.");
     }
-
 
     const bandHelperContainer = document.getElementById("bandhelper-concerts");
     if (bandHelperContainer) {
         console.log("DOMContentLoaded: Configurando MutationObserver para BandHelper.");
-        const observer = new MutationObserver(() => { // Simplificado para reaccionar a cualquier cambio
+        const observer = new MutationObserver(() => {
             const table = bandHelperContainer.querySelector("table");
             if (table && (!bandHelperTableModified || table.dataset.processedByIntranet !== "true")) {
                 console.log("MutationObserver: Tabla BandHelper detectada/cambiada. Intentando modificar...");
-                if(modifyBandHelperTable()) {
-                    console.log("MutationObserver: Tabla BandHelper modificada exitosamente.");
-                }
+                if(modifyBandHelperTable()) { console.log("MutationObserver: Tabla BandHelper modificada."); }
             }
         });
         observer.observe(bandHelperContainer, { childList: true, subtree: true });
-    } else {
-        console.error("DOMContentLoaded: Contenedor #bandhelper-concerts NO ENCONTRADO.");
-    }
+    } else { console.error("DOMContentLoaded: Contenedor #bandhelper-concerts NO ENCONTRADO."); }
 
-    // Fallbacks para modifyBandHelperTable
+    // Fallbacks
     setTimeout(() => { if (!bandHelperTableModified) { console.warn("DOMContentLoaded (Fallback 3s): BandHelper no modificado. Intentando..."); modifyBandHelperTable(); }}, 3000);
     setTimeout(() => { if (!bandHelperTableModified) { console.warn("DOMContentLoaded (Fallback 7s): BandHelper AÚN no modificado. ÚLTIMO intento."); modifyBandHelperTable(); }}, 7000);
-
-    console.log("DOMContentLoaded: Configuración de listeners y observadores finalizada.");
+    console.log("DOMContentLoaded: Configuración finalizada.");
   });
   //]]>
   </script>
