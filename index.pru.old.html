@@ -24,7 +24,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Estilos CSS (iguales a la v3/v4/v5/v6, por brevedad no se repiten aquí) */
+    /* Estilos CSS (iguales a la v6, por brevedad no se repiten aquí) */
     /* ... Pega aquí los estilos de la versión anterior ... */
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
@@ -49,27 +49,34 @@
     #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:9998;display:none;backdrop-filter: blur(2px);}
     #overlay.show{display:block}
     /* Pantallas modales */
-    .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;
-                   overflow-y:auto;padding:70px 20px 20px} /* Aumentado padding superior */
-    .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px 0}
-    .config-screen h3{color:#0cf;margin:20px 0 10px; border-bottom: 1px solid #333; padding-bottom: 5px;}
-    .config-screen label{display:block;margin:10px 0 5px; color: #0cf;}
-    .config-screen input,.config-screen select, .config-screen textarea {
+    .config-screen, .modal-screen { /* Unificando clase base para modales */
+        display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;
+        overflow-y:auto;padding:70px 20px 20px
+    }
+    .config-screen h2, .modal-screen h2 {color:#0cf;text-align:center;margin:10px 0 20px 0}
+    .config-screen h3, .modal-screen h3 {color:#0cf;margin:20px 0 10px; border-bottom: 1px solid #333; padding-bottom: 5px;}
+    .config-screen label, .modal-screen label {display:block;margin:10px 0 5px; color: #0cf;}
+    .config-screen input,.config-screen select, .config-screen textarea,
+    .modal-screen input,.modal-screen select, .modal-screen textarea {
         width:100%;max-width:450px;padding:12px;background:#1a1a1a;color:#fff;
         border:1px solid #0cf;border-radius:5px; margin-bottom: 12px; box-shadow: 0 0 5px rgba(0,204,255,0.2);
     }
-    .config-screen select[multiple] { height: 150px; }
-    .config-screen textarea { height: 120px; resize: vertical; }
-    .config-screen button{
+    .config-screen select[multiple], .modal-screen select[multiple] { height: 150px; }
+    .config-screen textarea, .modal-screen textarea { height: 150px; resize: vertical; } /* Aumentado altura para notas */
+    .config-screen button, .modal-screen button {
         margin-top:25px;padding:12px 22px;background:#0cf;color:#000;border:none;
         border-radius:8px;cursor:pointer;font-weight:bold; text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .config-screen button:hover{background:#0ae; box-shadow: 0 0 10px #0cf;}
-    .config-screen .close-btn{
+    .config-screen button:hover, .modal-screen button:hover {background:#0ae; box-shadow: 0 0 10px #0cf;}
+    .config-screen .close-btn, .modal-screen .close-btn {
         position:absolute;top:15px;right:15px;font-size:1.5em;background:transparent;border:2px solid #0cf;
         color:#0cf;border-radius:50%;padding:0px;cursor:pointer; width:35px; height:35px; line-height:30px; text-align:center;
     }
-    .config-screen .close-btn:hover{background:#0cf; color:#000; box-shadow: 0 0 8px #0cf;}
+    .config-screen .close-btn:hover, .modal-screen .close-btn:hover {background:#0cf; color:#000; box-shadow: 0 0 8px #0cf;}
+    /* Estilos específicos para el modal de notas de concierto */
+    #concert-note-edit-modal .modal-content { max-width: 600px; margin: auto; }
+    #concert-note-info { color: #ccc; font-style: italic; margin-bottom: 15px; text-align: center;}
+
     /* Secciones */
     main section{max-width:1200px;margin:20px auto;padding:25px; background:#0a0a0a; border: 1px solid #1c1c1c; border-radius:10px;box-shadow:0 0 20px rgba(0,204,255,.1);}
     #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:20px; font-size: 1.8em;}
@@ -127,14 +134,14 @@
       header{padding:10px 15px;} .logo img.logo-main{width:130px} .logo-intranet{height:40px} .hamburger div{width:20px}
       main section {padding: 15px;}
       #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{font-size: 1.5em;}
-      .config-screen{padding:60px 15px 15px}
-      .config-screen input, .config-screen select, .config-screen textarea {padding:10px; max-width: none;}
-      .config-screen button{padding:10px 18px;}
+      .config-screen, .modal-screen {padding:60px 15px 15px}
+      .config-screen input, .config-screen select, .config-screen textarea,
+      .modal-screen input, .modal-screen select, .modal-screen textarea {padding:10px; max-width: none;}
+      .config-screen button, .modal-screen button {padding:10px 18px;}
       .action-btn, .attendance-form button {width: 100%; margin-bottom: 8px;}
       .attendance-form { flex-direction: column; align-items: stretch; } .attendance-form select { width: 100%; }
       #connection-status { font-size: 0.8em; padding: 6px 10px; bottom: 5px; right: 5px;}
       table { font-size: 0.8em; } th, td { padding: 8px 6px; max-width: 100px; }
-      #concert-notes-config-table th:nth-child(4), #concert-notes-config-table td:nth-child(4) { min-width: 120px;}
     }
   </style>
 </head>
@@ -157,8 +164,7 @@
       <a href="#" id="menu-setlist-config">Setlists</a>
       <a href="#" id="menu-user-mgmt">Usuarios</a>
       <a href="#" id="menu-rehearsal">Ensayos</a>
-      <a href="#" id="menu-concert-notes-config">Notas de Conciertos</a>
-    </div>
+      </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
   <div id="setlist-config-screen" class="config-screen">
@@ -230,19 +236,17 @@
       <div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Horario</th><th>Lugar</th><th>Asistencias (Apodos)</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div>
     </div>
   </div>
-  <div id="concert-notes-config-screen" class="config-screen">
-    <button class="close-btn" id="close-concert-notes-config" title="Cerrar">&times;</button>
-    <h2>Configuración de Notas para Conciertos</h2>
-    <p style="text-align: center; margin-bottom:15px;">Añade o edita notas internas para los próximos conciertos.</p>
-    <p id="concert-notes-message" class="message"></p>
-    <div class="table-wrapper">
-        <table id="concert-notes-config-table">
-            <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Nota</th><th>Acciones</th></tr></thead>
-            <tbody id="concert-notes-config-body"><tr><td colspan="5" style="text-align:center;">Cargando conciertos...</td></tr></tbody>
-        </table>
+  <div id="concert-note-edit-modal" class="modal-screen">
+    <div class="modal-content"> <button class="close-btn" id="close-concert-note-edit-modal" title="Cerrar">&times;</button>
+        <h2>Detalles del Concierto</h2>
+        <p id="concert-note-info">Concierto: Cargando...</p>
+        <label for="concert-note-textarea">Nota:</label>
+        <textarea id="concert-note-textarea" placeholder="Escribe aquí tus notas para este concierto..."></textarea>
+        <button id="save-concert-note-modal-btn">Guardar Nota</button>
+        <p id="concert-note-edit-message" class="message"></p>
     </div>
-    <p style="text-align: center; margin-top: 20px; font-size: 0.9em; color: #aaa;">La lista de conciertos se obtiene del widget de BandHelper.</p>
   </div>
+
   <main>
     <section id="setlists">
       <h2 id="setlist1-title">Setlist Ensayos</h2>
@@ -288,7 +292,6 @@
   let db;
   let persistencePromise;
 
-  // Recordatorio importante en la consola si la API key no se ha cambiado
   if (firebaseConfig.apiKey === "TU_API_KEY") {
     console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     console.error("!!! POR FAVOR, REEMPLAZA 'TU_API_KEY' EN firebaseConfig !!!");
@@ -296,26 +299,14 @@
   }
 
   try {
-    if (firebase.apps.length === 0) {
-        firebase.initializeApp(firebaseConfig);
-        console.log("Firebase App inicializada.");
-    } else {
-        console.log("Firebase App ya inicializada.");
-    }
+    if (firebase.apps.length === 0) { firebase.initializeApp(firebaseConfig); console.log("Firebase App inicializada."); }
+    else { console.log("Firebase App ya inicializada."); }
     db = firebase.firestore();
-
     persistencePromise = db.enablePersistence({ synchronizeTabs: true })
       .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); })
-      .catch(err => {
-        if (err.code === 'failed-precondition') {
-          console.warn("Persistencia (multi-pestaña) falló, intentando una sola pestaña...", err.message);
-          return db.enablePersistence();
-        }
-        console.error("Error habilitando persistencia Firestore (multi-pestaña):", err);
-        throw err;
-      })
-      .then(() => { console.log("Intento de configuración de persistencia completado."); })
-      .catch(err => { console.error("Error final configurando persistencia Firestore:", err); });
+      .catch(err => { if (err.code === 'failed-precondition') { console.warn("Persistencia (multi) falló, intentando una sola...", err.message); return db.enablePersistence(); } console.error("Error habilitando persistencia (multi):", err); throw err; })
+      .then(() => { console.log("Intento de config. de persistencia completado."); })
+      .catch(err => { console.error("Error final config. persistencia:", err); });
   } catch (e) {
     console.error("Error GRAVE: Firebase App no pudo inicializarse.", e);
     const statusDiv = document.getElementById("connection-status");
@@ -324,7 +315,7 @@
   }
 
   /* ---------- 1. Utilidades (sin cambios desde v6) ---------- */
-  // ... Pega aquí las funciones de utilidad de la v6 (parseDuration, toMMSS, etc.) ...
+  // ... Pega aquí las funciones de utilidad de la v6 ...
   const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n; };
   const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const toHHMM = s => { const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`; };
@@ -352,6 +343,7 @@
   }
   function generateConcertId(date, time, location) { const locNorm = (location || "sin_lugar").toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, ''); const timeNorm = (time || "sin_hora").replace(":", ""); return `${date}_${timeNorm}_${locNorm}`; }
 
+
   /* ---------- 1.5. Manejo de conexión (sin cambios) ---------- */
   // ... (igual a v6) ...
   const connectionStatus = document.getElementById("connection-status"); let isOnline = navigator.onLine;
@@ -366,7 +358,6 @@
 
   /* ---------- SECCIONES (Setlists, Usuarios, Ensayos, etc. con logs en carga - igual a v6) ---------- */
   // ... Pega aquí las funciones loadSetlistConfig, cargarPrimerSetlist, loadUsers, loadRehearsals, etc. de la v6 ...
-  // (Estas funciones ya tienen logs detallados)
   let setlistConfig = { setlist1: { name: "Setlist Ensayos", url: "" }, setlist2: { name: "Setlist Concierto", url: "" }};
   async function loadSetlistConfig() { console.log("loadSetlistConfig: Iniciando..."); const data = await withRetry(() => loadDoc("setlists", {config: setlistConfig}), "configuración de setlists"); setlistConfig = data.config || setlistConfig; updateTitles(); console.log("loadSetlistConfig: Finalizado. Config:", setlistConfig); }
   function updateTitles() { document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name; document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2.name; }
@@ -388,7 +379,8 @@
 
 
   /* ---------- 10. Modificar tabla de BandHelper (igual a v6, con logs) ---------- */
-  // ... Pega aquí la función modifyBandHelperTable y openConcertDetailViewer de la v6 ...
+  // ... Pega aquí la función modifyBandHelperTable de la v6 ...
+  // (Esta función ya tiene logs detallados y creación de thead/tr si no existen)
   let parsedBandHelperConcerts = [];
   let bandHelperTableModified = false;
   let bandHelperWidgetLoaded = false; 
@@ -476,73 +468,129 @@
             else row.appendChild(detailsCell);
           }
           if (!detailsCell.querySelector("button.details-btn")) {
-              detailsCell.innerHTML = `<button class="details-btn" title="Ver/Editar Detalles" onclick="openConcertDetailViewer('${concertId}')"><svg viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" /></svg></button>`;
+              detailsCell.innerHTML = `<button class="details-btn" title="Ver/Editar Detalles" onclick="openConcertNoteModal('${concertId}')"><svg viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" /></svg></button>`;
           }
         });
     }
     console.log("modifyBandHelperTable: Conciertos parseados:", parsedBandHelperConcerts.length);
     bandHelperTableModified = true; table.dataset.processedByIntranet = "true"; bandHelperWidgetLoaded = true;
-    if (document.getElementById("concert-notes-config-screen").style.display === "block") { renderConcertNotesConfigScreen(); }
+    // No llamar a renderConcertNotesConfigScreen aquí, se hará al abrir el modal de config si es necesario
     console.log("modifyBandHelperTable: Finalizada.");
     return true;
   }
-  function openConcertDetailViewer(concertId) { window.open(`concert_detail_viewer.html?concertId=${encodeURIComponent(concertId)}`, '_blank');}
 
 
-  /* ---------- 10.5. Notas de Conciertos (con logs - igual a v6) ---------- */
-  // ... Pega aquí loadConcertNotes, saveConcertNotes, renderConcertNotesConfigScreen de la v6 ...
+  /* ---------- 10.5. Notas de Concierto y Modal ---------- */
   let concertNotes = {};
-  async function loadConcertNotes() { console.log("loadConcertNotes: Iniciando..."); const data = await withRetry(() => loadDoc("concert_notes_store", { notes: {} }), "carga de notas de concierto"); concertNotes = data.notes || {}; console.log("loadConcertNotes: Finalizado. Notas:", concertNotes); }
-  async function saveConcertNotes() { console.log("Guardando notas de conciertos..."); try { await withRetry(() => saveDoc("concert_notes_store", { notes: concertNotes }), "guardar notas de concierto"); return true; } catch (e) { console.error("Error al guardar notas:", e); const msgEl = document.getElementById("concert-notes-message"); if(msgEl){ msgEl.className = "error-message"; msgEl.textContent = "Error al guardar: " + e.message;} throw e; } }
-  function renderConcertNotesConfigScreen() { 
-    const tbody = document.getElementById("concert-notes-config-body");
-    const messageEl = document.getElementById("concert-notes-message");
-    tbody.innerHTML = ""; if(messageEl) messageEl.textContent = "";
-    console.log("renderConcertNotesConfigScreen: Conciertos de BandHelper:", parsedBandHelperConcerts);
-    if (parsedBandHelperConcerts.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay conciertos próximos listados por BandHelper o aún no se han podido cargar.</td></tr>';
-      return;
-    }
-    parsedBandHelperConcerts.forEach(concert => {
-      const concertId = concert.id; const currentNote = concertNotes[concertId] || "";
-      const row = `<tr><td>${concert.displayDate}</td><td>${concert.time}</td><td>${concert.location}</td><td><textarea data-concert-id="${concertId}" placeholder="Añade detalles...">${currentNote}</textarea></td><td><button class="action-btn save-note-btn" data-concert-id="${concertId}">Guardar</button></td></tr>`;
-      tbody.insertAdjacentHTML("beforeend", row);
-    });
-    tbody.querySelectorAll(".save-note-btn").forEach(button => {
-      button.onclick = async () => {
-        const id = button.dataset.concertId; const textarea = tbody.querySelector(`textarea[data-concert-id="${id}"]`);
-        concertNotes[id] = textarea.value.trim();
-        try { await saveConcertNotes(); if(messageEl){ messageEl.className = "success-message"; messageEl.textContent = "Nota guardada."; setTimeout(() => messageEl.textContent = "", 2500);}}
-        catch (e) { /* error ya manejado en saveConcertNotes */ }
-      };
-    });
+  let currentEditingConcertId = null; // Para saber qué concierto se está editando en el modal
+
+  async function loadConcertNotes() {
+    console.log("loadConcertNotes: Iniciando...");
+    const data = await withRetry(() => loadDoc("concert_notes_store", { notes: {} }), "carga de notas de concierto");
+    concertNotes = data.notes || {};
+    console.log("loadConcertNotes: Finalizado. Notas:", concertNotes);
   }
 
+  async function saveConcertNotes() {
+    console.log("Guardando notas de conciertos...");
+    try {
+      await withRetry(() => saveDoc("concert_notes_store", { notes: concertNotes }), "guardar notas de concierto");
+      return true;
+    } catch (e) {
+      console.error("Error al guardar notas:", e);
+      const msgEl = document.getElementById("concert-note-edit-message"); // Mensaje en el modal de edición
+      if(msgEl){ msgEl.className = "error-message"; msgEl.textContent = "Error al guardar: " + e.message;}
+      throw e;
+    }
+  }
 
-  /* ---------- 11. Menú & pantallas (sin cambios en la lógica interna - igual a v6) ---------- */
-  // ... Pega aquí el código de menú y pantallas de la v6 ...
+  function openConcertNoteModal(concertId) {
+    console.log("openConcertNoteModal para concertId:", concertId);
+    currentEditingConcertId = concertId;
+    const concert = parsedBandHelperConcerts.find(c => c.id === concertId);
+    const modal = document.getElementById("concert-note-edit-modal");
+    const infoEl = document.getElementById("concert-note-info");
+    const textarea = document.getElementById("concert-note-textarea");
+    const messageEl = document.getElementById("concert-note-edit-message");
+
+    if (!modal || !infoEl || !textarea || !messageEl) {
+        console.error("Elementos del modal de notas no encontrados.");
+        return;
+    }
+    messageEl.textContent = ""; // Limpiar mensaje previo
+
+    if (concert) {
+        infoEl.textContent = `Concierto: ${concert.displayDate} - ${concert.location}`;
+        textarea.value = concertNotes[concertId] || "";
+    } else {
+        console.warn("No se encontró información del concierto para el ID:", concertId);
+        infoEl.textContent = "Información del concierto no disponible.";
+        textarea.value = concertNotes[concertId] || ""; // Intentar cargar la nota si existe
+    }
+    modal.style.display = "block";
+    overlay.classList.add("show"); // Mostrar overlay oscuro
+  }
+
+  document.getElementById("close-concert-note-edit-modal").onclick = () => {
+    document.getElementById("concert-note-edit-modal").style.display = "none";
+    overlay.classList.remove("show");
+    currentEditingConcertId = null;
+  };
+
+  document.getElementById("save-concert-note-modal-btn").onclick = async () => {
+    if (!currentEditingConcertId) {
+        console.error("No hay concertId para guardar la nota.");
+        return;
+    }
+    const textarea = document.getElementById("concert-note-textarea");
+    const messageEl = document.getElementById("concert-note-edit-message");
+    concertNotes[currentEditingConcertId] = textarea.value.trim();
+    messageEl.className = "message retrying"; // Usar clase 'retrying' para 'guardando'
+    messageEl.textContent = "Guardando nota...";
+
+    try {
+        await saveConcertNotes();
+        messageEl.className = "message success-message";
+        messageEl.textContent = "¡Nota guardada!";
+        setTimeout(() => {
+            // No cerrar automáticamente, permitir al usuario cerrar o seguir editando
+            // document.getElementById("concert-note-edit-modal").style.display = "none";
+            // overlay.classList.remove("show");
+            // currentEditingConcertId = null;
+            messageEl.textContent = ""; // Limpiar mensaje después de un tiempo
+        }, 2500);
+    } catch (e) {
+        // El error ya se maneja en saveConcertNotes y se muestra en messageEl
+        console.error("Fallo al guardar nota desde modal:", e);
+    }
+  };
+
+
+  /* ---------- 11. Menú & pantallas (eliminada la opción de config de notas) ---------- */
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
   const PASSWORD = "Sotano2014"; let isAuthenticated = false;
-  function closeAllScreens() { document.querySelectorAll(".config-screen").forEach(s => s.style.display = "none"); }
+  function closeAllScreens() { document.querySelectorAll(".config-screen, .modal-screen").forEach(s => s.style.display = "none"); } // Incluir .modal-screen
   function closeSidebarAndOverlay() { sidebar.classList.remove("show"); overlay.classList.remove("show"); document.getElementById("config-submenu").style.display = "none"; }
   function closeAll() { closeAllScreens(); closeSidebarAndOverlay(); resetUserForm(); resetRehearsalForm(); }
   document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
   document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); };
-  overlay.onclick = closeAll;
+  overlay.onclick = () => { // Si se hace clic en el overlay, cerrar modales abiertos y sidebar
+    closeAllScreens();
+    closeSidebarAndOverlay();
+  };
   ['menu-rehearsals-section', 'menu-second-setlist-section', 'menu-concerts-section'].forEach(id => { document.getElementById(id).onclick = e => { e.preventDefault(); closeAll(); const targetId = e.target.getAttribute('href').substring(1); document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" }); }; });
   document.getElementById("menu-config").onclick = e => { e.preventDefault(); if (!isAuthenticated) { const pass = prompt("Contraseña para Configuración:"); if (pass === PASSWORD) { isAuthenticated = true; } else { alert("Contraseña incorrecta."); return; } } document.getElementById("config-submenu").style.display = document.getElementById("config-submenu").style.display === "block" ? "none" : "block"; };
-  function openConfigScreen(screenId, loadDataFn) { if (!isAuthenticated) { alert("Acceso denegado."); return; } closeAllScreens(); document.getElementById(screenId).style.display = "block"; if (loadDataFn) loadDataFn(); }
+  function openConfigScreen(screenId, loadDataFn) { if (!isAuthenticated) { alert("Acceso denegado."); return; } closeAllScreens(); document.getElementById(screenId).style.display = "block"; overlay.classList.add("show"); if (loadDataFn) loadDataFn(); }
   document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault(); openConfigScreen("setlist-config-screen", () => { document.getElementById("setlist1-name").value = setlistConfig.setlist1.name; document.getElementById("setlist1-url").value = setlistConfig.setlist1.url; document.getElementById("setlist2-name").value = setlistConfig.setlist2.name; document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", ""); });};
-  document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; document.getElementById("setlist-message").textContent = ""; };
+  document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; overlay.classList.remove("show"); document.getElementById("setlist-message").textContent = ""; };
   document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); openConfigScreen("user-mgmt-screen"); };
   document.getElementById("menu-rehearsal").onclick = e => { e.preventDefault(); openConfigScreen("rehearsal-screen"); };
-  document.getElementById("menu-stats").onclick = e => { e.preventDefault(); closeAllScreens(); openConfigScreen("stats-screen", () => { updateMonthFilter(); renderStats(); }); };
-  document.getElementById("close-user-mgmt").onclick = () => { document.getElementById("user-mgmt-screen").style.display = "none"; resetUserForm(); document.getElementById("user-message").textContent = "";};
-  document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = "";};
-  document.getElementById("close-stats").onclick = () => { document.getElementById("stats-screen").style.display = "none"; };
-  document.getElementById("menu-concert-notes-config").onclick = async e => { e.preventDefault(); if (!isAuthenticated) { alert("Acceso denegado."); return; } closeAllScreens(); const screen = document.getElementById("concert-notes-config-screen"); screen.style.display = "block"; const tbody = document.getElementById("concert-notes-config-body"); tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando conciertos...</td></tr>'; console.log("Abriendo config notas. bandHelperWidgetLoaded:", bandHelperWidgetLoaded, "parsedConcerts:", parsedBandHelperConcerts.length); if (!bandHelperWidgetLoaded || parsedBandHelperConcerts.length === 0) { console.log("Intentando modificar tabla BandHelper desde menú (intento 1)..."); let success = modifyBandHelperTable(); if (!success) { console.log("Fallo intento 1. Esperando 2.5s para intento 2..."); await new Promise(resolve => setTimeout(resolve, 2500)); success = modifyBandHelperTable(); } if (!success && !bandHelperWidgetLoaded) { console.warn("No se pudo cargar/parsear tabla BandHelper desde menú."); tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No se pudo cargar info de BandHelper.</td></tr>'; return; } } renderConcertNotesConfigScreen(); };
-  document.getElementById("close-concert-notes-config").onclick = () => { document.getElementById("concert-notes-config-screen").style.display = "none"; document.getElementById("concert-notes-message").textContent = ""; };
-
+  document.getElementById("menu-stats").onclick = e => { e.preventDefault(); openConfigScreen("stats-screen", () => { updateMonthFilter(); renderStats(); }); };
+  document.getElementById("close-user-mgmt").onclick = () => { document.getElementById("user-mgmt-screen").style.display = "none"; overlay.classList.remove("show"); resetUserForm(); document.getElementById("user-message").textContent = "";};
+  document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; overlay.classList.remove("show"); resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = "";};
+  document.getElementById("close-stats").onclick = () => { document.getElementById("stats-screen").style.display = "none"; overlay.classList.remove("show"); };
+  // ELIMINADO: document.getElementById("menu-concert-notes-config").onclick ...
+  // ELIMINADO: document.getElementById("close-concert-notes-config").onclick ...
 
   /* ---------- 12. Carga inicial de datos y DOMContentLoaded ---------- */
   async function loadInitialData() {
@@ -551,17 +599,13 @@
     const statusDiv = document.getElementById("connection-status");
     try {
       if(statusDiv) { statusDiv.textContent = "Cargando datos..."; statusDiv.className = "retrying"; statusDiv.style.display = "block"; }
-      // Cargar datos de Firestore primero
       await Promise.all([ loadSetlistConfig(), loadUsers(), loadRehearsals(), loadConcertNotes() ]);
       console.log("loadInitialData: Cargas de Firestore completadas (o intentadas).");
-
-      // Luego, cargar setlists de URLs externas (que dependen de setlistConfig)
       let songs1 = [], songs2 = [];
       try { songs1 = await cargarPrimerSetlist(); } catch (e) { console.error("Fallo al cargar primer setlist desde URL:", e); }
       try { songs2 = await cargarSegundoSetlist(); } catch (e) { console.error("Fallo al cargar segundo setlist desde URL:", e); }
       document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf"); else alert("No hay canciones en el setlist de ensayos."); };
       document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf"); else alert("No hay canciones en el setlist de concierto."); };
-      
       if(statusDiv) statusDiv.style.display = "none";
     } catch (e) {
       console.error("loadInitialData: Error crítico durante la carga de datos:", e);
