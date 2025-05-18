@@ -11,8 +11,7 @@
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
   <meta property="og:image"       content="assets/logo_negro copia.jpg">
   <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://idoctor2000.github.io/ElSotanoDelDoctor-Intranet/">
-  <meta name="twitter:card"        content="summary_large_image">
+  <meta property="og:url"         content="https://idoctor2000.github.io/ElSotanoDelDoctor-Intranet/"> <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="El Sótano del Doctor – Uso Interno">
   <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
   <meta name="twitter:image"       content="assets/logo_negro copia.jpg">
@@ -95,7 +94,7 @@
     #concert-attendance-list { 
         border: 1px solid #333; padding: 10px; border-radius: 5px; margin-top: 10px; 
         max-width: 450px; margin-left:0; margin-right:auto;
-        max-height: 200px; /* Permitir scroll si hay muchos usuarios */
+        max-height: 200px; 
         overflow-y: auto;
     }
     #concert-attendance-list div { display: flex; align-items: center; margin-bottom: 8px; }
@@ -348,20 +347,23 @@
   <script>
   //<![CDATA[
   /* ---------- 0. Firebase ---------- */
+  // USAREMOS LA CONFIGURACIÓN PROPORCIONADA POR EL USUARIO
   const firebaseConfig = {
-    apiKey: "TU_API_KEY", // ¡¡¡REEMPLAZA ESTO CON TU API KEY REAL!!!
-    authDomain: "sotanointranet.firebaseapp.com",
-    projectId: "sotanointranet",
-    storageBucket: "sotanointranet.appspot.com",
-    messagingSenderId: "756955233128",
-    appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
+    apiKey: "AIzaSyAd70p3aEA2180PLWEs_DbMFEotHXfvyNg", // Clave API de la captura
+    authDomain: "el-sotano-del-doctor.firebaseapp.com",
+    projectId: "el-sotano-del-doctor",
+    storageBucket: "el-sotano-del-doctor.appspot.com", // Asumiendo que es .appspot.com
+    messagingSenderId: "288654488846",
+    appId: "1:288654488846:web:51a7264676af8e8a88535f",
+    measurementId: "G-5N8G5GCGW1" // Opcional, pero lo incluyo
   };
 
   let db;
   let persistencePromise;
   const persistenceWarningDiv = document.getElementById("persistence-warning");
 
-  if (firebaseConfig.apiKey === "TU_API_KEY") {
+  // Solo mostrar advertencia de API Key si es el placeholder exacto
+  if (firebaseConfig.apiKey === "TU_API_KEY_PLACEHOLDER") { // Cambiado para que no salte con la real
     console.error("!!! API Key de Firebase NO CONFIGURADA !!!");
     if(persistenceWarningDiv) {
         persistenceWarningDiv.innerHTML = "<b>ERROR CRÍTICO: API Key de Firebase no configurada. La aplicación NO funcionará correctamente.</b>";
@@ -370,18 +372,14 @@
   }
 
   try {
-    if (firebase.apps.length === 0) { firebase.initializeApp(firebaseConfig); console.log("Firebase App inicializada."); }
+    if (firebase.apps.length === 0) { firebase.initializeApp(firebaseConfig); console.log("Firebase App inicializada con la config del usuario."); }
     else { console.log("Firebase App ya inicializada."); }
     db = firebase.firestore();
     persistencePromise = db.enablePersistence({ synchronizeTabs: true })
-      .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.style.display = "none"; })
+      .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); if(persistenceWarningDiv) persistenceWarningDiv.style.display = "none"; })
       .catch(err => {
         if (err.code !== 'failed-precondition' || !err.message.includes("already active")) {
-            if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") {
-                // No mostrar el cartel rojo por problemas de persistencia si la API key es correcta.
-                // El log en consola es suficiente.
-                console.warn("Advertencia: Problema con persistencia de datos (offline): " + err.message);
-            }
+            console.warn("Advertencia: Problema con persistencia de datos (offline): " + err.message);
         }
         if (err.code === 'failed-precondition') {
           console.warn("Persistencia (multi) falló, intentando una sola pestaña...", err.message);
@@ -393,7 +391,7 @@
       .then(() => { console.log("Intento de config. de persistencia completado."); })
       .catch(err => {
         console.error("Error final config. persistencia:", err);
-         if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY" && (err.code !== 'failed-precondition' || !err.message.includes("already active")) ) {
+        if(err.code !== 'failed-precondition' || !err.message.includes("already active")) {
             console.warn("Advertencia: La persistencia de datos (modo offline) podría NO estar disponible: " + err.message);
         }
       });
