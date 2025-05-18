@@ -11,7 +11,8 @@
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
   <meta property="og:image"       content="assets/logo_negro copia.jpg">
   <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://idoctor2000.github.io/ElSotanoDelDoctor-Intranet/"> <meta name="twitter:card"        content="summary_large_image">
+  <meta property="og:url"         content="https://idoctor2000.github.io/ElSotanoDelDoctor-Intranet/">
+  <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="El Sótano del Doctor – Uso Interno">
   <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
   <meta name="twitter:image"       content="assets/logo_negro copia.jpg">
@@ -347,15 +348,15 @@
   <script>
   //<![CDATA[
   /* ---------- 0. Firebase ---------- */
-  // USAREMOS LA CONFIGURACIÓN PROPORCIONADA POR EL USUARIO
+  // Configuración REAL del proyecto "el-sotano-del-doctor"
   const firebaseConfig = {
     apiKey: "AIzaSyAd70p3aEA2180PLWEs_DbMFEotHXfvyNg", // Clave API de la captura
     authDomain: "el-sotano-del-doctor.firebaseapp.com",
     projectId: "el-sotano-del-doctor",
-    storageBucket: "el-sotano-del-doctor.appspot.com", // Asumiendo que es .appspot.com
+    storageBucket: "el-sotano-del-doctor.appspot.com",
     messagingSenderId: "288654488846",
     appId: "1:288654488846:web:51a7264676af8e8a88535f",
-    measurementId: "G-5N8G5GCGW1" // Opcional, pero lo incluyo
+    measurementId: "G-5N8G5GCGW1"
   };
 
   let db;
@@ -363,7 +364,7 @@
   const persistenceWarningDiv = document.getElementById("persistence-warning");
 
   // Solo mostrar advertencia de API Key si es el placeholder exacto
-  if (firebaseConfig.apiKey === AIzaSyAd70p3aEA2180PLWEs_DbMFEotHXfvyNg) { // Cambiado para que no salte con la real
+  if (firebaseConfig.apiKey === "TU_API_KEY_PLACEHOLDER_PARA_EVITAR_ERROR_REAL") {
     console.error("!!! API Key de Firebase NO CONFIGURADA !!!");
     if(persistenceWarningDiv) {
         persistenceWarningDiv.innerHTML = "<b>ERROR CRÍTICO: API Key de Firebase no configurada. La aplicación NO funcionará correctamente.</b>";
@@ -376,7 +377,7 @@
     else { console.log("Firebase App ya inicializada."); }
     db = firebase.firestore();
     persistencePromise = db.enablePersistence({ synchronizeTabs: true })
-      .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); if(persistenceWarningDiv) persistenceWarningDiv.style.display = "none"; })
+      .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY_PLACEHOLDER_PARA_EVITAR_ERROR_REAL") persistenceWarningDiv.style.display = "none"; })
       .catch(err => {
         if (err.code !== 'failed-precondition' || !err.message.includes("already active")) {
             console.warn("Advertencia: Problema con persistencia de datos (offline): " + err.message);
@@ -474,7 +475,10 @@
   function updateTitles() {
     try {
         document.getElementById("setlist1-title").textContent = setlistConfig.setlist1?.name || "Setlist Ensayos";
-        document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2?.name || "Setlist Próximo Concierto";
+        const setlist2NameEl = document.getElementById("second-setlist-name"); // Elemento para el nombre del segundo setlist
+        if (setlist2NameEl) setlist2NameEl.textContent = setlistConfig.setlist2?.name || ""; // Mostrar el nombre del setlist 2
+        else document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2?.name || "Setlist Próximo Concierto"; // Fallback si el p no existe
+
         document.getElementById("setlist3-title").textContent = setlistConfig.setlist3?.name || "Setlist Concierto Estrella";
         document.getElementById("setlist3-title-display").textContent = setlistConfig.setlist3?.name || "";
     } catch (e) {
