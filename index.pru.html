@@ -1267,36 +1267,3 @@ document.addEventListener("DOMContentLoaded", async () => {
   </script>
 </body>
 </html>
-```
-
-**Cambios clave en esta versión:**
-
-1.  **CSS para `#musicians-attendance-list`:** He verificado que `max-height` y `overflow-y` estén comentados o eliminados para permitir que la lista se expanda. He añadido `display: flex` y `align-items: center` al `div` de cada músico para mejorar la alineación del checkbox y el nombre.
-2.  **Función `processBandHelperTable` (JavaScript):**
-    * La lógica para encontrar la fila de cabecera (`headerRow`) se ha hecho más robusta. Intenta `thead tr`, luego la primera fila de la tabla si contiene `<th>`, y luego la primera fila del `<tbody>` si contiene `<th>`.
-    * **Se mantiene el `console.log("Estructura interna de la tabla de BandHelper (table.innerHTML):", table.innerHTML);`**. Este es el log más importante si sigue sin funcionar.
-    * La lógica para añadir la celda de "Detalles" (`detailCell`) a cada fila de datos también se ha mejorado para intentar manejar casos donde la tabla no tenga un `<tbody>` explícito o la estructura sea un poco diferente.
-3.  **Función `openConcertDetailModal` (JavaScript):**
-    * Se limpia el `concertDetailMessage` al abrir el modal.
-    * Se ha añadido un `console.log` para ver el `concertId` que se está usando al intentar cargar los detalles, y otro para mostrar los detalles cargados desde Firestore (o si no se encontraron).
-    * Se ha hecho más único el `id` de los checkboxes de los músicos añadiendo el `concertId` para evitar conflictos si se abren modales muy rápido (aunque es poco probable).
-4.  **Función `saveDoc` y `loadDoc` (JavaScript):**
-    * `loadDoc`: Modificado para que, si hay un error al cargar el documento (ej. permisos), devuelva el `fallback` (objeto vacío para el modal) en lugar de relanzar el error y romper la apertura del modal. El error específico se mostrará en el `concertDetailMessage`.
-    * `saveDoc`: Sigue relanzando el error para que el modal pueda mostrarlo.
-5.  **Manejo de Fechas (JavaScript):**
-    * En `formatDateWithDay` y `getMonthYear`, he añadido `Z` al final de la cadena de fecha antes de crear el objeto `Date` (`new Date(dateStr + 'T00:00:00Z')`) y luego he usado `getUTCDate()`, `getUTCDay()`, `getUTCMonth()`, `getUTCFullYear()` para asegurar que la fecha se interprete y muestre consistentemente como UTC, evitando problemas de desfase de un día por la zona horaria del navegador.
-    * En `generateICS`, he ajustado la forma en que se generan las fechas `DTSTART` y `DTEND` para que sean fechas locales flotantes (sin 'Z' al final), que es más común para eventos de calendario a menos que se manejen zonas horarias explícitamente. También he añadido `PRODID` y `UID` al evento ICS para mejor compatibilidad.
-
-**Próximos Pasos:**
-
-1.  **MUY IMPORTANTE: Revisa tus Reglas de Seguridad de Firestore** para la colección `concert_details` como te indiqué en el mensaje anterior. Si no, el modal mostrará un error de permisos al intentar cargar o guardar.
-2.  Reemplaza todo tu HTML con el código de arriba.
-3.  Abre la consola de desarrollador (F12).
-4.  Carga la página.
-5.  **Si la columna "Detalles" sigue sin aparecer en "Próximos Conciertos":**
-    * Busca el log: `Estructura interna de la tabla de BandHelper (table.innerHTML):`
-    * **Copia todo el HTML que se muestra después de ese mensaje y pégamelo aquí.** Esto es esencial.
-6.  **Si la columna "Detalles" aparece pero el modal da error al abrir o guardar:**
-    * Mira los mensajes de error en la consola y en el propio modal (en `concert-detail-message`). Probablemente serán los de permisos de Firestore.
-
-¡Espero que esto nos acerque a la solución fin
