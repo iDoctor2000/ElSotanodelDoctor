@@ -372,21 +372,27 @@
     persistencePromise = db.enablePersistence({ synchronizeTabs: true })
       .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.style.display = "none"; })
       .catch(err => {
-        if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.style.display = "block"; else if (persistenceWarningDiv) persistenceWarningDiv.style.display = "none"; // Ocultar si el problema es solo de API Key ya mostrada
+        // Solo mostrar advertencia de persistencia si la API key ES correcta y el error NO es por ya estar habilitada
+        if (err.code !== 'failed-precondition' || !err.message.includes("already active")) {
+            if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") {
+                persistenceWarningDiv.style.display = "block";
+                persistenceWarningDiv.innerHTML = "Advertencia: Problema con persistencia de datos (offline): " + err.message.substring(0,100) + "... Revisa config. del navegador.";
+            }
+        }
         if (err.code === 'failed-precondition') {
           console.warn("Persistencia (multi) falló, intentando una sola pestaña...", err.message);
-          if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.innerHTML = "Advertencia: Fallo de persistencia multi-pestaña. Intentando modo simple.";
           return db.enablePersistence();
         }
         console.error("Error habilitando persistencia (multi):", err);
-        if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.innerHTML = "Advertencia: Error grave habilitando persistencia: " + err.message.substring(0,100) + "...";
         throw err;
       })
       .then(() => { console.log("Intento de config. de persistencia completado."); })
       .catch(err => {
         console.error("Error final config. persistencia:", err);
-        // No mostrar el cartel rojo por problemas de persistencia, solo loguear
-        console.warn("Advertencia: La persistencia de datos (modo offline) podría NO estar disponible: " + err.message);
+        if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY" && (err.code !== 'failed-precondition' || !err.message.includes("already active")) ) {
+            persistenceWarningDiv.style.display = "block";
+            persistenceWarningDiv.innerHTML = "Advertencia: La persistencia de datos (modo offline) NO está disponible: " + err.message.substring(0,100) + "...";
+        }
       });
   } catch (e) {
     console.error("Error GRAVE: Firebase App no pudo inicializarse.", e);
@@ -436,33 +442,33 @@
   async function saveDoc(docId, data) { if (!db) { console.error("DB no inicializado. No se puede guardar:", docId); return false; } console.log(`Intentando guardar doc: ${docId}`); try { await db.collection("intranet").doc(docId).set(data); console.log(`Doc ${docId} guardado OK.`); return true; } catch (e) { console.error(`Error FATAL al guardar doc ${docId}:`, e.message, e); throw e; } }
 
   /* ---------- SECCIONES (Setlists, Usuarios, Ensayos, etc.) ---------- */
-  let setlistConfig = { // Asegurar estructura inicial completa
+  let setlistConfig = { 
     setlist1: { name: "Setlist Próximo Ensayo", url: "" },
     setlist2: { name: "Setlist Próximo Concierto", url: "" },
     setlist3: { name: "Setlist Concierto Estrella", url: "" }
   };
   async function loadSetlistConfig() {
     console.log("loadSetlistConfig: Iniciando...");
-    const fallbackConfig = { // Fallback con estructura completa
-        setlist1: { name: "Setlist Próximo Ensayo (Default)", url: "" },
+    const fallbackConfig = { 
+        setlist1: { name: "Setlist Ensayos (Default)", url: "" },
         setlist2: { name: "Setlist Próximo Concierto (Default)", url: "" },
         setlist3: { name: "Setlist Concierto Estrella (Default)", url: "" }
     };
-    let data = { config: fallbackConfig }; // Empezar con el fallback
+    let dataFromFirestore = { config: fallbackConfig }; 
     try {
-        data = await withRetry(() => loadDoc("setlists", {config: fallbackConfig }), "configuración de setlists");
+        dataFromFirestore = await withRetry(() => loadDoc("setlists", {config: fallbackConfig }), "configuración de setlists");
     } catch (e) {
         console.error("Error en withRetry para loadSetlistConfig, usando fallback completo:", e);
     }
     
-    // Fusionar para asegurar que todas las claves existan
+    const loadedConfig = dataFromFirestore.config || {};
     setlistConfig = {
-        setlist1: { ...(fallbackConfig.setlist1), ...(data.config?.setlist1 || {}) },
-        setlist2: { ...(fallbackConfig.setlist2), ...(data.config?.setlist2 || {}) },
-        setlist3: { ...(fallbackConfig.setlist3), ...(data.config?.setlist3 || {}) }
+        setlist1: { ...(fallbackConfig.setlist1), ...(loadedConfig.setlist1 || {}) },
+        setlist2: { ...(fallbackConfig.setlist2), ...(loadedConfig.setlist2 || {}) },
+        setlist3: { ...(fallbackConfig.setlist3), ...(loadedConfig.setlist3 || {}) }
     };
     updateTitles();
-    console.log("loadSetlistConfig: Finalizado. Config:", setlistConfig);
+    console.log("loadSetlistConfig: Finalizado. Config:", JSON.parse(JSON.stringify(setlistConfig))); // Loguear copia para evitar problemas de referencia
   }
   function updateTitles() {
     try {
@@ -653,7 +659,7 @@
 
     if (users.length > 0) {
         users.forEach(user => {
-            const isChecked = (existingNoteData.attendees || []).includes(user.name); // CORREGIDO: isChecked declarado aquí
+            const isChecked = (existingNoteData.attendees || []).includes(user.name); 
             const userHtml = `
                 <div>
                     <input type="checkbox" id="user-att-${user.name.replace(/\s+/g, '-')}" name="concertAttendees" value="${user.name}" ${isChecked ? 'checked' : ''}>
