@@ -120,7 +120,7 @@
     .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; vertical-align: middle; }
     .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
     .calendar-btn:hover svg { fill: #09b; }
-    .details-btn { font-size: 1.5em; color: #0cf; } /* Flecha azul */
+    .details-btn { font-size: 1.5em; color: #0cf; }
     .details-btn:hover { color: #09b; }
 
     .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal {
@@ -809,7 +809,7 @@ async function genPDF(songs, title, fileName) {
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
 let processTableAttempts = 0;
-const MAX_PROCESS_ATTEMPTS = 20; // Aumentado a 20 intentos (10 segundos)
+const MAX_PROCESS_ATTEMPTS = 20; 
 
 function processBandHelperTable() {
   const container = document.getElementById('bandhelper-concerts-container');
@@ -819,34 +819,49 @@ function processBandHelperTable() {
   }
   
   console.log(`processBandHelperTable: Intento ${processTableAttempts + 1} para encontrar la tabla de BandHelper.`);
-  const table = container.querySelector("table"); // Busca la tabla generada por el script de BandHelper
+  const table = container.querySelector("table"); 
   const loadingMessage = document.getElementById("bandhelper-loading-message");
 
   if (!table) {
     processTableAttempts++;
     if (processTableAttempts < MAX_PROCESS_ATTEMPTS) {
       console.log("processBandHelperTable: Tabla de BandHelper NO encontrada. Reintentando en 500ms...");
-      setTimeout(processBandHelperTable, 500);
+      setTimeout(processBandHelperTable, 500); 
     } else {
       console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de", MAX_PROCESS_ATTEMPTS, "intentos.");
       if(loadingMessage) {
           loadingMessage.textContent = "No se pudieron mostrar los conciertos (tabla no generada por BandHelper).";
-          loadingMessage.style.display = "block";
+          loadingMessage.style.display = "block"; 
       }
     }
     return;
   }
 
-  if(loadingMessage) loadingMessage.style.display = "none"; // Ocultar mensaje de "cargando"
+  if(loadingMessage) loadingMessage.style.display = "none"; 
   console.log("processBandHelperTable: Tabla de BandHelper ENCONTRADA:", table);
+  console.log("Estructura interna de la tabla de BandHelper (table.innerHTML):", table.innerHTML); // <<<--- ¡¡¡REVISA ESTE LOG!!!
 
-  if (table.dataset.processed === "true") { // Evitar procesar la tabla múltiples veces
+  if (table.dataset.processed === "true") { 
       console.log("processBandHelperTable: Tabla ya procesada. Saltando.");
       return;
   }
   table.dataset.processed = "true";
 
-  const headerRow = table.querySelector("thead tr");
+  let headerRow = table.querySelector("thead tr");
+  if (!headerRow) {
+      console.log("processBandHelperTable: No se encontró 'thead tr'. Buscando alternativas...");
+      if (table.rows.length > 0 && table.rows[0].cells.length > 0 && table.rows[0].cells[0].tagName.toLowerCase() === 'th') {
+          headerRow = table.rows[0];
+          console.log("processBandHelperTable: Usando la primera fila de la tabla (table.rows[0]) como cabecera porque contiene TH.");
+      } else {
+          const firstTbodyRow = table.querySelector("tbody tr");
+          if (firstTbodyRow && firstTbodyRow.querySelector("th")) {
+              headerRow = firstTbodyRow;
+              console.log("processBandHelperTable: Usando la primera fila de 'tbody' como cabecera (contiene 'th').");
+          }
+      }
+  }
+
   if (headerRow) {
       if (!headerRow.querySelector(".details-header")) {
           const th = document.createElement("th");
@@ -854,57 +869,65 @@ function processBandHelperTable() {
           th.textContent = "Detalles";
           th.style.textAlign = "center";
           headerRow.appendChild(th);
-          console.log("processBandHelperTable: Cabecera 'Detalles' añadida.");
+          console.log("processBandHelperTable: Cabecera 'Detalles' añadida a la fila de cabecera encontrada.");
       } else {
-          console.log("processBandHelperTable: Cabecera 'Detalles' ya existente.");
+          console.log("processBandHelperTable: Cabecera 'Detalles' ya existente en la fila de cabecera encontrada.");
       }
   } else {
-      console.error("processBandHelperTable: No se encontró la fila de cabecera (thead tr). No se pueden añadir detalles.");
-      return; 
+      console.warn("processBandHelperTable: No se pudo identificar una fila de cabecera clara. La columna 'Detalles' podría no tener título o no alinearse correctamente.");
   }
 
-  const rows = table.querySelectorAll("tbody tr");
-  console.log(`processBandHelperTable: ${rows.length} filas encontradas en tbody.`);
-  rows.forEach((row, index) => {
-    const cells = row.cells; // HTMLCollection, se actualiza en vivo si se insertan celdas
+  const dataRows = table.querySelectorAll("tbody tr"); 
+  console.log(`processBandHelperTable: ${dataRows.length} filas de datos (tbody tr) encontradas.`);
+  
+  if (dataRows.length === 0 && table.rows.length > (headerRow ? 1:0) ) {
+      console.warn("processBandHelperTable: No se encontraron filas en 'tbody', pero la tabla tiene filas. Esto puede indicar una estructura de tabla inusual (sin tbody). La modificación podría fallar.");
+      // Si no hay tbody, y la cabecera fue la primera fila de la tabla, entonces las filas de datos son el resto.
+      // Esta es una heurística y puede ser necesario ajustar si la estructura es muy atípica.
+      // Por ahora, el forEach siguiente sobre dataRows (que estará vacío) no hará nada.
+      // El console.log(table.innerHTML) es crucial aquí.
+  }
+
+  dataRows.forEach((row, index) => {
+    const cells = row.cells; 
     
-    // BandHelper debe tener al menos 3 columnas: Fecha, Hora, Evento
     if (cells.length < 3) { 
-        console.warn(`processBandHelperTable: Fila ${index} con ${cells.length} celdas. Mínimo 3 esperadas. Saltando.`);
+        console.warn(`processBandHelperTable: Fila de datos ${index} con ${cells.length} celdas. Mínimo 3 esperadas (Fecha, Hora, Evento). Saltando.`);
         return;
     }
-    console.log(`processBandHelperTable: Fila ${index}, ${cells.length} celdas. Contenido inicial: '${cells[0]?.textContent.trim()}', '${cells[1]?.textContent.trim()}', '${cells[2]?.textContent.trim()}'`);
+    console.log(`processBandHelperTable: Fila de datos ${index}, ${cells.length} celdas. Contenido: '${cells[0]?.textContent.trim()}', '${cells[1]?.textContent.trim()}', '${cells[2]?.textContent.trim()}'`);
 
     let detailCell;
-    // Si la cabecera ahora tiene N columnas, y la fila actual tiene N-1, insertamos la celda faltante.
-    if (cells.length < headerRow.cells.length) {
-        detailCell = row.insertCell(-1); // Añadir al final
-        console.log(`processBandHelperTable: Fila ${index}, celda de detalles insertada.`);
-    } 
-    // Si la fila ya tiene el mismo número de celdas que la cabecera, la última es la de detalles.
-    else if (cells.length === headerRow.cells.length) {
-        detailCell = cells[cells.length - 1]; // Usar la última celda existente
-        detailCell.innerHTML = ''; // Limpiarla por si BandHelper la llenó con algo o por reprocesamiento accidental
+    // Se espera que la celda de detalles sea la última. Si la cabecera se modificó, se espera una celda más.
+    const expectedCellCountAfterModification = headerRow ? headerRow.cells.length : cells.length + 1;
+
+    if (cells.length < expectedCellCountAfterModification) {
+        detailCell = row.insertCell(-1); 
+        console.log(`processBandHelperTable: Fila ${index}, celda de detalles insertada (ahora ${row.cells.length} celdas).`);
+    } else if (cells.length === expectedCellCountAfterModification) {
+        detailCell = cells[cells.length - 1]; 
+        detailCell.innerHTML = ''; 
         console.log(`processBandHelperTable: Fila ${index}, usando la última celda existente (${cells.length -1}) para detalles.`);
     } else {
-        console.error(`processBandHelperTable: Fila ${index} tiene ${cells.length} celdas, pero la cabecera tiene ${headerRow.cells.length}. Estructura inesperada. No se añadirá botón de detalles.`);
-        return; 
+        console.warn(`processBandHelperTable: Fila ${index} tiene ${cells.length} celdas, pero se esperaban ${expectedCellCountAfterModification}. Se usará la última celda igualmente, pero la alineación podría ser incorrecta.`);
+        detailCell = cells[cells.length -1]; // Intentar usar la última
+        detailCell.innerHTML = '';
     }
 
     detailCell.className = "details-cell"; 
     detailCell.style.textAlign = "center";
     
-    // Añadir botón de detalles si no existe ya en la celda
     if (!detailCell.querySelector('.details-btn')) {
         const dateCellText = cells[0].textContent.trim();
-        const eventTitleFromCell = cells[2].textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
+        const eventCellContent = cells[2] ? cells[2].textContent.trim() : "Evento Desconocido";
+        const eventTitleFromCell = eventCellContent.split('\n')[0].trim() || "Evento Sin Título";
         const concertId = sanitizeFirebaseKey(`${dateCellText}_${eventTitleFromCell}`);
         
         const detailsBtn = document.createElement("button");
         detailsBtn.className = "details-btn";
         detailsBtn.innerHTML = "➡️";
         detailsBtn.title = "Ver/Editar Detalles del Concierto";
-        detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellText, eventTitleFromCell, cells[2].textContent.trim());
+        detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellText, eventTitleFromCell, eventCellContent);
         
         detailCell.appendChild(detailsBtn);
         console.log(`processBandHelperTable: Fila ${index}, Botón Detalles añadido para concertId: ${concertId}`);
@@ -912,11 +935,11 @@ function processBandHelperTable() {
         console.log(`processBandHelperTable: Fila ${index}, Botón Detalles ya existía en la celda.`);
     }
 
-    const locationCell = cells[2]; // Celda original de BandHelper para el evento/lugar
+    const locationCell = cells[2]; 
     if (locationCell && !locationCell.querySelector('.calendar-btn')) {
         const eventNameText = locationCell.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
         const dateCellContent = cells[0].textContent.trim();
-        const timeCellContent = cells[1].textContent.trim() || "20:00";
+        const timeCellContent = cells[1]?.textContent.trim() || "20:00";
         const dateParts = dateCellContent.match(/(\d+)\s+de\s+(\w+)/i);
         let icsDate = new Date().toISOString().split('T')[0];
         if (dateParts) {
