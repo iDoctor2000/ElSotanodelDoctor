@@ -65,12 +65,12 @@
     #concert-note-edit-modal input[type="time"],
     #concert-note-edit-modal input[type="text"] { 
         margin-left: 0; 
-        margin-right: auto; /* Cambiado para alinear a la izquierda */
+        margin-right: auto; 
         max-width: 250px; 
     }
      #concert-note-edit-modal textarea {
         margin-left: 0;
-        margin-right: auto; /* Cambiado para alinear a la izquierda */
+        margin-right: auto; 
     }
 
     .config-screen select[multiple], .modal-screen select[multiple] { height: 150px; }
@@ -90,14 +90,13 @@
     
     #concert-note-edit-modal .modal-content { max-width: 600px; margin: auto; background-color: #111; padding: 20px; border-radius: 8px; border: 1px solid #0cf;}
     #concert-note-info { color: #ccc; font-style: italic; margin-bottom: 15px; text-align: center; font-size: 1.1em; }
-    #concert-note-edit-modal label {text-align: left; max-width: 450px; margin-left: 0; margin-right: auto;} /* Alinear labels a la izquierda */
+    #concert-note-edit-modal label {text-align: left; max-width: 450px; margin-left: 0; margin-right: auto;} 
     
-    /* Estilos para la lista de asistencia en el modal */
     #concert-attendance-list { 
-        /* max-height: 150px; */ /* Eliminado para que se expanda */
-        /* overflow-y: auto; */  /* Eliminado para que se expanda */
         border: 1px solid #333; padding: 10px; border-radius: 5px; margin-top: 10px; 
         max-width: 450px; margin-left:0; margin-right:auto;
+        max-height: 200px; /* Permitir scroll si hay muchos usuarios */
+        overflow-y: auto;
     }
     #concert-attendance-list div { display: flex; align-items: center; margin-bottom: 8px; }
     #concert-attendance-list input[type="checkbox"] { width: auto; margin-right: 10px; -webkit-appearance: checkbox; appearance: checkbox; } 
