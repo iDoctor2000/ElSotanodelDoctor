@@ -364,7 +364,7 @@
   const persistenceWarningDiv = document.getElementById("persistence-warning");
 
   // Solo mostrar advertencia de API Key si es el placeholder exacto
-  if (firebaseConfig.apiKey === "TU_API_KEY_PLACEHOLDER_PARA_EVITAR_ERROR_REAL") {
+  if (firebaseConfig.apiKey === "TU_API_KEY_PLACEHOLDER_PARA_EVITAR_ERROR_REAL") { // Cambiado para que no salte con la real
     console.error("!!! API Key de Firebase NO CONFIGURADA !!!");
     if(persistenceWarningDiv) {
         persistenceWarningDiv.innerHTML = "<b>ERROR CRÍTICO: API Key de Firebase no configurada. La aplicación NO funcionará correctamente.</b>";
@@ -475,9 +475,9 @@
   function updateTitles() {
     try {
         document.getElementById("setlist1-title").textContent = setlistConfig.setlist1?.name || "Setlist Ensayos";
-        const setlist2NameEl = document.getElementById("second-setlist-name"); // Elemento para el nombre del segundo setlist
-        if (setlist2NameEl) setlist2NameEl.textContent = setlistConfig.setlist2?.name || ""; // Mostrar el nombre del setlist 2
-        else document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2?.name || "Setlist Próximo Concierto"; // Fallback si el p no existe
+        const setlist2NameEl = document.getElementById("second-setlist-name"); 
+        if (setlist2NameEl) setlist2NameEl.textContent = setlistConfig.setlist2?.name || ""; 
+        else document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2?.name || "Setlist Próximo Concierto"; 
 
         document.getElementById("setlist3-title").textContent = setlistConfig.setlist3?.name || "Setlist Concierto Estrella";
         document.getElementById("setlist3-title-display").textContent = setlistConfig.setlist3?.name || "";
