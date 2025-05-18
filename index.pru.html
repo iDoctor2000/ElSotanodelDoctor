@@ -120,7 +120,7 @@
     .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; vertical-align: middle; }
     .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
     .calendar-btn:hover svg { fill: #09b; }
-    .details-btn { font-size: 1.5em; color: #0cf; }
+    .details-btn { font-size: 1.5em; color: #0cf; } /* Flecha azul */
     .details-btn:hover { color: #09b; }
 
     .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal {
@@ -320,7 +320,8 @@
       <h2>Próximos Conciertos</h2>
       <div id="bandhelper-concerts-container">
           <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
-          <p id="bandhelper-loading-message" style="display:none;">Procesando conciertos...</p> </div>
+          <p id="bandhelper-loading-message" style="display:none;">Procesando conciertos...</p>
+      </div>
     </section>
 
     <section id="usuarios">
@@ -331,7 +332,7 @@
 
   <footer>© 2025 El Sótano del Doctor. All Rights Reserved.</footer>
 
-  <script>
+<script>
 /* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
@@ -391,7 +392,7 @@ const getMonthYear = dateStr => {
 function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) {
   const startDate = new Date(`${date}T${startTime}`);
   const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
-  const formatDateFunc = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z"; // Renombrada para evitar conflicto con `formatDate`
+  const formatDateFunc = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
   const start = formatDateFunc(startDate);
   const end = formatDateFunc(endDate);
   const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
@@ -807,11 +808,8 @@ async function genPDF(songs, title, fileName) {
 }
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
-// Ya no se necesita loadBandHelperScript, el script se carga síncronamente desde el HTML.
-// La función processBandHelperTable se llamará desde DOMContentLoaded.
-
 let processTableAttempts = 0;
-const MAX_PROCESS_ATTEMPTS = 20; // Aumentamos un poco los reintentos
+const MAX_PROCESS_ATTEMPTS = 20; // Aumentado a 20 intentos (10 segundos)
 
 function processBandHelperTable() {
   const container = document.getElementById('bandhelper-concerts-container');
@@ -820,82 +818,84 @@ function processBandHelperTable() {
       return;
   }
   
-  console.log(`processBandHelperTable: Intento ${processTableAttempts + 1}`);
-  const table = container.querySelector("table");
-  const loadingMessage = document.getElementById("bandhelper-loading-message"); // Aunque esté display:none, lo podemos usar
+  console.log(`processBandHelperTable: Intento ${processTableAttempts + 1} para encontrar la tabla de BandHelper.`);
+  const table = container.querySelector("table"); // Busca la tabla generada por el script de BandHelper
+  const loadingMessage = document.getElementById("bandhelper-loading-message");
 
   if (!table) {
     processTableAttempts++;
     if (processTableAttempts < MAX_PROCESS_ATTEMPTS) {
       console.log("processBandHelperTable: Tabla de BandHelper NO encontrada. Reintentando en 500ms...");
-      setTimeout(processBandHelperTable, 500); // Llamada recursiva para reintentar
+      setTimeout(processBandHelperTable, 500);
     } else {
-      console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de varios intentos.");
+      console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de", MAX_PROCESS_ATTEMPTS, "intentos.");
       if(loadingMessage) {
           loadingMessage.textContent = "No se pudieron mostrar los conciertos (tabla no generada por BandHelper).";
-          loadingMessage.style.display = "block"; // Mostrar el mensaje de error
+          loadingMessage.style.display = "block";
       }
     }
     return;
   }
 
-  if(loadingMessage) loadingMessage.style.display = "none";
+  if(loadingMessage) loadingMessage.style.display = "none"; // Ocultar mensaje de "cargando"
   console.log("processBandHelperTable: Tabla de BandHelper ENCONTRADA:", table);
-  // processTableAttempts = 0; // No es necesario resetear aquí si solo se llama una vez inicialmente
 
-  if (table.dataset.processed) {
+  if (table.dataset.processed === "true") { // Evitar procesar la tabla múltiples veces
       console.log("processBandHelperTable: Tabla ya procesada. Saltando.");
       return;
   }
   table.dataset.processed = "true";
 
   const headerRow = table.querySelector("thead tr");
-  if (headerRow && !headerRow.querySelector(".details-header")) {
-      const th = document.createElement("th");
-      th.className = "details-header";
-      th.textContent = "Detalles";
-      th.style.textAlign = "center";
-      headerRow.appendChild(th);
-      console.log("processBandHelperTable: Cabecera 'Detalles' añadida.");
+  if (headerRow) {
+      if (!headerRow.querySelector(".details-header")) {
+          const th = document.createElement("th");
+          th.className = "details-header";
+          th.textContent = "Detalles";
+          th.style.textAlign = "center";
+          headerRow.appendChild(th);
+          console.log("processBandHelperTable: Cabecera 'Detalles' añadida.");
+      } else {
+          console.log("processBandHelperTable: Cabecera 'Detalles' ya existente.");
+      }
+  } else {
+      console.error("processBandHelperTable: No se encontró la fila de cabecera (thead tr). No se pueden añadir detalles.");
+      return; 
   }
 
   const rows = table.querySelectorAll("tbody tr");
   console.log(`processBandHelperTable: ${rows.length} filas encontradas en tbody.`);
   rows.forEach((row, index) => {
-    const cells = row.querySelectorAll("td");
-    if (cells.length < 3) {
-      console.warn(`processBandHelperTable: Fila ${index} tiene menos de 3 celdas. Saltando:`, row);
-      return;
-    }
+    const cells = row.cells; // HTMLCollection, se actualiza en vivo si se insertan celdas
     
-    console.log(`processBandHelperTable: Procesando fila ${index}. Celdas:`, cells[0]?.textContent.trim(), "|", cells[1]?.textContent.trim(), "|", cells[2]?.textContent.trim());
+    // BandHelper debe tener al menos 3 columnas: Fecha, Hora, Evento
+    if (cells.length < 3) { 
+        console.warn(`processBandHelperTable: Fila ${index} con ${cells.length} celdas. Mínimo 3 esperadas. Saltando.`);
+        return;
+    }
+    console.log(`processBandHelperTable: Fila ${index}, ${cells.length} celdas. Contenido inicial: '${cells[0]?.textContent.trim()}', '${cells[1]?.textContent.trim()}', '${cells[2]?.textContent.trim()}'`);
 
-    let detailCell = row.querySelector(".details-cell");
-    // Lógica para añadir la celda de detalles si no existe
-    if (!detailCell) {
-        if (headerRow && cells.length < headerRow.cells.length) { // Si hay espacio según la cabecera
-            detailCell = row.insertCell(-1);
-            detailCell.className = "details-cell";
-        } else if (headerRow && cells.length === headerRow.cells.length -1 && headerRow.cells[headerRow.cells.length-1].classList.contains('details-header')) {
-            // Si la cabecera YA tiene la columna de detalles y la fila no tiene la celda .details-cell pero sí una última celda.
-            detailCell = cells[cells.length -1]; // Usar la última celda existente
-            detailCell.className = "details-cell"; // Asegurar la clase
-            detailCell.innerHTML = ''; // Limpiarla por si acaso
-        } else {
-            console.warn(`processBandHelperTable: No se pudo determinar/añadir celda de detalles para fila ${index}. Puede que la tabla ya la tenga pero sin la clase, o que la estructura sea inesperada.`);
-            // Intentar usar la última celda si la cabecera parece tener la columna de detalles.
-            if (headerRow && headerRow.cells.length > cells.length) {
-                detailCell = row.insertCell(-1); // Intentar añadir de todas formas
-                 detailCell.className = "details-cell";
-            } else {
-                 // Si no se puede añadir celda de detalles, se omite el botón de detalles para esta fila
-                 console.warn(`processBandHelperTable: Omitiendo botón de detalles para fila ${index} por no poder crear/identificar celda.`);
-            }
-        }
-        if(detailCell) detailCell.style.textAlign = "center";
+    let detailCell;
+    // Si la cabecera ahora tiene N columnas, y la fila actual tiene N-1, insertamos la celda faltante.
+    if (cells.length < headerRow.cells.length) {
+        detailCell = row.insertCell(-1); // Añadir al final
+        console.log(`processBandHelperTable: Fila ${index}, celda de detalles insertada.`);
+    } 
+    // Si la fila ya tiene el mismo número de celdas que la cabecera, la última es la de detalles.
+    else if (cells.length === headerRow.cells.length) {
+        detailCell = cells[cells.length - 1]; // Usar la última celda existente
+        detailCell.innerHTML = ''; // Limpiarla por si BandHelper la llenó con algo o por reprocesamiento accidental
+        console.log(`processBandHelperTable: Fila ${index}, usando la última celda existente (${cells.length -1}) para detalles.`);
+    } else {
+        console.error(`processBandHelperTable: Fila ${index} tiene ${cells.length} celdas, pero la cabecera tiene ${headerRow.cells.length}. Estructura inesperada. No se añadirá botón de detalles.`);
+        return; 
     }
+
+    detailCell.className = "details-cell"; 
+    detailCell.style.textAlign = "center";
     
-    if (detailCell && !detailCell.querySelector('.details-btn')) {
+    // Añadir botón de detalles si no existe ya en la celda
+    if (!detailCell.querySelector('.details-btn')) {
         const dateCellText = cells[0].textContent.trim();
         const eventTitleFromCell = cells[2].textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
         const concertId = sanitizeFirebaseKey(`${dateCellText}_${eventTitleFromCell}`);
@@ -905,37 +905,38 @@ function processBandHelperTable() {
         detailsBtn.innerHTML = "➡️";
         detailsBtn.title = "Ver/Editar Detalles del Concierto";
         detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellText, eventTitleFromCell, cells[2].textContent.trim());
+        
         detailCell.appendChild(detailsBtn);
-        console.log(`processBandHelperTable: Botón Detalles añadido para concertId: ${concertId}`);
-    } else if (detailCell && detailCell.querySelector('.details-btn')) {
-        console.log(`processBandHelperTable: Botón Detalles ya existe para fila ${index}.`);
+        console.log(`processBandHelperTable: Fila ${index}, Botón Detalles añadido para concertId: ${concertId}`);
+    } else {
+        console.log(`processBandHelperTable: Fila ${index}, Botón Detalles ya existía en la celda.`);
     }
 
-    const locationCell = cells[2];
+    const locationCell = cells[2]; // Celda original de BandHelper para el evento/lugar
     if (locationCell && !locationCell.querySelector('.calendar-btn')) {
-      const eventNameText = locationCell.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
-      const dateCellContent = cells[0].textContent.trim();
-      const timeCellContent = cells[1].textContent.trim() || "20:00";
-      const dateParts = dateCellContent.match(/(\d+)\s+de\s+(\w+)/i);
-      let icsDate = new Date().toISOString().split('T')[0];
-      if (dateParts) {
-          const day = dateParts[1]; const monthName = dateParts[2];
-          const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-          const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
-          if (month !== -1) {
-              let year = new Date().getFullYear();
-              const currentMonth = new Date().getMonth();
-              if (month < currentMonth && (currentMonth - month > 6)) year++; 
-              icsDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          }
-      }
-      const calendarBtn = document.createElement('button');
-      calendarBtn.className = 'calendar-btn'; calendarBtn.title = 'Añadir a mi calendario';
-      calendarBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';
-      calendarBtn.onclick = () => generateICS(`Concierto: ${eventNameText}`, icsDate, timeCellContent, eventNameText, `Concierto de El Sótano del Doctor en ${eventNameText}`);
-      locationCell.appendChild(document.createTextNode(" "));
-      locationCell.appendChild(calendarBtn);
-      console.log(`processBandHelperTable: Botón Calendario añadido para ${eventNameText}`);
+        const eventNameText = locationCell.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
+        const dateCellContent = cells[0].textContent.trim();
+        const timeCellContent = cells[1].textContent.trim() || "20:00";
+        const dateParts = dateCellContent.match(/(\d+)\s+de\s+(\w+)/i);
+        let icsDate = new Date().toISOString().split('T')[0];
+        if (dateParts) {
+            const day = dateParts[1]; const monthName = dateParts[2];
+            const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
+            if (month !== -1) {
+                let year = new Date().getFullYear();
+                const currentMonth = new Date().getMonth();
+                if (month < currentMonth && (currentMonth - month > 6)) year++; 
+                icsDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            }
+        }
+        const calendarBtn = document.createElement('button');
+        calendarBtn.className = 'calendar-btn'; calendarBtn.title = 'Añadir a mi calendario';
+        calendarBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';
+        calendarBtn.onclick = () => generateICS(`Concierto: ${eventNameText}`, icsDate, timeCellContent, eventNameText, `Concierto de El Sótano del Doctor en ${eventNameText}`);
+        locationCell.appendChild(document.createTextNode(" "));
+        locationCell.appendChild(calendarBtn);
+        console.log(`processBandHelperTable: Fila ${index}, Botón Calendario añadido para ${eventNameText}.`);
     }
   });
   console.log("processBandHelperTable: Procesamiento de tabla BandHelper FINALIZADO.");
@@ -1171,9 +1172,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_prox_concierto.pdf"); else alert("No hay canciones en Setlist Próx. Concierto."); };
   document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, "setlist_estrella.pdf"); else alert("No hay canciones en Setlist Estrella."); };
   
-  // Iniciar el procesamiento de la tabla de BandHelper después de un breve retraso
-  // para dar tiempo al script síncrono de BandHelper a ejecutarse.
-  setTimeout(processBandHelperTable, 1000); // Intenta procesar después de 1 segundo
+  setTimeout(processBandHelperTable, 1000);
 });
   </script>
 </body>
