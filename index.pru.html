@@ -24,7 +24,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Estilos CSS (iguales a la v7.4/v7.5, por brevedad no se repiten aquí) */
+    /* Estilos CSS (iguales a la v7.6, por brevedad no se repiten aquí) */
     /* ... Pega aquí los estilos de la versión anterior ... */
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
@@ -59,28 +59,44 @@
     .config-screen input,.config-screen select, .config-screen textarea,
     .modal-screen input,.modal-screen select, .modal-screen textarea {
         width:100%;max-width:450px;padding:12px;background:#1a1a1a;color:#fff;
-        border:1px solid #0cf;border-radius:5px; margin-bottom: 12px; box-shadow: 0 0 5px rgba(0,204,255,0.2); display: block; /* Para que ocupen el ancho del max-width */ margin-left: auto; margin-right: auto; /* Centrar los inputs */
+        border:1px solid #0cf;border-radius:5px; margin-bottom: 12px; box-shadow: 0 0 5px rgba(0,204,255,0.2); display: block; margin-left: auto; margin-right: auto; 
     }
-    .config-screen select[multiple], .modal-screen select[multiple] { height: 150px; }
-    .config-screen textarea, .modal-screen textarea { height: 120px; resize: vertical; } /* Ajustado altura para notas */
-    .modal-screen textarea#concert-note-general { height: 100px; } /* Altura específica para nota general */
-    .modal-screen input[type="time"], .modal-screen input[type="text"] { max-width: 250px; } /* Ancho específico para algunos inputs del modal */
+    /* Ajuste para inputs de hora y texto en modal de notas */
+    #concert-note-edit-modal input[type="time"],
+    #concert-note-edit-modal input[type="text"] { /* Si tuvieras inputs de texto específicos */
+        margin-left: 0; /* Anula el centrado para estos */
+        margin-right: 0;
+        max-width: 250px; /* O el ancho que prefieras */
+    }
+     #concert-note-edit-modal textarea {
+        margin-left: 0;
+        margin-right: 0;
+    }
 
+    .config-screen select[multiple], .modal-screen select[multiple] { height: 150px; }
+    .config-screen textarea, .modal-screen textarea { height: 120px; resize: vertical; } 
+    .modal-screen textarea#concert-note-general { height: 100px; } 
 
     .config-screen button, .modal-screen button {
         margin-top:25px;padding:12px 22px;background:#0cf;color:#000;border:none;
-        border-radius:8px;cursor:pointer;font-weight:bold; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-left: auto; margin-right: auto; /* Centrar botones */
+        border-radius:8px;cursor:pointer;font-weight:bold; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-left: auto; margin-right: auto; 
     }
     .config-screen button:hover, .modal-screen button:hover {background:#0ae; box-shadow: 0 0 10px #0cf;}
     .config-screen .close-btn, .modal-screen .close-btn {
         position:absolute;top:15px;right:15px;font-size:1.5em;background:transparent;border:2px solid #0cf;
-        color:#0cf;border-radius:50%;padding:0px;cursor:pointer; width:35px; height:35px; line-height:30px; text-align:center; margin:0; /* Resetear margen para el botón de cerrar */
+        color:#0cf;border-radius:50%;padding:0px;cursor:pointer; width:35px; height:35px; line-height:30px; text-align:center; margin:0; 
     }
     .config-screen .close-btn:hover, .modal-screen .close-btn:hover {background:#0cf; color:#000; box-shadow: 0 0 8px #0cf;}
-    /* Estilos específicos para el modal de notas de concierto */
+    
     #concert-note-edit-modal .modal-content { max-width: 600px; margin: auto; background-color: #111; padding: 20px; border-radius: 8px; border: 1px solid #0cf;}
     #concert-note-info { color: #ccc; font-style: italic; margin-bottom: 15px; text-align: center; font-size: 1.1em; }
-    #concert-note-edit-modal label {text-align: left; max-width: 450px; margin-left: auto; margin-right: auto;} /* Alinear labels a la izquierda */
+    #concert-note-edit-modal label {text-align: left; max-width: 450px; margin-left: 0; margin-right: auto;} /* Alinear labels a la izquierda */
+    
+    /* Estilos para la lista de asistencia en el modal */
+    #concert-attendance-list { max-height: 150px; overflow-y: auto; border: 1px solid #333; padding: 10px; border-radius: 5px; margin-top: 10px; max-width: 450px; margin-left:0; margin-right:auto;}
+    #concert-attendance-list div { display: flex; align-items: center; margin-bottom: 8px; }
+    #concert-attendance-list input[type="checkbox"] { width: auto; margin-right: 10px; -webkit-appearance: checkbox; appearance: checkbox; } /* Resetear apariencia para que se vea el check */
+    #concert-attendance-list label { margin-bottom: 0; color: #fff; font-weight: normal;}
 
 
     /* Secciones */
@@ -125,7 +141,7 @@
     #connection-status.offline { background: #c00; border-color: #f00;}
     #connection-status.retrying { background: #e68900; border-color: #ff9800;}
     #persistence-warning { 
-        background-color: #ffc107; color: #000; padding: 10px; text-align: center;
+        background-color: #f44336; color: #fff; padding: 10px; text-align: center;
         font-weight: bold; display: none; position: sticky; top:0; z-index: 10002;
     }
     .message { margin-top: 15px; text-align: center; padding: 8px; border-radius: 4px; font-weight: bold;}
@@ -265,6 +281,11 @@
         
         <label for="concert-note-general">Notas Generales Adicionales:</label>
         <textarea id="concert-note-general" placeholder="Otras notas importantes..."></textarea>
+
+        <h3>Músicos Asistentes al Concierto</h3>
+        <div id="concert-attendance-list">
+            <p>Cargando lista de usuarios...</p>
+        </div>
         
         <button id="save-concert-note-modal-btn">Guardar Detalles</button>
         <p id="concert-note-edit-message" class="message"></p>
@@ -315,17 +336,17 @@
 
   let db;
   let persistencePromise;
+  const persistenceWarningDiv = document.getElementById("persistence-warning");
 
   if (firebaseConfig.apiKey === "TU_API_KEY") {
     console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     console.error("!!! POR FAVOR, REEMPLAZA 'TU_API_KEY' EN firebaseConfig !!!");
     console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    const warningDiv = document.getElementById("persistence-warning");
-    if(warningDiv) {
-        warningDiv.innerHTML += "<br><b>ERROR CRÍTICO: API Key de Firebase no configurada. La aplicación no funcionará.</b>";
-        warningDiv.style.display = "block";
-        warningDiv.style.backgroundColor = "#f44336"; 
-        warningDiv.style.color = "#fff";
+    if(persistenceWarningDiv) {
+        persistenceWarningDiv.innerHTML = "<b>ERROR CRÍTICO: API Key de Firebase no configurada. La aplicación no funcionará.</b>";
+        persistenceWarningDiv.style.display = "block";
+        persistenceWarningDiv.style.backgroundColor = "#f44336"; 
+        persistenceWarningDiv.style.color = "#fff";
     }
   }
 
@@ -336,39 +357,36 @@
     persistencePromise = db.enablePersistence({ synchronizeTabs: true })
       .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); })
       .catch(err => {
-        const persistenceWarningDiv = document.getElementById("persistence-warning");
         if(persistenceWarningDiv) persistenceWarningDiv.style.display = "block";
         if (err.code === 'failed-precondition') {
           console.warn("Persistencia (multi) falló, intentando una sola pestaña...", err.message);
-          if(persistenceWarningDiv) persistenceWarningDiv.innerHTML += "<br>Fallo de persistencia multi-pestaña. Intentando modo simple.";
+          if(persistenceWarningDiv) persistenceWarningDiv.innerHTML = "Advertencia: Fallo de persistencia multi-pestaña. Intentando modo simple.";
           return db.enablePersistence();
         }
         console.error("Error habilitando persistencia (multi):", err);
-        if(persistenceWarningDiv) persistenceWarningDiv.innerHTML += "<br>Error grave habilitando persistencia: " + err.message;
+        if(persistenceWarningDiv) persistenceWarningDiv.innerHTML = "Advertencia: Error grave habilitando persistencia: " + err.message.substring(0,100) + "...";
         throw err;
       })
       .then(() => { console.log("Intento de config. de persistencia completado."); })
       .catch(err => {
         console.error("Error final config. persistencia:", err);
-        const persistenceWarningDiv = document.getElementById("persistence-warning");
         if(persistenceWarningDiv) {
             persistenceWarningDiv.style.display = "block";
-            persistenceWarningDiv.innerHTML += "<br>La persistencia de datos (modo offline) NO está disponible: " + err.message;
+            persistenceWarningDiv.innerHTML = "Advertencia: La persistencia de datos (modo offline) NO está disponible: " + err.message.substring(0,100) + "...";
         }
       });
   } catch (e) {
     console.error("Error GRAVE: Firebase App no pudo inicializarse.", e);
     const statusDiv = document.getElementById("connection-status");
     if (statusDiv) { statusDiv.textContent = "Error GRAVE: Firebase no inicializado."; statusDiv.className = "offline"; statusDiv.style.display = "block"; }
-    const persistenceWarningDiv = document.getElementById("persistence-warning");
     if(persistenceWarningDiv) {
-        persistenceWarningDiv.innerHTML += "<br><b>Error CRÍTICO: Firebase no pudo inicializarse.</b>";
+        persistenceWarningDiv.innerHTML = "<b>Error CRÍTICO: Firebase no pudo inicializarse.</b>";
         persistenceWarningDiv.style.display = "block";
     }
     persistencePromise = Promise.reject(e);
   }
 
-  /* ---------- 1. Utilidades (sin cambios desde v7.2) ---------- */
+  /* ---------- 1. Utilidades (sin cambios desde v7.3) ---------- */
   const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n; };
   const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const toHHMM = s => { const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`; };
@@ -620,8 +638,8 @@
     return true;
   }
 
-  /* ---------- 10.5. Notas de Concierto y Modal (igual a v7.1) ---------- */
-  // ... Pega aquí loadConcertNotes, saveConcertNotes, openConcertNoteModal y los listeners del modal de la v7.1 ...
+  /* ---------- 10.5. Notas de Concierto y Modal (igual a v7.2) ---------- */
+  // ... Pega aquí loadConcertNotes, saveConcertNotes, openConcertNoteModal y los listeners del modal de la v7.2 ...
   let concertNotes = {}; 
   let currentEditingConcertId = null;
   async function loadConcertNotes() {
@@ -646,7 +664,7 @@
     console.log("openConcertNoteModal para concertId:", concertId);
     currentEditingConcertId = concertId;
     const concertDataFromWidget = parsedBandHelperConcerts.find(c => c.id === concertId);
-    const existingNoteData = concertNotes[concertId] || {}; 
+    const existingNoteData = concertNotes[concertId] || { attendees: [] }; // Asegurar que attendees es un array
 
     const modal = document.getElementById("concert-note-edit-modal");
     const infoEl = document.getElementById("concert-note-info");
@@ -655,27 +673,42 @@
     const showTimeInput = document.getElementById("concert-note-show-time");
     const generalNoteTextarea = document.getElementById("concert-note-general");
     const messageEl = document.getElementById("concert-note-edit-message");
+    const concertAttendanceListDiv = document.getElementById("concert-attendance-list");
 
-    if (!modal || !infoEl || !locationDetailsTextarea || !soundcheckTimeInput || !showTimeInput || !generalNoteTextarea || !messageEl) {
+    if (!modal || !infoEl || !locationDetailsTextarea || !soundcheckTimeInput || !showTimeInput || !generalNoteTextarea || !messageEl || !concertAttendanceListDiv) {
         console.error("Elementos del modal de notas no encontrados.");
         return;
     }
     messageEl.textContent = "";
+    concertAttendanceListDiv.innerHTML = ""; // Limpiar lista de asistencia
 
     if (concertDataFromWidget) {
         infoEl.textContent = `Concierto: ${concertDataFromWidget.displayDate} en ${concertDataFromWidget.location} (Hora original: ${concertDataFromWidget.time})`;
-        locationDetailsTextarea.value = existingNoteData.locationUserNotes || "";
-        soundcheckTimeInput.value = existingNoteData.soundcheckTime || "";
-        showTimeInput.value = existingNoteData.showTimeUser || concertDataFromWidget.time || ""; 
-        generalNoteTextarea.value = existingNoteData.generalNote || "";
     } else {
         console.warn("No se encontró información del concierto (widget) para el ID:", concertId);
         infoEl.textContent = "Información del concierto (widget) no disponible.";
-        locationDetailsTextarea.value = existingNoteData.locationUserNotes || "";
-        soundcheckTimeInput.value = existingNoteData.soundcheckTime || "";
-        showTimeInput.value = existingNoteData.showTimeUser || "";
-        generalNoteTextarea.value = existingNoteData.generalNote || "";
     }
+    
+    locationDetailsTextarea.value = existingNoteData.locationUserNotes || "";
+    soundcheckTimeInput.value = existingNoteData.soundcheckTime || "";
+    showTimeInput.value = existingNoteData.showTimeUser || (concertDataFromWidget ? concertDataFromWidget.time : "") || ""; 
+    generalNoteTextarea.value = existingNoteData.generalNote || "";
+
+    // Poblar lista de asistencia
+    if (users.length > 0) {
+        users.forEach(user => {
+            constisChecked = (existingNoteData.attendees || []).includes(user.name);
+            const userHtml = `
+                <div>
+                    <input type="checkbox" id="user-att-${user.name.replace(/\s+/g, '-')}" name="concertAttendees" value="${user.name}" ${isChecked ? 'checked' : ''}>
+                    <label for="user-att-${user.name.replace(/\s+/g, '-')}">${user.name} (${user.nickname || 'N/A'})</label>
+                </div>`;
+            concertAttendanceListDiv.insertAdjacentHTML("beforeend", userHtml);
+        });
+    } else {
+        concertAttendanceListDiv.innerHTML = "<p>No hay usuarios registrados para listar.</p>";
+    }
+
     modal.style.display = "block";
     overlay.classList.add("show");
   }
@@ -686,17 +719,22 @@
   };
   document.getElementById("save-concert-note-modal-btn").onclick = async () => {
     if (!currentEditingConcertId) { console.error("No hay concertId para guardar la nota."); return; }
-    const locationDetails = document.getElementById("concert-note-location-details").value.trim();
-    const soundcheckTime = document.getElementById("concert-note-soundcheck-time").value;
-    const showTimeUser = document.getElementById("concert-note-show-time").value;
-    const generalNote = document.getElementById("concert-note-general").value.trim();
-    const messageEl = document.getElementById("concert-note-edit-message");
-    concertNotes[currentEditingConcertId] = {
-        locationUserNotes: locationDetails,
-        soundcheckTime: soundcheckTime,
-        showTimeUser: showTimeUser,
-        generalNote: generalNote
+    
+    const attendingUsers = [];
+    document.querySelectorAll('#concert-attendance-list input[type="checkbox"]:checked').forEach(checkbox => {
+        attendingUsers.push(checkbox.value);
+    });
+
+    const noteDetails = {
+        locationUserNotes: document.getElementById("concert-note-location-details").value.trim(),
+        soundcheckTime: document.getElementById("concert-note-soundcheck-time").value,
+        showTimeUser: document.getElementById("concert-note-show-time").value,
+        generalNote: document.getElementById("concert-note-general").value.trim(),
+        attendees: attendingUsers // Guardar la lista de asistentes
     };
+    
+    concertNotes[currentEditingConcertId] = noteDetails;
+    const messageEl = document.getElementById("concert-note-edit-message");
     messageEl.className = "message retrying"; messageEl.textContent = "Guardando detalles...";
     try {
         await saveConcertNotes();
@@ -705,8 +743,8 @@
     } catch (e) { console.error("Fallo al guardar detalles desde modal:", e); }
   };
 
-  /* ---------- 11. Menú & pantallas (igual a v7.1, sin config de notas) ---------- */
-  // ... Pega aquí el código de menú y pantallas de la v7.1 ...
+  /* ---------- 11. Menú & pantallas (igual a v7.2, sin config de notas) ---------- */
+  // ... Pega aquí el código de menú y pantallas de la v7.2 ...
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
   const PASSWORD = "Sotano2014"; let isAuthenticated = false;
   function closeAllScreens() { document.querySelectorAll(".config-screen, .modal-screen").forEach(s => s.style.display = "none"); } 
@@ -727,8 +765,8 @@
   document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; overlay.classList.remove("show"); resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = "";};
   document.getElementById("close-stats").onclick = () => { document.getElementById("stats-screen").style.display = "none"; overlay.classList.remove("show"); };
 
-  /* ---------- 12. Carga inicial de datos y DOMContentLoaded (igual a v7.1) ---------- */
-  // ... Pega aquí la función loadInitialData y el listener DOMContentLoaded de la v7.1 ...
+  /* ---------- 12. Carga inicial de datos y DOMContentLoaded (igual a v7.2) ---------- */
+  // ... Pega aquí la función loadInitialData y el listener DOMContentLoaded de la v7.2 ...
   async function loadInitialData() {
     console.log("loadInitialData: Iniciando...");
     if (!db) { console.warn("loadInitialData: DB no inicializado. Abortando carga de datos de Firestore."); return; }
