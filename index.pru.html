@@ -24,7 +24,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Estilos CSS (iguales a la v7.4, por brevedad no se repiten aquí) */
+    /* Estilos CSS (iguales a la v7.4/v7.5, por brevedad no se repiten aquí) */
     /* ... Pega aquí los estilos de la versión anterior ... */
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
@@ -415,9 +415,40 @@
   async function cargarSegundoSetlist() { console.log("cargarSegundoSetlist desde:", setlistConfig.setlist2.url); if(!setlistConfig.setlist2.url) { console.warn("URL para segundo setlist no definida."); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">URL no configurada.</td></tr>'; return [];} try { const response = await fetch(setlistConfig.setlist2.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : []; const tbody = document.getElementById("second-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration || "0"); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time-2").textContent = "Tiempo total: " + toHHMM(total); console.log("Segundo setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando segundo setlist:", e); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">Error al cargar. Revisa la URL y la conexión.</td></tr>'; document.getElementById("total-time-2").textContent = ""; return []; } }
   
   let users = []; let editingUserIndex = null;
-  function renderUsers() { /* ... (Pega aquí tu función renderUsers completa de v7.2) ... */ }
+  function renderUsers() {
+    console.log("renderUsers: Iniciando con", users.length, "usuarios.");
+    const tbodyCfg = document.getElementById("user-table-body");
+    const tbodyMain = document.getElementById("users-body");
+    tbodyCfg.innerHTML = ""; tbodyMain.innerHTML = "";
+    if (!users || users.length === 0) {
+        tbodyCfg.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay usuarios registrados.</td></tr>';
+        tbodyMain.innerHTML = '<tr><td colspan="3" style="text-align:center;">No hay usuarios registrados.</td></tr>';
+        return;
+    }
+    users.forEach((user, index) => {
+        const roles = Array.isArray(user.roles) ? user.roles.join(", ") : "Sin roles";
+        const mainRowHTML = `<tr><td>${user.name || "N/A"}</td><td>${user.nickname || "N/A"}</td><td>${roles}</td></tr>`;
+        tbodyMain.insertAdjacentHTML("beforeend", mainRowHTML);
+        const configRowHTML = `
+            <tr>
+                <td>${user.name || "N/A"}</td>
+                <td>${user.nickname || "N/A"}</td>
+                <td>${roles}</td>
+                <td>
+                    <button class="action-btn edit-btn edit-user" data-i="${index}">Editar</button>
+                    <button class="action-btn delete-btn delete-user" data-i="${index}">Eliminar</button>
+                </td>
+            </tr>`;
+        tbodyCfg.insertAdjacentHTML("beforeend", configRowHTML);
+    });
+    addUserTableListeners();
+  }
+  function addUserTableListeners() {
+    document.querySelectorAll("#user-table-body .edit-user").forEach(btn => { /* ... (tu lógica de editar usuario) ... */ });
+    document.querySelectorAll("#user-table-body .delete-user").forEach(btn => { /* ... (tu lógica de eliminar usuario) ... */ });
+  }
   async function loadUsers() { console.log("loadUsers: Iniciando..."); const data = await withRetry(() => loadDoc("users", {users:[]}), "carga de usuarios"); users = Array.isArray(data.users) ? data.users : []; renderUsers(); console.log("loadUsers: Finalizado. Usuarios:", users.length); }
-  async function saveUsers() { /* ... (Pega aquí tu función saveUsers de v7.2) ... */ }
+  async function saveUsers() { console.log("Guardando usuarios..."); renderUsers(); return await withRetry(() => saveDoc("users", {users}), "guardar usuarios");}
   function resetUserForm() { /* ... (Pega aquí tu función resetUserForm de v7.2) ... */ }
 
   let rehearsals = []; let editingRehearsalIndex = null;
@@ -458,7 +489,7 @@
           </td>
         </tr>`);
       
-      const rehearsalDateObj = new Date(r.date + "T00:00:00Z"); // Comparar solo fechas
+      const rehearsalDateObj = new Date(r.date + "T00:00:00Z"); 
       if (rehearsalDateObj >= today) { 
         tbodyMain.insertAdjacentHTML("beforeend",
           `<tr>
@@ -554,8 +585,8 @@
           const concertDateObj = new Date(Date.UTC(year, month, day)); 
           const dateISO = concertDateObj.toISOString().split('T')[0];
           
-          let time24h = "20:00"; 
-          const timeMatch = timeCellText.match(/(\d{1,2}:\d{2})/); 
+          let time24h = "20:00"; // Default
+          const timeMatch = timeCellText.match(/(\d{1,2}:\d{2})/); // Busca un formato HH:MM
           if (timeMatch) {
               time24h = timeMatch[1];
           } else {
