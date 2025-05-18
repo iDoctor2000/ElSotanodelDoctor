@@ -319,8 +319,8 @@
     <section id="calendario">
       <h2>Próximos Conciertos</h2>
       <div id="bandhelper-concerts-container">
-          <p id="bandhelper-loading-message">Cargando conciertos de BandHelper...</p>
-      </div>
+          <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
+          <p id="bandhelper-loading-message" style="display:none;">Procesando conciertos...</p> </div>
     </section>
 
     <section id="usuarios">
@@ -391,9 +391,9 @@ const getMonthYear = dateStr => {
 function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) {
   const startDate = new Date(`${date}T${startTime}`);
   const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
-  const formatDate = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  const start = formatDate(startDate);
-  const end = formatDate(endDate);
+  const formatDateFunc = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z"; // Renombrada para evitar conflicto con `formatDate`
+  const start = formatDateFunc(startDate);
+  const end = formatDateFunc(endDate);
   const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
   const blob = new Blob([icsContent], { type: "text/calendar" });
   const url = URL.createObjectURL(blob);
@@ -807,59 +807,41 @@ async function genPDF(songs, title, fileName) {
 }
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
-let bandHelperScriptLoaded = false;
-function loadBandHelperScript() {
-  const bandHelperContainer = document.getElementById("bandhelper-concerts-container");
-  const loadingMessage = document.getElementById("bandhelper-loading-message");
+// Ya no se necesita loadBandHelperScript, el script se carga síncronamente desde el HTML.
+// La función processBandHelperTable se llamará desde DOMContentLoaded.
 
-  if (bandHelperScriptLoaded || !bandHelperContainer) return;
-  console.log("loadBandHelperScript: Intentando cargar script de BandHelper.");
+let processTableAttempts = 0;
+const MAX_PROCESS_ATTEMPTS = 20; // Aumentamos un poco los reintentos
 
-  if (bandHelperContainer.querySelector('script')) {
-      console.log("loadBandHelperScript: Script tag ya presente.");
+function processBandHelperTable() {
+  const container = document.getElementById('bandhelper-concerts-container');
+  if (!container) {
+      console.error("processBandHelperTable: Contenedor 'bandhelper-concerts-container' no encontrado.");
       return;
   }
   
-  const script = document.createElement('script');
-  script.src = "https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6";
-  script.async = true;
-  script.onload = () => {
-      console.log("loadBandHelperScript: Script de BandHelper CARGADO.");
-      bandHelperScriptLoaded = true;
-      if(loadingMessage) loadingMessage.textContent = "Procesando conciertos...";
-      setTimeout(() => processBandHelperTable(bandHelperContainer), 500); 
-  };
-  script.onerror = () => {
-      console.error("loadBandHelperScript: ERROR al cargar script de BandHelper.");
-      if(loadingMessage) loadingMessage.textContent = "Error al cargar conciertos de BandHelper.";
-      bandHelperScriptLoaded = false;
-  };
-  bandHelperContainer.appendChild(script);
-}
-
-let processTableAttempts = 0;
-const MAX_PROCESS_ATTEMPTS = 10;
-
-function processBandHelperTable(container) {
   console.log(`processBandHelperTable: Intento ${processTableAttempts + 1}`);
   const table = container.querySelector("table");
-  const loadingMessage = document.getElementById("bandhelper-loading-message");
+  const loadingMessage = document.getElementById("bandhelper-loading-message"); // Aunque esté display:none, lo podemos usar
 
   if (!table) {
     processTableAttempts++;
     if (processTableAttempts < MAX_PROCESS_ATTEMPTS) {
       console.log("processBandHelperTable: Tabla de BandHelper NO encontrada. Reintentando en 500ms...");
-      setTimeout(() => processBandHelperTable(container), 500);
+      setTimeout(processBandHelperTable, 500); // Llamada recursiva para reintentar
     } else {
       console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de varios intentos.");
-      if(loadingMessage) loadingMessage.textContent = "No se pudieron mostrar los conciertos (tabla no encontrada).";
+      if(loadingMessage) {
+          loadingMessage.textContent = "No se pudieron mostrar los conciertos (tabla no generada por BandHelper).";
+          loadingMessage.style.display = "block"; // Mostrar el mensaje de error
+      }
     }
     return;
   }
 
   if(loadingMessage) loadingMessage.style.display = "none";
   console.log("processBandHelperTable: Tabla de BandHelper ENCONTRADA:", table);
-  processTableAttempts = 0; 
+  // processTableAttempts = 0; // No es necesario resetear aquí si solo se llama una vez inicialmente
 
   if (table.dataset.processed) {
       console.log("processBandHelperTable: Tabla ya procesada. Saltando.");
@@ -889,19 +871,28 @@ function processBandHelperTable(container) {
     console.log(`processBandHelperTable: Procesando fila ${index}. Celdas:`, cells[0]?.textContent.trim(), "|", cells[1]?.textContent.trim(), "|", cells[2]?.textContent.trim());
 
     let detailCell = row.querySelector(".details-cell");
-    if (!detailCell && headerRow && cells.length < headerRow.cells.length) { // Verifica que haya espacio para la nueva celda según la cabecera
-        detailCell = row.insertCell(-1);
-        detailCell.className = "details-cell";
-        detailCell.style.textAlign = "center";
-    } else if (!detailCell && headerRow && cells.length === headerRow.cells.length -1 ) { // Caso donde la cabecera ya tiene la celda de detalles
-         // Esto puede suceder si la tabla se reconstruye pero sin la clase .details-cell
-         // En este caso, la última celda es la de detalles
-        detailCell = cells[cells.length -1];
-        detailCell.className = "details-cell"; // Asegurar la clase
-        detailCell.style.textAlign = "center";
-        detailCell.innerHTML = ''; // Limpiar por si acaso
-    } else if (!detailCell) {
-        console.warn(`processBandHelperTable: No se pudo añadir/encontrar celda de detalles para fila ${index}`);
+    // Lógica para añadir la celda de detalles si no existe
+    if (!detailCell) {
+        if (headerRow && cells.length < headerRow.cells.length) { // Si hay espacio según la cabecera
+            detailCell = row.insertCell(-1);
+            detailCell.className = "details-cell";
+        } else if (headerRow && cells.length === headerRow.cells.length -1 && headerRow.cells[headerRow.cells.length-1].classList.contains('details-header')) {
+            // Si la cabecera YA tiene la columna de detalles y la fila no tiene la celda .details-cell pero sí una última celda.
+            detailCell = cells[cells.length -1]; // Usar la última celda existente
+            detailCell.className = "details-cell"; // Asegurar la clase
+            detailCell.innerHTML = ''; // Limpiarla por si acaso
+        } else {
+            console.warn(`processBandHelperTable: No se pudo determinar/añadir celda de detalles para fila ${index}. Puede que la tabla ya la tenga pero sin la clase, o que la estructura sea inesperada.`);
+            // Intentar usar la última celda si la cabecera parece tener la columna de detalles.
+            if (headerRow && headerRow.cells.length > cells.length) {
+                detailCell = row.insertCell(-1); // Intentar añadir de todas formas
+                 detailCell.className = "details-cell";
+            } else {
+                 // Si no se puede añadir celda de detalles, se omite el botón de detalles para esta fila
+                 console.warn(`processBandHelperTable: Omitiendo botón de detalles para fila ${index} por no poder crear/identificar celda.`);
+            }
+        }
+        if(detailCell) detailCell.style.textAlign = "center";
     }
     
     if (detailCell && !detailCell.querySelector('.details-btn')) {
@@ -921,7 +912,7 @@ function processBandHelperTable(container) {
     }
 
     const locationCell = cells[2];
-    if (locationCell && !locationCell.querySelector('.calendar-btn')) { // Asegurar que locationCell existe
+    if (locationCell && !locationCell.querySelector('.calendar-btn')) {
       const eventNameText = locationCell.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
       const dateCellContent = cells[0].textContent.trim();
       const timeCellContent = cells[1].textContent.trim() || "20:00";
@@ -1179,8 +1170,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf"); else alert("No hay canciones en Setlist Ensayo."); };
   document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_prox_concierto.pdf"); else alert("No hay canciones en Setlist Próx. Concierto."); };
   document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, "setlist_estrella.pdf"); else alert("No hay canciones en Setlist Estrella."); };
-
-  loadBandHelperScript();
+  
+  // Iniciar el procesamiento de la tabla de BandHelper después de un breve retraso
+  // para dar tiempo al script síncrono de BandHelper a ejecutarse.
+  setTimeout(processBandHelperTable, 1000); // Intenta procesar después de 1 segundo
 });
   </script>
 </body>
