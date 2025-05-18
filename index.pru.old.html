@@ -24,7 +24,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Estilos CSS (iguales a la v7.1/v7.2, por brevedad no se repiten aquí) */
+    /* Estilos CSS (iguales a la v7.3, por brevedad no se repiten aquí) */
     /* ... Pega aquí los estilos de la versión anterior ... */
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
@@ -124,6 +124,10 @@
     #connection-status { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.85); color: #fff; padding: 8px 12px; border-radius: 5px; font-size: 0.9em; z-index: 10001; display: none; border: 1px solid #555; } /* Aumentado z-index */
     #connection-status.offline { background: #c00; border-color: #f00;}
     #connection-status.retrying { background: #e68900; border-color: #ff9800;}
+    #persistence-warning { /* NUEVO */
+        background-color: #ffc107; color: #000; padding: 10px; text-align: center;
+        font-weight: bold; display: none; position: sticky; top:0; z-index: 10002;
+    }
     .message { margin-top: 15px; text-align: center; padding: 8px; border-radius: 4px; font-weight: bold;}
     .success-message { color: #000; background-color: #0cf; }
     .error-message { color: #fff; background-color: #d32f2f; }
@@ -152,6 +156,7 @@
   </style>
 </head>
 <body>
+  <div id="persistence-warning">Advertencia: La persistencia de datos (modo offline) podría no funcionar. Revisa la configuración de tu navegador (cookies/almacenamiento, extensiones).</div>
   <div id="connection-status"></div>
   <header>
     <div class="logo"><img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main"></div>
@@ -315,6 +320,10 @@
     console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     console.error("!!! POR FAVOR, REEMPLAZA 'TU_API_KEY' EN firebaseConfig !!!");
     console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    document.getElementById("persistence-warning").innerHTML += "<br><b>ERROR CRÍTICO: API Key de Firebase no configurada. La aplicación no funcionará.</b>";
+    document.getElementById("persistence-warning").style.display = "block";
+    document.getElementById("persistence-warning").style.backgroundColor = "#f44336"; // Rojo
+    document.getElementById("persistence-warning").style.color = "#fff";
   }
 
   try {
@@ -323,17 +332,35 @@
     db = firebase.firestore();
     persistencePromise = db.enablePersistence({ synchronizeTabs: true })
       .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); })
-      .catch(err => { if (err.code === 'failed-precondition') { console.warn("Persistencia (multi) falló, intentando una sola...", err.message); return db.enablePersistence(); } console.error("Error habilitando persistencia (multi):", err); throw err; })
+      .catch(err => {
+        const persistenceWarningDiv = document.getElementById("persistence-warning");
+        persistenceWarningDiv.style.display = "block";
+        if (err.code === 'failed-precondition') {
+          console.warn("Persistencia (multi) falló, intentando una sola pestaña...", err.message);
+          persistenceWarningDiv.innerHTML += "<br>Fallo de persistencia multi-pestaña. Intentando modo simple.";
+          return db.enablePersistence();
+        }
+        console.error("Error habilitando persistencia (multi):", err);
+        persistenceWarningDiv.innerHTML += "<br>Error grave habilitando persistencia: " + err.message;
+        throw err;
+      })
       .then(() => { console.log("Intento de config. de persistencia completado."); })
-      .catch(err => { console.error("Error final config. persistencia:", err); });
+      .catch(err => {
+        console.error("Error final config. persistencia:", err);
+        const persistenceWarningDiv = document.getElementById("persistence-warning");
+        persistenceWarningDiv.style.display = "block";
+        persistenceWarningDiv.innerHTML += "<br>La persistencia de datos (modo offline) NO está disponible: " + err.message;
+      });
   } catch (e) {
     console.error("Error GRAVE: Firebase App no pudo inicializarse.", e);
     const statusDiv = document.getElementById("connection-status");
     if (statusDiv) { statusDiv.textContent = "Error GRAVE: Firebase no inicializado."; statusDiv.className = "offline"; statusDiv.style.display = "block"; }
+    document.getElementById("persistence-warning").innerHTML += "<br><b>Error CRÍTICO: Firebase no pudo inicializarse.</b>";
+    document.getElementById("persistence-warning").style.display = "block";
     persistencePromise = Promise.reject(e);
   }
 
-  /* ---------- 1. Utilidades (sin cambios desde v6) ---------- */
+  /* ---------- 1. Utilidades (sin cambios desde v7.2) ---------- */
   const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n; };
   const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const toHHMM = s => { const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`; };
@@ -344,8 +371,8 @@
   const getMonthYear = dateStr => { try {const date = new Date(dateStr + "T00:00:00Z"); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`; } catch(e) { console.warn(`Error getMonthYear para '${dateStr}':`, e); return "Fecha Inválida";}};
   function generateICS(title, dateISO, startTime, location, description = "", durationSeconds = 7200) {
     console.log("generateICS - Entradas:", { title, dateISO, startTime, location, description, durationSeconds });
-    const timeParts = startTime.match(/^(\d{1,2}):(\d{2})$/);
-    if (!timeParts) { console.error("generateICS: Formato de hora inválido:", startTime); alert("Formato de hora incorrecto para evento de calendario."); return; }
+    const timeParts = String(startTime).match(/^(\d{1,2}):(\d{2})$/); // startTime puede ser null o undefined
+    if (!timeParts) { console.error("generateICS: Formato de hora inválido o no proporcionado:", startTime); alert("Formato de hora incorrecto para evento de calendario."); return; }
     const validStartTime = `${String(timeParts[1]).padStart(2, '0')}:${timeParts[2]}`;
     try {
         const startDate = new Date(`${dateISO}T${validStartTime}:00Z`); 
@@ -375,7 +402,7 @@
   let setlistConfig = { setlist1: { name: "Setlist Ensayos", url: "" }, setlist2: { name: "Setlist Concierto", url: "" }};
   async function loadSetlistConfig() { console.log("loadSetlistConfig: Iniciando..."); const data = await withRetry(() => loadDoc("setlists", {config: setlistConfig}), "configuración de setlists"); setlistConfig = data.config || setlistConfig; updateTitles(); console.log("loadSetlistConfig: Finalizado. Config:", setlistConfig); }
   function updateTitles() { document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name; document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2.name; }
-  async function saveSetlistConfig() { updateTitles(); return await withRetry(() => saveDoc("setlists", { config: setlistConfig }), "guardar config setlists");}
+  async function saveSetlistConfig() { /* ... (Pega aquí tu función saveSetlistConfig) ... */ }
   async function cargarPrimerSetlist() { console.log("cargarPrimerSetlist desde:", setlistConfig.setlist1.url); if(!setlistConfig.setlist1.url) { console.warn("URL para primer setlist no definida."); document.getElementById("setlist-body").innerHTML = '<tr><td colspan="5">URL no configurada.</td></tr>'; return [];} try { const response = await fetch(setlistConfig.setlist1.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const songs = (await response.json()).filter(i => i.type === "song"); const tbody = document.getElementById("setlist-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.key || ""}</td><td>${s.tempo || ""}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time").textContent = "Tiempo total: " + toHHMM(total); console.log("Primer setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando primer setlist:", e); document.getElementById("setlist-body").innerHTML = '<tr><td colspan="5">Error al cargar. Revisa la URL y la conexión.</td></tr>'; return []; } }
   async function cargarSegundoSetlist() { console.log("cargarSegundoSetlist desde:", setlistConfig.setlist2.url); if(!setlistConfig.setlist2.url) { console.warn("URL para segundo setlist no definida."); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">URL no configurada.</td></tr>'; return [];} try { const response = await fetch(setlistConfig.setlist2.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : []; const tbody = document.getElementById("second-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration || "0"); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time-2").textContent = "Tiempo total: " + toHHMM(total); console.log("Segundo setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando segundo setlist:", e); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">Error al cargar. Revisa la URL y la conexión.</td></tr>'; document.getElementById("total-time-2").textContent = ""; return []; } }
   
@@ -405,11 +432,10 @@
             </tr>`;
         tbodyCfg.insertAdjacentHTML("beforeend", configRowHTML);
     });
-    // Añadir listeners para editar/eliminar (debes tener esta función definida)
-    // addUserTableListeners(); 
+    // addUserTableListeners(); // Asegúrate de que esta función esté definida y se llame
   }
-  async function loadUsers() { console.log("loadUsers: Iniciando..."); const data = await withRetry(() => loadDoc("users", {users:[]}), "carga de usuarios"); users = data.users || []; renderUsers(); console.log("loadUsers: Finalizado. Usuarios:", users.length); }
-  async function saveUsers() { console.log("Guardando usuarios..."); return await withRetry(() => saveDoc("users", {users}), "guardar usuarios");}
+  async function loadUsers() { console.log("loadUsers: Iniciando..."); const data = await withRetry(() => loadDoc("users", {users:[]}), "carga de usuarios"); users = Array.isArray(data.users) ? data.users : []; renderUsers(); console.log("loadUsers: Finalizado. Usuarios:", users.length); }
+  async function saveUsers() { console.log("Guardando usuarios..."); renderUsers(); return await withRetry(() => saveDoc("users", {users}), "guardar usuarios");}
   function resetUserForm() { /* ... (Pega aquí tu función resetUserForm) ... */ }
 
   let rehearsals = []; let editingRehearsalIndex = null;
@@ -421,10 +447,8 @@
     tbodyConfig.innerHTML = ""; tbodyMain.innerHTML = "";
 
     if (!rehearsals || rehearsals.length === 0) {
-        const emptyMsgCfg = '<tr><td colspan="6" style="text-align:center;">No hay ensayos programados.</td></tr>';
-        tbodyConfig.innerHTML = emptyMsgCfg;
-        const emptyMsgMain = '<tr><td colspan="4" style="text-align:center;">No hay ensayos programados.</td></tr>';
-        tbodyMain.innerHTML = emptyMsgMain;
+        tbodyConfig.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay ensayos programados.</td></tr>';
+        tbodyMain.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay ensayos programados.</td></tr>';
         return;
     }
 
@@ -478,14 +502,14 @@
   }
   function addRehearsalTableListeners() { /* ... (Pega aquí tu función addRehearsalTableListeners completa) ... */ }
   async function loadRehearsals() { console.log("loadRehearsals: Iniciando..."); const data = await withRetry(() => loadDoc("rehearsals", {rehearsals:[]}), "carga de ensayos"); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); console.log("loadRehearsals: Finalizado. Ensayos:", rehearsals.length); }
-  async function saveRehearsals() { console.log("Guardando rehearsals..."); return await withRetry(() => saveDoc("rehearsals", {rehearsals}), "guardar ensayos");}
+  async function saveRehearsals() { console.log("Guardando rehearsals..."); renderRehearsals(); return await withRetry(() => saveDoc("rehearsals", {rehearsals}), "guardar ensayos");}
   function resetRehearsalForm() { /* ... (Pega aquí tu función resetRehearsalForm) ... */ }
   
   function updateMonthFilter() { /* ... */ } function renderStats() { /* ... */ }
   async function genPDF(songs, title, fileName) { /* ... */ }
 
-  /* ---------- 10. Modificar tabla de BandHelper (igual a v6, con logs) ---------- */
-  // ... Pega aquí la función modifyBandHelperTable de la v6 ...
+  /* ---------- 10. Modificar tabla de BandHelper (igual a v7.2, con logs y corrección de onclick) ---------- */
+  // ... Pega aquí la función modifyBandHelperTable de la v7.2 (ya tiene la corrección para llamar a openConcertNoteModal) ...
   let parsedBandHelperConcerts = [];
   let bandHelperTableModified = false;
   let bandHelperWidgetLoaded = false; 
@@ -573,7 +597,6 @@
             else row.appendChild(detailsCell);
           }
           if (!detailsCell.querySelector("button.details-btn")) {
-              // CORRECCIÓN AQUÍ: Llamar a openConcertNoteModal
               detailsCell.innerHTML = `<button class="details-btn" title="Ver/Editar Detalles" onclick="openConcertNoteModal('${concertId}')"><svg viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" /></svg></button>`;
           }
         });
