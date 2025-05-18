@@ -377,10 +377,11 @@
     persistencePromise = db.enablePersistence({ synchronizeTabs: true })
       .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.style.display = "none"; })
       .catch(err => {
-        if (err.code !== 'failed-precondition' || !err.message.includes("already active")) { // No mostrar si el error es que ya está activa
+        if (err.code !== 'failed-precondition' || !err.message.includes("already active")) {
             if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") {
-                persistenceWarningDiv.style.display = "block";
-                persistenceWarningDiv.innerHTML = "Advertencia: Problema con persistencia de datos (offline): " + err.message.substring(0,100) + "... Revisa config. del navegador.";
+                // No mostrar el cartel rojo por problemas de persistencia si la API key es correcta.
+                // El log en consola es suficiente.
+                console.warn("Advertencia: Problema con persistencia de datos (offline): " + err.message);
             }
         }
         if (err.code === 'failed-precondition') {
@@ -393,9 +394,7 @@
       .then(() => { console.log("Intento de config. de persistencia completado."); })
       .catch(err => {
         console.error("Error final config. persistencia:", err);
-        if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY" && (err.code !== 'failed-precondition' || !err.message.includes("already active")) ) {
-            // No mostrar el cartel rojo por problemas de persistencia si la API key es correcta.
-            // El log en consola es suficiente.
+         if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY" && (err.code !== 'failed-precondition' || !err.message.includes("already active")) ) {
             console.warn("Advertencia: La persistencia de datos (modo offline) podría NO estar disponible: " + err.message);
         }
       });
@@ -466,8 +465,7 @@
         console.error("Error en withRetry para loadSetlistConfig, usando fallback completo:", e);
     }
     
-    const loadedConfig = dataFromFirestore.config || {}; // Asegurar que loadedConfig es un objeto
-    // Fusionar para asegurar que todas las claves existan, dando prioridad a loadedConfig
+    const loadedConfig = dataFromFirestore.config || {}; 
     setlistConfig = {
         setlist1: { ...(fallbackConfig.setlist1), ...(loadedConfig.setlist1 || {}) },
         setlist2: { ...(fallbackConfig.setlist2), ...(loadedConfig.setlist2 || {}) },
