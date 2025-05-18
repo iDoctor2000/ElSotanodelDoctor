@@ -24,7 +24,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Estilos CSS (iguales a la v7.6, por brevedad no se repiten aquí) */
+    /* Estilos CSS (iguales a la v7.7, por brevedad no se repiten aquí) */
     /* ... Pega aquí los estilos de la versión anterior ... */
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
@@ -101,7 +101,7 @@
 
     /* Secciones */
     main section{max-width:1200px;margin:20px auto;padding:25px; background:#0a0a0a; border: 1px solid #1c1c1c; border-radius:10px;box-shadow:0 0 20px rgba(0,204,255,.1);}
-    #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:20px; font-size: 1.8em;}
+    #setlists h2,#rehearsals h2,#second-setlist h2, #setlist-estrella h2, #calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:20px; font-size: 1.8em;} /* Añadido #setlist-estrella h2 */
     /* Ajuste para tablas */
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; }
@@ -109,11 +109,11 @@
     th,td{padding:12px 15px;border:1px solid #282828;text-align:left;white-space:normal; word-wrap:break-word;}
     tr:nth-child(even){background:#101010}
     tr:hover {background-color: #181818;}
-    #second-setlist .table-wrapper table { min-width: 600px; }
+    #second-setlist .table-wrapper table, #setlist-estrella .table-wrapper table { min-width: 600px; } /* Añadido #setlist-estrella */
     .download-btn{display:block;margin:25px auto 0;padding:12px 25px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer; font-weight: bold;}
     .download-btn:hover{background:#09b; box-shadow: 0 0 8px #0cf;}
-    #total-time,#total-time-2{color:#0cf;margin-top:15px;text-align:center; font-size: 1.1em; font-weight: bold;}
-    #second-setlist-name {text-align:center;color:#aaa;margin-top:5px;font-style:italic; font-size: 1.1em;}
+    #total-time,#total-time-2, #total-time-3 {color:#0cf;margin-top:15px;text-align:center; font-size: 1.1em; font-weight: bold;} /* Añadido #total-time-3 */
+    #second-setlist-name, #setlist3-title-display {text-align:center;color:#aaa;margin-top:5px;font-style:italic; font-size: 1.1em;} /* Añadido #setlist3-title-display */
     footer{background:#050505;color:#888;text-align:center;padding:15px;border-top:1px solid #0cf; margin-top: 30px;}
     /* Botones de acción, calendario, detalles */
     .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; vertical-align: middle; }
@@ -159,7 +159,7 @@
     @media(max-width:768px){
       header{padding:10px 15px;} .logo img.logo-main{width:130px} .logo-intranet{height:40px} .hamburger div{width:20px}
       main section {padding: 15px;}
-      #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{font-size: 1.5em;}
+      #setlists h2,#rehearsals h2,#second-setlist h2, #setlist-estrella h2, #calendario h2,#usuarios h2{font-size: 1.5em;} /* Añadido #setlist-estrella h2 */
       .config-screen, .modal-screen {padding:60px 15px 15px}
       .config-screen input, .config-screen select, .config-screen textarea,
       .modal-screen input, .modal-screen select, .modal-screen textarea {padding:10px; max-width: none;}
@@ -174,17 +174,18 @@
 <body>
   <div id="persistence-warning">Advertencia: La persistencia de datos (modo offline) podría no funcionar. Revisa la configuración de tu navegador (cookies/almacenamiento, extensiones).</div>
   <div id="connection-status"></div>
+
   <header>
     <div class="logo"><img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main"></div>
     <img src="assets/logointranet.png" alt="Logo Intranet" class="logo-intranet">
     <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
   </header>
+
   <div id="overlay"></div>
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú Principal</h2>
     <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
-    <a href="#second-setlist" id="menu-second-setlist-section">Setlist Concierto</a>
-    <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
+    <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a> <a href="#setlist-estrella" id="menu-setlist-estrella-section">Setlist Concierto Estrella</a> <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#" id="menu-stats">Estadísticas</a>
     <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
@@ -194,18 +195,24 @@
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
+
   <div id="setlist-config-screen" class="config-screen">
     <button class="close-btn" id="close-setlist-config" title="Cerrar">&times;</button>
     <h2>Configuración de Setlists</h2>
     <h3>Setlist Próximo Ensayo</h3>
     <label for="setlist1-name">Nombre del Setlist:</label><input id="setlist1-name" placeholder="Ej: Ensayos Verano 2025">
     <label for="setlist1-url">ID/URL del feed:</label><input id="setlist1-url" placeholder="URL completa del feed JSON">
-    <h3>Segundo Setlist (ej. Próximo Concierto)</h3>
-    <label for="setlist2-name">Nombre del Setlist:</label><input id="setlist2-name" placeholder="Ej: Concierto Sala X">
+    
+    <h3>Setlist Próximo Concierto</h3> <label for="setlist2-name">Nombre del Setlist:</label><input id="setlist2-name" placeholder="Ej: Concierto Sala X">
     <label for="setlist2-url">ID/URL del feed (BandHelper):</label><input id="setlist2-url" placeholder="ID del feed (ej: TXHvyb) o URL completa">
+
+    <h3>Setlist Concierto Estrella</h3> <label for="setlist3-name">Nombre del Setlist:</label><input id="setlist3-name" placeholder="Ej: Festival Estrella">
+    <label for="setlist3-url">ID/URL del feed:</label><input id="setlist3-url" placeholder="URL completa o ID de BandHelper">
+
     <button id="guardar-setlist-config">Guardar Configuración</button>
     <p id="setlist-message" class="message"></p>
   </div>
+
   <div id="user-mgmt-screen" class="config-screen">
     <button class="close-btn" id="close-user-mgmt" title="Cerrar">&times;</button>
     <h2>Gestión de Usuarios</h2>
@@ -269,24 +276,16 @@
         <button class="close-btn" id="close-concert-note-edit-modal" title="Cerrar">&times;</button>
         <h2>Detalles del Concierto</h2>
         <p id="concert-note-info">Concierto: Cargando...</p>
-        
         <label for="concert-note-location-details">Detalles Ubicación (ej. entrada, parking, camerinos):</label>
         <textarea id="concert-note-location-details" placeholder="Notas sobre la ubicación..."></textarea>
-
         <label for="concert-note-soundcheck-time">Hora Prueba de Sonido:</label>
         <input type="time" id="concert-note-soundcheck-time">
-
         <label for="concert-note-show-time">Hora del Show (confirmada/ajustada):</label>
         <input type="time" id="concert-note-show-time">
-        
         <label for="concert-note-general">Notas Generales Adicionales:</label>
         <textarea id="concert-note-general" placeholder="Otras notas importantes..."></textarea>
-
         <h3>Músicos Asistentes al Concierto</h3>
-        <div id="concert-attendance-list">
-            <p>Cargando lista de usuarios...</p>
-        </div>
-        
+        <div id="concert-attendance-list"><p>Cargando lista de usuarios...</p></div>
         <button id="save-concert-note-modal-btn">Guardar Detalles</button>
         <p id="concert-note-edit-message" class="message"></p>
     </div>
@@ -299,22 +298,39 @@
       <button class="download-btn" id="download-btn">Descargar PDF</button>
       <p id="total-time"></p>
     </section>
+
     <section id="rehearsals">
       <h2>Próximos Ensayos</h2>
       <div class="table-wrapper"><table id="rehearsal-main-table"><thead><tr><th>Fecha y Duración</th><th>Horario</th><th>Lugar y Calendario</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div>
     </section>
+
     <section id="second-setlist">
-      <h2 id="setlist2-title-placeholder">Setlist Próximo Concierto</h2> <p id="second-setlist-name"></p>
+      <h2 id="setlist2-title-placeholder">Setlist Próximo Concierto</h2>
+      <p id="second-setlist-name"></p>
       <div class="table-wrapper"><table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table></div>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
     </section>
+
+    <section id="setlist-estrella">
+      <h2 id="setlist3-title">Setlist Concierto Estrella</h2>
+      <p id="setlist3-title-display"></p> <div class="table-wrapper">
+        <table id="setlist3-table">
+          <thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead>
+          <tbody id="setlist3-body"></tbody>
+        </table>
+      </div>
+      <button class="download-btn" id="download-btn-3">Descargar PDF</button>
+      <p id="total-time-3"></p>
+    </section>
+
     <section id="calendario">
       <h2>Próximos Conciertos</h2>
       <div id="bandhelper-concerts">
         <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
       </div>
     </section>
+
     <section id="usuarios">
       <h2>Usuarios Registrados</h2>
       <div class="table-wrapper"><table id="users-main-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table></div>
@@ -339,14 +355,10 @@
   const persistenceWarningDiv = document.getElementById("persistence-warning");
 
   if (firebaseConfig.apiKey === "TU_API_KEY") {
-    console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    console.error("!!! POR FAVOR, REEMPLAZA 'TU_API_KEY' EN firebaseConfig !!!");
-    console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    console.error("!!! API Key de Firebase NO CONFIGURADA !!!");
     if(persistenceWarningDiv) {
         persistenceWarningDiv.innerHTML = "<b>ERROR CRÍTICO: API Key de Firebase no configurada. La aplicación no funcionará.</b>";
         persistenceWarningDiv.style.display = "block";
-        persistenceWarningDiv.style.backgroundColor = "#f44336"; 
-        persistenceWarningDiv.style.color = "#fff";
     }
   }
 
@@ -355,30 +367,28 @@
     else { console.log("Firebase App ya inicializada."); }
     db = firebase.firestore();
     persistencePromise = db.enablePersistence({ synchronizeTabs: true })
-      .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); })
+      .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); if(persistenceWarningDiv) persistenceWarningDiv.style.display = "none"; }) // Ocultar si tiene éxito
       .catch(err => {
-        if(persistenceWarningDiv) persistenceWarningDiv.style.display = "block";
+        if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.style.display = "block"; // Mostrar solo si no es error de API Key
         if (err.code === 'failed-precondition') {
           console.warn("Persistencia (multi) falló, intentando una sola pestaña...", err.message);
-          if(persistenceWarningDiv) persistenceWarningDiv.innerHTML = "Advertencia: Fallo de persistencia multi-pestaña. Intentando modo simple.";
+          if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.innerHTML = "Advertencia: Fallo de persistencia multi-pestaña. Intentando modo simple.";
           return db.enablePersistence();
         }
         console.error("Error habilitando persistencia (multi):", err);
-        if(persistenceWarningDiv) persistenceWarningDiv.innerHTML = "Advertencia: Error grave habilitando persistencia: " + err.message.substring(0,100) + "...";
+        if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.innerHTML = "Advertencia: Error grave habilitando persistencia: " + err.message.substring(0,100) + "...";
         throw err;
       })
       .then(() => { console.log("Intento de config. de persistencia completado."); })
       .catch(err => {
         console.error("Error final config. persistencia:", err);
-        if(persistenceWarningDiv) {
+        if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") {
             persistenceWarningDiv.style.display = "block";
             persistenceWarningDiv.innerHTML = "Advertencia: La persistencia de datos (modo offline) NO está disponible: " + err.message.substring(0,100) + "...";
         }
       });
   } catch (e) {
     console.error("Error GRAVE: Firebase App no pudo inicializarse.", e);
-    const statusDiv = document.getElementById("connection-status");
-    if (statusDiv) { statusDiv.textContent = "Error GRAVE: Firebase no inicializado."; statusDiv.className = "offline"; statusDiv.style.display = "block"; }
     if(persistenceWarningDiv) {
         persistenceWarningDiv.innerHTML = "<b>Error CRÍTICO: Firebase no pudo inicializarse.</b>";
         persistenceWarningDiv.style.display = "block";
@@ -425,122 +435,67 @@
   async function saveDoc(docId, data) { if (!db) { console.error("DB no inicializado. No se puede guardar:", docId); return false; } console.log(`Intentando guardar doc: ${docId}`); try { await db.collection("intranet").doc(docId).set(data); console.log(`Doc ${docId} guardado OK.`); return true; } catch (e) { console.error(`Error FATAL al guardar doc ${docId}:`, e.message, e); throw e; } }
 
   /* ---------- SECCIONES (Setlists, Usuarios, Ensayos, etc.) ---------- */
-  let setlistConfig = { setlist1: { name: "Setlist Ensayos", url: "" }, setlist2: { name: "Setlist Concierto", url: "" }};
+  let setlistConfig = {
+    setlist1: { name: "Setlist Próximo Ensayo", url: "" },
+    setlist2: { name: "Setlist Próximo Concierto", url: "" },
+    setlist3: { name: "Setlist Concierto Estrella", url: "" } // NUEVO
+  };
   async function loadSetlistConfig() { console.log("loadSetlistConfig: Iniciando..."); const data = await withRetry(() => loadDoc("setlists", {config: setlistConfig}), "configuración de setlists"); setlistConfig = data.config || setlistConfig; updateTitles(); console.log("loadSetlistConfig: Finalizado. Config:", setlistConfig); }
-  function updateTitles() { document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name; document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2.name; }
-  async function saveSetlistConfig() { /* ... (Pega aquí tu función saveSetlistConfig de v7.2) ... */ }
-  async function cargarPrimerSetlist() { console.log("cargarPrimerSetlist desde:", setlistConfig.setlist1.url); if(!setlistConfig.setlist1.url) { console.warn("URL para primer setlist no definida."); document.getElementById("setlist-body").innerHTML = '<tr><td colspan="5">URL no configurada.</td></tr>'; return [];} try { const response = await fetch(setlistConfig.setlist1.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const songs = (await response.json()).filter(i => i.type === "song"); const tbody = document.getElementById("setlist-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.key || ""}</td><td>${s.tempo || ""}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time").textContent = "Tiempo total: " + toHHMM(total); console.log("Primer setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando primer setlist:", e); document.getElementById("setlist-body").innerHTML = '<tr><td colspan="5">Error al cargar. Revisa la URL y la conexión.</td></tr>'; return []; } }
-  async function cargarSegundoSetlist() { console.log("cargarSegundoSetlist desde:", setlistConfig.setlist2.url); if(!setlistConfig.setlist2.url) { console.warn("URL para segundo setlist no definida."); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">URL no configurada.</td></tr>'; return [];} try { const response = await fetch(setlistConfig.setlist2.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : []; const tbody = document.getElementById("second-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration || "0"); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time-2").textContent = "Tiempo total: " + toHHMM(total); console.log("Segundo setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando segundo setlist:", e); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">Error al cargar. Revisa la URL y la conexión.</td></tr>'; document.getElementById("total-time-2").textContent = ""; return []; } }
+  function updateTitles() {
+    document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
+    document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2.name;
+    document.getElementById("setlist3-title").textContent = setlistConfig.setlist3.name; // NUEVO
+    document.getElementById("setlist3-title-display").textContent = setlistConfig.setlist3.name; // Para el subtítulo
+  }
+  async function saveSetlistConfig() { updateTitles(); return await withRetry(() => saveDoc("setlists", { config: setlistConfig }), "guardar config setlists");}
+  async function cargarPrimerSetlist() { /* ... (igual a v7.3) ... */ }
+  async function cargarSegundoSetlist() { /* ... (igual a v7.3) ... */ }
+  async function cargarTercerSetlist() { // NUEVA FUNCIÓN
+    console.log("cargarTercerSetlist desde:", setlistConfig.setlist3.url);
+    const tbody = document.getElementById("setlist3-body");
+    const totalTimeEl = document.getElementById("total-time-3");
+    tbody.innerHTML = ""; totalTimeEl.textContent = "";
+    if(!setlistConfig.setlist3.url) { console.warn("URL para Setlist Concierto Estrella no definida."); tbody.innerHTML = '<tr><td colspan="5">URL no configurada.</td></tr>'; return [];}
+    try {
+      const response = await fetch(setlistConfig.setlist3.url);
+      if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : [];
+      let total = 0;
+      songs.forEach((s, i) => {
+        const secs = parseDuration(s.duration || "0");
+        total += secs;
+        tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`);
+      });
+      totalTimeEl.textContent = "Tiempo total: " + toHHMM(total);
+      console.log("Setlist Concierto Estrella cargado, canciones:", songs.length);
+      return songs;
+    } catch (e) {
+      console.error("Error cargando Setlist Concierto Estrella:", e);
+      tbody.innerHTML = '<tr><td colspan="5">Error al cargar. Revisa la URL y la conexión.</td></tr>';
+      return [];
+    }
+  }
   
   let users = []; let editingUserIndex = null;
-  function renderUsers() {
-    console.log("renderUsers: Iniciando con", users.length, "usuarios.");
-    const tbodyCfg = document.getElementById("user-table-body");
-    const tbodyMain = document.getElementById("users-body");
-    tbodyCfg.innerHTML = ""; tbodyMain.innerHTML = "";
-    if (!users || users.length === 0) {
-        tbodyCfg.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay usuarios registrados.</td></tr>';
-        tbodyMain.innerHTML = '<tr><td colspan="3" style="text-align:center;">No hay usuarios registrados.</td></tr>';
-        return;
-    }
-    users.forEach((user, index) => {
-        const roles = Array.isArray(user.roles) ? user.roles.join(", ") : "Sin roles";
-        const mainRowHTML = `<tr><td>${user.name || "N/A"}</td><td>${user.nickname || "N/A"}</td><td>${roles}</td></tr>`;
-        tbodyMain.insertAdjacentHTML("beforeend", mainRowHTML);
-        const configRowHTML = `
-            <tr>
-                <td>${user.name || "N/A"}</td>
-                <td>${user.nickname || "N/A"}</td>
-                <td>${roles}</td>
-                <td>
-                    <button class="action-btn edit-btn edit-user" data-i="${index}">Editar</button>
-                    <button class="action-btn delete-btn delete-user" data-i="${index}">Eliminar</button>
-                </td>
-            </tr>`;
-        tbodyCfg.insertAdjacentHTML("beforeend", configRowHTML);
-    });
-    addUserTableListeners();
-  }
-  function addUserTableListeners() {
-    document.querySelectorAll("#user-table-body .edit-user").forEach(btn => { /* ... (tu lógica de editar usuario) ... */ });
-    document.querySelectorAll("#user-table-body .delete-user").forEach(btn => { /* ... (tu lógica de eliminar usuario) ... */ });
-  }
+  function renderUsers() { /* ... (Pega aquí tu función renderUsers completa de v7.3) ... */ }
+  function addUserTableListeners() { /* ... (Pega aquí tu función addUserTableListeners de v7.3) ... */ }
   async function loadUsers() { console.log("loadUsers: Iniciando..."); const data = await withRetry(() => loadDoc("users", {users:[]}), "carga de usuarios"); users = Array.isArray(data.users) ? data.users : []; renderUsers(); console.log("loadUsers: Finalizado. Usuarios:", users.length); }
-  async function saveUsers() { console.log("Guardando usuarios..."); renderUsers(); return await withRetry(() => saveDoc("users", {users}), "guardar usuarios");}
-  function resetUserForm() { /* ... (Pega aquí tu función resetUserForm de v7.2) ... */ }
+  async function saveUsers() { /* ... (Pega aquí tu función saveUsers de v7.3) ... */ }
+  function resetUserForm() { /* ... (Pega aquí tu función resetUserForm de v7.3) ... */ }
 
   let rehearsals = []; let editingRehearsalIndex = null;
-  function renderRehearsals() {
-    console.log("renderRehearsals: Iniciando con", rehearsals.length, "ensayos y", users.length, "usuarios.");
-    rehearsals.sort((a, b) => new Date(a.date + "T" + (a.startTime || "00:00")) - new Date(b.date + "T" + (b.startTime || "00:00")));
-    const tbodyConfig = document.getElementById("rehearsal-table-body");
-    const tbodyMain = document.getElementById("rehearsal-main-body");
-    tbodyConfig.innerHTML = ""; tbodyMain.innerHTML = "";
-
-    if (!rehearsals || rehearsals.length === 0) {
-        tbodyConfig.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay ensayos programados.</td></tr>';
-        tbodyMain.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay ensayos programados.</td></tr>';
-        return;
-    }
-
-    const userOptions = users.length > 0 ? users.map(user => `<option value="${user.name}">${user.name} (${user.nickname || 'N/A'})</option>`).join("") : `<option value="" disabled>No hay usuarios</option>`;
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
-
-    rehearsals.forEach((r, i) => {
-      const formattedDate = formatDateWithDay(r.date);
-      const durationSeconds = calculateDuration(r.startTime, r.endTime);
-      const durationText = toHHMM(durationSeconds);
-      const attendance = Array.isArray(r.attendance) ? r.attendance : [];
-      const attendingYes = attendance.filter(a => a.attending === "Sí").map(a => users.find(u => u.name === a.name)?.nickname || a.name).join(", ") || "Ninguno";
-      const attendingNo = attendance.filter(a => a.attending === "No").map(a => users.find(u => u.name === a.name)?.nickname || a.name).join(", ") || "Ninguno";
-      const summary = `<div class="attendance-summary"><span class="attending-yes">Asisten: ${attendingYes}</span><span class="attending-no">No asisten: ${attendingNo}</span></div>`;
-
-      tbodyConfig.insertAdjacentHTML("beforeend",
-        `<tr>
-          <td>${r.date || "N/A"}</td><td>${r.startTime || "N/A"}</td><td>${r.endTime || "N/A"}</td><td>${r.location || "N/A"}</td>
-          <td>${summary}</td>
-          <td>
-            <button class="action-btn edit-btn edit-rehearsal" data-i="${i}">Editar</button>
-            <button class="action-btn clear-attendance-btn clear-attendance" data-i="${i}">Limpiar Asist.</button>
-            <button class="action-btn delete-btn delete-rehearsal" data-i="${i}">Eliminar</button>
-          </td>
-        </tr>`);
-      
-      const rehearsalDateObj = new Date(r.date + "T00:00:00Z"); 
-      if (rehearsalDateObj >= today) { 
-        tbodyMain.insertAdjacentHTML("beforeend",
-          `<tr>
-            <td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td>
-            <td>${r.startTime || "N/A"} - ${r.endTime || "N/A"}</td>
-            <td>${r.location || "N/A"}
-              <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo: ${clean(r.location)}", "${r.date}", "${r.startTime}", "${clean(r.location)}", "Ensayo de El Sótano del Doctor", ${durationSeconds})'>
-                <svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>
-              </button>
-            </td>
-            <td>
-              <div class="attendance-form">
-                <select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select>
-                <select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select>
-                <button class="confirm-attendance" data-i="${i}">Confirmar</button>
-              </div>
-              ${summary}
-            </td>
-          </tr>`);
-      }
-    });
-    addRehearsalTableListeners();
-  }
-  function addRehearsalTableListeners() { /* ... (Pega aquí tu función addRehearsalTableListeners completa de la v7.2) ... */ }
+  function renderRehearsals() { /* ... (Pega aquí tu función renderRehearsals completa de v7.3) ... */ }
+  function addRehearsalTableListeners() { /* ... (Pega aquí tu función addRehearsalTableListeners completa de v7.3) ... */ }
   async function loadRehearsals() { console.log("loadRehearsals: Iniciando..."); const data = await withRetry(() => loadDoc("rehearsals", {rehearsals:[]}), "carga de ensayos"); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); console.log("loadRehearsals: Finalizado. Ensayos:", rehearsals.length); }
-  async function saveRehearsals() { console.log("Guardando rehearsals..."); renderRehearsals(); return await withRetry(() => saveDoc("rehearsals", {rehearsals}), "guardar ensayos");}
-  function resetRehearsalForm() { /* ... (Pega aquí tu función resetRehearsalForm de la v7.2) ... */ }
+  async function saveRehearsals() { /* ... (Pega aquí tu función saveRehearsals de v7.3) ... */ }
+  function resetRehearsalForm() { /* ... (Pega aquí tu función resetRehearsalForm de v7.3) ... */ }
   
   function updateMonthFilter() { /* ... */ } function renderStats() { /* ... */ }
   async function genPDF(songs, title, fileName) { /* ... */ }
 
-  /* ---------- 10. Modificar tabla de BandHelper (igual a v7.2, con logs y corrección de onclick) ---------- */
-  // ... Pega aquí la función modifyBandHelperTable de la v7.2 ...
+  /* ---------- 10. Modificar tabla de BandHelper (igual a v7.3, con logs y corrección de onclick) ---------- */
+  // ... Pega aquí la función modifyBandHelperTable de la v7.3 ...
   let parsedBandHelperConcerts = [];
   let bandHelperTableModified = false;
   let bandHelperWidgetLoaded = false; 
@@ -664,7 +619,7 @@
     console.log("openConcertNoteModal para concertId:", concertId);
     currentEditingConcertId = concertId;
     const concertDataFromWidget = parsedBandHelperConcerts.find(c => c.id === concertId);
-    const existingNoteData = concertNotes[concertId] || { attendees: [] }; // Asegurar que attendees es un array
+    const existingNoteData = concertNotes[concertId] || { attendees: [] }; 
 
     const modal = document.getElementById("concert-note-edit-modal");
     const infoEl = document.getElementById("concert-note-info");
@@ -680,7 +635,7 @@
         return;
     }
     messageEl.textContent = "";
-    concertAttendanceListDiv.innerHTML = ""; // Limpiar lista de asistencia
+    concertAttendanceListDiv.innerHTML = ""; 
 
     if (concertDataFromWidget) {
         infoEl.textContent = `Concierto: ${concertDataFromWidget.displayDate} en ${concertDataFromWidget.location} (Hora original: ${concertDataFromWidget.time})`;
@@ -694,7 +649,6 @@
     showTimeInput.value = existingNoteData.showTimeUser || (concertDataFromWidget ? concertDataFromWidget.time : "") || ""; 
     generalNoteTextarea.value = existingNoteData.generalNote || "";
 
-    // Poblar lista de asistencia
     if (users.length > 0) {
         users.forEach(user => {
             constisChecked = (existingNoteData.attendees || []).includes(user.name);
@@ -730,7 +684,7 @@
         soundcheckTime: document.getElementById("concert-note-soundcheck-time").value,
         showTimeUser: document.getElementById("concert-note-show-time").value,
         generalNote: document.getElementById("concert-note-general").value.trim(),
-        attendees: attendingUsers // Guardar la lista de asistentes
+        attendees: attendingUsers 
     };
     
     concertNotes[currentEditingConcertId] = noteDetails;
@@ -753,11 +707,51 @@
   document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
   document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); };
   overlay.onclick = () => { closeAllScreens(); closeSidebarAndOverlay(); };
-  ['menu-rehearsals-section', 'menu-second-setlist-section', 'menu-concerts-section'].forEach(id => { document.getElementById(id).onclick = e => { e.preventDefault(); closeAll(); const targetId = e.target.getAttribute('href').substring(1); document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" }); }; });
+  ['menu-rehearsals-section', 'menu-second-setlist-section', 'menu-setlist-estrella-section', 'menu-concerts-section'].forEach(id => { // Añadido menu-setlist-estrella-section
+    const element = document.getElementById(id);
+    if (element) {
+        element.onclick = e => { 
+            e.preventDefault(); 
+            closeAll(); 
+            const targetId = e.target.getAttribute('href').substring(1); 
+            document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" }); 
+        };
+    } else {
+        console.warn("Elemento de menú no encontrado:", id);
+    }
+  });
   document.getElementById("menu-config").onclick = e => { e.preventDefault(); if (!isAuthenticated) { const pass = prompt("Contraseña para Configuración:"); if (pass === PASSWORD) { isAuthenticated = true; } else { alert("Contraseña incorrecta."); return; } } document.getElementById("config-submenu").style.display = document.getElementById("config-submenu").style.display === "block" ? "none" : "block"; };
   function openConfigScreen(screenId, loadDataFn) { if (!isAuthenticated) { alert("Acceso denegado."); return; } closeAllScreens(); document.getElementById(screenId).style.display = "block"; overlay.classList.add("show"); if (loadDataFn) loadDataFn(); }
-  document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault(); openConfigScreen("setlist-config-screen", () => { document.getElementById("setlist1-name").value = setlistConfig.setlist1.name; document.getElementById("setlist1-url").value = setlistConfig.setlist1.url; document.getElementById("setlist2-name").value = setlistConfig.setlist2.name; document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", ""); });};
+  document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault(); openConfigScreen("setlist-config-screen", () => { 
+    document.getElementById("setlist1-name").value = setlistConfig.setlist1.name; 
+    document.getElementById("setlist1-url").value = setlistConfig.setlist1.url; 
+    document.getElementById("setlist2-name").value = setlistConfig.setlist2.name; 
+    document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", ""); 
+    document.getElementById("setlist3-name").value = setlistConfig.setlist3.name; // NUEVO
+    document.getElementById("setlist3-url").value = setlistConfig.setlist3.url; // NUEVO
+  });};
   document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; overlay.classList.remove("show"); document.getElementById("setlist-message").textContent = ""; };
+  // MODIFICADO: Guardar config de setlists
+  document.getElementById("guardar-setlist-config").onclick = async () => {
+    const msg = document.getElementById("setlist-message"); msg.textContent = "";
+    setlistConfig.setlist1.name = document.getElementById("setlist1-name").value.trim();
+    setlistConfig.setlist1.url = document.getElementById("setlist1-url").value.trim();
+    setlistConfig.setlist2.name = document.getElementById("setlist2-name").value.trim();
+    const rawSetlist2Url = document.getElementById("setlist2-url").value.trim();
+    setlistConfig.setlist2.url = rawSetlist2Url.startsWith("http") ? rawSetlist2Url : `https://www.bandhelper.com/feed/set_list/${rawSetlist2Url}`;
+    setlistConfig.setlist3.name = document.getElementById("setlist3-name").value.trim(); // NUEVO
+    setlistConfig.setlist3.url = document.getElementById("setlist3-url").value.trim(); // NUEVO
+
+    if (!setlistConfig.setlist1.name || !setlistConfig.setlist1.url || !setlistConfig.setlist2.name || !rawSetlist2Url || !setlistConfig.setlist3.name /* No requerir URL para setlist3 opcionalmente */) {
+        msg.className = "message error-message"; msg.textContent = "Completa todos los campos obligatorios (nombre y URL para setlist 1 y 2)."; return;
+    }
+    try {
+        await saveSetlistConfig();
+        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarTercerSetlist()]); // Añadir tercer setlist
+        msg.className = "message success-message"; msg.textContent = "Configuración guardada.";
+        setTimeout(() => { document.getElementById("setlist-config-screen").style.display = "none"; overlay.classList.remove("show"); msg.textContent = "";}, 1500);
+    } catch (e) { msg.className = "message error-message"; msg.textContent = "Error al guardar: " + e.message; }
+  };
   document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); openConfigScreen("user-mgmt-screen"); };
   document.getElementById("menu-rehearsal").onclick = e => { e.preventDefault(); openConfigScreen("rehearsal-screen"); };
   document.getElementById("menu-stats").onclick = e => { e.preventDefault(); openConfigScreen("stats-screen", () => { updateMonthFilter(); renderStats(); }); };
@@ -765,8 +759,7 @@
   document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; overlay.classList.remove("show"); resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = "";};
   document.getElementById("close-stats").onclick = () => { document.getElementById("stats-screen").style.display = "none"; overlay.classList.remove("show"); };
 
-  /* ---------- 12. Carga inicial de datos y DOMContentLoaded (igual a v7.2) ---------- */
-  // ... Pega aquí la función loadInitialData y el listener DOMContentLoaded de la v7.2 ...
+  /* ---------- 12. Carga inicial de datos y DOMContentLoaded ---------- */
   async function loadInitialData() {
     console.log("loadInitialData: Iniciando...");
     if (!db) { console.warn("loadInitialData: DB no inicializado. Abortando carga de datos de Firestore."); return; }
@@ -774,12 +767,17 @@
     try {
       if(statusDiv) { statusDiv.textContent = "Cargando datos..."; statusDiv.className = "retrying"; statusDiv.style.display = "block"; }
       await Promise.all([ loadSetlistConfig(), loadUsers(), loadRehearsals(), loadConcertNotes() ]);
-      console.log("loadInitialData: Cargas de Firestore completadas (o intentadas).");
-      let songs1 = [], songs2 = [];
-      try { songs1 = await cargarPrimerSetlist(); } catch (e) { console.error("Fallo al cargar primer setlist desde URL:", e); }
-      try { songs2 = await cargarSegundoSetlist(); } catch (e) { console.error("Fallo al cargar segundo setlist desde URL:", e); }
-      document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf"); else alert("No hay canciones en el setlist de ensayos."); };
-      document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf"); else alert("No hay canciones en el setlist de concierto."); };
+      console.log("loadInitialData: Cargas de Firestore completadas.");
+      
+      let songs1 = [], songs2 = [], songs3 = []; // Añadir songs3
+      try { songs1 = await cargarPrimerSetlist(); } catch (e) { console.error("Fallo al cargar primer setlist:", e); }
+      try { songs2 = await cargarSegundoSetlist(); } catch (e) { console.error("Fallo al cargar segundo setlist:", e); }
+      try { songs3 = await cargarTercerSetlist(); } catch (e) { console.error("Fallo al cargar tercer setlist:", e); } // NUEVO
+
+      document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf"); else alert("No hay canciones en Setlist Ensayos."); };
+      document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_proximo_concierto.pdf"); else alert("No hay canciones en Setlist Próximo Concierto."); };
+      document.getElementById("download-btn-3").onclick = () => { if (songs3.length > 0) genPDF(songs3, setlistConfig.setlist3.name, "setlist_concierto_estrella.pdf"); else alert("No hay canciones en Setlist Concierto Estrella."); }; // NUEVO
+      
       if(statusDiv) statusDiv.style.display = "none";
     } catch (e) {
       console.error("loadInitialData: Error crítico durante la carga de datos:", e);
@@ -792,7 +790,7 @@
     updateConnectionStatus();
     if (persistencePromise) {
         persistencePromise.finally(() => {
-            console.log("DOMContentLoaded: Promesa de persistencia finalizada. Procediendo a cargar datos iniciales.");
+            console.log("DOMContentLoaded: Promesa de persistencia finalizada. Cargando datos iniciales.");
             loadInitialData();
         });
     } else if (db) {
