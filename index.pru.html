@@ -890,34 +890,34 @@ function processBandHelperTable() {
   }
   table.dataset.processed = "true";
 
-  let headerRow = table.querySelector("thead tr"); // Intenta encontrar un thead primero
+  let headerRow = table.querySelector("thead tr"); 
   let isHeaderInTbody = false;
 
-  if (!headerRow) { // Si no hay thead, busca en tbody
-      console.log("processBandHelperTable: No se encontró 'thead tr'. Buscando cabecera en 'tbody tr th' o primera fila de 'tbody'.");
-      const tbody = table.querySelector("tbody");
-      if (tbody && tbody.rows.length > 0) {
-          const firstTbodyRow = tbody.rows[0];
-          // Comprueba si la primera fila del tbody contiene celdas <th>
-          if (firstTbodyRow.querySelector("th")) {
-              headerRow = firstTbodyRow;
-              isHeaderInTbody = true; // Marcar que la cabecera está en tbody
-              console.log("processBandHelperTable: Usando la primera fila de 'tbody' como cabecera (contiene 'th').");
-          } else {
-              // Si la tabla de BandHelper NO tiene <thead> Y la primera fila del <tbody> NO tiene <th>,
-              // entonces no hay una cabecera formal para añadir el título "Detalles".
-              // El HTML que pasaste indica que la tabla de BandHelper solo tiene <tbody> con <td>.
-              console.warn("processBandHelperTable: La tabla de BandHelper no parece tener una fila de cabecera formal con <th>. La columna 'Detalles' no tendrá título.");
+  if (!headerRow) { 
+      console.log("processBandHelperTable: No se encontró 'thead tr'. Buscando alternativas para la cabecera...");
+      if (table.rows.length > 0 && table.rows[0].cells.length > 0 && table.rows[0].cells[0].tagName.toLowerCase() === 'th') {
+          headerRow = table.rows[0];
+          console.log("processBandHelperTable: Usando la primera fila de la tabla (table.rows[0]) como cabecera porque contiene TH.");
+      } else {
+          const tbody = table.querySelector("tbody");
+          if (tbody && tbody.rows.length > 0) {
+              const firstTbodyRow = tbody.rows[0];
+              if (firstTbodyRow.querySelector("th")) {
+                  headerRow = firstTbodyRow;
+                  isHeaderInTbody = true; 
+                  console.log("processBandHelperTable: Usando la primera fila de 'tbody' como cabecera (contiene 'th').");
+              } else {
+                  console.warn("processBandHelperTable: La tabla de BandHelper no parece tener una fila de cabecera formal con <th>. La columna 'Detalles' no tendrá título.");
+              }
           }
       }
   } else {
       console.log("processBandHelperTable: Fila de cabecera encontrada en 'thead tr'.");
   }
   
-  // Añadir la cabecera "Detalles" solo si se encontró una fila de cabecera real (con <th> o en <thead>)
   if (headerRow) {
       if (!headerRow.querySelector(".details-header")) {
-          const th = document.createElement("th"); // Crear un TH para la cabecera
+          const th = document.createElement("th"); 
           th.className = "details-header";
           th.textContent = "Detalles";
           th.style.textAlign = "center";
@@ -928,34 +928,44 @@ function processBandHelperTable() {
       }
   }
 
-  // Procesar filas de datos (siempre dentro de tbody según el HTML de BandHelper)
-  const dataRows = table.querySelectorAll("tbody tr"); 
-  console.log(`processBandHelperTable: ${dataRows.length} filas de datos (tbody tr) encontradas.`);
-  
-  // Si la cabecera estaba en tbody, no la procesamos como fila de datos
-  const startIndexForDataRows = (headerRow && isHeaderInTbody) ? 1 : 0;
+  const dataRowsSource = table.querySelector("tbody") ? table.querySelectorAll("tbody tr") : []; 
+  let dataRows = Array.from(dataRowsSource);
 
-  for (let i = startIndexForDataRows; i < dataRows.length; i++) {
+  console.log(`processBandHelperTable: Inicialmente ${dataRows.length} filas de datos (tbody tr) encontradas.`);
+  
+  if (dataRows.length === 0 && table.rows.length > (headerRow ? 1:0) ) {
+      console.warn("processBandHelperTable: No se encontraron filas en 'tbody' o estaba vacío. Intentando procesar todas las filas de la tabla excepto la posible cabecera.");
+      let allRowsInTable = Array.from(table.rows);
+      if (headerRow && allRowsInTable.length > 0 && allRowsInTable[0] === headerRow) {
+          allRowsInTable.shift(); 
+          console.log("processBandHelperTable: Cabecera eliminada de la lista de filas a procesar.");
+      }
+      dataRows = allRowsInTable; 
+      console.log(`processBandHelperTable: Ahora procesando ${dataRows.length} filas (potencialmente sin tbody).`);
+  }
+
+  for (let i = 0; i < dataRows.length; i++) { // Usar un bucle for tradicional para manejar el caso de isHeaderInTbody
     const row = dataRows[i];
+    if (isHeaderInTbody && i === 0 && row === headerRow) { // Saltar la fila de cabecera si está en tbody
+        console.log("processBandHelperTable: Saltando fila de cabecera que estaba en tbody.");
+        continue;
+    }
+
     const cells = row.cells; 
     
     if (cells.length < 3) { 
-        console.warn(`processBandHelperTable: Fila de datos ${index} con ${cells.length} celdas. Mínimo 3 esperadas (Fecha, Hora, Evento). Saltando.`);
+        console.warn(`processBandHelperTable: Fila de datos ${i} con ${cells.length} celdas. Mínimo 3 esperadas (Fecha, Hora, Evento). Saltando.`);
         continue; 
     }
 
     let detailCell;
-    // Si hay una cabecera y ya se le añadió la columna "Detalles", las filas de datos deben tener el mismo número de celdas.
-    // Si no hay cabecera formal, simplemente añadimos una celda.
     const expectedCellCount = headerRow ? headerRow.cells.length : cells.length + 1;
 
     if (cells.length < expectedCellCount) {
-        detailCell = row.insertCell(-1); // Añadir al final
+        detailCell = row.insertCell(-1); 
     } else { 
-        // Si ya tiene el número esperado de celdas (o más), usamos la última.
-        // Esto podría pasar si la tabla ya fue procesada parcialmente o tiene una estructura inesperada.
         detailCell = cells[expectedCellCount - 1]; 
-        detailCell.innerHTML = ''; // Limpiar por si acaso
+        detailCell.innerHTML = ''; 
     }
 
     detailCell.className = "details-cell"; 
@@ -1014,8 +1024,8 @@ async function openConcertDetailModal(concertId, concertDate, concertTitle, conc
     document.getElementById('concert-detail-id').value = concertId;
     
     document.getElementById('concert-detail-location').value = '';
-    document.getElementById('concert-detail-soundsetup').value = ''; // Nuevo campo
-    document.getElementById('concert-detail-instrumentssetup').value = ''; // Nuevo campo
+    document.getElementById('concert-detail-soundsetup').value = ''; 
+    document.getElementById('concert-detail-instrumentssetup').value = ''; 
     document.getElementById('concert-detail-soundcheck').value = '';
     document.getElementById('concert-detail-showtime').value = '';
     document.getElementById('concert-detail-notes').value = '';
@@ -1023,11 +1033,11 @@ async function openConcertDetailModal(concertId, concertDate, concertTitle, conc
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando músicos...';
 
-    const excludedMusicians = ["Ximo", "Gines"]; // Nombres a excluir
+    const excludedMusicians = ["Ximo", "Gines Torres"]; // Excluir a "Gines Torres" también
 
     if (users && users.length > 0) {
         musiciansListDiv.innerHTML = ''; 
-        users.filter(user => !excludedMusicians.includes(user.name)) // Filtrar aquí
+        users.filter(user => !excludedMusicians.includes(user.name)) 
              .forEach(user => {
                 const userDiv = document.createElement('div');
                 const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`;
@@ -1051,8 +1061,8 @@ async function openConcertDetailModal(concertId, concertDate, concertTitle, conc
         if (details && Object.keys(details).length > 0) { 
             console.log("Detalles cargados desde Firestore:", details);
             document.getElementById('concert-detail-location').value = details.locationDetails || '';
-            document.getElementById('concert-detail-soundsetup').value = details.soundSetupTime || ''; // Cargar nuevo campo
-            document.getElementById('concert-detail-instrumentssetup').value = details.instrumentsSetupTime || ''; // Cargar nuevo campo
+            document.getElementById('concert-detail-soundsetup').value = details.soundSetupTime || ''; 
+            document.getElementById('concert-detail-instrumentssetup').value = details.instrumentsSetupTime || ''; 
             document.getElementById('concert-detail-soundcheck').value = details.soundcheckTime || '';
             document.getElementById('concert-detail-showtime').value = details.showTime || '';
             document.getElementById('concert-detail-notes').value = details.generalNotes || '';
@@ -1093,8 +1103,8 @@ document.getElementById('save-concert-details').onclick = async () => {
 
     const concertData = {
         locationDetails: document.getElementById('concert-detail-location').value.trim(),
-        soundSetupTime: document.getElementById('concert-detail-soundsetup').value, // Guardar nuevo campo
-        instrumentsSetupTime: document.getElementById('concert-detail-instrumentssetup').value, // Guardar nuevo campo
+        soundSetupTime: document.getElementById('concert-detail-soundsetup').value, 
+        instrumentsSetupTime: document.getElementById('concert-detail-instrumentssetup').value, 
         soundcheckTime: document.getElementById('concert-detail-soundcheck').value,
         showTime: document.getElementById('concert-detail-showtime').value,
         generalNotes: document.getElementById('concert-detail-notes').value.trim(),
@@ -1283,7 +1293,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_prox_concierto.pdf"); else alert("No hay canciones en Setlist Próx. Concierto."); };
   document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, "setlist_estrella.pdf"); else alert("No hay canciones en Setlist Estrella."); };
   
-  setTimeout(processBandHelperTable, 1500); // Aumentar ligeramente el tiempo de espera para BandHelper
+  setTimeout(processBandHelperTable, 1500); 
 });
   </script>
 </body>
