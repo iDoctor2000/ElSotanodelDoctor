@@ -24,7 +24,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Estilos CSS (iguales a la v7.7, por brevedad no se repiten aquí) */
+    /* Estilos CSS (iguales a la v7.8, por brevedad no se repiten aquí) */
     /* ... Pega aquí los estilos de la versión anterior ... */
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
@@ -174,13 +174,11 @@
 <body>
   <div id="persistence-warning">Advertencia: La persistencia de datos (modo offline) podría no funcionar. Revisa la configuración de tu navegador (cookies/almacenamiento, extensiones).</div>
   <div id="connection-status"></div>
-
   <header>
     <div class="logo"><img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main"></div>
     <img src="assets/logointranet.png" alt="Logo Intranet" class="logo-intranet">
     <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
   </header>
-
   <div id="overlay"></div>
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú Principal</h2>
@@ -195,7 +193,6 @@
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
-
   <div id="setlist-config-screen" class="config-screen">
     <button class="close-btn" id="close-setlist-config" title="Cerrar">&times;</button>
     <h2>Configuración de Setlists</h2>
@@ -367,9 +364,10 @@
     else { console.log("Firebase App ya inicializada."); }
     db = firebase.firestore();
     persistencePromise = db.enablePersistence({ synchronizeTabs: true })
-      .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); if(persistenceWarningDiv) persistenceWarningDiv.style.display = "none"; }) // Ocultar si tiene éxito
+      .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); if(persistenceWarningDiv) persistenceWarningDiv.style.display = "none"; })
       .catch(err => {
-        if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.style.display = "block"; // Mostrar solo si no es error de API Key
+        // Solo mostrar advertencia de persistencia si la API key ES correcta
+        if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.style.display = "block";
         if (err.code === 'failed-precondition') {
           console.warn("Persistencia (multi) falló, intentando una sola pestaña...", err.message);
           if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.innerHTML = "Advertencia: Fallo de persistencia multi-pestaña. Intentando modo simple.";
@@ -438,44 +436,39 @@
   let setlistConfig = {
     setlist1: { name: "Setlist Próximo Ensayo", url: "" },
     setlist2: { name: "Setlist Próximo Concierto", url: "" },
-    setlist3: { name: "Setlist Concierto Estrella", url: "" } // NUEVO
+    setlist3: { name: "Setlist Concierto Estrella", url: "" }
   };
-  async function loadSetlistConfig() { console.log("loadSetlistConfig: Iniciando..."); const data = await withRetry(() => loadDoc("setlists", {config: setlistConfig}), "configuración de setlists"); setlistConfig = data.config || setlistConfig; updateTitles(); console.log("loadSetlistConfig: Finalizado. Config:", setlistConfig); }
-  function updateTitles() {
-    document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
-    document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2.name;
-    document.getElementById("setlist3-title").textContent = setlistConfig.setlist3.name; // NUEVO
-    document.getElementById("setlist3-title-display").textContent = setlistConfig.setlist3.name; // Para el subtítulo
+  async function loadSetlistConfig() {
+    console.log("loadSetlistConfig: Iniciando...");
+    const fallbackConfig = { // Asegurar que el fallback tenga la estructura completa
+        setlist1: { name: "Setlist Ensayos (Default)", url: "" },
+        setlist2: { name: "Setlist Próximo Concierto (Default)", url: "" },
+        setlist3: { name: "Setlist Concierto Estrella (Default)", url: "" }
+    };
+    const data = await withRetry(() => loadDoc("setlists", {config: fallbackConfig }), "configuración de setlists");
+    // Fusionar configuración cargada con la por defecto para asegurar que todas las claves existan
+    setlistConfig = {
+        setlist1: { ...(fallbackConfig.setlist1), ...(data.config?.setlist1 || {}) },
+        setlist2: { ...(fallbackConfig.setlist2), ...(data.config?.setlist2 || {}) },
+        setlist3: { ...(fallbackConfig.setlist3), ...(data.config?.setlist3 || {}) }
+    };
+    updateTitles();
+    console.log("loadSetlistConfig: Finalizado. Config:", setlistConfig);
   }
-  async function saveSetlistConfig() { updateTitles(); return await withRetry(() => saveDoc("setlists", { config: setlistConfig }), "guardar config setlists");}
-  async function cargarPrimerSetlist() { /* ... (igual a v7.3) ... */ }
-  async function cargarSegundoSetlist() { /* ... (igual a v7.3) ... */ }
-  async function cargarTercerSetlist() { // NUEVA FUNCIÓN
-    console.log("cargarTercerSetlist desde:", setlistConfig.setlist3.url);
-    const tbody = document.getElementById("setlist3-body");
-    const totalTimeEl = document.getElementById("total-time-3");
-    tbody.innerHTML = ""; totalTimeEl.textContent = "";
-    if(!setlistConfig.setlist3.url) { console.warn("URL para Setlist Concierto Estrella no definida."); tbody.innerHTML = '<tr><td colspan="5">URL no configurada.</td></tr>'; return [];}
+  function updateTitles() {
     try {
-      const response = await fetch(setlistConfig.setlist3.url);
-      if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : [];
-      let total = 0;
-      songs.forEach((s, i) => {
-        const secs = parseDuration(s.duration || "0");
-        total += secs;
-        tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`);
-      });
-      totalTimeEl.textContent = "Tiempo total: " + toHHMM(total);
-      console.log("Setlist Concierto Estrella cargado, canciones:", songs.length);
-      return songs;
+        document.getElementById("setlist1-title").textContent = setlistConfig.setlist1?.name || "Setlist Ensayos";
+        document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2?.name || "Setlist Próximo Concierto";
+        document.getElementById("setlist3-title").textContent = setlistConfig.setlist3?.name || "Setlist Concierto Estrella";
+        document.getElementById("setlist3-title-display").textContent = setlistConfig.setlist3?.name || "";
     } catch (e) {
-      console.error("Error cargando Setlist Concierto Estrella:", e);
-      tbody.innerHTML = '<tr><td colspan="5">Error al cargar. Revisa la URL y la conexión.</td></tr>';
-      return [];
+        console.error("Error en updateTitles:", e, "setlistConfig era:", setlistConfig);
     }
   }
+  async function saveSetlistConfig() { /* ... (Pega aquí tu función saveSetlistConfig de v7.8) ... */ }
+  async function cargarPrimerSetlist() { /* ... (Pega aquí tu función cargarPrimerSetlist de v7.8) ... */ }
+  async function cargarSegundoSetlist() { /* ... (Pega aquí tu función cargarSegundoSetlist de v7.8) ... */ }
+  async function cargarTercerSetlist() { /* ... (Pega aquí tu función cargarTercerSetlist de v7.8) ... */ }
   
   let users = []; let editingUserIndex = null;
   function renderUsers() { /* ... (Pega aquí tu función renderUsers completa de v7.3) ... */ }
@@ -485,11 +478,11 @@
   function resetUserForm() { /* ... (Pega aquí tu función resetUserForm de v7.3) ... */ }
 
   let rehearsals = []; let editingRehearsalIndex = null;
-  function renderRehearsals() { /* ... (Pega aquí tu función renderRehearsals completa de v7.3) ... */ }
-  function addRehearsalTableListeners() { /* ... (Pega aquí tu función addRehearsalTableListeners completa de v7.3) ... */ }
+  function renderRehearsals() { /* ... (Pega aquí tu función renderRehearsals completa de v7.5) ... */ }
+  function addRehearsalTableListeners() { /* ... (Pega aquí tu función addRehearsalTableListeners completa de v7.5) ... */ }
   async function loadRehearsals() { console.log("loadRehearsals: Iniciando..."); const data = await withRetry(() => loadDoc("rehearsals", {rehearsals:[]}), "carga de ensayos"); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); console.log("loadRehearsals: Finalizado. Ensayos:", rehearsals.length); }
-  async function saveRehearsals() { /* ... (Pega aquí tu función saveRehearsals de v7.3) ... */ }
-  function resetRehearsalForm() { /* ... (Pega aquí tu función resetRehearsalForm de v7.3) ... */ }
+  async function saveRehearsals() { /* ... (Pega aquí tu función saveRehearsals de v7.5) ... */ }
+  function resetRehearsalForm() { /* ... (Pega aquí tu función resetRehearsalForm de v7.5) ... */ }
   
   function updateMonthFilter() { /* ... */ } function renderStats() { /* ... */ }
   async function genPDF(songs, title, fileName) { /* ... */ }
@@ -651,7 +644,7 @@
 
     if (users.length > 0) {
         users.forEach(user => {
-            constisChecked = (existingNoteData.attendees || []).includes(user.name);
+            const isChecked = (existingNoteData.attendees || []).includes(user.name); // CORREGIDO: isChecked declarado aquí
             const userHtml = `
                 <div>
                     <input type="checkbox" id="user-att-${user.name.replace(/\s+/g, '-')}" name="concertAttendees" value="${user.name}" ${isChecked ? 'checked' : ''}>
@@ -759,7 +752,8 @@
   document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; overlay.classList.remove("show"); resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = "";};
   document.getElementById("close-stats").onclick = () => { document.getElementById("stats-screen").style.display = "none"; overlay.classList.remove("show"); };
 
-  /* ---------- 12. Carga inicial de datos y DOMContentLoaded ---------- */
+  /* ---------- 12. Carga inicial de datos y DOMContentLoaded (igual a v7.2) ---------- */
+  // ... Pega aquí la función loadInitialData y el listener DOMContentLoaded de la v7.2 ...
   async function loadInitialData() {
     console.log("loadInitialData: Iniciando...");
     if (!db) { console.warn("loadInitialData: DB no inicializado. Abortando carga de datos de Firestore."); return; }
