@@ -63,14 +63,14 @@
     }
     /* Ajuste para inputs de hora y texto en modal de notas */
     #concert-note-edit-modal input[type="time"],
-    #concert-note-edit-modal input[type="text"] { /* Si tuvieras inputs de texto específicos */
-        margin-left: 0; /* Anula el centrado para estos */
-        margin-right: 0;
-        max-width: 250px; /* O el ancho que prefieras */
+    #concert-note-edit-modal input[type="text"] { 
+        margin-left: 0; 
+        margin-right: auto; /* Cambiado para alinear a la izquierda */
+        max-width: 250px; 
     }
      #concert-note-edit-modal textarea {
         margin-left: 0;
-        margin-right: 0;
+        margin-right: auto; /* Cambiado para alinear a la izquierda */
     }
 
     .config-screen select[multiple], .modal-screen select[multiple] { height: 150px; }
@@ -93,15 +93,20 @@
     #concert-note-edit-modal label {text-align: left; max-width: 450px; margin-left: 0; margin-right: auto;} /* Alinear labels a la izquierda */
     
     /* Estilos para la lista de asistencia en el modal */
-    #concert-attendance-list { max-height: 150px; overflow-y: auto; border: 1px solid #333; padding: 10px; border-radius: 5px; margin-top: 10px; max-width: 450px; margin-left:0; margin-right:auto;}
+    #concert-attendance-list { 
+        /* max-height: 150px; */ /* Eliminado para que se expanda */
+        /* overflow-y: auto; */  /* Eliminado para que se expanda */
+        border: 1px solid #333; padding: 10px; border-radius: 5px; margin-top: 10px; 
+        max-width: 450px; margin-left:0; margin-right:auto;
+    }
     #concert-attendance-list div { display: flex; align-items: center; margin-bottom: 8px; }
-    #concert-attendance-list input[type="checkbox"] { width: auto; margin-right: 10px; -webkit-appearance: checkbox; appearance: checkbox; } /* Resetear apariencia para que se vea el check */
+    #concert-attendance-list input[type="checkbox"] { width: auto; margin-right: 10px; -webkit-appearance: checkbox; appearance: checkbox; } 
     #concert-attendance-list label { margin-bottom: 0; color: #fff; font-weight: normal;}
 
 
     /* Secciones */
     main section{max-width:1200px;margin:20px auto;padding:25px; background:#0a0a0a; border: 1px solid #1c1c1c; border-radius:10px;box-shadow:0 0 20px rgba(0,204,255,.1);}
-    #setlists h2,#rehearsals h2,#second-setlist h2, #setlist-estrella h2, #calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:20px; font-size: 1.8em;} /* Añadido #setlist-estrella h2 */
+    #setlists h2,#rehearsals h2,#second-setlist h2, #setlist-estrella h2, #calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:20px; font-size: 1.8em;} 
     /* Ajuste para tablas */
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; }
@@ -109,11 +114,11 @@
     th,td{padding:12px 15px;border:1px solid #282828;text-align:left;white-space:normal; word-wrap:break-word;}
     tr:nth-child(even){background:#101010}
     tr:hover {background-color: #181818;}
-    #second-setlist .table-wrapper table, #setlist-estrella .table-wrapper table { min-width: 600px; } /* Añadido #setlist-estrella */
+    #second-setlist .table-wrapper table, #setlist-estrella .table-wrapper table { min-width: 600px; } 
     .download-btn{display:block;margin:25px auto 0;padding:12px 25px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer; font-weight: bold;}
     .download-btn:hover{background:#09b; box-shadow: 0 0 8px #0cf;}
-    #total-time,#total-time-2, #total-time-3 {color:#0cf;margin-top:15px;text-align:center; font-size: 1.1em; font-weight: bold;} /* Añadido #total-time-3 */
-    #second-setlist-name, #setlist3-title-display {text-align:center;color:#aaa;margin-top:5px;font-style:italic; font-size: 1.1em;} /* Añadido #setlist3-title-display */
+    #total-time,#total-time-2, #total-time-3 {color:#0cf;margin-top:15px;text-align:center; font-size: 1.1em; font-weight: bold;} 
+    #second-setlist-name, #setlist3-title-display {text-align:center;color:#aaa;margin-top:5px;font-style:italic; font-size: 1.1em;} 
     footer{background:#050505;color:#888;text-align:center;padding:15px;border-top:1px solid #0cf; margin-top: 30px;}
     /* Botones de acción, calendario, detalles */
     .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; vertical-align: middle; }
@@ -137,7 +142,7 @@
     .attending-yes { color: #0cf; font-weight: bold;} .attending-no { color: #f00; font-weight: bold;}
     .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; margin-top: 3px;}
     /* Indicador de conexión y mensajes */
-    #connection-status { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.85); color: #fff; padding: 8px 12px; border-radius: 5px; font-size: 0.9em; z-index: 10001; display: none; border: 1px solid #555; } /* Aumentado z-index */
+    #connection-status { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.85); color: #fff; padding: 8px 12px; border-radius: 5px; font-size: 0.9em; z-index: 10001; display: none; border: 1px solid #555; } 
     #connection-status.offline { background: #c00; border-color: #f00;}
     #connection-status.retrying { background: #e68900; border-color: #ff9800;}
     #persistence-warning { 
@@ -153,13 +158,13 @@
     .stats-filter label { color: #0cf; }
     .stats-filter select { padding: 8px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 220px; }
     /* Columnas específicas en tablas */
-    #calendario table th:last-child, #calendario table td:last-child { text-align: center; } /* Para centrar la columna de detalles */
+    #calendario table th:last-child, #calendario table td:last-child { text-align: center; } 
 
     /* Responsive */
     @media(max-width:768px){
       header{padding:10px 15px;} .logo img.logo-main{width:130px} .logo-intranet{height:40px} .hamburger div{width:20px}
       main section {padding: 15px;}
-      #setlists h2,#rehearsals h2,#second-setlist h2, #setlist-estrella h2, #calendario h2,#usuarios h2{font-size: 1.5em;} /* Añadido #setlist-estrella h2 */
+      #setlists h2,#rehearsals h2,#second-setlist h2, #setlist-estrella h2, #calendario h2,#usuarios h2{font-size: 1.5em;} 
       .config-screen, .modal-screen {padding:60px 15px 15px}
       .config-screen input, .config-screen select, .config-screen textarea,
       .modal-screen input, .modal-screen select, .modal-screen textarea {padding:10px; max-width: none;}
@@ -372,8 +377,7 @@
     persistencePromise = db.enablePersistence({ synchronizeTabs: true })
       .then(() => { console.log("Persistencia Firestore (multi-pestaña) HABILITADA."); if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") persistenceWarningDiv.style.display = "none"; })
       .catch(err => {
-        // Solo mostrar advertencia de persistencia si la API key ES correcta y el error NO es por ya estar habilitada
-        if (err.code !== 'failed-precondition' || !err.message.includes("already active")) {
+        if (err.code !== 'failed-precondition' || !err.message.includes("already active")) { // No mostrar si el error es que ya está activa
             if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY") {
                 persistenceWarningDiv.style.display = "block";
                 persistenceWarningDiv.innerHTML = "Advertencia: Problema con persistencia de datos (offline): " + err.message.substring(0,100) + "... Revisa config. del navegador.";
@@ -390,8 +394,9 @@
       .catch(err => {
         console.error("Error final config. persistencia:", err);
         if(persistenceWarningDiv && firebaseConfig.apiKey !== "TU_API_KEY" && (err.code !== 'failed-precondition' || !err.message.includes("already active")) ) {
-            persistenceWarningDiv.style.display = "block";
-            persistenceWarningDiv.innerHTML = "Advertencia: La persistencia de datos (modo offline) NO está disponible: " + err.message.substring(0,100) + "...";
+            // No mostrar el cartel rojo por problemas de persistencia si la API key es correcta.
+            // El log en consola es suficiente.
+            console.warn("Advertencia: La persistencia de datos (modo offline) podría NO estar disponible: " + err.message);
         }
       });
   } catch (e) {
@@ -461,14 +466,15 @@
         console.error("Error en withRetry para loadSetlistConfig, usando fallback completo:", e);
     }
     
-    const loadedConfig = dataFromFirestore.config || {};
+    const loadedConfig = dataFromFirestore.config || {}; // Asegurar que loadedConfig es un objeto
+    // Fusionar para asegurar que todas las claves existan, dando prioridad a loadedConfig
     setlistConfig = {
         setlist1: { ...(fallbackConfig.setlist1), ...(loadedConfig.setlist1 || {}) },
         setlist2: { ...(fallbackConfig.setlist2), ...(loadedConfig.setlist2 || {}) },
         setlist3: { ...(fallbackConfig.setlist3), ...(loadedConfig.setlist3 || {}) }
     };
     updateTitles();
-    console.log("loadSetlistConfig: Finalizado. Config:", JSON.parse(JSON.stringify(setlistConfig))); // Loguear copia para evitar problemas de referencia
+    console.log("loadSetlistConfig: Finalizado. Config:", JSON.parse(JSON.stringify(setlistConfig)));
   }
   function updateTitles() {
     try {
