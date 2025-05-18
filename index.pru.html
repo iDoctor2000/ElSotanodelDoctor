@@ -449,7 +449,9 @@ function generateICS(title, date, startTime, location, description = "", duratio
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
-const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/]/g, '_').replace(/\s+/g, '_');
+// Sanitize Firebase keys more aggressively
+const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
+
 
 /* ---------- 1.5. Manejo de conexión ---------- */
 const connectionStatus = document.getElementById("connection-status");
@@ -944,9 +946,9 @@ function processBandHelperTable() {
       console.log(`processBandHelperTable: Ahora procesando ${dataRows.length} filas (potencialmente sin tbody).`);
   }
 
-  for (let i = 0; i < dataRows.length; i++) { // Usar un bucle for tradicional para manejar el caso de isHeaderInTbody
+  for (let i = 0; i < dataRows.length; i++) { 
     const row = dataRows[i];
-    if (isHeaderInTbody && i === 0 && row === headerRow) { // Saltar la fila de cabecera si está en tbody
+    if (isHeaderInTbody && i === 0 && row === headerRow) { 
         console.log("processBandHelperTable: Saltando fila de cabecera que estaba en tbody.");
         continue;
     }
@@ -1033,7 +1035,7 @@ async function openConcertDetailModal(concertId, concertDate, concertTitle, conc
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando músicos...';
 
-    const excludedMusicians = ["Ximo", "Gines Torres"]; // Excluir a "Gines Torres" también
+    const excludedMusicians = ["Ximo", "Ginés Torres"]; // Excluir a "Ginés Torres" (con acento)
 
     if (users && users.length > 0) {
         musiciansListDiv.innerHTML = ''; 
@@ -1112,14 +1114,14 @@ document.getElementById('save-concert-details').onclick = async () => {
         lastUpdated: new Date().toISOString() 
     };
 
-    console.log("Guardando detalles para concertId:", concertId, "Datos:", concertData);
+    console.log("Intentando guardar en Firestore. Documento ID:", concertId, "Datos:", concertData);
 
     try {
         await saveDoc('concert_details', concertId, concertData, true); 
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente.";
     } catch (error) {
-        console.error("Error al guardar detalles del concierto:", error);
+        console.error("Error al guardar detalles del concierto en Firestore:", error);
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = `Error al guardar: ${error.message}. Verifica los permisos de Firestore.`;
     }
