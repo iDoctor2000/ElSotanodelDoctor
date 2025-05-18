@@ -24,7 +24,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Estilos CSS (iguales a la v6, por brevedad no se repiten aquí) */
+    /* Estilos CSS (iguales a la v6/v7, por brevedad no se repiten aquí) */
     /* ... Pega aquí los estilos de la versión anterior ... */
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
@@ -372,30 +372,93 @@
   async function saveDoc(docId, data) { if (!db) { console.error("DB no inicializado. No se puede guardar:", docId); return false; } console.log(`Intentando guardar doc: ${docId}`); try { await db.collection("intranet").doc(docId).set(data); console.log(`Doc ${docId} guardado OK.`); return true; } catch (e) { console.error(`Error FATAL al guardar doc ${docId}:`, e.message, e); throw e; } }
 
   /* ---------- SECCIONES (Setlists, Usuarios, Ensayos, etc. con logs en carga - igual a v6) ---------- */
-  // ... Pega aquí las funciones loadSetlistConfig, cargarPrimerSetlist, loadUsers, loadRehearsals, etc. de la v6 ...
-  // (Estas funciones ya tienen logs detallados)
   let setlistConfig = { setlist1: { name: "Setlist Ensayos", url: "" }, setlist2: { name: "Setlist Concierto", url: "" }};
   async function loadSetlistConfig() { console.log("loadSetlistConfig: Iniciando..."); const data = await withRetry(() => loadDoc("setlists", {config: setlistConfig}), "configuración de setlists"); setlistConfig = data.config || setlistConfig; updateTitles(); console.log("loadSetlistConfig: Finalizado. Config:", setlistConfig); }
   function updateTitles() { document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name; document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2.name; }
   async function saveSetlistConfig() { updateTitles(); return await withRetry(() => saveDoc("setlists", { config: setlistConfig }), "guardar config setlists");}
-  async function cargarPrimerSetlist() { console.log("cargarPrimerSetlist desde:", setlistConfig.setlist1.url); if(!setlistConfig.setlist1.url) { console.warn("URL para primer setlist no definida."); return [];} try { const response = await fetch(setlistConfig.setlist1.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const songs = (await response.json()).filter(i => i.type === "song"); const tbody = document.getElementById("setlist-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.key || ""}</td><td>${s.tempo || ""}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time").textContent = "Tiempo total: " + toHHMM(total); console.log("Primer setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando primer setlist:", e); document.getElementById("setlist-body").innerHTML = '<tr><td colspan="5">Error al cargar.</td></tr>'; return []; } }
-  async function cargarSegundoSetlist() { console.log("cargarSegundoSetlist desde:", setlistConfig.setlist2.url); if(!setlistConfig.setlist2.url) { console.warn("URL para segundo setlist no definida."); return [];} try { const response = await fetch(setlistConfig.setlist2.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : []; const tbody = document.getElementById("second-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration || "0"); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time-2").textContent = "Tiempo total: " + toHHMM(total); console.log("Segundo setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando segundo setlist:", e); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">Error al cargar.</td></tr>'; document.getElementById("total-time-2").textContent = ""; return []; } }
+  async function cargarPrimerSetlist() { console.log("cargarPrimerSetlist desde:", setlistConfig.setlist1.url); if(!setlistConfig.setlist1.url) { console.warn("URL para primer setlist no definida."); document.getElementById("setlist-body").innerHTML = '<tr><td colspan="5">URL no configurada.</td></tr>'; return [];} try { const response = await fetch(setlistConfig.setlist1.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const songs = (await response.json()).filter(i => i.type === "song"); const tbody = document.getElementById("setlist-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.key || ""}</td><td>${s.tempo || ""}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time").textContent = "Tiempo total: " + toHHMM(total); console.log("Primer setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando primer setlist:", e); document.getElementById("setlist-body").innerHTML = '<tr><td colspan="5">Error al cargar. Revisa la URL y la conexión.</td></tr>'; return []; } }
+  async function cargarSegundoSetlist() { console.log("cargarSegundoSetlist desde:", setlistConfig.setlist2.url); if(!setlistConfig.setlist2.url) { console.warn("URL para segundo setlist no definida."); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">URL no configurada.</td></tr>'; return [];} try { const response = await fetch(setlistConfig.setlist2.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : []; const tbody = document.getElementById("second-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration || "0"); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time-2").textContent = "Tiempo total: " + toHHMM(total); console.log("Segundo setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando segundo setlist:", e); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">Error al cargar. Revisa la URL y la conexión.</td></tr>'; document.getElementById("total-time-2").textContent = ""; return []; } }
+  
   let users = []; let editingUserIndex = null;
-  function renderUsers() { const tbodyCfg = document.getElementById("user-table-body"); const tbodyMain = document.getElementById("users-body"); tbodyCfg.innerHTML = ""; tbodyMain.innerHTML = ""; users.forEach((user, index) => { const roles = Array.isArray(user.roles) ? user.roles.join(", ") : "Sin roles"; const rowHTML = `<tr><td>${user.name || "N/A"}</td><td>${user.nickname || "N/A"}</td><td>${roles}</td></tr>`; tbodyMain.insertAdjacentHTML("beforeend", rowHTML); const actionsHTML = `<td><button class="action-btn edit-btn edit-user" data-i="${index}">Editar</button><button class="action-btn delete-btn delete-user" data-i="${index}">Eliminar</button></td>`; tbodyCfg.insertAdjacentHTML("beforeend", `<tr><td>${user.name || "N/A"}</td><td>${user.nickname || "N/A"}</td><td>${roles}</td>${actionsHTML}</tr>`); }); /* ... (añade listeners para editar/eliminar) ... */ }
+  function renderUsers() { /* ... (Pega aquí tu función renderUsers completa de versiones anteriores) ... */ }
   async function loadUsers() { console.log("loadUsers: Iniciando..."); const data = await withRetry(() => loadDoc("users", {users:[]}), "carga de usuarios"); users = data.users || []; renderUsers(); console.log("loadUsers: Finalizado. Usuarios:", users.length); }
   async function saveUsers() { console.log("Guardando usuarios..."); return await withRetry(() => saveDoc("users", {users}), "guardar usuarios");}
-  function resetUserForm() { /* ... */ }
+  function resetUserForm() { /* ... (Pega aquí tu función resetUserForm) ... */ }
+
   let rehearsals = []; let editingRehearsalIndex = null;
-  function renderRehearsals() { /* ... (tu lógica de renderizado de ensayos) ... */ }
+  function renderRehearsals() {
+    console.log("renderRehearsals: Iniciando con", rehearsals.length, "ensayos.");
+    rehearsals.sort((a, b) => new Date(a.date + "T" + a.startTime) - new Date(b.date + "T" + b.startTime)); // Ordenar por fecha y hora
+    const tbodyConfig = document.getElementById("rehearsal-table-body");
+    const tbodyMain = document.getElementById("rehearsal-main-body");
+    tbodyConfig.innerHTML = ""; tbodyMain.innerHTML = "";
+
+    if (rehearsals.length === 0) {
+        const emptyMsg = '<tr><td colspan="6" style="text-align:center;">No hay ensayos programados.</td></tr>';
+        tbodyConfig.innerHTML = emptyMsg;
+        tbodyMain.innerHTML = emptyMsg.replace('colspan="6"', 'colspan="4"'); // Ajustar colspan para la tabla principal
+        return;
+    }
+
+    const userOptions = users.length > 0 ? users.map(user => `<option value="${user.name}">${user.name} (${user.nickname || ''})</option>`).join("") : `<option value="" disabled>No hay usuarios</option>`;
+    const now = new Date();
+    const todayDateStr = now.toISOString().split('T')[0];
+
+    rehearsals.forEach((r, i) => {
+      const formattedDate = formatDateWithDay(r.date);
+      const durationSeconds = calculateDuration(r.startTime, r.endTime);
+      const durationText = toHHMM(durationSeconds);
+      const attendance = Array.isArray(r.attendance) ? r.attendance : [];
+      const attendingYes = attendance.filter(a => a.attending === "Sí").map(a => users.find(u => u.name === a.name)?.nickname || a.name).join(", ") || "Ninguno";
+      const attendingNo = attendance.filter(a => a.attending === "No").map(a => users.find(u => u.name === a.name)?.nickname || a.name).join(", ") || "Ninguno";
+      const summary = `<div class="attendance-summary"><span class="attending-yes">Asisten: ${attendingYes}</span><span class="attending-no">No asisten: ${attendingNo}</span></div>`;
+
+      tbodyConfig.insertAdjacentHTML("beforeend",
+        `<tr>
+          <td>${r.date}</td><td>${r.startTime || "N/A"}</td><td>${r.endTime || "N/A"}</td><td>${r.location || "N/A"}</td>
+          <td>${summary}</td>
+          <td>
+            <button class="action-btn edit-btn edit-rehearsal" data-i="${i}">Editar</button>
+            <button class="action-btn clear-attendance-btn clear-attendance" data-i="${i}">Limpiar Asist.</button>
+            <button class="action-btn delete-btn delete-rehearsal" data-i="${i}">Eliminar</button>
+          </td>
+        </tr>`);
+
+      const rehearsalDateTime = new Date(r.date + "T" + (r.endTime || "00:00")); // Usar endTime para la comparación
+      if (rehearsalDateTime >= now || r.date === todayDateStr) { // Mostrar ensayos de hoy o futuros
+        tbodyMain.insertAdjacentHTML("beforeend",
+          `<tr>
+            <td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td>
+            <td>${r.startTime || "N/A"} - ${r.endTime || "N/A"}</td>
+            <td>${r.location || "N/A"}
+              <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo: ${clean(r.location)}", "${r.date}", "${r.startTime}", "${clean(r.location)}", "Ensayo de El Sótano del Doctor", ${durationSeconds})'>
+                <svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>
+              </button>
+            </td>
+            <td>
+              <div class="attendance-form">
+                <select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select>
+                <select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select>
+                <button class="confirm-attendance" data-i="${i}">Confirmar</button>
+              </div>
+              ${summary}
+            </td>
+          </tr>`);
+      }
+    });
+    // Re-añadir listeners a los botones de las tablas de ensayos
+    addRehearsalTableListeners();
+  }
+  function addRehearsalTableListeners() { /* ... (Pega aquí tu función addRehearsalTableListeners completa) ... */ }
   async function loadRehearsals() { console.log("loadRehearsals: Iniciando..."); const data = await withRetry(() => loadDoc("rehearsals", {rehearsals:[]}), "carga de ensayos"); rehearsals = data.rehearsals || []; renderRehearsals(); console.log("loadRehearsals: Finalizado. Ensayos:", rehearsals.length); }
   async function saveRehearsals() { console.log("Guardando rehearsals..."); return await withRetry(() => saveDoc("rehearsals", {rehearsals}), "guardar ensayos");}
-  function resetRehearsalForm() { /* ... */ }
+  function resetRehearsalForm() { /* ... (Pega aquí tu función resetRehearsalForm) ... */ }
+  
   function updateMonthFilter() { /* ... */ } function renderStats() { /* ... */ }
   async function genPDF(songs, title, fileName) { /* ... */ }
 
   /* ---------- 10. Modificar tabla de BandHelper (igual a v6, con logs) ---------- */
   // ... Pega aquí la función modifyBandHelperTable de la v6 ...
-  // (Esta función ya tiene logs detallados y creación de thead/tr si no existen)
   let parsedBandHelperConcerts = [];
   let bandHelperTableModified = false;
   let bandHelperWidgetLoaded = false; 
@@ -483,6 +546,7 @@
             else row.appendChild(detailsCell);
           }
           if (!detailsCell.querySelector("button.details-btn")) {
+              // CORRECCIÓN AQUÍ: Llamar a openConcertNoteModal en lugar de openConcertDetailViewer
               detailsCell.innerHTML = `<button class="details-btn" title="Ver/Editar Detalles" onclick="openConcertNoteModal('${concertId}')"><svg viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" /></svg></button>`;
           }
         });
@@ -493,18 +557,16 @@
     return true;
   }
 
-
-  /* ---------- 10.5. Notas de Concierto y Modal (MODIFICADO) ---------- */
-  let concertNotes = {}; // Estructura: { concertId1: {soundcheckTime:"", showTimeUser:"", locationUserNotes:"", generalNote:""}, ... }
+  /* ---------- 10.5. Notas de Concierto y Modal (igual a v7) ---------- */
+  // ... Pega aquí loadConcertNotes, saveConcertNotes, openConcertNoteModal y los listeners del modal de la v7 ...
+  let concertNotes = {}; 
   let currentEditingConcertId = null;
-
   async function loadConcertNotes() {
     console.log("loadConcertNotes: Iniciando...");
     const data = await withRetry(() => loadDoc("concert_notes_store", { notes: {} }), "carga de notas de concierto");
-    concertNotes = data.notes || {}; // `notes` ahora es un objeto de objetos
+    concertNotes = data.notes || {}; 
     console.log("loadConcertNotes: Finalizado. Notas:", concertNotes);
   }
-
   async function saveConcertNotes() {
     console.log("Guardando notas de conciertos...", concertNotes);
     try {
@@ -517,12 +579,11 @@
       throw e;
     }
   }
-
   function openConcertNoteModal(concertId) {
     console.log("openConcertNoteModal para concertId:", concertId);
     currentEditingConcertId = concertId;
     const concertDataFromWidget = parsedBandHelperConcerts.find(c => c.id === concertId);
-    const existingNoteData = concertNotes[concertId] || {}; // Obtener el objeto de nota o uno vacío
+    const existingNoteData = concertNotes[concertId] || {}; 
 
     const modal = document.getElementById("concert-note-edit-modal");
     const infoEl = document.getElementById("concert-note-info");
@@ -540,15 +601,13 @@
 
     if (concertDataFromWidget) {
         infoEl.textContent = `Concierto: ${concertDataFromWidget.displayDate} en ${concertDataFromWidget.location} (Hora original: ${concertDataFromWidget.time})`;
-        // Pre-rellenar campos
         locationDetailsTextarea.value = existingNoteData.locationUserNotes || "";
         soundcheckTimeInput.value = existingNoteData.soundcheckTime || "";
-        showTimeInput.value = existingNoteData.showTimeUser || concertDataFromWidget.time || ""; // Usar hora del widget si no hay nota guardada
+        showTimeInput.value = existingNoteData.showTimeUser || concertDataFromWidget.time || ""; 
         generalNoteTextarea.value = existingNoteData.generalNote || "";
     } else {
         console.warn("No se encontró información del concierto (widget) para el ID:", concertId);
         infoEl.textContent = "Información del concierto (widget) no disponible.";
-        // Cargar lo que haya en la nota guardada si existe
         locationDetailsTextarea.value = existingNoteData.locationUserNotes || "";
         soundcheckTimeInput.value = existingNoteData.soundcheckTime || "";
         showTimeInput.value = existingNoteData.showTimeUser || "";
@@ -557,37 +616,31 @@
     modal.style.display = "block";
     overlay.classList.add("show");
   }
-
   document.getElementById("close-concert-note-edit-modal").onclick = () => {
     document.getElementById("concert-note-edit-modal").style.display = "none";
     overlay.classList.remove("show");
     currentEditingConcertId = null;
   };
-
   document.getElementById("save-concert-note-modal-btn").onclick = async () => {
     if (!currentEditingConcertId) { console.error("No hay concertId para guardar la nota."); return; }
-
     const locationDetails = document.getElementById("concert-note-location-details").value.trim();
     const soundcheckTime = document.getElementById("concert-note-soundcheck-time").value;
     const showTimeUser = document.getElementById("concert-note-show-time").value;
     const generalNote = document.getElementById("concert-note-general").value.trim();
     const messageEl = document.getElementById("concert-note-edit-message");
-
     concertNotes[currentEditingConcertId] = {
         locationUserNotes: locationDetails,
         soundcheckTime: soundcheckTime,
         showTimeUser: showTimeUser,
         generalNote: generalNote
     };
-
     messageEl.className = "message retrying"; messageEl.textContent = "Guardando detalles...";
     try {
         await saveConcertNotes();
         messageEl.className = "message success-message"; messageEl.textContent = "¡Detalles guardados!";
         setTimeout(() => { messageEl.textContent = ""; }, 2500);
-    } catch (e) { console.error("Fallo al guardar detalles desde modal:", e); /* Mensaje de error ya se muestra en saveConcertNotes */ }
+    } catch (e) { console.error("Fallo al guardar detalles desde modal:", e); }
   };
-
 
   /* ---------- 11. Menú & pantallas (sin cambios en la lógica interna - igual a v6) ---------- */
   // ... Pega aquí el código de menú y pantallas de la v6 (asegúrate que menu-concert-notes-config NO esté) ...
@@ -610,7 +663,6 @@
   document.getElementById("close-user-mgmt").onclick = () => { document.getElementById("user-mgmt-screen").style.display = "none"; overlay.classList.remove("show"); resetUserForm(); document.getElementById("user-message").textContent = "";};
   document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; overlay.classList.remove("show"); resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = "";};
   document.getElementById("close-stats").onclick = () => { document.getElementById("stats-screen").style.display = "none"; overlay.classList.remove("show"); };
-
 
   /* ---------- 12. Carga inicial de datos y DOMContentLoaded ---------- */
   // ... (igual a v6) ...
