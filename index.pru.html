@@ -41,15 +41,16 @@
     
     .modal-backdrop {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 10px; /* Padding para que no pegue a los bordes en móvil */
+        background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 10px;
     }
     .modal-backdrop.show { display: flex; }
     .modal-content {
         background: #1a1a1a; color: #fff; padding: 20px; border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 100%; max-width: 600px; /* Ancho completo en móvil, max en desktop */
+        box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 100%; max-width: 600px;
         max-height: 90vh; overflow-y: auto; position: relative;
     }
     .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 20px; }
+    .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
     .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
     .modal-content input[type="text"],
     .modal-content input[type="time"],
@@ -68,27 +69,25 @@
     
     #musicians-attendance-list { 
         border: 1px solid #333; padding: 10px; margin-bottom:15px;
-        /* No max-height ni overflow-y aquí para que la lista se expanda */
     }
-    #musicians-attendance-list div { /* Cada músico en su propia línea */
+    #musicians-attendance-list div { 
         margin-bottom: 8px; 
-        display: flex; /* Para alinear checkbox y label */
+        display: flex; 
         align-items: center;
     }
     #musicians-attendance-list label { 
-        color: #fff; margin-left: 8px; font-weight: normal; /* Reset font-weight */
-        cursor: pointer; /* Hacer el label clickeable */
+        color: #fff; margin-left: 8px; font-weight: normal; 
+        cursor: pointer; 
     }
     #musicians-attendance-list input[type="checkbox"] { 
         vertical-align: middle; 
-        width: 18px; /* Tamaño del checkbox */
+        width: 18px; 
         height: 18px;
         cursor: pointer;
     }
 
-
-    .modal-field-group { display: flex; gap: 15px; flex-wrap: wrap; /* Permitir que se envuelvan en pantallas pequeñas */ }
-    .modal-field-group > div { flex: 1; min-width: 200px; /* Ancho mínimo para cada campo de hora */ }
+    .modal-field-group { display: flex; gap: 15px; flex-wrap: wrap; }
+    .modal-field-group > div { flex: 1; min-width: 200px; }
     .modal-field-group input[type="time"] { text-align: left; }
 
     .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
@@ -188,8 +187,8 @@
       th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
       #second-setlist .table-wrapper table, #star-setlist .table-wrapper table { min-width: unset; }
       .stats-table table { font-size: 0.85em; }
-      .modal-content { width: 95%; padding: 15px; } /* Ajuste para móviles */
-      .modal-field-group { flex-direction: column; } /* Campos de hora uno debajo del otro en móvil */
+      .modal-content { width: 95%; padding: 15px; } 
+      .modal-field-group { flex-direction: column; } 
     }
   </style>
 </head>
@@ -212,10 +211,11 @@
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
     <a href="#setlists" id="menu-rehearsals-setlist-section">Setlist Próximo Ensayo</a>
+    <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
-    <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
+    <a href="#usuarios" id="menu-users-section">Usuarios Registrados</a>
     <a href="#" id="menu-stats">Estadísticas</a>
     <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
@@ -230,17 +230,26 @@
     <div class="modal-content">
         <h3>Detalles del Concierto</h3>
         <input type="hidden" id="concert-detail-id">
+        
         <label for="concert-detail-location">Detalles adicionales de la ubicación:</label>
         <textarea id="concert-detail-location"></textarea>
+
         <div class="modal-field-group">
-            <div><label for="concert-detail-soundcheck">Hora de la prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div>
+            <div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div>
+            <div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div>
+        </div>
+        <div class="modal-field-group">
+            <div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div>
             <div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div>
         </div>
+        
         <label for="concert-detail-notes">Notas generales:</label>
         <textarea id="concert-detail-notes"></textarea>
+
         <h4>Músicos Asistentes al Concierto</h4>
         <div id="musicians-attendance-list">
             </div>
+        
         <button id="save-concert-details">Guardar Detalles</button>
         <button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button>
         <p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p>
@@ -310,6 +319,11 @@
       <p id="total-time"></p>
     </section>
 
+    <section id="rehearsals">
+      <h2>Próximos Ensayos</h2>
+      <div class="table-wrapper"><table id="rehearsal-main-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div>
+    </section>
+
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
@@ -324,11 +338,6 @@
       <div class="table-wrapper"><table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
       <button class="download-btn" id="download-btn-star">Descargar PDF</button>
       <p id="total-time-star"></p>
-    </section>
-
-    <section id="rehearsals">
-      <h2>Próximos Ensayos</h2>
-      <div class="table-wrapper"><table id="rehearsal-main-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div>
     </section>
 
     <section id="calendario">
@@ -349,6 +358,17 @@
 
 <script>
 /* ---------- 0. Firebase ---------- */
+// MUY IMPORTANTE: Configura tus REGLAS DE SEGURIDAD en Firestore para permitir la lectura/escritura
+// en la colección 'concert_details'. Sin esto, el modal de detalles del concierto dará error.
+// Para desarrollo, puedes usar:
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//     match /{document=**} { // Esto es muy permisivo
+//       allow read, write: if true;
+//     }
+//   }
+// }
+// ¡Recuerda restringir esto para producción!
 const firebaseConfig = {
   apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw", // Reemplaza con tu API Key real si esta es de prueba
   authDomain: "sotanointranet.firebaseapp.com",
@@ -394,13 +414,13 @@ const calculateDuration = (startTime, endTime) => {
   return duration;
 };
 const formatDateWithDay = dateStr => {
-  const date = new Date(dateStr + 'T00:00:00Z'); // Interpretar como UTC para evitar corrupciones de zona horaria al mostrar
+  const date = new Date(dateStr + 'T00:00:00Z'); 
   const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;
 };
 const getMonthYear = dateStr => {
-  const date = new Date(dateStr + 'T00:00:00Z'); // Interpretar como UTC
+  const date = new Date(dateStr + 'T00:00:00Z'); 
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 };
@@ -479,9 +499,7 @@ async function loadDoc(collection, docId, fallback) {
     return snap.exists ? snap.data() : fallback;
   } catch (e) {
     console.error(`Error al cargar documento ${collection}/${docId}:`, e.message);
-    // No relanzar para que la app no se rompa si Firestore está inaccesible temporalmente
-    // El modal mostrará el error específico.
-    return fallback; // Devolver fallback para que el modal se abra vacío pero funcional
+    return fallback; 
   }
 }
 async function saveDoc(collection, docId, data, merge = false) {
@@ -490,7 +508,7 @@ async function saveDoc(collection, docId, data, merge = false) {
     return true;
   } catch (e) {
     console.error(`Error al guardar documento ${collection}/${docId}:`, e.message);
-    throw e; // Relanzar para que el modal pueda mostrar el error
+    throw e; 
   }
 }
 
@@ -667,7 +685,7 @@ function renderRehearsals() {
         const getAttendeeNicknames = (status) => attendance.filter(a => a.attending === status).map(a => { const user = users.find(u => u.name === a.name); return user ? user.nickname : a.name; }).join(", ") || "Ninguno";
         const summary = `<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
         tbodyConfig.insertAdjacentHTML("beforeend", `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
-        const rehearsalDate = new Date(r.date + 'T00:00:00Z'); // Usar Z para UTC y comparar con today (que es local pero sin hora)
+        const rehearsalDate = new Date(r.date + 'T00:00:00Z'); 
         if (rehearsalDate >= today) {
             tbodyMain.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}<button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td><td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`);
         }
@@ -752,7 +770,7 @@ function updateMonthFilter() {
     const select = document.getElementById("stats-month-filter");
     select.innerHTML = '<option value="all">Todos los meses</option>';
     const now = new Date();
-    const pastRehearsals = rehearsals.filter(r => new Date(r.date + 'T00:00:00Z') < now); // Comparar con UTC
+    const pastRehearsals = rehearsals.filter(r => new Date(r.date + 'T00:00:00Z') < now); 
     const months = new Set(pastRehearsals.map(r => getMonthYear(r.date)));
     Array.from(months).sort((a,b) => new Date(b.split(" ")[1], getMonthIndex(b.split(" ")[0])) - new Date(a.split(" ")[1], getMonthIndex(a.split(" ")[0])) ).forEach(month => {
         select.insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`);
@@ -765,7 +783,7 @@ function getMonthIndex(monthName) {
 function renderStats() {
     const now = new Date();
     const selectedMonth = document.getElementById("stats-month-filter")?.value || "all";
-    let filteredRehearsals = rehearsals.filter(r => new Date(r.date + 'T00:00:00Z') < now); // Comparar con UTC
+    let filteredRehearsals = rehearsals.filter(r => new Date(r.date + 'T00:00:00Z') < now); 
     if (selectedMonth !== "all") {
         filteredRehearsals = filteredRehearsals.filter(r => getMonthYear(r.date) === selectedMonth);
     }
@@ -813,7 +831,7 @@ async function genPDF(songs, title, fileName) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "pt", format: "A4" });
     try {
-        const blob = await (await fetch("assets/logo_negro copia.jpg")).blob(); // Asegúrate que la ruta al logo sea correcta
+        const blob = await (await fetch("assets/logo_negro copia.jpg")).blob(); 
         const base = await new Promise((ok, ko) => {
             const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(blob);
         });
@@ -872,74 +890,72 @@ function processBandHelperTable() {
   }
   table.dataset.processed = "true";
 
-  let headerRow = table.querySelector("thead tr");
-  if (!headerRow) {
-      console.log("processBandHelperTable: No se encontró 'thead tr'. Buscando alternativas para la cabecera...");
-      if (table.rows.length > 0 && table.rows[0].cells.length > 0 && table.rows[0].cells[0].tagName.toLowerCase() === 'th') {
-          headerRow = table.rows[0];
-          console.log("processBandHelperTable: Usando la primera fila de la tabla (table.rows[0]) como cabecera porque contiene TH.");
-      } else {
-          const firstTbodyRow = table.querySelector("tbody tr");
-          if (firstTbodyRow && firstTbodyRow.querySelector("th")) {
+  let headerRow = table.querySelector("thead tr"); // Intenta encontrar un thead primero
+  let isHeaderInTbody = false;
+
+  if (!headerRow) { // Si no hay thead, busca en tbody
+      console.log("processBandHelperTable: No se encontró 'thead tr'. Buscando cabecera en 'tbody tr th' o primera fila de 'tbody'.");
+      const tbody = table.querySelector("tbody");
+      if (tbody && tbody.rows.length > 0) {
+          const firstTbodyRow = tbody.rows[0];
+          // Comprueba si la primera fila del tbody contiene celdas <th>
+          if (firstTbodyRow.querySelector("th")) {
               headerRow = firstTbodyRow;
+              isHeaderInTbody = true; // Marcar que la cabecera está en tbody
               console.log("processBandHelperTable: Usando la primera fila de 'tbody' como cabecera (contiene 'th').");
+          } else {
+              // Si la tabla de BandHelper NO tiene <thead> Y la primera fila del <tbody> NO tiene <th>,
+              // entonces no hay una cabecera formal para añadir el título "Detalles".
+              // El HTML que pasaste indica que la tabla de BandHelper solo tiene <tbody> con <td>.
+              console.warn("processBandHelperTable: La tabla de BandHelper no parece tener una fila de cabecera formal con <th>. La columna 'Detalles' no tendrá título.");
           }
       }
+  } else {
+      console.log("processBandHelperTable: Fila de cabecera encontrada en 'thead tr'.");
   }
-
+  
+  // Añadir la cabecera "Detalles" solo si se encontró una fila de cabecera real (con <th> o en <thead>)
   if (headerRow) {
       if (!headerRow.querySelector(".details-header")) {
-          const th = document.createElement("th");
+          const th = document.createElement("th"); // Crear un TH para la cabecera
           th.className = "details-header";
           th.textContent = "Detalles";
           th.style.textAlign = "center";
           headerRow.appendChild(th);
-          console.log("processBandHelperTable: Cabecera 'Detalles' añadida a la fila de cabecera encontrada:", headerRow);
+          console.log("processBandHelperTable: Cabecera 'Detalles' (<th>) añadida a la fila de cabecera encontrada:", headerRow);
       } else {
           console.log("processBandHelperTable: Cabecera 'Detalles' ya existente en la fila de cabecera encontrada.");
       }
-  } else {
-      console.warn("processBandHelperTable: No se pudo identificar una fila de cabecera clara y con celdas <th>. La columna 'Detalles' podría no tener título o no alinearse correctamente. El HTML de la tabla era:", table.innerHTML);
   }
 
-  const dataRowsSource = table.querySelector("tbody") ? table.querySelectorAll("tbody tr") : []; 
-  let dataRows = Array.from(dataRowsSource);
-
-  console.log(`processBandHelperTable: Inicialmente ${dataRows.length} filas de datos (tbody tr) encontradas.`);
+  // Procesar filas de datos (siempre dentro de tbody según el HTML de BandHelper)
+  const dataRows = table.querySelectorAll("tbody tr"); 
+  console.log(`processBandHelperTable: ${dataRows.length} filas de datos (tbody tr) encontradas.`);
   
-  if (dataRows.length === 0 && table.rows.length > (headerRow ? 1:0) ) {
-      console.warn("processBandHelperTable: No se encontraron filas en 'tbody' o estaba vacío. Intentando procesar todas las filas de la tabla excepto la posible cabecera.");
-      let allRowsInTable = Array.from(table.rows);
-      if (headerRow && allRowsInTable.length > 0 && allRowsInTable[0] === headerRow) {
-          allRowsInTable.shift(); 
-          console.log("processBandHelperTable: Cabecera eliminada de la lista de filas a procesar.");
-      }
-      dataRows = allRowsInTable; 
-      console.log(`processBandHelperTable: Ahora procesando ${dataRows.length} filas (potencialmente sin tbody).`);
-  }
+  // Si la cabecera estaba en tbody, no la procesamos como fila de datos
+  const startIndexForDataRows = (headerRow && isHeaderInTbody) ? 1 : 0;
 
-
-  dataRows.forEach((row, index) => {
+  for (let i = startIndexForDataRows; i < dataRows.length; i++) {
+    const row = dataRows[i];
     const cells = row.cells; 
     
     if (cells.length < 3) { 
         console.warn(`processBandHelperTable: Fila de datos ${index} con ${cells.length} celdas. Mínimo 3 esperadas (Fecha, Hora, Evento). Saltando.`);
-        return;
+        continue; 
     }
-    // console.log(`processBandHelperTable: Fila de datos ${index}, ${cells.length} celdas. Contenido: '${cells[0]?.textContent.trim()}', '${cells[1]?.textContent.trim()}', '${cells[2]?.textContent.trim()}'`);
 
     let detailCell;
-    const expectedCellCountAfterModification = headerRow ? headerRow.cells.length : cells.length + 1;
+    // Si hay una cabecera y ya se le añadió la columna "Detalles", las filas de datos deben tener el mismo número de celdas.
+    // Si no hay cabecera formal, simplemente añadimos una celda.
+    const expectedCellCount = headerRow ? headerRow.cells.length : cells.length + 1;
 
-    if (cells.length < expectedCellCountAfterModification) {
-        detailCell = row.insertCell(-1); 
-    } else if (cells.length === expectedCellCountAfterModification) {
-        detailCell = cells[cells.length - 1]; 
-        detailCell.innerHTML = ''; 
-    } else {
-        console.warn(`processBandHelperTable: Fila ${index} tiene ${cells.length} celdas, pero se esperaban ${expectedCellCountAfterModification}. Se usará la última celda igualmente, pero la alineación podría ser incorrecta.`);
-        detailCell = cells[cells.length -1]; 
-        detailCell.innerHTML = '';
+    if (cells.length < expectedCellCount) {
+        detailCell = row.insertCell(-1); // Añadir al final
+    } else { 
+        // Si ya tiene el número esperado de celdas (o más), usamos la última.
+        // Esto podría pasar si la tabla ya fue procesada parcialmente o tiene una estructura inesperada.
+        detailCell = cells[expectedCellCount - 1]; 
+        detailCell.innerHTML = ''; // Limpiar por si acaso
     }
 
     detailCell.className = "details-cell"; 
@@ -985,20 +1001,21 @@ function processBandHelperTable() {
         locationCell.appendChild(document.createTextNode(" "));
         locationCell.appendChild(calendarBtn);
     }
-  });
+  }
   console.log("processBandHelperTable: Procesamiento de tabla BandHelper FINALIZADO.");
 }
 
 const concertDetailModal = document.getElementById('concert-details-modal');
 const concertDetailMessage = document.getElementById('concert-detail-message');
 async function openConcertDetailModal(concertId, concertDate, concertTitle, concertLocationOriginal) {
-    concertDetailMessage.textContent = ""; // Limpiar mensajes previos
-    concertDetailMessage.className = "success-message"; // Resetear clase por si antes hubo error
+    concertDetailMessage.textContent = ""; 
+    concertDetailMessage.className = "success-message"; 
 
     document.getElementById('concert-detail-id').value = concertId;
     
-    // Limpiar campos del modal antes de cargar nuevos datos o mostrarlo vacío
     document.getElementById('concert-detail-location').value = '';
+    document.getElementById('concert-detail-soundsetup').value = ''; // Nuevo campo
+    document.getElementById('concert-detail-instrumentssetup').value = ''; // Nuevo campo
     document.getElementById('concert-detail-soundcheck').value = '';
     document.getElementById('concert-detail-showtime').value = '';
     document.getElementById('concert-detail-notes').value = '';
@@ -1006,37 +1023,42 @@ async function openConcertDetailModal(concertId, concertDate, concertTitle, conc
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando músicos...';
 
+    const excludedMusicians = ["Ximo", "Gines"]; // Nombres a excluir
+
     if (users && users.length > 0) {
         musiciansListDiv.innerHTML = ''; 
-        users.forEach(user => {
-            const userDiv = document.createElement('div');
-            const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`; // ID más único
-            userDiv.innerHTML = `
-                <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}">
-                <label for="${checkboxId}">${user.name} (${user.nickname})</label>
-            `;
-            musiciansListDiv.appendChild(userDiv);
+        users.filter(user => !excludedMusicians.includes(user.name)) // Filtrar aquí
+             .forEach(user => {
+                const userDiv = document.createElement('div');
+                const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`;
+                userDiv.innerHTML = `
+                    <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}">
+                    <label for="${checkboxId}">${user.name} (${user.nickname})</label>
+                `;
+                musiciansListDiv.appendChild(userDiv);
         });
+        if (musiciansListDiv.children.length === 0) {
+            musiciansListDiv.innerHTML = 'No hay otros músicos para listar.';
+        }
     } else { 
         musiciansListDiv.innerHTML = 'No hay músicos registrados para listar.';
     }
 
-    // Cargar datos existentes de Firestore
     try {
-        // Añadimos un log para ver el concertId que se está usando para cargar
         console.log("Abriendo modal para concertId:", concertId);
-        const details = await loadDoc('concert_details', concertId, {}); // El fallback es objeto vacío
+        const details = await loadDoc('concert_details', concertId, {}); 
         
-        if (details && Object.keys(details).length > 0) { // Si details no es null y tiene propiedades
+        if (details && Object.keys(details).length > 0) { 
             console.log("Detalles cargados desde Firestore:", details);
             document.getElementById('concert-detail-location').value = details.locationDetails || '';
+            document.getElementById('concert-detail-soundsetup').value = details.soundSetupTime || ''; // Cargar nuevo campo
+            document.getElementById('concert-detail-instrumentssetup').value = details.instrumentsSetupTime || ''; // Cargar nuevo campo
             document.getElementById('concert-detail-soundcheck').value = details.soundcheckTime || '';
             document.getElementById('concert-detail-showtime').value = details.showTime || '';
             document.getElementById('concert-detail-notes').value = details.generalNotes || '';
             
             if (details.attendees && Array.isArray(details.attendees)) {
                 details.attendees.forEach(attendeeName => {
-                    // Asegurarse que el selector del checkbox sea preciso
                     const checkbox = musiciansListDiv.querySelector(`input[value="${attendeeName}"]`);
                     if (checkbox) {
                         checkbox.checked = true;
@@ -1048,17 +1070,16 @@ async function openConcertDetailModal(concertId, concertDate, concertTitle, conc
         } else {
             console.log("No se encontraron detalles previos en Firestore para este concierto o el documento está vacío:", concertId);
         }
-    } catch (error) { // Este catch es de loadDoc, que ya no relanza el error si es de carga
+    } catch (error) { 
         console.error("Error al intentar cargar detalles del concierto desde Firestore (manejado en openConcertDetailModal):", error);
         concertDetailMessage.className = "error-message";
-        // El mensaje de error de loadDoc ya es específico, pero podemos añadir contexto.
         concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}. Verifica los permisos de Firestore.`;
     }
-    concertDetailModal.classList.add('show'); // Mostrar modal después de intentar cargar datos
+    concertDetailModal.classList.add('show'); 
 }
 document.getElementById('save-concert-details').onclick = async () => {
     const concertId = document.getElementById('concert-detail-id').value;
-    const concertDetailMessage = document.getElementById('concert-detail-message'); // Referencia local
+    const concertDetailMessage = document.getElementById('concert-detail-message'); 
     if (!concertId) { 
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = "Error: ID de concierto no encontrado. No se puede guardar."; 
@@ -1072,25 +1093,24 @@ document.getElementById('save-concert-details').onclick = async () => {
 
     const concertData = {
         locationDetails: document.getElementById('concert-detail-location').value.trim(),
+        soundSetupTime: document.getElementById('concert-detail-soundsetup').value, // Guardar nuevo campo
+        instrumentsSetupTime: document.getElementById('concert-detail-instrumentssetup').value, // Guardar nuevo campo
         soundcheckTime: document.getElementById('concert-detail-soundcheck').value,
         showTime: document.getElementById('concert-detail-showtime').value,
         generalNotes: document.getElementById('concert-detail-notes').value.trim(),
         attendees: selectedAttendees,
-        lastUpdated: new Date().toISOString() // Añadir timestamp de última actualización
+        lastUpdated: new Date().toISOString() 
     };
 
     console.log("Guardando detalles para concertId:", concertId, "Datos:", concertData);
 
     try {
-        await saveDoc('concert_details', concertId, concertData, true); // Usar merge true
+        await saveDoc('concert_details', concertId, concertData, true); 
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente.";
-        // No cerrar modal automáticamente, permitir al usuario ver el mensaje.
-        // setTimeout(() => concertDetailModal.classList.remove('show'), 2000); 
     } catch (error) {
         console.error("Error al guardar detalles del concierto:", error);
         concertDetailMessage.className = "error-message";
-        // El error de saveDoc ya es específico.
         concertDetailMessage.textContent = `Error al guardar: ${error.message}. Verifica los permisos de Firestore.`;
     }
 };
@@ -1128,11 +1148,14 @@ const setupMenuLink = (menuId, targetId) => {
         };
     } else { console.warn(`Enlace ${menuId} no encontrado.`); }
 };
+// Orden del menú actualizado
 setupMenuLink("menu-rehearsals-setlist-section", "setlists");
+setupMenuLink("menu-rehearsals-section", "rehearsals");
 setupMenuLink("menu-second-setlist-section", "second-setlist");
 setupMenuLink("menu-star-setlist-section", "star-setlist");
-setupMenuLink("menu-rehearsals-section", "rehearsals");
 setupMenuLink("menu-concerts-section", "calendario");
+setupMenuLink("menu-users-section", "usuarios");
+
 
 document.getElementById("menu-config").onclick = e => {
     e.preventDefault();
@@ -1260,9 +1283,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_prox_concierto.pdf"); else alert("No hay canciones en Setlist Próx. Concierto."); };
   document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, "setlist_estrella.pdf"); else alert("No hay canciones en Setlist Estrella."); };
   
-  // Iniciar el procesamiento de la tabla de BandHelper después de un breve retraso
-  // para dar tiempo al script síncrono de BandHelper a ejecutarse y pintar la tabla.
-  setTimeout(processBandHelperTable, 1000); 
+  setTimeout(processBandHelperTable, 1500); // Aumentar ligeramente el tiempo de espera para BandHelper
 });
   </script>
 </body>
