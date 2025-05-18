@@ -24,7 +24,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Estilos CSS (iguales a la v6/v7, por brevedad no se repiten aquí) */
+    /* Estilos CSS (iguales a la v7.1/v7.2, por brevedad no se repiten aquí) */
     /* ... Pega aquí los estilos de la versión anterior ... */
     /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
@@ -170,7 +170,7 @@
       <a href="#" id="menu-setlist-config">Setlists</a>
       <a href="#" id="menu-user-mgmt">Usuarios</a>
       <a href="#" id="menu-rehearsal">Ensayos</a>
-      </div>
+    </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
   <div id="setlist-config-screen" class="config-screen">
@@ -371,7 +371,7 @@
   async function loadDoc(docId, fallback = {}) { if (!db) { console.error("DB no inicializado. No se puede cargar:", docId); return fallback; } console.log(`Intentando cargar doc: ${docId}`); try { const snap = await db.collection("intranet").doc(docId).get(); if (snap.exists) { console.log(`Doc ${docId} cargado OK.`, snap.data()); return snap.data(); } else { console.warn(`Doc ${docId} NO ENCONTRADO. Usando fallback.`); return fallback; } } catch (e) { console.error(`Error FATAL al cargar doc ${docId}:`, e.message, e); throw e; } }
   async function saveDoc(docId, data) { if (!db) { console.error("DB no inicializado. No se puede guardar:", docId); return false; } console.log(`Intentando guardar doc: ${docId}`); try { await db.collection("intranet").doc(docId).set(data); console.log(`Doc ${docId} guardado OK.`); return true; } catch (e) { console.error(`Error FATAL al guardar doc ${docId}:`, e.message, e); throw e; } }
 
-  /* ---------- SECCIONES (Setlists, Usuarios, Ensayos, etc. con logs en carga - igual a v6) ---------- */
+  /* ---------- SECCIONES (Setlists, Usuarios, Ensayos, etc.) ---------- */
   let setlistConfig = { setlist1: { name: "Setlist Ensayos", url: "" }, setlist2: { name: "Setlist Concierto", url: "" }};
   async function loadSetlistConfig() { console.log("loadSetlistConfig: Iniciando..."); const data = await withRetry(() => loadDoc("setlists", {config: setlistConfig}), "configuración de setlists"); setlistConfig = data.config || setlistConfig; updateTitles(); console.log("loadSetlistConfig: Finalizado. Config:", setlistConfig); }
   function updateTitles() { document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name; document.getElementById("setlist2-title-placeholder").textContent = setlistConfig.setlist2.name; }
@@ -380,7 +380,34 @@
   async function cargarSegundoSetlist() { console.log("cargarSegundoSetlist desde:", setlistConfig.setlist2.url); if(!setlistConfig.setlist2.url) { console.warn("URL para segundo setlist no definida."); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">URL no configurada.</td></tr>'; return [];} try { const response = await fetch(setlistConfig.setlist2.url); if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : []; const tbody = document.getElementById("second-body"); tbody.innerHTML = ""; let total = 0; songs.forEach((s, i) => { const secs = parseDuration(s.duration || "0"); total += secs; tbody.insertAdjacentHTML("beforeend", `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`); }); document.getElementById("total-time-2").textContent = "Tiempo total: " + toHHMM(total); console.log("Segundo setlist cargado, canciones:", songs.length); return songs; } catch (e) { console.error("Error cargando segundo setlist:", e); document.getElementById("second-body").innerHTML = '<tr><td colspan="5">Error al cargar. Revisa la URL y la conexión.</td></tr>'; document.getElementById("total-time-2").textContent = ""; return []; } }
   
   let users = []; let editingUserIndex = null;
-  function renderUsers() { /* ... (Pega aquí tu función renderUsers completa de versiones anteriores) ... */ }
+  function renderUsers() {
+    const tbodyCfg = document.getElementById("user-table-body");
+    const tbodyMain = document.getElementById("users-body");
+    tbodyCfg.innerHTML = ""; tbodyMain.innerHTML = "";
+    if (!users || users.length === 0) {
+        tbodyCfg.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay usuarios registrados.</td></tr>';
+        tbodyMain.innerHTML = '<tr><td colspan="3" style="text-align:center;">No hay usuarios registrados.</td></tr>';
+        return;
+    }
+    users.forEach((user, index) => {
+        const roles = Array.isArray(user.roles) ? user.roles.join(", ") : "Sin roles";
+        const mainRowHTML = `<tr><td>${user.name || "N/A"}</td><td>${user.nickname || "N/A"}</td><td>${roles}</td></tr>`;
+        tbodyMain.insertAdjacentHTML("beforeend", mainRowHTML);
+        const configRowHTML = `
+            <tr>
+                <td>${user.name || "N/A"}</td>
+                <td>${user.nickname || "N/A"}</td>
+                <td>${roles}</td>
+                <td>
+                    <button class="action-btn edit-btn edit-user" data-i="${index}">Editar</button>
+                    <button class="action-btn delete-btn delete-user" data-i="${index}">Eliminar</button>
+                </td>
+            </tr>`;
+        tbodyCfg.insertAdjacentHTML("beforeend", configRowHTML);
+    });
+    // Añadir listeners para editar/eliminar (debes tener esta función definida)
+    // addUserTableListeners(); 
+  }
   async function loadUsers() { console.log("loadUsers: Iniciando..."); const data = await withRetry(() => loadDoc("users", {users:[]}), "carga de usuarios"); users = data.users || []; renderUsers(); console.log("loadUsers: Finalizado. Usuarios:", users.length); }
   async function saveUsers() { console.log("Guardando usuarios..."); return await withRetry(() => saveDoc("users", {users}), "guardar usuarios");}
   function resetUserForm() { /* ... (Pega aquí tu función resetUserForm) ... */ }
@@ -388,15 +415,16 @@
   let rehearsals = []; let editingRehearsalIndex = null;
   function renderRehearsals() {
     console.log("renderRehearsals: Iniciando con", rehearsals.length, "ensayos.");
-    rehearsals.sort((a, b) => new Date(a.date + "T" + a.startTime) - new Date(b.date + "T" + b.startTime)); // Ordenar por fecha y hora
+    rehearsals.sort((a, b) => new Date(a.date + "T" + (a.startTime || "00:00")) - new Date(b.date + "T" + (b.startTime || "00:00")));
     const tbodyConfig = document.getElementById("rehearsal-table-body");
     const tbodyMain = document.getElementById("rehearsal-main-body");
     tbodyConfig.innerHTML = ""; tbodyMain.innerHTML = "";
 
-    if (rehearsals.length === 0) {
-        const emptyMsg = '<tr><td colspan="6" style="text-align:center;">No hay ensayos programados.</td></tr>';
-        tbodyConfig.innerHTML = emptyMsg;
-        tbodyMain.innerHTML = emptyMsg.replace('colspan="6"', 'colspan="4"'); // Ajustar colspan para la tabla principal
+    if (!rehearsals || rehearsals.length === 0) {
+        const emptyMsgCfg = '<tr><td colspan="6" style="text-align:center;">No hay ensayos programados.</td></tr>';
+        tbodyConfig.innerHTML = emptyMsgCfg;
+        const emptyMsgMain = '<tr><td colspan="4" style="text-align:center;">No hay ensayos programados.</td></tr>';
+        tbodyMain.innerHTML = emptyMsgMain;
         return;
     }
 
@@ -415,7 +443,7 @@
 
       tbodyConfig.insertAdjacentHTML("beforeend",
         `<tr>
-          <td>${r.date}</td><td>${r.startTime || "N/A"}</td><td>${r.endTime || "N/A"}</td><td>${r.location || "N/A"}</td>
+          <td>${r.date || "N/A"}</td><td>${r.startTime || "N/A"}</td><td>${r.endTime || "N/A"}</td><td>${r.location || "N/A"}</td>
           <td>${summary}</td>
           <td>
             <button class="action-btn edit-btn edit-rehearsal" data-i="${i}">Editar</button>
@@ -424,8 +452,8 @@
           </td>
         </tr>`);
 
-      const rehearsalDateTime = new Date(r.date + "T" + (r.endTime || "00:00")); // Usar endTime para la comparación
-      if (rehearsalDateTime >= now || r.date === todayDateStr) { // Mostrar ensayos de hoy o futuros
+      const rehearsalEndDateTime = new Date(r.date + "T" + (r.endTime || "23:59"));
+      if (rehearsalEndDateTime >= now || r.date === todayDateStr) {
         tbodyMain.insertAdjacentHTML("beforeend",
           `<tr>
             <td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td>
@@ -446,11 +474,10 @@
           </tr>`);
       }
     });
-    // Re-añadir listeners a los botones de las tablas de ensayos
     addRehearsalTableListeners();
   }
   function addRehearsalTableListeners() { /* ... (Pega aquí tu función addRehearsalTableListeners completa) ... */ }
-  async function loadRehearsals() { console.log("loadRehearsals: Iniciando..."); const data = await withRetry(() => loadDoc("rehearsals", {rehearsals:[]}), "carga de ensayos"); rehearsals = data.rehearsals || []; renderRehearsals(); console.log("loadRehearsals: Finalizado. Ensayos:", rehearsals.length); }
+  async function loadRehearsals() { console.log("loadRehearsals: Iniciando..."); const data = await withRetry(() => loadDoc("rehearsals", {rehearsals:[]}), "carga de ensayos"); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); console.log("loadRehearsals: Finalizado. Ensayos:", rehearsals.length); }
   async function saveRehearsals() { console.log("Guardando rehearsals..."); return await withRetry(() => saveDoc("rehearsals", {rehearsals}), "guardar ensayos");}
   function resetRehearsalForm() { /* ... (Pega aquí tu función resetRehearsalForm) ... */ }
   
@@ -546,7 +573,7 @@
             else row.appendChild(detailsCell);
           }
           if (!detailsCell.querySelector("button.details-btn")) {
-              // CORRECCIÓN AQUÍ: Llamar a openConcertNoteModal en lugar de openConcertDetailViewer
+              // CORRECCIÓN AQUÍ: Llamar a openConcertNoteModal
               detailsCell.innerHTML = `<button class="details-btn" title="Ver/Editar Detalles" onclick="openConcertNoteModal('${concertId}')"><svg viewBox="0 0 24 24"><path d="M8.59,16.59L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.59Z" /></svg></button>`;
           }
         });
@@ -557,8 +584,8 @@
     return true;
   }
 
-  /* ---------- 10.5. Notas de Concierto y Modal (igual a v7) ---------- */
-  // ... Pega aquí loadConcertNotes, saveConcertNotes, openConcertNoteModal y los listeners del modal de la v7 ...
+  /* ---------- 10.5. Notas de Concierto y Modal (igual a v7.1) ---------- */
+  // ... Pega aquí loadConcertNotes, saveConcertNotes, openConcertNoteModal y los listeners del modal de la v7.1 ...
   let concertNotes = {}; 
   let currentEditingConcertId = null;
   async function loadConcertNotes() {
@@ -642,8 +669,8 @@
     } catch (e) { console.error("Fallo al guardar detalles desde modal:", e); }
   };
 
-  /* ---------- 11. Menú & pantallas (sin cambios en la lógica interna - igual a v6) ---------- */
-  // ... Pega aquí el código de menú y pantallas de la v6 (asegúrate que menu-concert-notes-config NO esté) ...
+  /* ---------- 11. Menú & pantallas (igual a v7.1, sin config de notas) ---------- */
+  // ... Pega aquí el código de menú y pantallas de la v7.1 ...
   const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
   const PASSWORD = "Sotano2014"; let isAuthenticated = false;
   function closeAllScreens() { document.querySelectorAll(".config-screen, .modal-screen").forEach(s => s.style.display = "none"); } 
@@ -664,8 +691,8 @@
   document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; overlay.classList.remove("show"); resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = "";};
   document.getElementById("close-stats").onclick = () => { document.getElementById("stats-screen").style.display = "none"; overlay.classList.remove("show"); };
 
-  /* ---------- 12. Carga inicial de datos y DOMContentLoaded ---------- */
-  // ... (igual a v6) ...
+  /* ---------- 12. Carga inicial de datos y DOMContentLoaded (igual a v7.1) ---------- */
+  // ... Pega aquí la función loadInitialData y el listener DOMContentLoaded de la v7.1 ...
   async function loadInitialData() {
     console.log("loadInitialData: Iniciando...");
     if (!db) { console.warn("loadInitialData: DB no inicializado. Abortando carga de datos de Firestore."); return; }
