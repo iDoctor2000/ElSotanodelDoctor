@@ -70,9 +70,19 @@
     .modal-content button:hover { background: #09b; }
     .modal-content .modal-close-btn { background: #444; color: #fff; }
     .modal-content .modal-close-btn:hover { background: #555; }
-    #musicians-attendance-list { max-height: 150px; overflow-y: auto; border: 1px solid #333; padding: 10px; margin-bottom:15px; }
-    #musicians-attendance-list div { margin-bottom: 5px; }
-    #musicians-attendance-list label { color: #fff; margin-left: 5px; }
+    
+    /* Estilo para la lista de músicos en el modal */
+    #musicians-attendance-list { 
+        /* max-height: 150px; */ /* Eliminado para mostrar todos */
+        /* overflow-y: auto; */   /* Eliminado para mostrar todos */
+        border: 1px solid #333; padding: 10px; margin-bottom:15px;
+        /* Si se vuelve demasiado largo y quieres scroll DENTRO de esta lista específicamente, descomenta max-height y overflow-y */
+    }
+    #musicians-attendance-list div { margin-bottom: 5px; /* Un div por músico, ya ocupa una línea */ }
+    #musicians-attendance-list label { color: #fff; margin-left: 5px; font-weight: normal; /* Asegurar que no herede bold si no se desea */}
+    #musicians-attendance-list input[type="checkbox"] { vertical-align: middle; }
+
+
     .modal-field-group { display: flex; gap: 10px; }
     .modal-field-group > div { flex: 1; }
     .modal-field-group input[type="time"] { text-align: left; }
@@ -335,15 +345,15 @@
 <script>
 /* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw", // Reemplaza con tu API Key real si esta es de prueba
   authDomain: "sotanointranet.firebaseapp.com",
   projectId: "sotanointranet",
   messagingSenderId: "756955233128",
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
 
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" ||
-    (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30) ) {
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || 
+    (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30) ) { // Condición más genérica para placeholder
     const banner = document.getElementById('firebase-critical-error-banner');
     if (banner) banner.style.display = 'block';
     console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");
@@ -379,28 +389,39 @@ const calculateDuration = (startTime, endTime) => {
   return duration;
 };
 const formatDateWithDay = dateStr => {
-  const date = new Date(dateStr + 'T00:00:00');
+  const date = new Date(dateStr + 'T00:00:00'); // Asegurar interpretación como fecha local sin corrupciones de zona horaria
   const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-  return `${days[date.getDay()]} ${date.getDate()} de ${months[date.getMonth()]}`;
+  return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`; // Usar UTC para evitar problemas de un día más/menos
 };
 const getMonthYear = dateStr => {
   const date = new Date(dateStr + 'T00:00:00');
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-  return `${months[date.getMonth()]} ${date.getFullYear()}`;
+  return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 };
 function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) {
-  const startDate = new Date(`${date}T${startTime}`);
+  const startDate = new Date(`${date}T${startTime}`); // Asume que date y startTime son locales
   const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
-  const formatDateFunc = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  const start = formatDateFunc(startDate);
-  const end = formatDateFunc(endDate);
-  const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
-  const blob = new Blob([icsContent], { type: "text/calendar" });
+  // Para ICS, el formato YYYYMMDDTHHMMSSZ es para UTC. Si las fechas son locales, no se añade 'Z'.
+  // Simplificación: generar como flotante si no se manejan zonas horarias explícitamente.
+  // O asumir que las horas introducidas son UTC o convertirlas. Por ahora, se generan como locales.
+  const formatICSDate = d => {
+    const pad = (num) => String(num).padStart(2, '0');
+    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  };
+  const startICS = formatICSDate(startDate);
+  const endICS = formatICSDate(endDate);
+  const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ElSotanoDelDoctor//Intranet//ES", "BEGIN:VEVENT",
+    `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, "")}Z`, // Hora de creación del evento
+    `UID:${startICS}-${sanitizeFirebaseKey(title)}@elsotanodeldoctor.com`, // UID único
+    `DTSTART:${startICS}`, `DTEND:${endICS}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`,
+    "END:VEVENT", "END:VCALENDAR"
+  ].join("\r\n");
+  const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${title.replace(/\s+/g, "_")}.ics`;
+  link.download = `${sanitizeFirebaseKey(title)}.ics`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -839,7 +860,8 @@ function processBandHelperTable() {
 
   if(loadingMessage) loadingMessage.style.display = "none"; 
   console.log("processBandHelperTable: Tabla de BandHelper ENCONTRADA:", table);
-  console.log("Estructura interna de la tabla de BandHelper (table.innerHTML):", table.innerHTML); // <<<--- ¡¡¡REVISA ESTE LOG!!!
+  // IMPORTANTE: Revisa este log en tu consola para ver la estructura de la tabla.
+  console.log("Estructura interna de la tabla de BandHelper (table.innerHTML):", table.innerHTML); 
 
   if (table.dataset.processed === "true") { 
       console.log("processBandHelperTable: Tabla ya procesada. Saltando.");
@@ -849,7 +871,7 @@ function processBandHelperTable() {
 
   let headerRow = table.querySelector("thead tr");
   if (!headerRow) {
-      console.log("processBandHelperTable: No se encontró 'thead tr'. Buscando alternativas...");
+      console.log("processBandHelperTable: No se encontró 'thead tr'. Buscando alternativas para la cabecera...");
       if (table.rows.length > 0 && table.rows[0].cells.length > 0 && table.rows[0].cells[0].tagName.toLowerCase() === 'th') {
           headerRow = table.rows[0];
           console.log("processBandHelperTable: Usando la primera fila de la tabla (table.rows[0]) como cabecera porque contiene TH.");
@@ -869,24 +891,31 @@ function processBandHelperTable() {
           th.textContent = "Detalles";
           th.style.textAlign = "center";
           headerRow.appendChild(th);
-          console.log("processBandHelperTable: Cabecera 'Detalles' añadida a la fila de cabecera encontrada.");
+          console.log("processBandHelperTable: Cabecera 'Detalles' añadida a la fila de cabecera encontrada:", headerRow);
       } else {
           console.log("processBandHelperTable: Cabecera 'Detalles' ya existente en la fila de cabecera encontrada.");
       }
   } else {
-      console.warn("processBandHelperTable: No se pudo identificar una fila de cabecera clara. La columna 'Detalles' podría no tener título o no alinearse correctamente.");
+      console.warn("processBandHelperTable: No se pudo identificar una fila de cabecera clara y con celdas <th>. La columna 'Detalles' podría no tener título o no alinearse correctamente. El HTML de la tabla era:", table.innerHTML);
   }
 
-  const dataRows = table.querySelectorAll("tbody tr"); 
-  console.log(`processBandHelperTable: ${dataRows.length} filas de datos (tbody tr) encontradas.`);
+  const dataRowsSource = table.querySelector("tbody") ? table.querySelectorAll("tbody tr") : []; 
+  let dataRows = Array.from(dataRowsSource);
+
+  console.log(`processBandHelperTable: Inicialmente ${dataRows.length} filas de datos (tbody tr) encontradas.`);
   
+  // Si no hay tbody, o está vacío, pero la tabla tiene filas (y no son solo la cabecera)
   if (dataRows.length === 0 && table.rows.length > (headerRow ? 1:0) ) {
-      console.warn("processBandHelperTable: No se encontraron filas en 'tbody', pero la tabla tiene filas. Esto puede indicar una estructura de tabla inusual (sin tbody). La modificación podría fallar.");
-      // Si no hay tbody, y la cabecera fue la primera fila de la tabla, entonces las filas de datos son el resto.
-      // Esta es una heurística y puede ser necesario ajustar si la estructura es muy atípica.
-      // Por ahora, el forEach siguiente sobre dataRows (que estará vacío) no hará nada.
-      // El console.log(table.innerHTML) es crucial aquí.
+      console.warn("processBandHelperTable: No se encontraron filas en 'tbody' o estaba vacío. Intentando procesar todas las filas de la tabla excepto la posible cabecera.");
+      let allRowsInTable = Array.from(table.rows);
+      if (headerRow && allRowsInTable.length > 0 && allRowsInTable[0] === headerRow) {
+          allRowsInTable.shift(); // Eliminar la fila de cabecera si es la primera
+          console.log("processBandHelperTable: Cabecera eliminada de la lista de filas a procesar.");
+      }
+      dataRows = allRowsInTable; // Usar estas filas como filas de datos
+      console.log(`processBandHelperTable: Ahora procesando ${dataRows.length} filas (potencialmente sin tbody).`);
   }
+
 
   dataRows.forEach((row, index) => {
     const cells = row.cells; 
@@ -895,22 +924,21 @@ function processBandHelperTable() {
         console.warn(`processBandHelperTable: Fila de datos ${index} con ${cells.length} celdas. Mínimo 3 esperadas (Fecha, Hora, Evento). Saltando.`);
         return;
     }
-    console.log(`processBandHelperTable: Fila de datos ${index}, ${cells.length} celdas. Contenido: '${cells[0]?.textContent.trim()}', '${cells[1]?.textContent.trim()}', '${cells[2]?.textContent.trim()}'`);
+    // console.log(`processBandHelperTable: Fila de datos ${index}, ${cells.length} celdas. Contenido: '${cells[0]?.textContent.trim()}', '${cells[1]?.textContent.trim()}', '${cells[2]?.textContent.trim()}'`);
 
     let detailCell;
-    // Se espera que la celda de detalles sea la última. Si la cabecera se modificó, se espera una celda más.
     const expectedCellCountAfterModification = headerRow ? headerRow.cells.length : cells.length + 1;
 
     if (cells.length < expectedCellCountAfterModification) {
         detailCell = row.insertCell(-1); 
-        console.log(`processBandHelperTable: Fila ${index}, celda de detalles insertada (ahora ${row.cells.length} celdas).`);
+        // console.log(`processBandHelperTable: Fila ${index}, celda de detalles insertada (ahora ${row.cells.length} celdas).`);
     } else if (cells.length === expectedCellCountAfterModification) {
         detailCell = cells[cells.length - 1]; 
         detailCell.innerHTML = ''; 
-        console.log(`processBandHelperTable: Fila ${index}, usando la última celda existente (${cells.length -1}) para detalles.`);
+        // console.log(`processBandHelperTable: Fila ${index}, usando la última celda existente (${cells.length -1}) para detalles.`);
     } else {
         console.warn(`processBandHelperTable: Fila ${index} tiene ${cells.length} celdas, pero se esperaban ${expectedCellCountAfterModification}. Se usará la última celda igualmente, pero la alineación podría ser incorrecta.`);
-        detailCell = cells[cells.length -1]; // Intentar usar la última
+        detailCell = cells[cells.length -1]; 
         detailCell.innerHTML = '';
     }
 
@@ -930,9 +958,9 @@ function processBandHelperTable() {
         detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellText, eventTitleFromCell, eventCellContent);
         
         detailCell.appendChild(detailsBtn);
-        console.log(`processBandHelperTable: Fila ${index}, Botón Detalles añadido para concertId: ${concertId}`);
+        // console.log(`processBandHelperTable: Fila ${index}, Botón Detalles añadido para concertId: ${concertId}`);
     } else {
-        console.log(`processBandHelperTable: Fila ${index}, Botón Detalles ya existía en la celda.`);
+        // console.log(`processBandHelperTable: Fila ${index}, Botón Detalles ya existía en la celda.`);
     }
 
     const locationCell = cells[2]; 
@@ -959,7 +987,7 @@ function processBandHelperTable() {
         calendarBtn.onclick = () => generateICS(`Concierto: ${eventNameText}`, icsDate, timeCellContent, eventNameText, `Concierto de El Sótano del Doctor en ${eventNameText}`);
         locationCell.appendChild(document.createTextNode(" "));
         locationCell.appendChild(calendarBtn);
-        console.log(`processBandHelperTable: Fila ${index}, Botón Calendario añadido para ${eventNameText}.`);
+        // console.log(`processBandHelperTable: Fila ${index}, Botón Calendario añadido para ${eventNameText}.`);
     }
   });
   console.log("processBandHelperTable: Procesamiento de tabla BandHelper FINALIZADO.");
@@ -1035,7 +1063,7 @@ document.getElementById('close-concert-details-modal').onclick = () => {
 
 /* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
-const PASSWORD = "Sotano2014";
+const PASSWORD = "Sotano2014"; // Considera mover esto a una configuración más segura
 let isAuthenticated = false;
 function closeAll() {
     document.querySelectorAll(".config-screen, .modal-backdrop").forEach(s => s.classList.remove("show"));
@@ -1195,7 +1223,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_prox_concierto.pdf"); else alert("No hay canciones en Setlist Próx. Concierto."); };
   document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, "setlist_estrella.pdf"); else alert("No hay canciones en Setlist Estrella."); };
   
-  setTimeout(processBandHelperTable, 1000);
+  setTimeout(processBandHelperTable, 1000); // Iniciar procesamiento después de que la página y el script síncrono de BH hayan tenido tiempo de cargar.
 });
   </script>
 </body>
