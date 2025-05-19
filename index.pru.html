@@ -553,10 +553,12 @@ async function loadDoc(collection, docId, fallback) {
 }
 async function saveDoc(collection, docId, data, merge = false) {
   try {
-    await db.collection(collection).doc(docId).set(data, { merge });
+    console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge);
+    await db.collection(collection).doc(docId).set(data, { merge: merge }); // Asegurar que el flag merge se pasa explícitamente
+    console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`);
     return true;
   } catch (e) {
-    console.error(`Error al guardar documento ${collection}/${docId}:`, e.message, e); 
+    console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); 
     throw e; 
   }
 }
@@ -901,25 +903,28 @@ async function loadFontAsBase64(fontPath) {
     try {
         const response = await fetch(fontPath);
         if (!response.ok) {
-            throw new Error(`No se pudo cargar la fuente: ${response.statusText}`);
+            throw new Error(`No se pudo cargar la fuente: ${response.statusText} (URL: ${fontPath})`);
         }
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                // Quitar el prefijo "data:...;base64,"
                 const base64 = reader.result.split(',')[1];
                 resolve(base64);
             };
-            reader.onerror = reject;
+            reader.onerror = (error) => reject(new Error("Error del FileReader al convertir fuente a Base64: " + error));
             reader.readAsDataURL(blob);
         });
     } catch (error) {
         console.error(`Error cargando la fuente ${fontPath}:`, error);
-        return null; // Retornar null si falla la carga
+        return null; 
     }
 }
 
+// Variable global para indicar si la fuente personalizada está cargada
+let customFontLoaded = false; 
+// Nombre que le daremos a la fuente en jsPDF
+const CUSTOM_FONT_NAME_IN_PDF = "BleedingCowboysCustom"; 
 
 async function genPDF(songs, title, fileName) {
     const { jsPDF } = window.jspdf;
@@ -927,18 +932,26 @@ async function genPDF(songs, title, fileName) {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Cargar fuente personalizada
-    // const bleedingCowboysFontBase64 = await loadFontAsBase64('assets/Bleeding_Cowboys.ttf');
-    // if (bleedingCowboysFontBase64) {
-    //     doc.addFileToVFS('Bleeding_Cowboys.ttf', bleedingCowboysFontBase64);
-    //     doc.addFont('Bleeding_Cowboys.ttf', 'BleedingCowboys', 'normal');
-    //     console.log("Fuente BleedingCowboys registrada en jsPDF.");
-    // } else {
-    //     console.warn("No se pudo cargar la fuente BleedingCowboys. Se usará una fuente estándar.");
-    // }
-    // Nota: La carga de fuentes personalizadas puede ser compleja y depende de la configuración del servidor
-    // y de cómo jsPDF maneja las fuentes en el entorno específico.
-    // Por ahora, se usará una fuente estándar para "SETLIST".
+    // Intentar cargar y registrar la fuente personalizada si aún no se ha hecho
+    if (!customFontLoaded) {
+        const fontFile = 'assets/Bleeding_Cowboys.ttf';
+        const fontNameInVFS = 'Bleeding_Cowboys.ttf'; // Nombre del archivo en VFS
+        console.log(`Intentando cargar fuente personalizada: ${fontFile}`);
+        const fontBase64 = await loadFontAsBase64(fontFile);
+        if (fontBase64) {
+            try {
+                doc.addFileToVFS(fontNameInVFS, fontBase64);
+                doc.addFont(fontNameInVFS, CUSTOM_FONT_NAME_IN_PDF, 'normal'); // 'normal' es el estilo
+                customFontLoaded = true;
+                console.log(`Fuente ${CUSTOM_FONT_NAME_IN_PDF} registrada en jsPDF.`);
+            } catch (fontError) {
+                console.error(`Error al registrar la fuente ${CUSTOM_FONT_NAME_IN_PDF} en jsPDF:`, fontError);
+                customFontLoaded = false; // Marcar como no cargada si falla el registro
+            }
+        } else {
+            console.warn(`No se pudo cargar la fuente ${fontFile}. Se usará una fuente estándar.`);
+        }
+    }
 
     try {
         console.log("Intentando cargar la imagen de plantilla para el PDF...");
@@ -990,11 +1003,11 @@ async function genPDF(songs, title, fileName) {
     let currentY = contentMarginTop;
 
     // Título "SETLIST"
-    // if (bleedingCowboysFontBase64) {
-    //     doc.setFont('BleedingCowboys');
-    // } else {
-        doc.setFont("times", "bold"); // Fallback a Times si BleedingCowboys no carga
-    // }
+    if (customFontLoaded) {
+        doc.setFont(CUSTOM_FONT_NAME_IN_PDF);
+    } else {
+        doc.setFont("times", "bold"); 
+    }
     doc.setFontSize(22); 
     doc.setTextColor(0, 0, 0); 
     const mainSetlistTitle = "SETLIST";
