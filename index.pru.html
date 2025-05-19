@@ -898,17 +898,21 @@ function renderStats() {
 }
 
 /* ---------- 9. PDF ---------- */
-let bleedingCowboysFontLoaded = false;
-let chalkBoardFontLoaded = false;
-let carnevaleeFontLoaded = false; // Nueva flag para Carnevalee Freakshow
+// Caché global para los datos de las fuentes en Base64
+const fontDataCache = {};
 
 const BLEEDING_COWBOYS_FONT_NAME_IN_PDF = "BleedingCowboysCustom"; 
 const CHALK_BOARD_FONT_NAME_IN_PDF = "ChalkBoardCustom";
-const CARNEVALEE_FONT_NAME_IN_PDF = "CarnevaleeCustom"; // Nombre para Carnevalee en PDF
+const CARNEVALEE_FONT_NAME_IN_PDF = "CarnevaleeCustom"; 
 const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png';
 
 async function loadFontAsBase64(fontPath) {
+    if (fontDataCache[fontPath]) {
+        // console.log(`Fuente ${fontPath} ya estaba en caché.`);
+        return fontDataCache[fontPath];
+    }
     try {
+        // console.log(`Cargando fuente ${fontPath} desde el servidor...`);
         const response = await fetch(fontPath);
         if (!response.ok) {
             throw new Error(`No se pudo cargar la fuente: ${response.statusText} (URL: ${fontPath})`);
@@ -918,13 +922,19 @@ async function loadFontAsBase64(fontPath) {
             const reader = new FileReader();
             reader.onloadend = () => {
                 const base64 = reader.result.split(',')[1];
+                fontDataCache[fontPath] = base64; // Guardar en caché
+                // console.log(`Fuente ${fontPath} cargada y convertida a Base64.`);
                 resolve(base64);
             };
-            reader.onerror = (error) => reject(new Error("Error del FileReader al convertir fuente a Base64: " + error.message));
+            reader.onerror = (error) => {
+                console.error("Error del FileReader:", error);
+                reject(new Error("Error del FileReader al convertir fuente a Base64."));
+            };
             reader.readAsDataURL(blob);
         });
     } catch (error) {
-        console.error(`Error cargando la fuente ${fontPath}:`, error);
+        console.error(`Error crítico cargando la fuente ${fontPath}:`, error);
+        fontDataCache[fontPath] = null; // Marcar como fallida en caché para no reintentar innecesariamente
         return null; 
     }
 }
@@ -935,69 +945,61 @@ async function genPDF(songs, title, fileName) {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Cargar Bleeding Cowboys
-    if (!bleedingCowboysFontLoaded) {
-        const fontFileBC = 'assets/Bleeding_Cowboys.ttf';
-        const fontNameInVFSBC = 'Bleeding_Cowboys.ttf';
-        const fontBase64BC = await loadFontAsBase64(fontFileBC);
-        if (fontBase64BC) {
-            try {
-                doc.addFileToVFS(fontNameInVFSBC, fontBase64BC);
-                doc.addFont(fontNameInVFSBC, BLEEDING_COWBOYS_FONT_NAME_IN_PDF, 'normal');
-                bleedingCowboysFontLoaded = true;
-                console.log(`Fuente ${BLEEDING_COWBOYS_FONT_NAME_IN_PDF} registrada.`);
-            } catch (e) { console.error(`Error registrando ${BLEEDING_COWBOYS_FONT_NAME_IN_PDF}:`, e); }
-        } else { console.warn(`No se pudo cargar ${fontFileBC}.`); }
+    let bleedingCowboysRegistered = false;
+    let chalkBoardRegistered = false;
+    let carnevaleeRegistered = false;
+
+    // Cargar y registrar Bleeding Cowboys
+    const fontFileBC = 'assets/Bleeding_Cowboys.ttf';
+    const fontBase64BC = await loadFontAsBase64(fontFileBC);
+    if (fontBase64BC) {
+        try {
+            doc.addFileToVFS(fontFileBC, fontBase64BC); // Usar el nombre de archivo como nombre en VFS
+            doc.addFont(fontFileBC, BLEEDING_COWBOYS_FONT_NAME_IN_PDF, 'normal');
+            bleedingCowboysRegistered = true;
+            console.log(`Fuente ${BLEEDING_COWBOYS_FONT_NAME_IN_PDF} registrada con la instancia actual del PDF.`);
+        } catch (e) { console.error(`Error registrando ${BLEEDING_COWBOYS_FONT_NAME_IN_PDF}:`, e); }
     }
 
-    // Cargar Chalk Board
-    if (!chalkBoardFontLoaded) {
-        const fontFileCB = 'assets/Chalk_Board.ttf';
-        const fontNameInVFSCB = 'Chalk_Board.ttf';
-        const fontBase64CB = await loadFontAsBase64(fontFileCB);
-        if (fontBase64CB) {
-            try {
-                doc.addFileToVFS(fontNameInVFSCB, fontBase64CB);
-                doc.addFont(fontNameInVFSCB, CHALK_BOARD_FONT_NAME_IN_PDF, 'normal');
-                chalkBoardFontLoaded = true;
-                console.log(`Fuente ${CHALK_BOARD_FONT_NAME_IN_PDF} registrada.`);
-            } catch (e) { console.error(`Error registrando ${CHALK_BOARD_FONT_NAME_IN_PDF}:`, e); }
-        } else { console.warn(`No se pudo cargar ${fontFileCB}.`); }
+    // Cargar y registrar Chalk Board
+    const fontFileCB = 'assets/Chalk_Board.ttf';
+    const fontBase64CB = await loadFontAsBase64(fontFileCB);
+    if (fontBase64CB) {
+        try {
+            doc.addFileToVFS(fontFileCB, fontBase64CB);
+            doc.addFont(fontFileCB, CHALK_BOARD_FONT_NAME_IN_PDF, 'normal');
+            chalkBoardRegistered = true;
+            console.log(`Fuente ${CHALK_BOARD_FONT_NAME_IN_PDF} registrada con la instancia actual del PDF.`);
+        } catch (e) { console.error(`Error registrando ${CHALK_BOARD_FONT_NAME_IN_PDF}:`, e); }
     }
     
-    // Cargar Carnevalee Freakshow
-    if (!carnevaleeFontLoaded) {
-        const fontFileCF = 'assets/Carnevalee_Freakshow.ttf'; // Asegúrate que el nombre es exacto
-        const fontNameInVFSCF = 'Carnevalee_Freakshow.ttf';
-        const fontBase64CF = await loadFontAsBase64(fontFileCF);
-        if (fontBase64CF) {
-            try {
-                doc.addFileToVFS(fontNameInVFSCF, fontBase64CF);
-                doc.addFont(fontNameInVFSCF, CARNEVALEE_FONT_NAME_IN_PDF, 'normal');
-                carnevaleeFontLoaded = true;
-                console.log(`Fuente ${CARNEVALEE_FONT_NAME_IN_PDF} registrada.`);
-            } catch (e) { console.error(`Error registrando ${CARNEVALEE_FONT_NAME_IN_PDF}:`, e); }
-        } else { console.warn(`No se pudo cargar ${fontFileCF}.`); }
+    // Cargar y registrar Carnevalee Freakshow
+    const fontFileCF = 'assets/Carnevalee_Freakshow.ttf';
+    const fontBase64CF = await loadFontAsBase64(fontFileCF);
+    if (fontBase64CF) {
+        try {
+            doc.addFileToVFS(fontFileCF, fontBase64CF);
+            doc.addFont(fontFileCF, CARNEVALEE_FONT_NAME_IN_PDF, 'normal');
+            carnevaleeRegistered = true;
+            console.log(`Fuente ${CARNEVALEE_FONT_NAME_IN_PDF} registrada con la instancia actual del PDF.`);
+        } catch (e) { console.error(`Error registrando ${CARNEVALEE_FONT_NAME_IN_PDF}:`, e); }
     }
-
 
     try {
         const imgData = await new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
+                canvas.width = img.width; canvas.height = img.height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
                 resolve(canvas.toDataURL('image/png'));
             };
-            img.onerror = (err) => reject(new Error("Error al cargar la imagen de plantilla. Verifique la ruta y que el archivo exista."));
+            img.onerror = () => reject(new Error("Error al cargar la imagen de plantilla."));
             img.src = PDF_BACKGROUND_IMAGE_PATH; 
              if (img.complete && img.naturalHeight !== 0) { 
                  const canvas = document.createElement('canvas');
-                 canvas.width = img.width;
-                 canvas.height = img.height;
+                 canvas.width = img.width; canvas.height = img.height;
                  const ctx = canvas.getContext('2d');
                  ctx.drawImage(img, 0, 0);
                  resolve(canvas.toDataURL('image/png'));
@@ -1007,10 +1009,9 @@ async function genPDF(songs, title, fileName) {
         });
         doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
     } catch (e) {
-        console.error("No se pudo añadir la plantilla de fondo al PDF. Error detallado:", e);
+        console.error("No se pudo añadir la plantilla de fondo al PDF:", e);
         doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S'); 
-        doc.setFontSize(10);
-        doc.setTextColor(150,0,0); 
+        doc.setFontSize(10); doc.setTextColor(150,0,0); 
         doc.text("Advertencia: No se pudo cargar la plantilla de fondo.", pageWidth / 2, pageHeight / 2, { align: "center" });
         doc.setTextColor(0,0,0); 
     }
@@ -1020,30 +1021,20 @@ async function genPDF(songs, title, fileName) {
     const contentMarginBottom = 100; 
     let currentY = contentMarginTop;
 
-    // Título "SETLIST"
-    if (bleedingCowboysFontLoaded) {
-        doc.setFont(BLEEDING_COWBOYS_FONT_NAME_IN_PDF);
-    } else {
-        doc.setFont("times", "bold"); 
-    }
+    doc.setFont(bleedingCowboysRegistered ? BLEEDING_COWBOYS_FONT_NAME_IN_PDF : "times", 'normal');
+    if (!bleedingCowboysRegistered && doc.getFont().fontName !== "times") doc.setFont("times", "bold"); // Asegurar fallback si la fuente no cargó
     doc.setFontSize(22); 
     doc.setTextColor(0, 0, 0); 
-    const mainSetlistTitle = "SETLIST";
-    doc.text(mainSetlistTitle, pageWidth / 2, currentY, { align: "center" });
+    doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
     currentY += 22 + 10; 
 
-    // Nombre del Setlist (el que viene como 'title' de la función) - Usar Carnevalee Freakshow
-    if (carnevaleeFontLoaded) {
-        doc.setFont(CARNEVALEE_FONT_NAME_IN_PDF);
-    } else {
-        doc.setFont("times", "bold"); // Fallback
-    }
-    doc.setFontSize(18); // Ajustar tamaño si es necesario para Carnevalee
+    doc.setFont(carnevaleeRegistered ? CARNEVALEE_FONT_NAME_IN_PDF : "times", 'normal');
+    if (!carnevaleeRegistered && doc.getFont().fontName !== "times") doc.setFont("times", "bold");
+    doc.setFontSize(18); 
     doc.text(title, pageWidth / 2, currentY, { align: "center" });
     currentY += 18 + 5;
 
-    // Detalles (Nº canciones, Tiempo total)
-    doc.setFont("times", "italic"); // Volver a una fuente estándar para esto
+    doc.setFont("times", "italic");
     doc.setFontSize(10);
     const totalSongsText = `${songs.length} canciones`;
     const totalTimeValue = songs.reduce((a, s) => a + parseDuration(s.duration), 0);
@@ -1051,8 +1042,8 @@ async function genPDF(songs, title, fileName) {
     doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
-    const tableFont = chalkBoardFontLoaded ? CHALK_BOARD_FONT_NAME_IN_PDF : "helvetica";
-    const tableHeadFont = chalkBoardFontLoaded ? CHALK_BOARD_FONT_NAME_IN_PDF : "helvetica"; // También para cabeceras
+    const tableFontToUse = chalkBoardRegistered ? CHALK_BOARD_FONT_NAME_IN_PDF : "helvetica";
+    const tableHeadFontToUse = chalkBoardRegistered ? CHALK_BOARD_FONT_NAME_IN_PDF : "helvetica";
 
     doc.autoTable({
         startY: currentY,
@@ -1068,14 +1059,14 @@ async function genPDF(songs, title, fileName) {
         headStyles: { 
             fillColor: [50, 50, 50], 
             textColor: [255, 255, 255], 
-            font: tableHeadFont, 
-            fontStyle: 'normal', // Chalkboard puede no tener 'bold' real
+            font: tableHeadFontToUse, 
+            fontStyle: 'normal',
             halign: 'center',
-            fontSize: 10 // Ajustar tamaño para Chalkboard si es necesario
+            fontSize: chalkBoardRegistered ? 11 : 10 // Ajustar tamaño si es Chalkboard
         },
         styles: { 
-            font: tableFont, 
-            fontSize: 9, 
+            font: tableFontToUse, 
+            fontSize: chalkBoardRegistered ? 10 : 9, // Ajustar tamaño si es Chalkboard
             cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
             lineColor: [80, 80, 80], 
             lineWidth: 0.5,
