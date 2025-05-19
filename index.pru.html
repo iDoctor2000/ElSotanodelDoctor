@@ -2,16 +2,16 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>El Sótano del Doctor – Uso Interno</title>
+  <title>El Sótano del Doctor – Intranet</title>
 
   <link rel="icon" type="image/x-icon" href="assets/favicon_ElSotanoDr.ico">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-  <meta property="og:title"       content="El Sótano del Doctor – Uso Interno">
+  <meta property="og:title"       content="El Sótano del Doctor – Intranet">
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
   <meta property="og:image"       content="assets/logo_negro copia.jpg"> <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://tusitioweb.com"> <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"        content="El Sótano del Doctor – Uso Interno">
+  <meta name="twitter:title"        content="El Sótano del Doctor – Intranet">
   <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
   <meta name="twitter:image"        content="assets/logo_negro copia.jpg"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -36,14 +36,8 @@
     .sidebar a:hover{color:#0cf}
     .sidebar .submenu { margin-left: 15px; }
     .sidebar .submenu a { padding: 5px 0; font-size: 0.95em; }
-    /* Estilo para el enlace de Configuración */
-    .sidebar a#menu-config {
-      color: #FFD700; /* Color dorado */
-      font-weight: bold;
-    }
-    .sidebar a#menu-config:hover {
-      color: #fff2a7; /* Dorado más claro para hover */
-    }
+    .sidebar a#menu-config { color: #FFD700; font-weight: bold; }
+    .sidebar a#menu-config:hover { color: #fff2a7; }
     #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9998;display:none}
     #overlay.show{display:block}
     
@@ -57,8 +51,24 @@
         box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 100%; max-width: 600px;
         max-height: 90vh; overflow-y: auto; position: relative;
     }
-    .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 20px; }
+    .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 5px; } 
     .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
+    #concert-detail-title-display {
+        color: #fff; 
+        font-size: 1em; 
+        font-weight: normal; 
+        margin-top: 0px; 
+        margin-bottom: 20px; 
+        text-align: left; 
+        border-bottom: 1px solid #333; 
+        padding-bottom: 10px; 
+        padding-left: 0px; 
+    }
+     #concert-detail-title-display .concert-date {
+        font-style: italic;
+        font-size: 0.9em;
+        margin-left: 8px;
+    }
     .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
     .modal-content input[type="text"],
     .modal-content input[type="time"],
@@ -112,7 +122,7 @@
                                 color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { /* #usuarios ya no es una sección principal */
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { 
         background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px
     }
     #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 {
@@ -131,6 +141,18 @@
     }
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
+    th.calendar-col-header, td.calendar-col { 
+        width: 50px; 
+        text-align: center;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+    th.details-col-header { 
+        width: 50px;
+        text-align: center;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
     tr:nth-child(even){background:#1a1a1a}
     
     .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
@@ -138,7 +160,7 @@
     #total-time, #total-time-star, #total-time-2{color:#0cf;margin-top:10px;text-align:center}
 
     footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
-    .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; vertical-align: middle; }
+    .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 0; vertical-align: middle; }
     .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
     .calendar-btn:hover svg { fill: #09b; }
     .details-btn { font-size: 1.5em; color: #0cf; }
@@ -193,6 +215,7 @@
       .table-wrapper { overflow-x: hidden; }
       table { width: 100%; min-width: unset; font-size: 0.85em; }
       th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
+      th.calendar-col-header, td.calendar-col, th.details-col-header { width: 40px; padding: 8px 2px;} 
       #second-setlist .table-wrapper table, #star-setlist .table-wrapper table { min-width: unset; }
       .stats-table table { font-size: 0.85em; }
       .modal-content { width: 95%; padding: 15px; } 
@@ -224,7 +247,8 @@
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#" id="menu-stats">Estadísticas</a>
-    <a href="#" id="menu-user-list-display">Usuarios Registrados</a> <a href="#" id="menu-config">Configuración</a>
+    <a href="#" id="menu-user-list-display">Usuarios Registrados</a> 
+    <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
       <a href="#" id="menu-setlist-config">Configurar Setlists</a>
       <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
@@ -236,6 +260,8 @@
   <div id="concert-details-modal" class="modal-backdrop">
     <div class="modal-content">
         <h3>Detalles del Concierto</h3>
+        <h4 id="concert-detail-title-display"></h4> 
+        
         <input type="hidden" id="concert-detail-id">
         
         <label for="concert-detail-location">Detalles adicionales de la ubicación:</label>
@@ -320,7 +346,8 @@
   <div id="user-list-screen" class="config-screen">
     <button class="close-btn" id="close-user-list-screen">Cerrar</button>
     <h2>Usuarios Registrados</h2>
-    <div class="table-wrapper" style="padding: 0 10px;"> <table>
+    <div class="table-wrapper" style="padding: 0 10px;"> 
+        <table>
             <thead>
                 <tr>
                     <th>Nombre</th>
@@ -328,7 +355,8 @@
                     <th>Roles</th>
                 </tr>
             </thead>
-            <tbody id="users-body"> </tbody>
+            <tbody id="users-body"> 
+            </tbody>
         </table>
     </div>
   </div>
@@ -345,7 +373,18 @@
 
     <section id="rehearsals">
       <h2>Próximos Ensayos</h2>
-      <div class="table-wrapper"><table id="rehearsal-main-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div>
+      <div class="table-wrapper"><table id="rehearsal-main-table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Lugar</th>
+                <th class="calendar-col-header">Cal</th> 
+                <th>Confirmar Asistencia</th>
+            </tr>
+        </thead>
+        <tbody id="rehearsal-main-body"></tbody>
+      </table></div>
     </section>
 
     <section id="second-setlist">
@@ -372,7 +411,7 @@
       </div>
     </section>
 
-    </main>
+  </main>
 
   <footer>© 2025 El Sótano del Doctor. All Rights Reserved.</footer>
 
@@ -420,7 +459,7 @@ const calculateDuration = (startTime, endTime) => {
   const startSeconds = startH * 3600 + startM * 60;
   const endSeconds = endH * 3600 + endM * 60;
   let duration = endSeconds - startSeconds;
-  if (duration < 0) duration += 24 * 3600;
+  if (duration < 0) duration += 24 * 3600; // Cruza la medianoche
   return duration;
 };
 const formatDateWithDay = dateStr => {
@@ -505,9 +544,7 @@ async function withRetry(fn, maxRetries = 3, delay = 2000) {
 /* ---------- 2. Acceso Firestore ---------- */
 async function loadDoc(collection, docId, fallback) {
   try {
-    console.log(`Firestore: Intentando cargar ${collection}/${docId}`);
     const snap = await db.collection(collection).doc(docId).get();
-    console.log(`Firestore: Carga de ${collection}/${docId} ${snap.exists ? 'exitosa' : 'no existe'}`);
     return snap.exists ? snap.data() : fallback;
   } catch (e) {
     console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); 
@@ -516,9 +553,7 @@ async function loadDoc(collection, docId, fallback) {
 }
 async function saveDoc(collection, docId, data, merge = false) {
   try {
-    console.log(`Firestore: Intentando guardar en ${collection}/${docId}`, data);
     await db.collection(collection).doc(docId).set(data, { merge });
-    console.log(`Firestore: Guardado de ${collection}/${docId} exitoso`);
     return true;
   } catch (e) {
     console.error(`Error al guardar documento ${collection}/${docId}:`, e.message, e); 
@@ -597,15 +632,12 @@ const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar,
 /* ---------- 6. Usuarios ---------- */
 let users = [];
 let editingUserIndex = null;
-function renderUsers() {
-    const tbodyMgmt = document.getElementById("user-table-body"); // Para la pantalla de gestión
-    const tbodyDisplay = document.getElementById("users-body");   // Para la nueva pantalla de visualización
+const excludedRehearsalUsers = ["Ximo", "Ginés Torres"]; 
 
-    if (!tbodyMgmt || !tbodyDisplay) { 
-        console.warn("Una o ambas tablas de usuarios no encontradas en el DOM. (tbodyMgmt:", tbodyMgmt, ", tbodyDisplay:", tbodyDisplay, ")"); 
-        // No retornar aquí, intentar popular la que exista.
-    }
-    
+function renderUsers() {
+    const tbodyMgmt = document.getElementById("user-table-body"); 
+    const tbodyDisplay = document.getElementById("users-body");   
+
     if (tbodyMgmt) tbodyMgmt.innerHTML = "";
     if (tbodyDisplay) tbodyDisplay.innerHTML = "";
 
@@ -638,9 +670,9 @@ function renderUsers() {
             if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)) {
                 rehearsals.forEach(r => { if (Array.isArray(r.attendance)) { r.attendance = r.attendance.filter(a => a.name !== userToDelete.name); } });
                 users.splice(userIndex, 1);
-                await saveUsers(); // Esto llamará a renderUsers() de nuevo
+                await saveUsers(); 
                 await saveRehearsals();
-                renderStats(); // renderStats también usa la lista de usuarios
+                renderStats(); 
             }
         });
         tbodyMgmt.querySelectorAll(".edit-user").forEach(btn => btn.onclick = () => {
@@ -666,9 +698,9 @@ async function loadUsers() {
 async function saveUsers() {
     try {
         await withRetry(() => saveDoc("intranet", "users", { users }));
-        renderUsers(); // Actualiza ambas tablas
-        renderRehearsals(); // Si los nombres de usuario cambian, esto podría ser relevante
-        renderStats(); // Las estadísticas por usuario se actualizan
+        renderUsers(); 
+        renderRehearsals(); 
+        renderStats(); 
         return true;
     } catch (e) { console.error("Error al guardar usuarios:", e); throw e; }
 }
@@ -694,11 +726,16 @@ function renderRehearsals() {
     if (!Array.isArray(rehearsals) || rehearsals.length === 0) {
         const emptyMsgConfig = '<tr><td colspan="6">No hay ensayos programados.</td></tr>';
         tbodyConfig.innerHTML = emptyMsgConfig;
-        const emptyMsgMain = '<tr><td colspan="4">No hay próximos ensayos.</td></tr>';
+        const emptyMsgMain = '<tr><td colspan="5">No hay próximos ensayos.</td></tr>'; 
         tbodyMain.innerHTML = emptyMsgMain;
         return;
     }
-    const userOptions = users.length > 0 ? users.map(user => `<option value="${user.name}">${user.nickname || user.name}</option>`).join("") : `<option value="" disabled>No hay usuarios</option>`;
+    
+    const availableUsersForRehearsal = users.filter(user => !excludedRehearsalUsers.includes(user.name));
+    const userOptions = availableUsersForRehearsal.length > 0 ?
+        availableUsersForRehearsal.map(user => `<option value="${user.name}">${user.nickname || user.name}</option>`).join("")
+        : `<option value="" disabled>No hay usuarios disponibles</option>`;
+
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     rehearsals.forEach((r, i) => {
@@ -718,7 +755,8 @@ function renderRehearsals() {
         tbodyConfig.insertAdjacentHTML("beforeend", `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
         const rehearsalDate = new Date(r.date + 'T00:00:00Z'); 
         if (rehearsalDate >= today) {
-            tbodyMain.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}<button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td><td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`);
+            const calendarCell = `<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
+            tbodyMain.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`);
         }
     });
     tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn => btn.onclick = () => {
@@ -860,26 +898,113 @@ function renderStats() {
 /* ---------- 9. PDF ---------- */
 async function genPDF(songs, title, fileName) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "pt", format: "A4" });
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    
+    // 1. Cargar y añadir la imagen de fondo primero
     try {
-        const blob = await (await fetch("assets/logo_negro copia.jpg")).blob(); 
-        const base = await new Promise((ok, ko) => {
-            const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(blob);
+        const imgData = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            };
+            img.onerror = (err) => {
+                console.error("Error al cargar la imagen de plantilla para el PDF:", err);
+                reject(err);
+            };
+            img.src = 'assets/Plantilla_pdf_ESDD_001.png'; // Asegúrate que la ruta es correcta
         });
-        doc.addImage(base, "JPEG", 40, 30, 60, 60);
-    } catch (e) { console.error("Error al cargar el logo para el PDF:", e); }
-    doc.setFontSize(16); doc.text(`Setlist - ${title}`, 120, 50);
-    const totalTime = toHHMM(songs.reduce((a, s) => a + parseDuration(s.duration), 0));
-    doc.setFontSize(12); doc.text(`${songs.length} canciones, ${totalTime} total`, 120, 70);
+        doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+    } catch (e) {
+        console.error("No se pudo añadir la plantilla de fondo al PDF:", e);
+    }
+
+    // 2. Definir márgenes y posición inicial del contenido (ajustar según la plantilla)
+    const contentMarginTop = 120; // Espacio superior dejado por la plantilla
+    const contentMarginSides = 60; // Márgenes laterales
+    const contentMarginBottom = 100; // Espacio inferior dejado por la plantilla
+    let currentY = contentMarginTop;
+
+    // 3. Título Principal "SETLIST" (ajustado para la plantilla)
+    doc.setFont("times", "bold"); // Usar Times para un look clásico
+    doc.setFontSize(26);
+    doc.setTextColor(0, 0, 0); // Texto negro
+    const mainSetlistTitle = "SETLIST";
+    doc.text(mainSetlistTitle, pageWidth / 2, currentY, { align: "center" });
+    currentY += 26 + 5; // Espacio después del título
+
+    // 4. Nombre del Setlist (el que viene como 'title' de la función)
+    doc.setFont("times", "bold");
+    doc.setFontSize(16);
+    doc.text(title, pageWidth / 2, currentY, { align: "center" });
+    currentY += 16 + 5;
+
+    // 5. Detalles (Nº canciones, Tiempo total)
+    const totalSongsText = `${songs.length} canciones`;
+    const totalTimeValue = songs.reduce((a, s) => a + parseDuration(s.duration), 0);
+    const totalTimeText = `Tiempo total: ${toHHMM(totalTimeValue)}`;
+    doc.setFont("times", "italic");
+    doc.setFontSize(10);
+    doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
+    currentY += 10 + 15; // Espacio antes de la tabla
+
+    // 6. Tabla de Canciones
     doc.autoTable({
-        startY: 100,
+        startY: currentY,
         head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
-        body: songs.map((s, i) => [i + 1, s.name || "", s.key || "", s.tempo || "", toMMSS(parseDuration(s.duration))]),
-        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: "bold" },
-        styles: { fontSize: 10, cellPadding: 5 }
+        body: songs.map((s, i) => [
+            i + 1, 
+            s.name || "", 
+            s.key || "", 
+            s.tempo || "", 
+            toMMSS(parseDuration(s.duration))
+        ]),
+        theme: 'grid', 
+        headStyles: { 
+            fillColor: [220, 220, 220], 
+            textColor: [0, 0, 0], 
+            font: "helvetica", 
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        styles: { 
+            font: "helvetica", 
+            fontSize: 9, // Un poco más pequeño para que quepa mejor
+            cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
+            lineColor: [44, 62, 80], 
+            lineWidth: 0.5,
+            textColor: [0,0,0], // Asegurar texto negro en la tabla
+        },
+        alternateRowStyles: { 
+            fillColor: [248, 248, 248] // Un gris aún más claro para alternar
+        },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 25 }, 
+            1: { halign: 'left', cellWidth: 'auto' },   
+            2: { halign: 'center', cellWidth: 60 },  
+            3: { halign: 'center', cellWidth: 60 },  
+            4: { halign: 'center', cellWidth: 60 }   
+        },
+        margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
+        pageBreak: 'auto',
+        didDrawPage: function (data) {
+            // El pie de página ya está en la plantilla, así que no añadimos uno aquí
+            // Si la plantilla no tuviera pie, aquí se podría añadir:
+            // doc.setFontSize(8);
+            // doc.setTextColor(100);
+            // doc.text("© " + new Date().getFullYear() + " El Sótano del Doctor - Intranet", data.settings.margin.left, pageHeight - 30);
+        }
     });
+
     doc.save(fileName);
 }
+
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
 let processTableAttempts = 0;
@@ -892,14 +1017,12 @@ function processBandHelperTable() {
       return;
   }
  
-  console.log(`processBandHelperTable: Intento ${processTableAttempts + 1} para encontrar la tabla de BandHelper.`);
   const table = container.querySelector("table"); 
   const loadingMessage = document.getElementById("bandhelper-loading-message");
 
   if (!table) {
     processTableAttempts++;
     if (processTableAttempts < MAX_PROCESS_ATTEMPTS) {
-      console.log("processBandHelperTable: Tabla de BandHelper NO encontrada. Reintentando en 500ms...");
       setTimeout(processBandHelperTable, 500); 
     } else {
       console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de", MAX_PROCESS_ATTEMPTS, "intentos.");
@@ -912,7 +1035,6 @@ function processBandHelperTable() {
   }
 
   if(loadingMessage) loadingMessage.style.display = "none"; 
-  console.log("processBandHelperTable: Tabla de BandHelper ENCONTRADA:", table);
 
   if (table.dataset.processed === "true") { 
       return;
@@ -920,123 +1042,105 @@ function processBandHelperTable() {
   table.dataset.processed = "true";
 
   let headerRow = table.querySelector("thead tr"); 
-  let isHeaderInTbody = false;
+  const desiredHeaders = ["Fecha/Hora", "Evento", "Lugar", "Cal", "Info"]; 
 
-  if (!headerRow) { 
-      if (table.rows.length > 0 && table.rows[0].cells.length > 0 && table.rows[0].cells[0].tagName.toLowerCase() === 'th') {
-          headerRow = table.rows[0];
-      } else {
-          const tbody = table.querySelector("tbody");
-          if (tbody && tbody.rows.length > 0) {
-              const firstTbodyRow = tbody.rows[0];
-              if (firstTbodyRow.querySelector("th")) {
-                  headerRow = firstTbodyRow;
-                  isHeaderInTbody = true; 
-              } else {
-                  console.warn("processBandHelperTable: La tabla de BandHelper no parece tener una fila de cabecera formal con <th>. La columna 'Detalles' no tendrá título.");
-              }
-          }
-      }
+  if (!table.tHead) {
+      table.createTHead();
   }
+  headerRow = table.tHead.rows[0] || table.tHead.insertRow(0);
+  headerRow.innerHTML = ''; 
+  desiredHeaders.forEach(text => {
+      const th = document.createElement('th');
+      th.textContent = text;
+      if (text === "Cal") th.classList.add("calendar-col-header");
+      if (text === "Info") th.classList.add("details-col-header");
+      headerRow.appendChild(th);
+  });
   
-  if (headerRow) {
-      if (!headerRow.querySelector(".details-header")) {
-          const th = document.createElement("th"); 
-          th.className = "details-header";
-          th.textContent = "Detalles";
-          th.style.textAlign = "center";
-          headerRow.appendChild(th);
-      }
-  }
-
   const dataRowsSource = table.querySelector("tbody") ? table.querySelectorAll("tbody tr") : []; 
-  let dataRows = Array.from(dataRowsSource);
   
-  if (dataRows.length === 0 && table.rows.length > (headerRow ? 1:0) ) {
-      console.warn("processBandHelperTable: No se encontraron filas en 'tbody' o estaba vacío. Intentando procesar todas las filas de la tabla excepto la posible cabecera.");
-      let allRowsInTable = Array.from(table.rows);
-      if (headerRow && allRowsInTable.length > 0 && allRowsInTable[0] === headerRow) {
-          allRowsInTable.shift(); 
-      }
-      dataRows = allRowsInTable; 
-  }
+  dataRowsSource.forEach((row) => {
+    const originalCells = Array.from(row.cells); 
+    row.innerHTML = ''; 
 
-  for (let i = 0; i < dataRows.length; i++) { 
-    const row = dataRows[i];
-    if (isHeaderInTbody && i === 0 && row === headerRow) { 
-        continue;
-    }
+    const dateCellFullText = originalCells[0]?.textContent.trim() || "";
+    const eventTitleFromCell = originalCells[1]?.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
+    const locationText = originalCells[3]?.textContent.trim().split('\n')[0].trim() || originalCells[2]?.textContent.trim().split('\n')[0].trim() || "";
 
-    const cells = row.cells; 
+    row.insertCell().textContent = dateCellFullText;    
+    row.insertCell().textContent = eventTitleFromCell; 
+    row.insertCell().textContent = locationText;       
+
+    const calendarDisplayCell = row.insertCell();
+    calendarDisplayCell.className = "calendar-col";
+    calendarDisplayCell.style.textAlign = "center";
+
+    const detailDisplayCell = row.insertCell();
+    detailDisplayCell.className = "calendar-col"; 
+    detailDisplayCell.style.textAlign = "center";
+
+    const dateForId = dateCellFullText.split(',')[0].trim();
+    const concertId = sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
     
-    if (cells.length < 3) { 
-        console.warn(`processBandHelperTable: Fila de datos ${i} con ${cells.length} celdas. Mínimo 3 esperadas (Fecha, Hora, Evento). Saltando.`);
-        continue; 
+    const detailsBtn = document.createElement("button");
+    detailsBtn.className = "details-btn";
+    detailsBtn.innerHTML = "➡️";
+    detailsBtn.title = "Ver/Editar Detalles del Concierto";
+    detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellFullText, eventTitleFromCell, locationText); 
+    detailDisplayCell.appendChild(detailsBtn);
+
+    let icsDate = new Date().toISOString().split('T')[0]; 
+    let startTimeForICS = "20:00"; 
+    let durationSecondsForICS = 2 * 3600; 
+
+    const dateMatch = dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/); 
+    if (dateMatch) {
+        let year = parseInt(dateMatch[3], 10);
+        year += (year < 70 ? 2000 : 1900); 
+        icsDate = `${year}-${dateMatch[2]}-${dateMatch[1]}`;
     }
 
-    let detailCell;
-    const expectedCellCount = headerRow ? headerRow.cells.length : cells.length + 1;
+    const timeRangeMatch = dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/); 
+    const singleTimeMatch = dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/); 
 
-    if (cells.length < expectedCellCount) {
-        detailCell = row.insertCell(-1); 
-    } else { 
-        detailCell = cells[expectedCellCount - 1]; 
-        detailCell.innerHTML = ''; 
+    if (timeRangeMatch) {
+        startTimeForICS = timeRangeMatch[1];
+        durationSecondsForICS = calculateDuration(timeRangeMatch[1], timeRangeMatch[2]);
+        if (durationSecondsForICS <= 0) durationSecondsForICS = 2 * 3600;
+    } else if (singleTimeMatch) {
+        startTimeForICS = singleTimeMatch[1];
     }
-
-    detailCell.className = "details-cell"; 
-    detailCell.style.textAlign = "center";
     
-    if (!detailCell.querySelector('.details-btn')) {
-        const dateCellText = cells[0].textContent.trim();
-        const eventCellContent = cells[2] ? cells[2].textContent.trim() : "Evento Desconocido";
-        const eventTitleFromCell = eventCellContent.split('\n')[0].trim() || "Evento Sin Título";
-        const concertId = sanitizeFirebaseKey(`${dateCellText}_${eventTitleFromCell}`);
-        
-        const detailsBtn = document.createElement("button");
-        detailsBtn.className = "details-btn";
-        detailsBtn.innerHTML = "➡️";
-        detailsBtn.title = "Ver/Editar Detalles del Concierto";
-        detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellText, eventTitleFromCell, eventCellContent);
-        
-        detailCell.appendChild(detailsBtn);
-    }
+    const locationForICS = locationText || eventTitleFromCell;
+    const descriptionForICS = `Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;
 
-    const locationCell = cells[2]; 
-    if (locationCell && !locationCell.querySelector('.calendar-btn')) {
-        const eventNameText = locationCell.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
-        const dateCellContent = cells[0].textContent.trim();
-        const timeCellContent = cells[1]?.textContent.trim() || "20:00";
-        const dateParts = dateCellContent.match(/(\d+)\s+de\s+(\w+)/i);
-        let icsDate = new Date().toISOString().split('T')[0];
-        if (dateParts) {
-            const day = dateParts[1]; const monthName = dateParts[2];
-            const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-            const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
-            if (month !== -1) {
-                let year = new Date().getFullYear();
-                const currentMonth = new Date().getMonth();
-                if (month < currentMonth && (currentMonth - month > 6)) year++; 
-                icsDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            }
-        }
-        const calendarBtn = document.createElement('button');
-        calendarBtn.className = 'calendar-btn'; calendarBtn.title = 'Añadir a mi calendario';
-        calendarBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';
-        calendarBtn.onclick = () => generateICS(`Concierto: ${eventNameText}`, icsDate, timeCellContent, eventNameText, `Concierto de El Sótano del Doctor en ${eventNameText}`);
-        locationCell.appendChild(document.createTextNode(" "));
-        locationCell.appendChild(calendarBtn);
-    }
-  }
+    const calendarBtn = document.createElement('button');
+    calendarBtn.className = 'calendar-btn'; calendarBtn.title = 'Añadir a mi calendario';
+    calendarBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';
+    calendarBtn.onclick = () => generateICS(
+        `Concierto: ${eventTitleFromCell}`,
+        icsDate,
+        startTimeForICS,
+        locationForICS,
+        descriptionForICS,
+        durationSecondsForICS
+    );
+    calendarDisplayCell.appendChild(calendarBtn);
+  });
 }
 
 const concertDetailModal = document.getElementById('concert-details-modal');
 const concertDetailMessage = document.getElementById('concert-detail-message');
-async function openConcertDetailModal(concertId, concertDate, concertTitle, concertLocationOriginal) {
+async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
     concertDetailMessage.textContent = ""; 
     concertDetailMessage.className = "success-message"; 
 
     document.getElementById('concert-detail-id').value = concertId;
+    const concertTitleDisplay = document.getElementById('concert-detail-title-display');
+    if (concertTitleDisplay) {
+        const datePartOnly = concertFullDateText.split(',')[0].trim(); 
+        concertTitleDisplay.innerHTML = `${concertTitle || "Título no disponible"} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`; 
+    }
     
     document.getElementById('concert-detail-location').value = '';
     document.getElementById('concert-detail-soundsetup').value = ''; 
@@ -1173,13 +1277,11 @@ const setupMenuLink = (menuId, targetId) => {
         };
     } else { console.warn(`Enlace ${menuId} no encontrado.`); }
 };
-// Enlaces a secciones principales
 setupMenuLink("menu-rehearsals-setlist-section", "setlists");
 setupMenuLink("menu-rehearsals-section", "rehearsals");
 setupMenuLink("menu-second-setlist-section", "second-setlist");
 setupMenuLink("menu-star-setlist-section", "star-setlist");
 setupMenuLink("menu-concerts-section", "calendario");
-// Ya no hay enlace directo a #usuarios en main, se maneja con openConfigScreen
 
 document.getElementById("menu-config").onclick = e => {
     e.preventDefault();
@@ -1193,19 +1295,17 @@ document.getElementById("menu-config").onclick = e => {
 };
 
 const openConfigScreen = (screenId) => {
-    if (!isAuthenticated && screenId !== 'user-list-screen' && screenId !== 'stats-screen') { // Permitir acceso a user-list y stats sin contraseña
+    if (!isAuthenticated && screenId !== 'user-list-screen' && screenId !== 'stats-screen') { 
         const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
         if (password && password.toLowerCase() === PASSWORD.toLowerCase()) { isAuthenticated = true; }
         else { alert("Contraseña incorrecta."); return false; }
     }
-    // Para user-list-screen y stats-screen, no se pide contraseña si no está autenticado, simplemente se muestra.
-    // Si ya está autenticado, cualquier pantalla de config se muestra.
     if (isAuthenticated || screenId === 'user-list-screen' || screenId === 'stats-screen') {
         closeAll();
         const screen = document.getElementById(screenId);
         if (screen) {
             screen.style.display = "block";
-            if (screenId === 'user-list-screen') { // Asegurar que los usuarios se renderizan al abrir esta pantalla
+            if (screenId === 'user-list-screen') { 
                 renderUsers();
             }
         } else {
@@ -1213,7 +1313,7 @@ const openConfigScreen = (screenId) => {
         }
         return true;
     }
-    return false; // Si no está autenticado y la pantalla requiere contraseña
+    return false; 
 }
 
 document.getElementById("menu-setlist-config").onclick = e => {
@@ -1302,15 +1402,13 @@ document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(op
 document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
 document.getElementById("stats-month-filter").addEventListener("change", renderStats);
 
-// Nuevo: Para la pantalla de lista de usuarios
 document.getElementById("menu-user-list-display").onclick = e => { 
     e.preventDefault(); 
-    openConfigScreen("user-list-screen"); // renderUsers() se llama dentro de openConfigScreen si es user-list-screen
+    openConfigScreen("user-list-screen"); 
 };
 document.getElementById("close-user-list-screen").onclick = () => {
     document.getElementById("user-list-screen").style.display = "none";
 };
-
 
 /* ---------- 12. Carga inicial ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
