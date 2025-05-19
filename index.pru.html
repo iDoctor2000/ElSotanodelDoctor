@@ -29,13 +29,21 @@
     .hamburger{cursor:pointer;border:1px solid #0cf;border-radius:4px;padding:5px}
     .hamburger div{width:25px;height:3px;background:#0cf;margin:4px 0}
     .sidebar{position:fixed;top:0;left:0;width:250px;height:100%;background:#111;border-right:1px solid #222;
-            padding:20px;box-shadow:2px 0 10px rgba(0,255,255,.1);transform:translateX(-250px);transition:.3s;z-index:9999}
+            padding:20px;box-shadow:2px 0 10px rgba(0,255,255,.1);transform:translateX(-250px);transition:.3s;z-index:9999; overflow-y: auto;}
     .sidebar.show{transform:translateX(0)}
     .sidebar h2{color:#0cf;margin:0}
     .sidebar a{display:block;color:#fff;text-decoration:none;margin:10px 0;padding:5px 0;border-bottom:1px solid #222}
     .sidebar a:hover{color:#0cf}
     .sidebar .submenu { margin-left: 15px; }
     .sidebar .submenu a { padding: 5px 0; font-size: 0.95em; }
+    /* Estilo para el enlace de Configuración */
+    .sidebar a#menu-config {
+      color: #FFD700; /* Color dorado */
+      font-weight: bold;
+    }
+    .sidebar a#menu-config:hover {
+      color: #fff2a7; /* Dorado más claro para hover */
+    }
     #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9998;display:none}
     #overlay.show{display:block}
     
@@ -104,10 +112,10 @@
                                 color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #usuarios {
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { /* #usuarios ya no es una sección principal */
         background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px
     }
-    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #usuarios h2 {
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 {
         text-align:center;color:#0cf;margin-bottom:5px
     }
     .setlist-dynamic-name {
@@ -215,9 +223,8 @@
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
-    <a href="#usuarios" id="menu-users-section">Usuarios Registrados</a>
     <a href="#" id="menu-stats">Estadísticas</a>
-    <a href="#" id="menu-config">Configuración</a>
+    <a href="#" id="menu-user-list-display">Usuarios Registrados</a> <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
       <a href="#" id="menu-setlist-config">Configurar Setlists</a>
       <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
@@ -310,6 +317,23 @@
     <div class="stats-table"><h3>Ensayos Pasados</h3><div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Asistencias</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div></div>
   </div>
 
+  <div id="user-list-screen" class="config-screen">
+    <button class="close-btn" id="close-user-list-screen">Cerrar</button>
+    <h2>Usuarios Registrados</h2>
+    <div class="table-wrapper" style="padding: 0 10px;"> <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apodo</th>
+                    <th>Roles</th>
+                </tr>
+            </thead>
+            <tbody id="users-body"> </tbody>
+        </table>
+    </div>
+  </div>
+
+
   <main>
     <section id="setlists">
       <h2>Setlist Próximo Ensayo</h2>
@@ -348,11 +372,7 @@
       </div>
     </section>
 
-    <section id="usuarios">
-      <h2>Usuarios Registrados</h2>
-      <div class="table-wrapper"><table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table></div>
-    </section>
-  </main>
+    </main>
 
   <footer>© 2025 El Sótano del Doctor. All Rights Reserved.</footer>
 
@@ -362,7 +382,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
   authDomain: "sotanointranet.firebaseapp.com",
   projectId: "sotanointranet",
-  storageBucket: "sotanointranet.appspot.com", // CORREGIDO: Coincide con la consola de Firebase
+  storageBucket: "sotanointranet.appspot.com", 
   messagingSenderId: "756955233128",
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
@@ -578,45 +598,62 @@ const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar,
 let users = [];
 let editingUserIndex = null;
 function renderUsers() {
-    const tbody = document.getElementById("user-table-body");
-    const mainUsersBody = document.getElementById("users-body");
-    if (!tbody || !mainUsersBody) { console.error("Tablas de usuarios no encontradas en el DOM."); return; }
-    tbody.innerHTML = mainUsersBody.innerHTML = "";
+    const tbodyMgmt = document.getElementById("user-table-body"); // Para la pantalla de gestión
+    const tbodyDisplay = document.getElementById("users-body");   // Para la nueva pantalla de visualización
+
+    if (!tbodyMgmt || !tbodyDisplay) { 
+        console.warn("Una o ambas tablas de usuarios no encontradas en el DOM. (tbodyMgmt:", tbodyMgmt, ", tbodyDisplay:", tbodyDisplay, ")"); 
+        // No retornar aquí, intentar popular la que exista.
+    }
+    
+    if (tbodyMgmt) tbodyMgmt.innerHTML = "";
+    if (tbodyDisplay) tbodyDisplay.innerHTML = "";
+
     if (!Array.isArray(users) || users.length === 0) {
-        const emptyMsg = '<tr><td colspan="4">No hay usuarios registrados.</td></tr>';
-        tbody.innerHTML = emptyMsg;
-        mainUsersBody.innerHTML = emptyMsg;
+        const emptyMsgMgmt = '<tr><td colspan="4">No hay usuarios registrados.</td></tr>';
+        const emptyMsgDisplay = '<tr><td colspan="3">No hay usuarios registrados.</td></tr>';
+        if (tbodyMgmt) tbodyMgmt.innerHTML = emptyMsgMgmt;
+        if (tbodyDisplay) tbodyDisplay.innerHTML = emptyMsgDisplay;
         return;
     }
+
     users.forEach((u, i) => {
         if (!u || typeof u !== 'object' || !u.name || !u.nickname || !Array.isArray(u.roles)) {
             console.warn(`Usuario inválido en la posición ${i}:`, u); return;
         }
         const rolesDisplay = u.roles.join(", ");
-        tbody.insertAdjacentHTML("beforeend", `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`);
-        mainUsersBody.insertAdjacentHTML("beforeend", `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`);
-    });
-    tbody.querySelectorAll(".delete-user").forEach(btn => btn.onclick = async () => {
-        const userIndex = parseInt(btn.dataset.i, 10);
-        const userToDelete = users[userIndex];
-        if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)) {
-            rehearsals.forEach(r => { if (Array.isArray(r.attendance)) { r.attendance = r.attendance.filter(a => a.name !== userToDelete.name); } });
-            users.splice(userIndex, 1);
-            await saveUsers();
-            await saveRehearsals();
-            renderStats();
+        
+        if (tbodyMgmt) {
+            tbodyMgmt.insertAdjacentHTML("beforeend", `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`);
+        }
+        if (tbodyDisplay) {
+            tbodyDisplay.insertAdjacentHTML("beforeend", `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`);
         }
     });
-    tbody.querySelectorAll(".edit-user").forEach(btn => btn.onclick = () => {
-        editingUserIndex = parseInt(btn.dataset.i, 10);
-        const user = users[editingUserIndex];
-        document.getElementById("user-name").value = user.name;
-        document.getElementById("user-nickname").value = user.nickname;
-        const roleSelect = document.getElementById("user-role");
-        Array.from(roleSelect.options).forEach(option => { option.selected = user.roles.includes(option.value); });
-        document.getElementById("add-user").textContent = "Guardar Cambios";
-        document.getElementById("cancel-edit-user").style.display = "inline-block";
-    });
+
+    if (tbodyMgmt) {
+        tbodyMgmt.querySelectorAll(".delete-user").forEach(btn => btn.onclick = async () => {
+            const userIndex = parseInt(btn.dataset.i, 10);
+            const userToDelete = users[userIndex];
+            if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)) {
+                rehearsals.forEach(r => { if (Array.isArray(r.attendance)) { r.attendance = r.attendance.filter(a => a.name !== userToDelete.name); } });
+                users.splice(userIndex, 1);
+                await saveUsers(); // Esto llamará a renderUsers() de nuevo
+                await saveRehearsals();
+                renderStats(); // renderStats también usa la lista de usuarios
+            }
+        });
+        tbodyMgmt.querySelectorAll(".edit-user").forEach(btn => btn.onclick = () => {
+            editingUserIndex = parseInt(btn.dataset.i, 10);
+            const user = users[editingUserIndex];
+            document.getElementById("user-name").value = user.name;
+            document.getElementById("user-nickname").value = user.nickname;
+            const roleSelect = document.getElementById("user-role");
+            Array.from(roleSelect.options).forEach(option => { option.selected = user.roles.includes(option.value); });
+            document.getElementById("add-user").textContent = "Guardar Cambios";
+            document.getElementById("cancel-edit-user").style.display = "inline-block";
+        });
+    }
 }
 async function loadUsers() {
     try {
@@ -629,9 +666,9 @@ async function loadUsers() {
 async function saveUsers() {
     try {
         await withRetry(() => saveDoc("intranet", "users", { users }));
-        renderUsers();
-        renderRehearsals();
-        renderStats();
+        renderUsers(); // Actualiza ambas tablas
+        renderRehearsals(); // Si los nombres de usuario cambian, esto podría ser relevante
+        renderStats(); // Las estadísticas por usuario se actualizan
         return true;
     } catch (e) { console.error("Error al guardar usuarios:", e); throw e; }
 }
@@ -685,7 +722,7 @@ function renderRehearsals() {
         }
     });
     tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn => btn.onclick = () => {
-        editingUserIndex = parseInt(btn.dataset.i, 10);
+        editingRehearsalIndex = parseInt(btn.dataset.i, 10);
         const rehearsal = rehearsals[editingRehearsalIndex];
         document.getElementById("rehearsal-date").value = rehearsal.date;
         document.getElementById("rehearsal-start-time").value = rehearsal.startTime;
@@ -1136,12 +1173,13 @@ const setupMenuLink = (menuId, targetId) => {
         };
     } else { console.warn(`Enlace ${menuId} no encontrado.`); }
 };
+// Enlaces a secciones principales
 setupMenuLink("menu-rehearsals-setlist-section", "setlists");
 setupMenuLink("menu-rehearsals-section", "rehearsals");
 setupMenuLink("menu-second-setlist-section", "second-setlist");
 setupMenuLink("menu-star-setlist-section", "star-setlist");
 setupMenuLink("menu-concerts-section", "calendario");
-setupMenuLink("menu-users-section", "usuarios");
+// Ya no hay enlace directo a #usuarios en main, se maneja con openConfigScreen
 
 document.getElementById("menu-config").onclick = e => {
     e.preventDefault();
@@ -1155,16 +1193,27 @@ document.getElementById("menu-config").onclick = e => {
 };
 
 const openConfigScreen = (screenId) => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && screenId !== 'user-list-screen' && screenId !== 'stats-screen') { // Permitir acceso a user-list y stats sin contraseña
         const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
         if (password && password.toLowerCase() === PASSWORD.toLowerCase()) { isAuthenticated = true; }
         else { alert("Contraseña incorrecta."); return false; }
     }
-    closeAll();
-    const screen = document.getElementById(screenId);
-    if (screen) screen.style.display = "block";
-    else console.error(`Pantalla ${screenId} no encontrada.`);
-    return true;
+    // Para user-list-screen y stats-screen, no se pide contraseña si no está autenticado, simplemente se muestra.
+    // Si ya está autenticado, cualquier pantalla de config se muestra.
+    if (isAuthenticated || screenId === 'user-list-screen' || screenId === 'stats-screen') {
+        closeAll();
+        const screen = document.getElementById(screenId);
+        if (screen) {
+            screen.style.display = "block";
+            if (screenId === 'user-list-screen') { // Asegurar que los usuarios se renderizan al abrir esta pantalla
+                renderUsers();
+            }
+        } else {
+             console.error(`Pantalla ${screenId} no encontrada.`);
+        }
+        return true;
+    }
+    return false; // Si no está autenticado y la pantalla requiere contraseña
 }
 
 document.getElementById("menu-setlist-config").onclick = e => {
@@ -1252,6 +1301,16 @@ document.getElementById("cancel-edit-rehearsal").onclick = () => { resetRehearsa
 document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(openConfigScreen("stats-screen")){ updateMonthFilter(); renderStats(); }};
 document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
 document.getElementById("stats-month-filter").addEventListener("change", renderStats);
+
+// Nuevo: Para la pantalla de lista de usuarios
+document.getElementById("menu-user-list-display").onclick = e => { 
+    e.preventDefault(); 
+    openConfigScreen("user-list-screen"); // renderUsers() se llama dentro de openConfigScreen si es user-list-screen
+};
+document.getElementById("close-user-list-screen").onclick = () => {
+    document.getElementById("user-list-screen").style.display = "none";
+};
+
 
 /* ---------- 12. Carga inicial ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
