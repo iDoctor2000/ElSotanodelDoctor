@@ -896,22 +896,55 @@ function renderStats() {
 }
 
 /* ---------- 9. PDF ---------- */
+// Función auxiliar para cargar fuentes TTF y convertirlas a base64
+async function loadFontAsBase64(fontPath) {
+    try {
+        const response = await fetch(fontPath);
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar la fuente: ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                // Quitar el prefijo "data:...;base64,"
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error(`Error cargando la fuente ${fontPath}:`, error);
+        return null; // Retornar null si falla la carga
+    }
+}
+
+
 async function genPDF(songs, title, fileName) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    // 1. Cargar y añadir la imagen de fondo primero
+    // Cargar fuente personalizada
+    // const bleedingCowboysFontBase64 = await loadFontAsBase64('assets/Bleeding_Cowboys.ttf');
+    // if (bleedingCowboysFontBase64) {
+    //     doc.addFileToVFS('Bleeding_Cowboys.ttf', bleedingCowboysFontBase64);
+    //     doc.addFont('Bleeding_Cowboys.ttf', 'BleedingCowboys', 'normal');
+    //     console.log("Fuente BleedingCowboys registrada en jsPDF.");
+    // } else {
+    //     console.warn("No se pudo cargar la fuente BleedingCowboys. Se usará una fuente estándar.");
+    // }
+    // Nota: La carga de fuentes personalizadas puede ser compleja y depende de la configuración del servidor
+    // y de cómo jsPDF maneja las fuentes en el entorno específico.
+    // Por ahora, se usará una fuente estándar para "SETLIST".
+
     try {
         console.log("Intentando cargar la imagen de plantilla para el PDF...");
-        console.log("Base URI del documento:", document.baseURI); // Para depurar la ruta base
+        console.log("Base URI del documento:", document.baseURI); 
         const imgData = await new Promise((resolve, reject) => {
             const img = new Image();
-            // Para asegurar que la carga no se vea afectada por CORS si se prueba localmente con file://
-            // y la imagen está en una ruta relativa, no se necesita crossOrigin.
-            // Si la imagen estuviera en un dominio diferente, sí sería necesario.
-            // img.crossOrigin = "Anonymous"; 
             img.onload = () => {
                 console.log("Imagen de plantilla cargada correctamente desde:", img.src);
                 const canvas = document.createElement('canvas');
@@ -923,24 +956,32 @@ async function genPDF(songs, title, fileName) {
             };
             img.onerror = (err) => {
                 console.error("Error en img.onerror al cargar la imagen de plantilla para el PDF desde:", img.src, "Error:", err);
-                reject(err);
+                reject(new Error("Error al cargar la imagen de plantilla."));
             };
-            img.src = 'assets/Plantilla_pdf_ESDD_001.png'; // Ruta relativa a tu HTML
+            img.src = 'assets/Plantilla_pdf_ESDD_001.png'; 
             console.log("Establecido img.src a:", img.src);
-             if (img.complete) { // Si la imagen ya está en caché
-                 console.log("Imagen de plantilla ya estaba en caché (ruta:", img.src, ")");
+             if (img.complete && img.naturalHeight !== 0) { 
+                 console.log("Imagen de plantilla ya estaba en caché y cargada (ruta:", img.src, ")");
                  const canvas = document.createElement('canvas');
                  canvas.width = img.width;
                  canvas.height = img.height;
                  const ctx = canvas.getContext('2d');
                  ctx.drawImage(img, 0, 0);
                  resolve(canvas.toDataURL('image/png'));
+            } else if (img.complete && img.naturalHeight === 0) {
+                console.warn("Imagen de plantilla en caché pero parece inválida (altura 0). Rechazando.");
+                reject(new Error("Imagen de plantilla en caché pero inválida."));
             }
         });
         doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
         console.log("Imagen de plantilla añadida al PDF.");
     } catch (e) {
         console.error("No se pudo añadir la plantilla de fondo al PDF. Error detallado:", e);
+        doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S'); 
+        doc.setFontSize(10);
+        doc.setTextColor(150,0,0); 
+        doc.text("Advertencia: No se pudo cargar la plantilla de fondo.", pageWidth / 2, pageHeight / 2, { align: "center" });
+        doc.setTextColor(0,0,0); 
     }
 
     const contentMarginTop = 120; 
@@ -949,20 +990,22 @@ async function genPDF(songs, title, fileName) {
     let currentY = contentMarginTop;
 
     // Título "SETLIST"
-    doc.setFont("times", "bold"); 
-    doc.setFontSize(22); // Ligeramente más pequeño
+    // if (bleedingCowboysFontBase64) {
+    //     doc.setFont('BleedingCowboys');
+    // } else {
+        doc.setFont("times", "bold"); // Fallback a Times si BleedingCowboys no carga
+    // }
+    doc.setFontSize(22); 
     doc.setTextColor(0, 0, 0); 
     const mainSetlistTitle = "SETLIST";
     doc.text(mainSetlistTitle, pageWidth / 2, currentY, { align: "center" });
     currentY += 22 + 10; 
 
-    // Nombre del Setlist (el que viene como 'title' de la función)
     doc.setFont("times", "bold");
     doc.setFontSize(16);
     doc.text(title, pageWidth / 2, currentY, { align: "center" });
     currentY += 16 + 5;
 
-    // Detalles (Nº canciones, Tiempo total)
     const totalSongsText = `${songs.length} canciones`;
     const totalTimeValue = songs.reduce((a, s) => a + parseDuration(s.duration), 0);
     const totalTimeText = `Tiempo total: ${toHHMM(totalTimeValue)}`;
@@ -971,7 +1014,6 @@ async function genPDF(songs, title, fileName) {
     doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
-    // Tabla de Canciones
     doc.autoTable({
         startY: currentY,
         head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
