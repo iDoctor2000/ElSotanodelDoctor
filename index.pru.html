@@ -904,9 +904,11 @@ async function genPDF(songs, title, fileName) {
     
     // 1. Cargar y añadir la imagen de fondo primero
     try {
+        console.log("Intentando cargar la imagen de plantilla para el PDF...");
         const imgData = await new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
+                console.log("Imagen de plantilla cargada correctamente.");
                 const canvas = document.createElement('canvas');
                 canvas.width = img.width;
                 canvas.height = img.height;
@@ -915,46 +917,56 @@ async function genPDF(songs, title, fileName) {
                 resolve(canvas.toDataURL('image/png'));
             };
             img.onerror = (err) => {
-                console.error("Error al cargar la imagen de plantilla para el PDF:", err);
+                console.error("Error en img.onerror al cargar la imagen de plantilla para el PDF:", err);
                 reject(err);
             };
-            img.src = 'assets/Plantilla_pdf_ESDD_001.png'; // Asegúrate que la ruta es correcta
+            // IMPORTANTE: Asegúrate de que esta ruta sea correcta y accesible desde tu HTML.
+            // Si el HTML está en la raíz y la imagen en 'assets/nombre.png', la ruta es correcta.
+            // Si el HTML está en una subcarpeta, la ruta podría necesitar ser '../assets/nombre.png' o una ruta absoluta.
+            img.src = 'assets/Plantilla_pdf_ESDD_001.png'; 
+            console.log("Establecido img.src a:", img.src);
+            if (img.complete) { // Si la imagen ya está en caché
+                 console.log("Imagen de plantilla ya estaba en caché.");
+                 const canvas = document.createElement('canvas');
+                 canvas.width = img.width;
+                 canvas.height = img.height;
+                 const ctx = canvas.getContext('2d');
+                 ctx.drawImage(img, 0, 0);
+                 resolve(canvas.toDataURL('image/png'));
+            }
         });
         doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+        console.log("Imagen de plantilla añadida al PDF.");
     } catch (e) {
-        console.error("No se pudo añadir la plantilla de fondo al PDF:", e);
+        console.error("No se pudo añadir la plantilla de fondo al PDF. Error detallado:", e);
+        // Continuar sin la imagen de fondo si falla
     }
 
-    // 2. Definir márgenes y posición inicial del contenido (ajustar según la plantilla)
-    const contentMarginTop = 120; // Espacio superior dejado por la plantilla
-    const contentMarginSides = 60; // Márgenes laterales
-    const contentMarginBottom = 100; // Espacio inferior dejado por la plantilla
+    const contentMarginTop = 120; 
+    const contentMarginSides = 60; 
+    const contentMarginBottom = 100; 
     let currentY = contentMarginTop;
 
-    // 3. Título Principal "SETLIST" (ajustado para la plantilla)
-    doc.setFont("times", "bold"); // Usar Times para un look clásico
-    doc.setFontSize(26);
-    doc.setTextColor(0, 0, 0); // Texto negro
-    const mainSetlistTitle = "SETLIST";
+    doc.setFont("times", "bold"); 
+    doc.setFontSize(24); // Reducido ligeramente
+    doc.setTextColor(0, 0, 0); 
+    const mainSetlistTitle = "SETLIST"; // Sin adornos por ahora, para simplicidad con fuentes
     doc.text(mainSetlistTitle, pageWidth / 2, currentY, { align: "center" });
-    currentY += 26 + 5; // Espacio después del título
+    currentY += 24 + 10; 
 
-    // 4. Nombre del Setlist (el que viene como 'title' de la función)
     doc.setFont("times", "bold");
     doc.setFontSize(16);
     doc.text(title, pageWidth / 2, currentY, { align: "center" });
     currentY += 16 + 5;
 
-    // 5. Detalles (Nº canciones, Tiempo total)
     const totalSongsText = `${songs.length} canciones`;
     const totalTimeValue = songs.reduce((a, s) => a + parseDuration(s.duration), 0);
     const totalTimeText = `Tiempo total: ${toHHMM(totalTimeValue)}`;
     doc.setFont("times", "italic");
     doc.setFontSize(10);
     doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
-    currentY += 10 + 15; // Espacio antes de la tabla
+    currentY += 10 + 20; 
 
-    // 6. Tabla de Canciones
     doc.autoTable({
         startY: currentY,
         head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
@@ -967,22 +979,22 @@ async function genPDF(songs, title, fileName) {
         ]),
         theme: 'grid', 
         headStyles: { 
-            fillColor: [220, 220, 220], 
-            textColor: [0, 0, 0], 
+            fillColor: [50, 50, 50], // Un gris más oscuro para la cabecera
+            textColor: [255, 255, 255], // Texto blanco para la cabecera
             font: "helvetica", 
             fontStyle: 'bold',
             halign: 'center'
         },
         styles: { 
             font: "helvetica", 
-            fontSize: 9, // Un poco más pequeño para que quepa mejor
+            fontSize: 9, 
             cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
-            lineColor: [44, 62, 80], 
+            lineColor: [80, 80, 80], 
             lineWidth: 0.5,
-            textColor: [0,0,0], // Asegurar texto negro en la tabla
+            textColor: [0,0,0], 
         },
         alternateRowStyles: { 
-            fillColor: [248, 248, 248] // Un gris aún más claro para alternar
+            fillColor: [235, 235, 235] // Gris muy claro para filas alternas
         },
         columnStyles: {
             0: { halign: 'center', cellWidth: 25 }, 
@@ -994,11 +1006,7 @@ async function genPDF(songs, title, fileName) {
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
         didDrawPage: function (data) {
-            // El pie de página ya está en la plantilla, así que no añadimos uno aquí
-            // Si la plantilla no tuviera pie, aquí se podría añadir:
-            // doc.setFontSize(8);
-            // doc.setTextColor(100);
-            // doc.text("© " + new Date().getFullYear() + " El Sótano del Doctor - Intranet", data.settings.margin.left, pageHeight - 30);
+            // El pie de página está en la plantilla de imagen, no es necesario añadirlo aquí
         }
     });
 
