@@ -4,123 +4,156 @@
   <meta charset="UTF-8" />
   <title>El Sótano del Doctor – Uso Interno</title>
 
-  <!-- Favicon -->
-  <link rel="icon" type="favicon_ElSotanoDr.ico" href="assets/favicon_ElSotanoDr.ico">
-  <link rel="logo_negro copia.png" href="assets/logo_negro copia.png">
+  <link rel="icon" type="image/x-icon" href="assets/favicon_ElSotanoDr.ico">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-  <!-- ================= METADATOS ================= -->
   <meta property="og:title"       content="El Sótano del Doctor – Uso Interno">
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
-  <meta property="og:image"       content="assets/logo_negro copia.jpg">
-  <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://tusitioweb.com">
-
-  <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="El Sótano del Doctor – Uso Interno">
+  <meta property="og:image"       content="assets/logo_negro copia.jpg"> <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://tusitioweb.com"> <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"        content="El Sótano del Doctor – Uso Interno">
   <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
-  <meta name="twitter:image"       content="assets/logo_negro copia.jpg">
+  <meta name="twitter:image"        content="assets/logo_negro copia.jpg"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- ================= Librerías externas ================= -->
-  <!-- jsPDF + autoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-
-  <!-- Firebase 9 “compat” (sin ES‑modules) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- ================= ESTILOS ================= -->
   <style>
-    /* Reset y fuente base */
     *,*::before,*::after{box-sizing:border-box}
     html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
-    /* Cabecera */
     header{background:#111;padding:20px 20px;display:flex;align-items:center;justify-content:space-between;position:relative}
-    .logo img.logo-main{width:180px;height:auto} /* Logo principal */
-    .logo-intranet{position:absolute;left:50%;transform:translateX(-50%);height:60px;width:auto} /* Centrar logointranet.png */
-    /* Hamburguesa */
+    .logo img.logo-main{width:180px;height:auto}
+    .logo-intranet{position:absolute;left:50%;transform:translateX(-50%);height:60px;width:auto}
     .hamburger{cursor:pointer;border:1px solid #0cf;border-radius:4px;padding:5px}
     .hamburger div{width:25px;height:3px;background:#0cf;margin:4px 0}
-    /* Sidebar */
     .sidebar{position:fixed;top:0;left:0;width:250px;height:100%;background:#111;border-right:1px solid #222;
-             padding:20px;box-shadow:2px 0 10px rgba(0,255,255,.1);transform:translateX(-250px);transition:.3s;z-index:9999}
+            padding:20px;box-shadow:2px 0 10px rgba(0,255,255,.1);transform:translateX(-250px);transition:.3s;z-index:9999; overflow-y: auto;}
     .sidebar.show{transform:translateX(0)}
     .sidebar h2{color:#0cf;margin:0}
     .sidebar a{display:block;color:#fff;text-decoration:none;margin:10px 0;padding:5px 0;border-bottom:1px solid #222}
     .sidebar a:hover{color:#0cf}
     .sidebar .submenu { margin-left: 15px; }
     .sidebar .submenu a { padding: 5px 0; font-size: 0.95em; }
-    /* Overlay */
+    /* Estilo para el enlace de Configuración */
+    .sidebar a#menu-config {
+      color: #FFD700; /* Color dorado */
+      font-weight: bold;
+    }
+    .sidebar a#menu-config:hover {
+      color: #fff2a7; /* Dorado más claro para hover */
+    }
     #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9998;display:none}
     #overlay.show{display:block}
-    /* Pantallas modales */
+    
+    .modal-backdrop {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 10px;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal-content {
+        background: #1a1a1a; color: #fff; padding: 20px; border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 100%; max-width: 600px;
+        max-height: 90vh; overflow-y: auto; position: relative;
+    }
+    .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 20px; }
+    .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
+    .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
+    .modal-content input[type="text"],
+    .modal-content input[type="time"],
+    .modal-content textarea {
+        width: 100%; padding: 10px; background: #222; color: #fff;
+        border: 1px solid #333; border-radius: 5px; margin-bottom: 15px;
+    }
+    .modal-content textarea { min-height: 80px; resize: vertical; }
+    .modal-content button {
+        padding: 10px 15px; background: #0cf; color: #000; border: none;
+        border-radius: 8px; cursor: pointer; margin-right: 10px; margin-top: 10px;
+    }
+    .modal-content button:hover { background: #09b; }
+    .modal-content .modal-close-btn { background: #444; color: #fff; }
+    .modal-content .modal-close-btn:hover { background: #555; }
+    
+    #musicians-attendance-list { 
+        border: 1px solid #333; padding: 10px; margin-bottom:15px;
+    }
+    #musicians-attendance-list div { 
+        margin-bottom: 8px; 
+        display: flex; 
+        align-items: center;
+    }
+    #musicians-attendance-list label { 
+        color: #fff; margin-left: 8px; font-weight: normal; 
+        cursor: pointer; 
+    }
+    #musicians-attendance-list input[type="checkbox"] { 
+        vertical-align: middle; 
+        width: 18px; 
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .modal-field-group { display: flex; gap: 15px; flex-wrap: wrap; }
+    .modal-field-group > div { flex: 1; min-width: 200px; }
+    .modal-field-group input[type="time"] { text-align: left; }
+
     .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
-                   overflow-y:auto;padding:80px 20px 20px}
+                    overflow-y:auto;padding:80px 20px 20px}
     .config-screen h2{color:#0cf;text-align:center;margin:20px 0}
     .config-screen h3{color:#0cf;margin:20px 0 10px}
     .config-screen label{display:block;margin:10px 0 5px}
     .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
-                                              border:1px solid #333;border-radius:5px}
+                                                border:1px solid #333;border-radius:5px}
     .config-screen select[multiple] { height: 150px; }
     .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .config-screen button:hover{background:#09b}
     .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;
-                              color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
+                                color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
     .config-screen .close-btn:hover{background:#333}
-    /* Secciones */
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists,#rehearsals,#second-setlist,#calendario,#usuarios{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
-    #setlists h2,#rehearsals h2,#second-setlist h2,#calendario h2,#usuarios h2{text-align:center;color:#0cf;margin-bottom:15px}
-    /* Ajuste para tablas: envolvente para permitir desplazamiento horizontal */
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { /* #usuarios ya no es una sección principal */
+        background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px
+    }
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 {
+        text-align:center;color:#0cf;margin-bottom:5px
+    }
+    .setlist-dynamic-name {
+        text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em;
+    }
     .table-wrapper {
-      width: 100%;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en dispositivos móviles */
-      display: flex;
-      justify-content: center; /* Centrar la tabla horizontalmente */
+      width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      display: flex; justify-content: center;
     }
     table {
-      width: 100%;
-      max-width: 100%; /* Asegurar que la tabla no exceda el contenedor */
-      border-collapse: collapse;
-      margin-top: 20px;
-      color: #fff;
-      font-size: .95em;
-      margin-left: auto;
-      margin-right: auto; /* Centrar la tabla */
+      width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px;
+      color: #fff; font-size: .95em; margin-left: auto; margin-right: auto;
     }
     thead{background:#222;color:#0cf}
-    th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;} /* Permitir que el texto se ajuste */
+    th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
     tr:nth-child(even){background:#1a1a1a}
-    /* Ajuste específico para la tabla del segundo setlist */
-    #second-setlist .table-wrapper table {
-      min-width: 600px; /* Ancho mínimo para pantallas grandes */
-    }
+    
     .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
-    #total-time,#total-time-2{color:#0cf;margin-top:10px;text-align:center}
-    #second-setlist-name {text-align:center;color:#aaa;margin-top:5px;font-style:italic}
+    #total-time, #total-time-star, #total-time-2{color:#0cf;margin-top:10px;text-align:center}
+
     footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
-    /* Estilo para el botón de añadir al calendario */
-    .calendar-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; vertical-align: middle; }
+    .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; vertical-align: middle; }
     .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
     .calendar-btn:hover svg { fill: #09b; }
-    /* Estilo para botones de acción en tablas */
+    .details-btn { font-size: 1.5em; color: #0cf; }
+    .details-btn:hover { color: #09b; }
+
     .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal {
       padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer;
     }
     .edit-user, .edit-rehearsal { background: #0cf; color: #000; }
-    .clear-attendance { background: #ff9800; } /* Color naranja para "Eliminar Asistentes" */
+    .clear-attendance { background: #ff9800; }
     .delete-user:hover, .delete-rehearsal:hover { background: #d00; }
     .edit-user:hover, .edit-rehearsal:hover { background: #09b; }
     .clear-attendance:hover { background: #e68900; }
-    /* Botón de cancelar edición */
     #cancel-edit-user, #cancel-edit-rehearsal { background: #666; color: #fff; }
     #cancel-edit-user:hover, #cancel-edit-rehearsal:hover { background: #555; }
-    /* Estilo para el formulario de asistencia */
     .attendance-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .attendance-form select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; }
     .attendance-form button { padding: 5px 10px; background: #0cf; color: #000; border: none; border-radius: 4px; cursor: pointer; }
@@ -129,84 +162,69 @@
     .attendance-summary span { display: block; }
     .attending-yes { color: #0cf; }
     .attending-no { color: #f00; }
-    /* Estilo para duración del ensayo */
     .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; }
-    /* Estilo para mensaje de conexión */
     #connection-status {
       position: fixed; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.8); color: #fff;
       padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none;
     }
     #connection-status.offline { background: #f00; }
     #connection-status.retrying { background: #ff9800; }
-    /* Estilo para mensajes de éxito/error */
     .success-message { color: #0cf; margin-top: 10px; text-align: center; }
     .error-message { color: #f00; margin-top: 10px; text-align: center; }
-    /* Estilo para la pantalla de estadísticas */
     .stats-table { margin-bottom: 40px; }
     .stats-table h3 { color: #0cf; margin: 20px 0 10px; text-align: center; }
-    /* Estilo para el selector de mes en estadísticas */
     .stats-filter { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px; }
     .stats-filter label { color: #0cf; }
     .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
-    /* Responsive */
+    
+    #firebase-critical-error-banner {
+        background-color: red; color: white; padding: 15px; text-align: center;
+        position: fixed; top: 0; left: 0; width: 100%; z-index: 100001; font-weight: bold;
+    }
+
     @media(max-width:768px){
       .hamburger div{width:20px}
-      .logo img.logo-main{width:150px} /* Reducir tamaño del logo en móviles */
-      .logo-intranet{height:50px} /* Ajustar altura de logointranet.png en móviles */
+      .logo img.logo-main{width:150px}
+      .logo-intranet{height:50px}
       .attendance-form { flex-direction: column; align-items: flex-start; }
       .attendance-form select { width: 100%; }
-      /* Ajustar botones de acción en pantallas pequeñas */
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
       #connection-status { top: 70px; right: 5px; font-size: 0.8em; }
-      /* Ajustar tablas para móviles */
-      .table-wrapper {
-        overflow-x: hidden; /* Eliminar desplazamiento horizontal */
-      }
-      table {
-        width: 100%;
-        min-width: unset; /* Eliminar ancho mínimo en móviles */
-        font-size: 0.85em; /* Reducir tamaño de fuente */
-      }
-      th, td {
-        padding: 8px; /* Reducir padding para ahorrar espacio */
-        white-space: normal; /* Permitir que el texto se ajuste */
-        word-wrap: break-word; /* Asegurar que el texto largo se divida */
-        max-width: 150px; /* Limitar el ancho máximo de las celdas */
-      }
-      /* Ajuste específico para la tabla del segundo setlist */
-      #second-setlist .table-wrapper table {
-        min-width: unset; /* Eliminar el ancho mínimo en móviles */
-      }
-      /* Ajustar tablas de estadísticas */
-      .stats-table table {
-        font-size: 0.85em;
-      }
+      .table-wrapper { overflow-x: hidden; }
+      table { width: 100%; min-width: unset; font-size: 0.85em; }
+      th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
+      #second-setlist .table-wrapper table, #star-setlist .table-wrapper table { min-width: unset; }
+      .stats-table table { font-size: 0.85em; }
+      .modal-content { width: 95%; padding: 15px; } 
+      .modal-field-group { flex-direction: column; } 
     }
   </style>
 </head>
 
 <body>
-  <!-- ============ Indicador de conexión ============ -->
+  <div id="firebase-critical-error-banner" style="display:none;">
+    ERROR CRÍTICO: La configuración de Firebase no es válida o es un placeholder. La aplicación puede no funcionar correctamente. Contacta al administrador.
+  </div>
   <div id="connection-status"></div>
 
-  <!-- ============ CABECERA ============ -->
   <header>
     <div class="logo">
-      <img src="assets/logo_blanco.png" alt="Logo" class="logo-main">
+      <img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main">
     </div>
-    <img src="assets/logointranet.png" alt="Logo Intranet" class="logo-intranet">
+    <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
     <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
   </header>
 
-  <!-- ============ SIDEBAR & OVERLAY ============ -->
   <div id="overlay"></div>
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
+    <a href="#setlists" id="menu-rehearsals-setlist-section">Setlist Próximo Ensayo</a>
     <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
+    <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#" id="menu-stats">Estadísticas</a>
-    <a href="#" id="menu-config">Configuración</a>
+    <a href="#" id="menu-user-list-display">Usuarios Registrados</a> <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
       <a href="#" id="menu-setlist-config">Configurar Setlists</a>
       <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
@@ -215,1259 +233,1103 @@
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
 
-  <!-- ============ PANTALLAS DE CONFIGURACIÓN ============ -->
-  <!-- Setlists -->
+  <div id="concert-details-modal" class="modal-backdrop">
+    <div class="modal-content">
+        <h3>Detalles del Concierto</h3>
+        <input type="hidden" id="concert-detail-id">
+        
+        <label for="concert-detail-location">Detalles adicionales de la ubicación:</label>
+        <textarea id="concert-detail-location"></textarea>
+
+        <div class="modal-field-group">
+            <div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div>
+            <div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div>
+        </div>
+        <div class="modal-field-group">
+            <div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div>
+            <div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div>
+        </div>
+        
+        <label for="concert-detail-notes">Notas generales:</label>
+        <textarea id="concert-detail-notes"></textarea>
+
+        <h4>Músicos Asistentes al Concierto</h4>
+        <div id="musicians-attendance-list">
+            </div>
+        
+        <button id="save-concert-details">Guardar Detalles</button>
+        <button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button>
+        <p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p>
+    </div>
+  </div>
+
   <div id="setlist-config-screen" class="config-screen">
     <button class="close-btn" id="close-setlist-config">Cerrar</button>
     <h2>Configuración de Setlists</h2>
     <h3>Setlist Próximo Ensayo</h3>
     <label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025">
     <label>ID/URL feed</label><input id="setlist1-url" placeholder="URL">
-    <h3>Segundo Setlist</h3>
+    <h3>Setlist Próximo Concierto</h3>
     <label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad">
     <label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa">
+    <h3>Setlist Concierto Estrella</h3>
+    <label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025">
+    <label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL">
     <button id="guardar-setlist-config">Guardar Configuración</button>
     <p id="setlist-message" class="error-message"></p>
   </div>
 
-  <!-- Usuarios -->
   <div id="user-mgmt-screen" class="config-screen">
     <button class="close-btn" id="close-user-mgmt">Cerrar</button>
     <h2>Gestión de Usuarios</h2>
-    <label>Nombre</label><input id="user-name" placeholder="Nombre">
-    <label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)">
-    <label>Roles</label>
+    <label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label>
     <select id="user-role" multiple>
-      <option value="Batería">Batería</option>
-      <option value="Teclados">Teclados</option>
-      <option value="Voz">Voz</option>
-      <option value="Guitarra eléctrica">Guitarra eléctrica</option>
-      <option value="Guitarra Acústica">Guitarra Acústica</option>
-      <option value="Bajo">Bajo</option>
-      <option value="Percusión">Percusión</option>
-      <option value="Saxo">Saxo</option>
-      <option value="Dirección Musical">Dirección Musical</option>
-      <option value="Técnico de Sonido">Técnico de Sonido</option>
-      <option value="Montador">Montador</option>
-      <option value="Coros">Coros</option>
+      <option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option>
+      <option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option>
+      <option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option>
+      <option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option>
+      <option value="Montador">Montador</option><option value="Coros">Coros</option>
     </select>
-    <button id="add-user">Añadir Usuario</button>
-    <button id="cancel-edit-user" style="display:none;">Cancelar Edición</button>
+    <button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button>
     <p id="user-message" class="error-message"></p>
     <table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
   </div>
 
-  <!-- Ensayos -->
   <div id="rehearsal-screen" class="config-screen">
     <button class="close-btn" id="close-rehearsal">Cerrar</button>
     <h2>Asignación de Ensayos</h2>
-    <label>Fecha</label><input type="date" id="rehearsal-date">
-    <label>Hora Inicio</label><input type="time" id="rehearsal-start-time">
-    <label>Hora Fin</label><input type="time" id="rehearsal-end-time">
-    <label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1">
-    <button id="add-rehearsal">Añadir Ensayo</button>
-    <button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button>
+    <label>Fecha</label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time">
+    <label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1">
+    <button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button>
     <p id="rehearsal-message" class="error-message"></p>
     <table id="rehearsal-table">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Hora Inicio</th>
-          <th>Hora Fin</th>
-          <th>Lugar</th>
-          <th>Asistencias</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead>
       <tbody id="rehearsal-table-body"></tbody>
     </table>
   </div>
 
-  <!-- Estadísticas -->
   <div id="stats-screen" class="config-screen">
     <button class="close-btn" id="close-stats">Cerrar</button>
     <h2>Estadísticas</h2>
-    <div class="stats-filter">
-      <label>Filtrar por mes:</label>
-      <select id="stats-month-filter">
-        <option value="all">Todos los meses</option>
-        <!-- Opciones dinámicas se añadirán aquí -->
-      </select>
-    </div>
-    <div class="stats-table">
-      <h3>Tiempo Ensayado por Mes</h3>
-      <table id="time-per-month-table">
-        <thead>
-          <tr>
-            <th>Mes</th>
-            <th>Tiempo Total (horas)</th>
-          </tr>
-        </thead>
-        <tbody id="time-per-month-body"></tbody>
-      </table>
-    </div>
-    <div class="stats-table">
-      <h3>Tiempo Ensayado por Usuario</h3>
-      <table id="time-per-user-table">
-        <thead>
-          <tr>
-            <th>Usuario</th>
-            <th>Tiempo Total (horas)</th>
-          </tr>
-        </thead>
-        <tbody id="time-per-user-body"></tbody>
-      </table>
-    </div>
-    <div class="stats-table">
-      <h3>Ensayos Pasados</h3>
-      <div class="table-wrapper">
-        <table id="past-rehearsals-table">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Lugar</th>
-              <th>Asistencias</th>
-            </tr>
-          </thead>
-          <tbody id="past-rehearsals-body"></tbody>
+    <div class="stats-filter"><label>Filtrar por mes:</label><select id="stats-month-filter"><option value="all">Todos los meses</option></select></div>
+    <div class="stats-table"><h3>Tiempo Ensayado por Mes</h3><table id="time-per-month-table"><thead><tr><th>Mes</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-month-body"></tbody></table></div>
+    <div class="stats-table"><h3>Tiempo Ensayado por Usuario</h3><table id="time-per-user-table"><thead><tr><th>Usuario</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-user-body"></tbody></table></div>
+    <div class="stats-table"><h3>Ensayos Pasados</h3><div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Asistencias</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div></div>
+  </div>
+
+  <div id="user-list-screen" class="config-screen">
+    <button class="close-btn" id="close-user-list-screen">Cerrar</button>
+    <h2>Usuarios Registrados</h2>
+    <div class="table-wrapper" style="padding: 0 10px;"> <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apodo</th>
+                    <th>Roles</th>
+                </tr>
+            </thead>
+            <tbody id="users-body"> </tbody>
         </table>
-      </div>
     </div>
   </div>
 
-  <!-- ============ CONTENIDO PRINCIPAL ============ -->
+
   <main>
-    <!-- 1) Primer setlist -->
     <section id="setlists">
-      <h2 id="setlist1-title">Setlist Ensayos -Año 2025-</h2>
-      <div class="table-wrapper">
-        <table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table>
-      </div>
+      <h2>Setlist Próximo Ensayo</h2>
+      <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
+      <div class="table-wrapper"><table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
       <button class="download-btn" id="download-btn">Descargar PDF</button>
-      <p id="total-time"></-part>
+      <p id="total-time"></p>
     </section>
 
-    <!-- 2) Ensayos -->
     <section id="rehearsals">
       <h2>Próximos Ensayos</h2>
-      <div class="table-wrapper">
-        <table id="rehearsal-main-table">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Lugar</th>
-              <th>Confirmar Asistencia</th>
-            </tr>
-          </thead>
-          <tbody id="rehearsal-main-body"></tbody>
-        </table>
-      </div>
+      <div class="table-wrapper"><table id="rehearsal-main-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div>
     </section>
 
-    <!-- 3) Segundo setlist -->
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
-      <p id="second-setlist-name"></p>
-      <div class="table-wrapper">
-        <table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table>
-      </div>
+      <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
+      <div class="table-wrapper"><table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table></div>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
     </section>
+    
+    <section id="star-setlist">
+      <h2>Setlist Concierto Estrella</h2>
+      <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
+      <div class="table-wrapper"><table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
+      <button class="download-btn" id="download-btn-star">Descargar PDF</button>
+      <p id="total-time-star"></p>
+    </section>
 
-    <!-- 4) Calendario -->
     <section id="calendario">
       <h2>Próximos Conciertos</h2>
-      <div id="bandhelper-concerts">
-        <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
+      <div id="bandhelper-concerts-container">
+          <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
+          <p id="bandhelper-loading-message" style="display:none;">Procesando conciertos...</p>
       </div>
     </section>
 
-    <!-- 5) Usuarios -->
-    <section id="usuarios">
-      <h2>Usuarios Registrados</h2>
-      <div class="table-wrapper">
-        <table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table>
-      </div>
-    </section>
-  </main>
+    </main>
 
   <footer>© 2025 El Sótano del Doctor. All Rights Reserved.</footer>
 
-  <!-- ============ JAVASCRIPT PRINCIPAL ============ -->
-  <script>
-  /* ---------- 0. Firebase ---------- */
-  const firebaseConfig = {
-    apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
-    authDomain: "sotanointranet.firebaseapp.com",
-    projectId: "sotanointranet",
-    messagingSenderId: "756955233128",
-    appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+<script>
+/* ---------- 0. Firebase ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
+  authDomain: "sotanointranet.firebaseapp.com",
+  projectId: "sotanointranet",
+  storageBucket: "sotanointranet.appspot.com", 
+  messagingSenderId: "756955233128",
+  appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
+};
 
-  // Habilitar modo offline de Firestore
-  firebase.firestore().enablePersistence()
-    .catch(err => {
-      console.warn("No se pudo habilitar la persistencia de Firestore:", err);
-    });
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || 
+    (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30) ) { 
+    const banner = document.getElementById('firebase-critical-error-banner');
+    if (banner) banner.style.display = 'block';
+    console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");
+}
 
-  /* ---------- 1. Utilidades ---------- */
-  const parseDuration = str => {
-    if (!str) return 0;
-    if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; }
-    const n = parseInt(str, 10); return isNaN(n) ? 0 : n;
-  };
-  const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  const toHHMM = s => {
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
-  };
-  const toHours = s => (s / 3600).toFixed(2); // Convertir segundos a horas con 2 decimales
-  const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore(); 
+firebase.firestore().enablePersistence()
+  .catch(err => { console.warn("Persistencia Firestore no habilitada:", err.code === 'failed-precondition' ? 'Múltiples pestañas.' : err.message); });
 
-  // Calcular duración entre dos horas (en segundos)
-  const calculateDuration = (startTime, endTime) => {
-    if (!startTime || !endTime) return 0;
-    const [startH, startM] = startTime.split(":").map(Number);
-    const [endH, endM] = endTime.split(":").map(Number);
-    const startSeconds = startH * 3600 + startM * 60;
-    const endSeconds = endH * 3600 + endM * 60;
-    let duration = endSeconds - startSeconds;
-    if (duration < 0) duration += 24 * 3600; // Si la hora fin es menor (ej. cruza medianoche)
-    return duration;
+/* ---------- 1. Utilidades ---------- */
+const parseDuration = str => {
+  if (!str) return 0;
+  if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; }
+  const n = parseInt(str, 10); return isNaN(n) ? 0 : n;
+};
+const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+const toHHMM = s => {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
+};
+const toHours = s => (s / 3600).toFixed(2);
+const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
+const calculateDuration = (startTime, endTime) => {
+  if (!startTime || !endTime) return 0;
+  const [startH, startM] = startTime.split(":").map(Number);
+  const [endH, endM] = endTime.split(":").map(Number);
+  const startSeconds = startH * 3600 + startM * 60;
+  const endSeconds = endH * 3600 + endM * 60;
+  let duration = endSeconds - startSeconds;
+  if (duration < 0) duration += 24 * 3600;
+  return duration;
+};
+const formatDateWithDay = dateStr => {
+  const date = new Date(dateStr + 'T00:00:00Z'); 
+  const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;
+};
+const getMonthYear = dateStr => {
+  const date = new Date(dateStr + 'T00:00:00Z'); 
+  const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+};
+function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) {
+  const startDate = new Date(`${date}T${startTime}`); 
+  const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
+  const formatICSDate = d => {
+    const pad = (num) => String(num).padStart(2, '0');
+    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
   };
+  const startICS = formatICSDate(startDate);
+  const endICS = formatICSDate(endDate);
+  const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ElSotanoDelDoctor//Intranet//ES", "BEGIN:VEVENT",
+    `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, "")}Z`, 
+    `UID:${startICS}-${sanitizeFirebaseKey(title)}@elsotanodeldoctor.com`, 
+    `DTSTART:${startICS}`, `DTEND:${endICS}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`,
+    "END:VEVENT", "END:VCALENDAR"
+  ].join("\r\n");
+  const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${sanitizeFirebaseKey(title)}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
 
-  // Formatear fecha como "Domingo 24 de Mayo"
-  const formatDateWithDay = dateStr => {
-    const date = new Date(dateStr);
-    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    const dayName = days[date.getDay()];
-    const day = date.getDate();
-    const monthName = months[date.getMonth()];
-    return `${dayName} ${day} de ${monthName}`;
-  };
-
-  // Obtener el nombre del mes y año para estadísticas
-  const getMonthYear = dateStr => {
-    const date = new Date(dateStr);
-    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    return `${months[date.getMonth()]} ${date.getFullYear()}`;
-  };
-
-  // Generar archivo .ics para añadir al calendario
-  function generateICS(title, date, startTime, location, description = "", durationSeconds) {
-    const startDate = new Date(`${date}T${startTime}`);
-    const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
-    const formatDate = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-    const start = formatDate(startDate);
-    const end = formatDate(endDate);
-    const icsContent = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "BEGIN:VEVENT",
-      `DTSTART:${start}`,
-      `DTEND:${end}`,
-      `SUMMARY:${title}`,
-      `DESCRIPTION:${description}`,
-      `LOCATION:${location}`,
-      "END:VEVENT",
-      "END:VCALENDAR"
-    ].join("\r\n");
-    const blob = new Blob([icsContent], { type: "text/calendar" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${title.replace(/\s+/g, "_")}.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+/* ---------- 1.5. Manejo de conexión ---------- */
+const connectionStatus = document.getElementById("connection-status");
+let isOnline = navigator.onLine;
+function updateConnectionStatus() {
+  isOnline = navigator.onLine;
+  if (!isOnline) {
+    connectionStatus.className = "offline";
+    connectionStatus.textContent = "Sin conexión: Mostrando datos en caché";
+    connectionStatus.style.display = "block";
+  } else {
+    connectionStatus.style.display = "none";
   }
+}
+window.addEventListener("online", updateConnectionStatus);
+window.addEventListener("offline", updateConnectionStatus);
 
-  /* ---------- 1.5. Manejo de conexión ---------- */
-  const connectionStatus = document.getElementById("connection-status");
-  let isOnline = navigator.onLine;
-
-  function updateConnectionStatus() {
-    isOnline = navigator.onLine;
-    if (!isOnline) {
-      connectionStatus.className = "offline";
-      connectionStatus.textContent = "Sin conexión: Mostrando datos en caché";
-      connectionStatus.style.display = "block";
-    } else {
-      connectionStatus.style.display = "none";
-    }
-  }
-
-  window.addEventListener("online", updateConnectionStatus);
-  window.addEventListener("offline", updateConnectionStatus);
-
-  // Función de reintento para operaciones de Firestore
-  async function withRetry(fn, maxRetries = 3, delay = 2000) {
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        if (!navigator.onLine) {
-          connectionStatus.className = "offline";
-          connectionStatus.textContent = "Sin conexión: Mostrando datos en caché";
-          connectionStatus.style.display = "block";
-          return await fn(); // Intentar con datos en caché
-        }
-        return await fn();
-      } catch (e) {
-        if (i === maxRetries - 1) throw e; // Último intento fallido
-        connectionStatus.className = "retrying";
-        connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`;
+async function withRetry(fn, maxRetries = 3, delay = 2000) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      if (!navigator.onLine) {
+        connectionStatus.className = "offline";
+        connectionStatus.textContent = "Sin conexión. Operación podría fallar o usar caché.";
         connectionStatus.style.display = "block";
-        await new Promise(resolve => setTimeout(resolve, delay));
       }
-    }
-  }
-
-  /* ---------- 2. Acceso Firestore ---------- */
-  async function loadDoc(id, fallback) {
-    try {
-      const snap = await db.collection("intranet").doc(id).get();
-      return snap.exists ? snap.data() : fallback;
+      return await fn();
     } catch (e) {
-      console.error(`Error al cargar documento ${id}:`, e.message);
-      throw new Error(`No se pudo cargar el documento ${id}: ${e.message}`);
-    }
-  }
-
-  async function saveDoc(id, data) {
-    try {
-      await db.collection("intranet").doc(id).set(data);
-      return true;
-    } catch (e) {
-      console.error(`Error al guardar documento ${id}:`, e.message);
-      throw new Error(`No se pudo guardar el documento ${id}: ${e.message}`);
-    }
-  }
-
-  /* ---------- 3. Configuración Setlists ---------- */
-  let setlistConfig = {
-    setlist1: { name: "Setlist Ensayos -Año 2025-", url: "https://cold-limit-811a.jagomezc.workers.dev" },
-    setlist2: { name: "Setlist Próximo Concierto", url: "https://www.bandhelper.com/feed/set_list/TXHvyb" }
-  };
-
-  function updateTitles() {
-    document.getElementById("setlist1-title").textContent = setlistConfig.setlist1.name;
-    document.getElementById("second-setlist-name").textContent = setlistConfig.setlist2.name;
-  }
-
-  async function loadSetlistConfig() {
-    try {
-      const data = await withRetry(() => loadDoc("setlists", { config: setlistConfig }));
-      setlistConfig = data.config || setlistConfig;
-      updateTitles();
-    } catch (e) {
-      console.error("Error al cargar la configuración de setlists:", e);
-      throw e;
-    }
-  }
-
-  async function saveSetlistConfig() {
-    updateTitles();
-    return await withRetry(() => saveDoc("setlists", { config: setlistConfig }));
-  }
-
-  /* ---------- 4. Primer Setlist ---------- */
-  async function cargarPrimerSetlist() {
-    try {
-      const songs = (await (await fetch(setlistConfig.setlist1.url)).json()).filter(i => i.type === "song");
-      const tbody = document.getElementById("setlist-body");
-      tbody.innerHTML = "";
-      let total = 0;
-      songs.forEach((s, i) => {
-        const secs = parseDuration(s.duration);
-        total += secs;
-        tbody.insertAdjacentHTML("beforeend",
-          `<tr><td>${i + 1}</td><td>${s.name || ""}</td><td>${s.key || ""}</td><td>${s.tempo || ""}</td><td>${toMMSS(secs)}</td></tr>`);
-      });
-      document.getElementById("total-time").textContent = "Tiempo total del set: " + toHHMM(total);
-      return songs;
-    } catch (e) {
-      console.error(e);
-      document.getElementById("setlist-body").innerHTML =
-        '<tr><td colspan="5">Error al cargar el primer setlist.</td></tr>';
-      return [];
-    }
-  }
-
-  /* ---------- 5. Segundo Setlist ---------- */
-  async function cargarSegundoSetlist() {
-    try {
-      const response = await fetch(setlistConfig.setlist2.url);
-      if (!response.ok) throw new Error('Error en la respuesta de la API');
-      const data = await response.json();
-      const songs = Array.isArray(data) ? data.filter(i => i.type === "song") : [];
-      const tbody = document.getElementById("second-body");
-      tbody.innerHTML = "";
-      let total = 0;
-      songs.forEach((s, i) => {
-        const secs = parseDuration(s.duration || "0");
-        total += secs;
-        tbody.insertAdjacentHTML("beforeend",
-          `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
-        );
-      });
-      document.getElementById("total-time-2").textContent = "Tiempo total del set: " + toHHMM(total);
-      return songs;
-    } catch (e) {
-      console.error("Error cargando segundo setlist:", e);
-      document.getElementById("second-body").innerHTML =
-        '<tr><td colspan="5">No se pudo cargar el segundo setlist. Verifica la URL o la conexión.</td></tr>';
-      document.getElementById("total-time-2").textContent = "";
-      return [];
-    }
-  }
-
-  /* ---------- 6. Usuarios ---------- */
-  let users = [];
-  let editingUserIndex = null;
-
-  function renderUsers() {
-    const tbody = document.getElementById("user-table-body");
-    const main = document.getElementById("users-body");
-    tbody.innerHTML = main.innerHTML = "";
-    users.forEach((u, i) => {
-      if (!u || typeof u !== 'object' || !u.name || !u.nickname || !Array.isArray(u.roles)) {
-        console.warn(`Usuario inválido en la posición ${i}:`, u);
-        return;
+      console.error(`Intento ${i+1} fallido:`, e);
+      if (i === maxRetries - 1 || !navigator.onLine) {
+        connectionStatus.className = "offline";
+        connectionStatus.textContent = "Error: Operación fallida. " + e.message;
+        connectionStatus.style.display = "block";
+        throw e;
       }
-      const rolesDisplay = u.roles.join(", ");
+      connectionStatus.className = "retrying";
+      connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`;
+      connectionStatus.style.display = "block";
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
+/* ---------- 2. Acceso Firestore ---------- */
+async function loadDoc(collection, docId, fallback) {
+  try {
+    console.log(`Firestore: Intentando cargar ${collection}/${docId}`);
+    const snap = await db.collection(collection).doc(docId).get();
+    console.log(`Firestore: Carga de ${collection}/${docId} ${snap.exists ? 'exitosa' : 'no existe'}`);
+    return snap.exists ? snap.data() : fallback;
+  } catch (e) {
+    console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); 
+    return fallback; 
+  }
+}
+async function saveDoc(collection, docId, data, merge = false) {
+  try {
+    console.log(`Firestore: Intentando guardar en ${collection}/${docId}`, data);
+    await db.collection(collection).doc(docId).set(data, { merge });
+    console.log(`Firestore: Guardado de ${collection}/${docId} exitoso`);
+    return true;
+  } catch (e) {
+    console.error(`Error al guardar documento ${collection}/${docId}:`, e.message, e); 
+    throw e; 
+  }
+}
+
+/* ---------- 3. Configuración Setlists ---------- */
+let setlistConfig = {
+  setlist1: { name: "Setlist Predeterminado Ensayo", url: "URL_POR_CONFIGURAR_1" },
+  setlist2: { name: "Setlist Predeterminado Próximo Concierto", url: "URL_POR_CONFIGURAR_2" },
+  setlistStar: { name: "Setlist Predeterminado Concierto Estrella", url: "URL_POR_CONFIGURAR_STAR" }
+};
+
+function updateDynamicSetlistTitles() {
+  document.getElementById("setlist1-dynamic-name").textContent = setlistConfig.setlist1.name;
+  document.getElementById("second-setlist-dynamic-name").textContent = setlistConfig.setlist2.name;
+  document.getElementById("star-setlist-dynamic-name").textContent = setlistConfig.setlistStar.name;
+}
+
+async function loadSetlistConfig() {
+  try {
+    const data = await withRetry(() => loadDoc("intranet", "setlists", { config: setlistConfig }));
+    setlistConfig = {
+        setlist1: data.config?.setlist1 || setlistConfig.setlist1,
+        setlist2: data.config?.setlist2 || setlistConfig.setlist2,
+        setlistStar: data.config?.setlistStar || setlistConfig.setlistStar,
+    };
+    updateDynamicSetlistTitles();
+  } catch (e) {
+    console.error("Error al cargar la configuración de setlists:", e);
+    updateDynamicSetlistTitles();
+  }
+}
+
+async function saveSetlistConfig() {
+  updateDynamicSetlistTitles();
+  return await withRetry(() => saveDoc("intranet", "setlists", { config: setlistConfig }));
+}
+
+/* ---------- Setlist Genérico (Adaptado para los tres) ---------- */
+async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
+  try {
+    if (!configEntry.url || configEntry.url.startsWith("URL_POR_CONFIGURAR")) {
+      throw new Error("URL no configurada.");
+    }
+    const response = await fetch(configEntry.url);
+    if (!response.ok) throw new Error(`Error en la respuesta de la API: ${response.statusText} (URL: ${configEntry.url})`);
+    const data = await response.json();
+    const songs = (Array.isArray(data) ? data : (data.items || [])).filter(i => i.type === "song");
+
+    const tbody = document.getElementById(tbodyId);
+    tbody.innerHTML = "";
+    let total = 0;
+    songs.forEach((s, i) => {
+      const secs = parseDuration(s.duration || "0");
+      total += secs;
       tbody.insertAdjacentHTML("beforeend",
-        `<tr>
-          <td>${u.name}</td>
-          <td>${u.nickname}</td>
-          <td>${rolesDisplay}</td>
-          <td>
-            <button data-i="${i}" class="edit-user">Editar</button>
-            <button data-i="${i}" class="delete-user">Eliminar</button>
-          </td>
-        </tr>`);
-      main.insertAdjacentHTML("beforeend",
-        `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`);
+        `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
+      );
+    });
+    document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(total);
+    return songs;
+  } catch (e) {
+    console.error(`${defaultErrorMessage}:`, e);
+    document.getElementById(tbodyId).innerHTML = `<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;
+    document.getElementById(totalTimeId).textContent = "";
+    return [];
+  }
+}
+
+const cargarPrimerSetlist = () => cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
+const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto");
+const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella");
+
+/* ---------- 6. Usuarios ---------- */
+let users = [];
+let editingUserIndex = null;
+function renderUsers() {
+    const tbodyMgmt = document.getElementById("user-table-body"); // Para la pantalla de gestión
+    const tbodyDisplay = document.getElementById("users-body");   // Para la nueva pantalla de visualización
+
+    if (!tbodyMgmt || !tbodyDisplay) { 
+        console.warn("Una o ambas tablas de usuarios no encontradas en el DOM. (tbodyMgmt:", tbodyMgmt, ", tbodyDisplay:", tbodyDisplay, ")"); 
+        // No retornar aquí, intentar popular la que exista.
+    }
+    
+    if (tbodyMgmt) tbodyMgmt.innerHTML = "";
+    if (tbodyDisplay) tbodyDisplay.innerHTML = "";
+
+    if (!Array.isArray(users) || users.length === 0) {
+        const emptyMsgMgmt = '<tr><td colspan="4">No hay usuarios registrados.</td></tr>';
+        const emptyMsgDisplay = '<tr><td colspan="3">No hay usuarios registrados.</td></tr>';
+        if (tbodyMgmt) tbodyMgmt.innerHTML = emptyMsgMgmt;
+        if (tbodyDisplay) tbodyDisplay.innerHTML = emptyMsgDisplay;
+        return;
+    }
+
+    users.forEach((u, i) => {
+        if (!u || typeof u !== 'object' || !u.name || !u.nickname || !Array.isArray(u.roles)) {
+            console.warn(`Usuario inválido en la posición ${i}:`, u); return;
+        }
+        const rolesDisplay = u.roles.join(", ");
+        
+        if (tbodyMgmt) {
+            tbodyMgmt.insertAdjacentHTML("beforeend", `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`);
+        }
+        if (tbodyDisplay) {
+            tbodyDisplay.insertAdjacentHTML("beforeend", `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`);
+        }
     });
 
-    tbody.querySelectorAll(".delete-user").forEach(btn =>
-      btn.onclick = async () => {
-        const user = users[btn.dataset.i];
-        if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${user.name}"? Esto también eliminará sus asistencias asociadas.`)) {
-          // Actualizar asistencias para eliminar al usuario
-          rehearsals.forEach(r => {
-            if (Array.isArray(r.attendance)) {
-              r.attendance = r.attendance.filter(a => a.name !== user.name);
+    if (tbodyMgmt) {
+        tbodyMgmt.querySelectorAll(".delete-user").forEach(btn => btn.onclick = async () => {
+            const userIndex = parseInt(btn.dataset.i, 10);
+            const userToDelete = users[userIndex];
+            if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)) {
+                rehearsals.forEach(r => { if (Array.isArray(r.attendance)) { r.attendance = r.attendance.filter(a => a.name !== userToDelete.name); } });
+                users.splice(userIndex, 1);
+                await saveUsers(); // Esto llamará a renderUsers() de nuevo
+                await saveRehearsals();
+                renderStats(); // renderStats también usa la lista de usuarios
             }
-          });
-          users.splice(btn.dataset.i, 1);
-          await saveUsers();
-          await saveRehearsals();
-          renderStats(); // Actualizar estadísticas después de eliminar un usuario
-        }
-      });
-
-    tbody.querySelectorAll(".edit-user").forEach(btn =>
-      btn.onclick = () => {
-        editingUserIndex = btn.dataset.i;
-        const user = users[editingUserIndex];
-        document.getElementById("user-name").value = user.name;
-        document.getElementById("user-nickname").value = user.nickname;
-        const roleSelect = document.getElementById("user-role");
-        Array.from(roleSelect.options).forEach(option => {
-          option.selected = user.roles.includes(option.value);
         });
-        const addButton = document.getElementById("add-user");
-        addButton.textContent = "Guardar Cambios";
-        document.getElementById("cancel-edit-user").style.display = "inline-block";
-      });
-  }
-
-  async function loadUsers() {
-    try {
-      const data = await withRetry(() => loadDoc("users", { users: [] }));
-      users = Array.isArray(data.users) ? data.users : [];
-      users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles));
-      renderUsers();
-    } catch (e) {
-      console.error("Error al cargar usuarios:", e);
-      throw e;
+        tbodyMgmt.querySelectorAll(".edit-user").forEach(btn => btn.onclick = () => {
+            editingUserIndex = parseInt(btn.dataset.i, 10);
+            const user = users[editingUserIndex];
+            document.getElementById("user-name").value = user.name;
+            document.getElementById("user-nickname").value = user.nickname;
+            const roleSelect = document.getElementById("user-role");
+            Array.from(roleSelect.options).forEach(option => { option.selected = user.roles.includes(option.value); });
+            document.getElementById("add-user").textContent = "Guardar Cambios";
+            document.getElementById("cancel-edit-user").style.display = "inline-block";
+        });
     }
-  }
-
-  async function saveUsers() {
+}
+async function loadUsers() {
     try {
-      await withRetry(() => saveDoc("users", { users }));
-      renderUsers();
-      renderRehearsals();
-      renderStats(); // Actualizar estadísticas después de guardar usuarios
-      return true;
-    } catch (e) {
-      console.error("Error al guardar usuarios:", e);
-      throw e;
-    }
-  }
-
-  function resetUserForm() {
+        const data = await withRetry(() => loadDoc("intranet", "users", { users: [] }));
+        users = Array.isArray(data.users) ? data.users : [];
+        users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles));
+        renderUsers();
+    } catch (e) { console.error("Error al cargar usuarios:", e); }
+}
+async function saveUsers() {
+    try {
+        await withRetry(() => saveDoc("intranet", "users", { users }));
+        renderUsers(); // Actualiza ambas tablas
+        renderRehearsals(); // Si los nombres de usuario cambian, esto podría ser relevante
+        renderStats(); // Las estadísticas por usuario se actualizan
+        return true;
+    } catch (e) { console.error("Error al guardar usuarios:", e); throw e; }
+}
+function resetUserForm() {
     document.getElementById("user-name").value = "";
     document.getElementById("user-nickname").value = "";
     const roleSelect = document.getElementById("user-role");
     Array.from(roleSelect.options).forEach(option => option.selected = false);
-    const addButton = document.getElementById("add-user");
-    addButton.textContent = "Añadir Usuario";
+    document.getElementById("add-user").textContent = "Añadir Usuario";
     document.getElementById("cancel-edit-user").style.display = "none";
     editingUserIndex = null;
-  }
+}
 
-  /* ---------- 7. Ensayos ---------- */
-  let rehearsals = [];
-  let editingRehearsalIndex = null;
-
-  function renderRehearsals() {
-    rehearsals.sort((a, b) => new Date(a.date) - new Date(b.date));
+/* ---------- 7. Ensayos ---------- */
+let rehearsals = [];
+let editingRehearsalIndex = null;
+function renderRehearsals() {
     const tbodyConfig = document.getElementById("rehearsal-table-body");
     const tbodyMain = document.getElementById("rehearsal-main-body");
+    if (!tbodyConfig || !tbodyMain) { console.error("Tablas de ensayos no encontradas en el DOM."); return; }
+    rehearsals.sort((a, b) => new Date(a.date + 'T' + (a.startTime || '00:00')) - new Date(b.date + 'T' + (b.startTime || '00:00')));
     tbodyConfig.innerHTML = tbodyMain.innerHTML = "";
-
-    const userOptions = users.length > 0
-      ? users.map(user => `<option value="${user.name}">${user.name}</option>`).join("")
-      : `<option value="" disabled>No hay usuarios registrados</option>`;
-
+    if (!Array.isArray(rehearsals) || rehearsals.length === 0) {
+        const emptyMsgConfig = '<tr><td colspan="6">No hay ensayos programados.</td></tr>';
+        tbodyConfig.innerHTML = emptyMsgConfig;
+        const emptyMsgMain = '<tr><td colspan="4">No hay próximos ensayos.</td></tr>';
+        tbodyMain.innerHTML = emptyMsgMain;
+        return;
+    }
+    const userOptions = users.length > 0 ? users.map(user => `<option value="${user.name}">${user.nickname || user.name}</option>`).join("") : `<option value="" disabled>No hay usuarios</option>`;
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Truncar a solo fecha (sin hora)
-
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     rehearsals.forEach((r, i) => {
-      // Migrar datos antiguos: si existe `time`, convertir a `startTime` y `endTime`
-      if (r.time && (!r.startTime || !r.endTime)) {
-        r.startTime = r.time;
-        const [hours, minutes] = r.time.split(":").map(Number);
-        const endHours = (hours + 2) % 24; // Añadir 2 horas por defecto
-        r.endTime = `${String(endHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-        delete r.time; // Eliminar la propiedad antigua
-      }
-
-      const formattedDate = formatDateWithDay(r.date);
-      const durationSeconds = calculateDuration(r.startTime, r.endTime);
-      const durationText = toHHMM(durationSeconds);
-
-      // Resumen de asistencias (usar apodo)
-      const attendance = Array.isArray(r.attendance) ? r.attendance : [];
-      const attendingYes = attendance
-        .filter(a => a.attending === "Sí")
-        .map(a => {
-          const user = users.find(u => u.name === a.name);
-          return user ? user.nickname : a.name;
-        })
-        .join(", ") || "Ninguno";
-      const attendingNo = attendance
-        .filter(a => a.attending === "No")
-        .map(a => {
-          const user = users.find(u => u.name === a.name);
-          return user ? user.nickname : a.name;
-        })
-        .join(", ") || "Ninguno";
-      const summary = `
-        <div class="attendance-summary">
-          <span class="attending-yes">Asisten: ${attendingYes}</span>
-          <span class="attending-no">No asisten: ${attendingNo}</span>
-        </div>
-      `;
-
-      // Tabla de configuración (mostrar todos los ensayos)
-      tbodyConfig.insertAdjacentHTML("beforeend",
-        `<tr>
-          <td>${r.date}</td>
-          <td>${r.startTime}</td>
-          <td>${r.endTime}</td>
-          <td>${r.location}</td>
-          <td>${summary}</td>
-          <td>
-            <button data-i="${i}" class="edit-rehearsal">Editar</button>
-            <button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button>
-            <button data-i="${i}" class="delete-rehearsal">Eliminar</button>
-          </td>
-        </tr>`);
-
-      // Tabla principal (solo ensayos del día actual o futuros)
-      const rehearsalDate = new Date(r.date);
-      const rehearsalDay = new Date(rehearsalDate.getFullYear(), rehearsalDate.getMonth(), rehearsalDate.getDate()); // Truncar a solo fecha
-      if (rehearsalDay >= today) { // Incluir ensayos del día actual o futuros
-        tbodyMain.insertAdjacentHTML("beforeend",
-          `<tr>
-            <td>
-              ${formattedDate}
-              <span class="rehearsal-duration">(${durationText})</span>
-            </td>
-            <td>${r.startTime} - ${r.endTime}</td>
-            <td>
-              ${r.location}
-              <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor", ${durationSeconds})'>
-                <svg viewBox="0 0 24 24">
-                  <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
-                  <rect x="4" y="6" width="16" height="12" rx="2"/>
-                </svg>
-              </button>
-            </td>
-            <td>
-              <div class="attendance-form">
-                <select class="attendance-user" data-i="${i}">
-                  <option value="" disabled selected>¿Nombre?</option>
-                  ${userOptions}
-                </select>
-                <select class="attendance-response" data-i="${i}">
-                  <option value="" disabled selected>¿Asistirás?</option>
-                  <option value="Sí">Sí</option>
-                  <option value="No">No</option>
-                </select>
-                <button class="confirm-attendance" data-i="${i}">Confirmar</button>
-              </div>
-              ${summary}
-            </td>
-          </tr>`);
-      }
+        if (r.time && (!r.startTime || !r.endTime)) {
+            r.startTime = r.time;
+            const [hours, minutes] = r.time.split(":").map(Number);
+            const endHours = (hours + 2) % 24;
+            r.endTime = `${String(endHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+            delete r.time;
+        }
+        const formattedDate = formatDateWithDay(r.date);
+        const durationSeconds = calculateDuration(r.startTime, r.endTime);
+        const durationText = toHHMM(durationSeconds);
+        const attendance = Array.isArray(r.attendance) ? r.attendance : [];
+        const getAttendeeNicknames = (status) => attendance.filter(a => a.attending === status).map(a => { const user = users.find(u => u.name === a.name); return user ? user.nickname : a.name; }).join(", ") || "Ninguno";
+        const summary = `<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
+        tbodyConfig.insertAdjacentHTML("beforeend", `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
+        const rehearsalDate = new Date(r.date + 'T00:00:00Z'); 
+        if (rehearsalDate >= today) {
+            tbodyMain.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}<button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td><td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`);
+        }
     });
-
-    // Añadir eventos a los botones de editar (pantalla de configuración)
-    tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn =>
-      btn.onclick = () => {
-        editingRehearsalIndex = btn.dataset.i;
+    tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn => btn.onclick = () => {
+        editingRehearsalIndex = parseInt(btn.dataset.i, 10);
         const rehearsal = rehearsals[editingRehearsalIndex];
         document.getElementById("rehearsal-date").value = rehearsal.date;
         document.getElementById("rehearsal-start-time").value = rehearsal.startTime;
         document.getElementById("rehearsal-end-time").value = rehearsal.endTime;
         document.getElementById("rehearsal-location").value = rehearsal.location;
-        const addButton = document.getElementById("add-rehearsal");
-        addButton.textContent = "Guardar Cambios";
+        document.getElementById("add-rehearsal").textContent = "Guardar Cambios";
         document.getElementById("cancel-edit-rehearsal").style.display = "inline-block";
-      });
-
-    // Añadir eventos a los botones de eliminar (pantalla de configuración)
-    tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn =>
-      btn.onclick = async () => {
-        if (confirm("¿Estás seguro de que deseas eliminar este ensayo? Esto también eliminará todas las asistencias asociadas.")) {
-          rehearsals.splice(btn.dataset.i, 1);
-          await saveRehearsals();
-          renderStats(); // Actualizar estadísticas después de eliminar un ensayo
-        }
-      });
-
-    // Añadir eventos a los botones de eliminar asistentes
-    tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn =>
-      btn.onclick = async () => {
-        const index = btn.dataset.i;
-        const rehearsal = rehearsals[index];
-        const formattedDate = formatDateWithDay(rehearsal.date);
-        if (confirm(`¿Estás seguro de que deseas eliminar todas las asistencias para el ensayo del día ${formattedDate} a las ${rehearsal.startTime} en ${rehearsal.location}? Los usuarios tendrán que volver a confirmar su asistencia.`)) {
-          rehearsal.attendance = [];
-          await saveRehearsals();
-          const rehearsalMessage = document.getElementById("rehearsal-message");
-          rehearsalMessage.className = "success-message";
-          rehearsalMessage.textContent = "Asistencias eliminadas correctamente";
-          renderStats(); // Actualizar estadísticas después de eliminar asistencias
-        }
-      });
-
-    // Añadir eventos a los botones de confirmar asistencia (tabla principal)
-    tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => {
-      btn.onclick = async () => {
-        const index = btn.dataset.i;
-        const userSelect = document.querySelector(`.attendance-user[data-i="${index}"]`);
-        const responseSelect = document.querySelector(`.attendance-response[data-i="${index}"]`);
-        const name = userSelect.value;
-        const attending = responseSelect.value;
-
-        if (!name || !attending) {
-          alert("Por favor, selecciona tu nombre y una respuesta (Sí/No).");
-          return;
-        }
-
-        const rehearsal = rehearsals[index];
-        const formattedDate = formatDateWithDay(rehearsal.date);
-        const confirmMessage = attending === "Sí"
-          ? `¿Asistirás pues al ensayo del día ${formattedDate} de ${rehearsal.startTime} a ${rehearsal.endTime} en ${rehearsal.location}?`
-          : `¿No asistirás pues al ensayo del día ${formattedDate} de ${rehearsal.startTime} a ${rehearsal.endTime} en ${rehearsal.location}?`;
-
-        if (!confirm(confirmMessage)) {
-          return;
-        }
-
-        if (!Array.isArray(rehearsal.attendance)) {
-          rehearsal.attendance = [];
-        }
-        const existingResponse = rehearsal.attendance.find(a => a.name === name);
-        if (existingResponse) {
-          existingResponse.attending = attending;
-        } else {
-          rehearsal.attendance.push({ name, attending });
-        }
-
-        try {
-          await saveRehearsals();
-          userSelect.value = "";
-          responseSelect.value = "";
-          renderStats(); // Actualizar estadísticas después de confirmar asistencia
-        } catch (e) {
-          alert("Error al guardar la asistencia: " + e.message);
-        }
-      };
     });
-  }
-
-  async function loadRehearsals() {
+    tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn => btn.onclick = async () => {
+        if (confirm("¿Estás seguro de que deseas eliminar este ensayo?")) {
+            rehearsals.splice(parseInt(btn.dataset.i, 10), 1);
+            await saveRehearsals();
+            renderStats();
+        }
+    });
+    tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn => btn.onclick = async () => {
+        const index = parseInt(btn.dataset.i, 10);
+        const rehearsal = rehearsals[index];
+        if (confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)) {
+            rehearsal.attendance = [];
+            await saveRehearsals();
+            document.getElementById("rehearsal-message").textContent = "Asistencias eliminadas.";
+            renderStats();
+        }
+    });
+    tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => {
+        btn.onclick = async () => {
+            const index = parseInt(btn.dataset.i, 10);
+            const userSelect = document.querySelector(`.attendance-user[data-i="${index}"]`);
+            const responseSelect = document.querySelector(`.attendance-response[data-i="${index}"]`);
+            const name = userSelect.value;
+            const attending = responseSelect.value;
+            if (!name || !attending) { alert("Selecciona nombre y respuesta."); return; }
+            const rehearsal = rehearsals[index];
+            const confirmMsg = `${name}, ¿${attending === "Sí" ? "ASISTIRÁS" : "NO ASISTIRÁS"} al ensayo del ${formatDateWithDay(rehearsal.date)}?`;
+            if (!confirm(confirmMsg)) return;
+            if (!Array.isArray(rehearsal.attendance)) rehearsal.attendance = [];
+            const existingResponse = rehearsal.attendance.find(a => a.name === name);
+            if (existingResponse) existingResponse.attending = attending;
+            else rehearsal.attendance.push({ name, attending });
+            try {
+                await saveRehearsals();
+                userSelect.value = ""; responseSelect.value = "";
+                renderStats();
+            } catch (e) { alert("Error al guardar asistencia: " + e.message); }
+        };
+    });
+}
+async function loadRehearsals() {
     try {
-      const data = await withRetry(() => loadDoc("rehearsals", { rehearsals: [] }));
-      rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : [];
-      renderRehearsals();
-    } catch (e) {
-      console.error("Error al cargar ensayos:", e);
-      throw e;
-    }
-  }
-
-  async function saveRehearsals() {
+        const data = await withRetry(() => loadDoc("intranet", "rehearsals", { rehearsals: [] }));
+        rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : [];
+        renderRehearsals();
+    } catch (e) { console.error("Error al cargar ensayos:", e); }
+}
+async function saveRehearsals() {
     try {
-      await withRetry(() => saveDoc("rehearsals", { rehearsals }));
-      renderRehearsals();
-      renderStats(); // Actualizar estadísticas después de guardar ensayos
-      return true;
-    } catch (e) {
-      console.error("Error al guardar ensayos:", e);
-      throw e;
-    }
-  }
-
-  function resetRehearsalForm() {
+        await withRetry(() => saveDoc("intranet", "rehearsals", { rehearsals }));
+        renderRehearsals();
+        renderStats();
+        return true;
+    } catch (e) { console.error("Error al guardar ensayos:", e); throw e; }
+}
+function resetRehearsalForm() {
     document.getElementById("rehearsal-date").value = "";
     document.getElementById("rehearsal-start-time").value = "";
     document.getElementById("rehearsal-end-time").value = "";
     document.getElementById("rehearsal-location").value = "";
-    const addButton = document.getElementById("add-rehearsal");
-    addButton.textContent = "Añadir Ensayo";
+    document.getElementById("add-rehearsal").textContent = "Añadir Ensayo";
     document.getElementById("cancel-edit-rehearsal").style.display = "none";
     editingRehearsalIndex = null;
-  }
+}
 
-  /* ---------- 8. Estadísticas ---------- */
-  function updateMonthFilter() {
+/* ---------- 8. Estadísticas ---------- */
+function updateMonthFilter() {
     const select = document.getElementById("stats-month-filter");
     select.innerHTML = '<option value="all">Todos los meses</option>';
-
     const now = new Date();
-    const pastRehearsals = rehearsals.filter(r => new Date(r.date) < now);
+    const pastRehearsals = rehearsals.filter(r => new Date(r.date + 'T00:00:00Z') < now); 
     const months = new Set(pastRehearsals.map(r => getMonthYear(r.date)));
-    Array.from(months).sort().forEach(month => {
-      select.insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`);
+    Array.from(months).sort((a,b) => new Date(b.split(" ")[1], getMonthIndex(b.split(" ")[0])) - new Date(a.split(" ")[1], getMonthIndex(a.split(" ")[0])) ).forEach(month => {
+        select.insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`);
     });
-  }
-
-  function renderStats() {
+}
+function getMonthIndex(monthName) {
+    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    return months.indexOf(monthName);
+}
+function renderStats() {
     const now = new Date();
     const selectedMonth = document.getElementById("stats-month-filter")?.value || "all";
-
-    // Filtrar ensayos pasados
-    let filteredRehearsals = rehearsals.filter(r => new Date(r.date) < now);
-
-    // Filtrar por mes seleccionado (si no es "all")
+    let filteredRehearsals = rehearsals.filter(r => new Date(r.date + 'T00:00:00Z') < now); 
     if (selectedMonth !== "all") {
-      filteredRehearsals = filteredRehearsals.filter(r => getMonthYear(r.date) === selectedMonth);
+        filteredRehearsals = filteredRehearsals.filter(r => getMonthYear(r.date) === selectedMonth);
     }
-
-    // Tiempo ensayado por mes
     const timePerMonth = {};
     filteredRehearsals.forEach(r => {
-      const monthYear = getMonthYear(r.date);
-      const duration = calculateDuration(r.startTime, r.endTime);
-      timePerMonth[monthYear] = (timePerMonth[monthYear] || 0) + duration;
+        const monthYear = getMonthYear(r.date);
+        const duration = calculateDuration(r.startTime, r.endTime);
+        timePerMonth[monthYear] = (timePerMonth[monthYear] || 0) + duration;
     });
-
     const tbodyMonth = document.getElementById("time-per-month-body");
     tbodyMonth.innerHTML = "";
-    Object.keys(timePerMonth).sort().forEach(month => {
-      const hours = toHours(timePerMonth[month]);
-      tbodyMonth.insertAdjacentHTML("beforeend",
-        `<tr><td>${month}</td><td>${hours}</td></tr>`);
+    Object.keys(timePerMonth).sort((a,b) => new Date(b.split(" ")[1], getMonthIndex(b.split(" ")[0])) - new Date(a.split(" ")[1], getMonthIndex(a.split(" ")[0])) ).forEach(month => {
+        tbodyMonth.insertAdjacentHTML("beforeend", `<tr><td>${month}</td><td>${toHours(timePerMonth[month])}</td></tr>`);
     });
-
-    // Tiempo ensayado por usuario
     const timePerUser = {};
     users.forEach(user => {
-      timePerUser[user.name] = 0;
-      filteredRehearsals.forEach(r => {
-        const attendance = r.attendance?.find(a => a.name === user.name);
-        if (attendance && attendance.attending === "Sí") {
-          const duration = calculateDuration(r.startTime, r.endTime);
-          timePerUser[user.name] += duration;
-        }
-      });
+        timePerUser[user.name] = 0;
+        filteredRehearsals.forEach(r => {
+            const attendance = r.attendance?.find(a => a.name === user.name);
+            if (attendance && attendance.attending === "Sí") {
+                timePerUser[user.name] += calculateDuration(r.startTime, r.endTime);
+            }
+        });
     });
-
     const tbodyUser = document.getElementById("time-per-user-body");
     tbodyUser.innerHTML = "";
     Object.keys(timePerUser).sort().forEach(user => {
-      const hours = toHours(timePerUser[user]);
-      tbodyUser.insertAdjacentHTML("beforeend",
-        `<tr><td>${user}</td><td>${hours}</td></tr>`);
+        tbodyUser.insertAdjacentHTML("beforeend", `<tr><td>${users.find(u=>u.name===user)?.nickname || user}</td><td>${toHours(timePerUser[user])}</td></tr>`);
     });
-
-    // Ensayos pasados
     const tbodyPast = document.getElementById("past-rehearsals-body");
     tbodyPast.innerHTML = "";
-    filteredRehearsals.sort((a, b) => new Date(b.date) - new Date(a.date)); // Ordenar de más reciente a más antiguo
+    filteredRehearsals.sort((a, b) => new Date(b.date + 'T' + (b.startTime || '00:00')) - new Date(a.date + 'T' + (a.startTime || '00:00')));
     filteredRehearsals.forEach(r => {
-      const formattedDate = formatDateWithDay(r.date);
-      const durationSeconds = calculateDuration(r.startTime, r.endTime);
-      const durationText = toHHMM(durationSeconds);
-
-      // Resumen de asistencias (usar apodo)
-      const attendance = Array.isArray(r.attendance) ? r.attendance : [];
-      const attendingYes = attendance
-        .filter(a => a.attending === "Sí")
-        .map(a => {
-          const user = users.find(u => u.name === a.name);
-          return user ? user.nickname : a.name;
-        })
-        .join(", ") || "Ninguno";
-      const attendingNo = attendance
-        .filter(a => a.attending === "No")
-        .map(a => {
-          const user = users.find(u => u.name === a.name);
-          return user ? user.nickname : a.name;
-        })
-        .join(", ") || "Ninguno";
-      const summary = `
-        <div class="attendance-summary">
-          <span class="attending-yes">Asisten: ${attendingYes}</span>
-          <span class="attending-no">No asisten: ${attendingNo}</span>
-        </div>
-      `;
-
-      tbodyPast.insertAdjacentHTML("beforeend",
-        `<tr>
-          <td>
-            ${formattedDate}
-            <span class="rehearsal-duration">(${durationText})</span>
-          </td>
-          <td>${r.startTime} - ${r.endTime}</td>
-          <td>${r.location}</td>
-          <td>${summary}</td>
-        </tr>`);
+        const formattedDate = formatDateWithDay(r.date);
+        const durationText = toHHMM(calculateDuration(r.startTime, r.endTime));
+        const attendance = Array.isArray(r.attendance) ? r.attendance : [];
+        const getAttendeeNicknames = (status) => attendance.filter(a => a.attending === status).map(a => { const user = users.find(u => u.name === a.name); return user ? user.nickname : a.name; }).join(", ") || "Ninguno";
+        const summary = `<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
+        tbodyPast.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td><td>${summary}</td></tr>`);
     });
-  }
+}
 
-  /* ---------- 9. PDF ---------- */
-  async function genPDF(songs, title, fileName) {
+/* ---------- 9. PDF ---------- */
+async function genPDF(songs, title, fileName) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "pt", format: "A4" });
     try {
-      const blob = await (await fetch("assets/logo_negro copia.jpg")).blob();
-      const base = await new Promise((ok, ko) => {
-        const r = new FileReader();
-        r.onload = () => ok(r.result);
-        r.onerror = ko;
-        r.readAsDataURL(blob);
-      });
-      doc.addImage(base, "JPEG", 40, 30, 60, 60);
-    } catch (e) {
-      console.error("Error al cargar el logo para el PDF:", e);
-    }
-    doc.setFontSize(16);
-    doc.text(`Setlist - ${title}`, 120, 50);
-    const totalTime = toMMSS(songs.reduce((a, s) => a + parseDuration(s.duration), 0));
-    doc.setFontSize(12);
-    doc.text(`${songs.length} canciones, ${totalTime} total`, 120, 70);
+        const blob = await (await fetch("assets/logo_negro copia.jpg")).blob(); 
+        const base = await new Promise((ok, ko) => {
+            const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(blob);
+        });
+        doc.addImage(base, "JPEG", 40, 30, 60, 60);
+    } catch (e) { console.error("Error al cargar el logo para el PDF:", e); }
+    doc.setFontSize(16); doc.text(`Setlist - ${title}`, 120, 50);
+    const totalTime = toHHMM(songs.reduce((a, s) => a + parseDuration(s.duration), 0));
+    doc.setFontSize(12); doc.text(`${songs.length} canciones, ${totalTime} total`, 120, 70);
     doc.autoTable({
-      startY: 100,
-      head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
-      body: songs.map((s, i) => [i + 1, s.name || "", s.key || "", s.tempo || "", toMMSS(parseDuration(s.duration))]),
-      headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: "bold" },
-      styles: { fontSize: 10, cellPadding: 5 }
+        startY: 100,
+        head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
+        body: songs.map((s, i) => [i + 1, s.name || "", s.key || "", s.tempo || "", toMMSS(parseDuration(s.duration))]),
+        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: "bold" },
+        styles: { fontSize: 10, cellPadding: 5 }
     });
     doc.save(fileName);
-  }
+}
 
-  /* ---------- 10. Modificar tabla de BandHelper (Próximos Conciertos) ---------- */
-  function modifyBandHelperTable() {
-    const table = document.querySelector("#bandhelper-concerts table");
-    if (!table) {
-      setTimeout(modifyBandHelperTable, 500);
+/* ---------- 10. BandHelper & Detalles Concierto ---------- */
+let processTableAttempts = 0;
+const MAX_PROCESS_ATTEMPTS = 20; 
+
+function processBandHelperTable() {
+  const container = document.getElementById('bandhelper-concerts-container');
+  if (!container) {
+      console.error("processBandHelperTable: Contenedor 'bandhelper-concerts-container' no encontrado.");
       return;
+  }
+ 
+  console.log(`processBandHelperTable: Intento ${processTableAttempts + 1} para encontrar la tabla de BandHelper.`);
+  const table = container.querySelector("table"); 
+  const loadingMessage = document.getElementById("bandhelper-loading-message");
+
+  if (!table) {
+    processTableAttempts++;
+    if (processTableAttempts < MAX_PROCESS_ATTEMPTS) {
+      console.log("processBandHelperTable: Tabla de BandHelper NO encontrada. Reintentando en 500ms...");
+      setTimeout(processBandHelperTable, 500); 
+    } else {
+      console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de", MAX_PROCESS_ATTEMPTS, "intentos.");
+      if(loadingMessage) {
+          loadingMessage.textContent = "No se pudieron mostrar los conciertos (tabla no generada por BandHelper).";
+          loadingMessage.style.display = "block"; 
+      }
     }
-    const rows = table.querySelectorAll("tbody tr");
-    rows.forEach(row => {
-      const cells = row.querySelectorAll("td");
-      if (cells.length < 3) return;
-      const dateCell = cells[0].textContent.trim();
-      const timeCell = cells[1].textContent.trim();
-      const locationCell = cells[2];
-      const locationText = locationCell.textContent.trim() || "Lugar no especificado";
-      const dateParts = dateCell.match(/(\d+)\s+de\s+(\w+)/i);
-      if (!dateParts) return;
-      const day = dateParts[1];
-      const monthName = dateParts[2];
-      const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-      const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase()) + 1;
-      const year = new Date().getFullYear();
-      const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      const time = timeCell || "20:00";
-      locationCell.innerHTML = `
-        ${locationText}
-        <button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Concierto El Sótano del Doctor", "${date}", "${time}", "${locationText}", "Concierto de la banda El Sótano del Doctor", 7200)'>
-          <svg viewBox="0 0 24 24">
-            <path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/>
-            <rect x="4" y="6" width="16" height="12" rx="2"/>
-          </svg>
-        </button>
-      `;
-    });
+    return;
   }
 
-  /* ---------- 11. Menú & pantallas ---------- */
-  const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
-  const PASSWORD = "Sotano2014";
-  let isAuthenticated = false;
+  if(loadingMessage) loadingMessage.style.display = "none"; 
+  console.log("processBandHelperTable: Tabla de BandHelper ENCONTRADA:", table);
 
-  function closeAll() {
-    document.querySelectorAll(".config-screen").forEach(s => {
-      s.style.display = "none";
-      s.querySelectorAll("input, select").forEach(input => {
-        if (input.tagName === "SELECT" && input.hasAttribute("multiple")) {
-          Array.from(input.options).forEach(option => option.selected = false);
-        } else {
-          input.value = "";
+  if (table.dataset.processed === "true") { 
+      return;
+  }
+  table.dataset.processed = "true";
+
+  let headerRow = table.querySelector("thead tr"); 
+  let isHeaderInTbody = false;
+
+  if (!headerRow) { 
+      if (table.rows.length > 0 && table.rows[0].cells.length > 0 && table.rows[0].cells[0].tagName.toLowerCase() === 'th') {
+          headerRow = table.rows[0];
+      } else {
+          const tbody = table.querySelector("tbody");
+          if (tbody && tbody.rows.length > 0) {
+              const firstTbodyRow = tbody.rows[0];
+              if (firstTbodyRow.querySelector("th")) {
+                  headerRow = firstTbodyRow;
+                  isHeaderInTbody = true; 
+              } else {
+                  console.warn("processBandHelperTable: La tabla de BandHelper no parece tener una fila de cabecera formal con <th>. La columna 'Detalles' no tendrá título.");
+              }
+          }
+      }
+  }
+  
+  if (headerRow) {
+      if (!headerRow.querySelector(".details-header")) {
+          const th = document.createElement("th"); 
+          th.className = "details-header";
+          th.textContent = "Detalles";
+          th.style.textAlign = "center";
+          headerRow.appendChild(th);
+      }
+  }
+
+  const dataRowsSource = table.querySelector("tbody") ? table.querySelectorAll("tbody tr") : []; 
+  let dataRows = Array.from(dataRowsSource);
+  
+  if (dataRows.length === 0 && table.rows.length > (headerRow ? 1:0) ) {
+      console.warn("processBandHelperTable: No se encontraron filas en 'tbody' o estaba vacío. Intentando procesar todas las filas de la tabla excepto la posible cabecera.");
+      let allRowsInTable = Array.from(table.rows);
+      if (headerRow && allRowsInTable.length > 0 && allRowsInTable[0] === headerRow) {
+          allRowsInTable.shift(); 
+      }
+      dataRows = allRowsInTable; 
+  }
+
+  for (let i = 0; i < dataRows.length; i++) { 
+    const row = dataRows[i];
+    if (isHeaderInTbody && i === 0 && row === headerRow) { 
+        continue;
+    }
+
+    const cells = row.cells; 
+    
+    if (cells.length < 3) { 
+        console.warn(`processBandHelperTable: Fila de datos ${i} con ${cells.length} celdas. Mínimo 3 esperadas (Fecha, Hora, Evento). Saltando.`);
+        continue; 
+    }
+
+    let detailCell;
+    const expectedCellCount = headerRow ? headerRow.cells.length : cells.length + 1;
+
+    if (cells.length < expectedCellCount) {
+        detailCell = row.insertCell(-1); 
+    } else { 
+        detailCell = cells[expectedCellCount - 1]; 
+        detailCell.innerHTML = ''; 
+    }
+
+    detailCell.className = "details-cell"; 
+    detailCell.style.textAlign = "center";
+    
+    if (!detailCell.querySelector('.details-btn')) {
+        const dateCellText = cells[0].textContent.trim();
+        const eventCellContent = cells[2] ? cells[2].textContent.trim() : "Evento Desconocido";
+        const eventTitleFromCell = eventCellContent.split('\n')[0].trim() || "Evento Sin Título";
+        const concertId = sanitizeFirebaseKey(`${dateCellText}_${eventTitleFromCell}`);
+        
+        const detailsBtn = document.createElement("button");
+        detailsBtn.className = "details-btn";
+        detailsBtn.innerHTML = "➡️";
+        detailsBtn.title = "Ver/Editar Detalles del Concierto";
+        detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellText, eventTitleFromCell, eventCellContent);
+        
+        detailCell.appendChild(detailsBtn);
+    }
+
+    const locationCell = cells[2]; 
+    if (locationCell && !locationCell.querySelector('.calendar-btn')) {
+        const eventNameText = locationCell.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
+        const dateCellContent = cells[0].textContent.trim();
+        const timeCellContent = cells[1]?.textContent.trim() || "20:00";
+        const dateParts = dateCellContent.match(/(\d+)\s+de\s+(\w+)/i);
+        let icsDate = new Date().toISOString().split('T')[0];
+        if (dateParts) {
+            const day = dateParts[1]; const monthName = dateParts[2];
+            const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
+            if (month !== -1) {
+                let year = new Date().getFullYear();
+                const currentMonth = new Date().getMonth();
+                if (month < currentMonth && (currentMonth - month > 6)) year++; 
+                icsDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            }
         }
-      });
-      const message = s.querySelector("#user-message, #rehearsal-message, #setlist-message");
-      if (message) message.textContent = "";
+        const calendarBtn = document.createElement('button');
+        calendarBtn.className = 'calendar-btn'; calendarBtn.title = 'Añadir a mi calendario';
+        calendarBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';
+        calendarBtn.onclick = () => generateICS(`Concierto: ${eventNameText}`, icsDate, timeCellContent, eventNameText, `Concierto de El Sótano del Doctor en ${eventNameText}`);
+        locationCell.appendChild(document.createTextNode(" "));
+        locationCell.appendChild(calendarBtn);
+    }
+  }
+}
+
+const concertDetailModal = document.getElementById('concert-details-modal');
+const concertDetailMessage = document.getElementById('concert-detail-message');
+async function openConcertDetailModal(concertId, concertDate, concertTitle, concertLocationOriginal) {
+    concertDetailMessage.textContent = ""; 
+    concertDetailMessage.className = "success-message"; 
+
+    document.getElementById('concert-detail-id').value = concertId;
+    
+    document.getElementById('concert-detail-location').value = '';
+    document.getElementById('concert-detail-soundsetup').value = ''; 
+    document.getElementById('concert-detail-instrumentssetup').value = ''; 
+    document.getElementById('concert-detail-soundcheck').value = '';
+    document.getElementById('concert-detail-showtime').value = '';
+    document.getElementById('concert-detail-notes').value = '';
+    
+    const musiciansListDiv = document.getElementById('musicians-attendance-list');
+    musiciansListDiv.innerHTML = 'Cargando músicos...';
+
+    const excludedMusicians = ["Ximo", "Ginés Torres"]; 
+
+    if (users && users.length > 0) {
+        musiciansListDiv.innerHTML = ''; 
+        users.filter(user => !excludedMusicians.includes(user.name)) 
+             .forEach(user => {
+                const userDiv = document.createElement('div');
+                const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`;
+                userDiv.innerHTML = `
+                    <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}">
+                    <label for="${checkboxId}">${user.name} (${user.nickname})</label>
+                `;
+                musiciansListDiv.appendChild(userDiv);
+        });
+        if (musiciansListDiv.children.length === 0) {
+            musiciansListDiv.innerHTML = 'No hay otros músicos para listar.';
+        }
+    } else { 
+        musiciansListDiv.innerHTML = 'No hay músicos registrados para listar.';
+    }
+
+    try {
+        console.log("Abriendo modal para concertId:", concertId);
+        const details = await loadDoc('concert_details', concertId, {}); 
+        
+        if (details && Object.keys(details).length > 0) { 
+            console.log("Detalles cargados desde Firestore:", details);
+            document.getElementById('concert-detail-location').value = details.locationDetails || '';
+            document.getElementById('concert-detail-soundsetup').value = details.soundSetupTime || ''; 
+            document.getElementById('concert-detail-instrumentssetup').value = details.instrumentsSetupTime || ''; 
+            document.getElementById('concert-detail-soundcheck').value = details.soundcheckTime || '';
+            document.getElementById('concert-detail-showtime').value = details.showTime || '';
+            document.getElementById('concert-detail-notes').value = details.generalNotes || '';
+            
+            if (details.attendees && Array.isArray(details.attendees)) {
+                details.attendees.forEach(attendeeName => {
+                    const checkbox = musiciansListDiv.querySelector(`input[value="${attendeeName}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    } else {
+                        console.warn("No se encontró checkbox para el asistente:", attendeeName);
+                    }
+                });
+            }
+        } else {
+            console.log("No se encontraron detalles previos en Firestore para este concierto o el documento está vacío:", concertId);
+        }
+    } catch (error) { 
+        console.error("Error al intentar cargar detalles del concierto desde Firestore (manejado en openConcertDetailModal):", error);
+        concertDetailMessage.className = "error-message";
+        concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}. Verifica los permisos de Firestore.`;
+    }
+    concertDetailModal.classList.add('show'); 
+}
+document.getElementById('save-concert-details').onclick = async () => {
+    const concertId = document.getElementById('concert-detail-id').value;
+    const concertDetailMessage = document.getElementById('concert-detail-message'); 
+    if (!concertId) { 
+        concertDetailMessage.className = "error-message";
+        concertDetailMessage.textContent = "Error: ID de concierto no encontrado. No se puede guardar."; 
+        return; 
+    }
+
+    const selectedAttendees = [];
+    document.querySelectorAll('#musicians-attendance-list input[type="checkbox"]:checked').forEach(checkbox => { 
+        selectedAttendees.push(checkbox.value); 
     });
+
+    const concertData = {
+        locationDetails: document.getElementById('concert-detail-location').value.trim(),
+        soundSetupTime: document.getElementById('concert-detail-soundsetup').value, 
+        instrumentsSetupTime: document.getElementById('concert-detail-instrumentssetup').value, 
+        soundcheckTime: document.getElementById('concert-detail-soundcheck').value,
+        showTime: document.getElementById('concert-detail-showtime').value,
+        generalNotes: document.getElementById('concert-detail-notes').value.trim(),
+        attendees: selectedAttendees,
+        lastUpdated: new Date().toISOString() 
+    };
+
+    console.log("Intentando guardar en Firestore (función original). Documento ID:", concertId, "Datos:", concertData);
+
+    try {
+        await saveDoc('concert_details', concertId, concertData, true); 
+        concertDetailMessage.className = "success-message";
+        concertDetailMessage.textContent = "Detalles guardados correctamente.";
+    } catch (error) {
+        console.error("Error al guardar detalles del concierto en Firestore (función original):", error);
+        concertDetailMessage.className = "error-message";
+        concertDetailMessage.textContent = `Error al guardar: ${error.message}. Verifica los permisos de Firestore.`;
+    }
+};
+document.getElementById('close-concert-details-modal').onclick = () => {
+    concertDetailModal.classList.remove('show');
+};
+
+/* ---------- 11. Menú & pantallas ---------- */
+const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
+const PASSWORD = "Sotano2014"; 
+let isAuthenticated = false;
+function closeAll() {
+    document.querySelectorAll(".config-screen, .modal-backdrop").forEach(s => s.classList.remove("show"));
+    document.querySelectorAll(".config-screen").forEach(s => s.style.display = "none");
     sidebar.classList.remove("show");
     overlay.classList.remove("show");
     document.getElementById("config-submenu").style.display = "none";
-    resetUserForm();
-    resetRehearsalForm();
-  }
+    if (typeof resetUserForm === "function") resetUserForm();
+    if (typeof resetRehearsalForm === "function") resetRehearsalForm();
+    document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message").forEach(el => el.textContent = "");
+}
+document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
+document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); };
+overlay.onclick = closeAll;
 
-  document.getElementById("hamburger-btn").onclick = () => {
-    sidebar.classList.add("show");
-    overlay.classList.add("show");
-  };
+const setupMenuLink = (menuId, targetId) => {
+    const link = document.getElementById(menuId);
+    if (link) {
+        link.onclick = e => {
+            e.preventDefault();
+            closeAll();
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) { targetElement.scrollIntoView({ behavior: "smooth" }); }
+            else { console.warn(`Elemento ${targetId} no encontrado.`); }
+        };
+    } else { console.warn(`Enlace ${menuId} no encontrado.`); }
+};
+// Enlaces a secciones principales
+setupMenuLink("menu-rehearsals-setlist-section", "setlists");
+setupMenuLink("menu-rehearsals-section", "rehearsals");
+setupMenuLink("menu-second-setlist-section", "second-setlist");
+setupMenuLink("menu-star-setlist-section", "star-setlist");
+setupMenuLink("menu-concerts-section", "calendario");
+// Ya no hay enlace directo a #usuarios en main, se maneja con openConfigScreen
 
-  document.getElementById("menu-cerrar").onclick = e => {
-    e.preventDefault();
-    closeAll();
-  };
-
-  overlay.onclick = closeAll;
-
-  // Nuevos ítems de acceso directo (sin contraseña)
-  document.getElementById("menu-rehearsals-section").onclick = e => {
-    e.preventDefault();
-    closeAll();
-    document.getElementById("rehearsals").scrollIntoView({ behavior: "smooth" });
-  };
-
-  document.getElementById("menu-second-setlist-section").onclick = e => {
-    e.preventDefault();
-    closeAll();
-    document.getElementById("second-setlist").scrollIntoView({ behavior: "smooth" });
-  };
-
-  document.getElementById("menu-concerts-section").onclick = e => {
-    e.preventDefault();
-    closeAll();
-    document.getElementById("calendario").scrollIntoView({ behavior: "smooth" });
-  };
-
-  // Ítem Configuración (protegido por contraseña)
-  document.getElementById("menu-config").onclick = e => {
+document.getElementById("menu-config").onclick = e => {
     e.preventDefault();
     if (!isAuthenticated) {
-      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-        isAuthenticated = true;
-        document.getElementById("config-submenu").style.display = "block";
-      } else {
-        alert("Contraseña incorrecta. Acceso denegado.");
-        return;
-      }
-    } else {
-      document.getElementById("config-submenu").style.display = "block";
-    }
-  };
+        const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
+        if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+            isAuthenticated = true;
+            document.getElementById("config-submenu").style.display = "block";
+        } else { alert("Contraseña incorrecta."); return; }
+    } else { document.getElementById("config-submenu").style.display = "block"; }
+};
 
-  /* --- Setlists screen */
-  document.getElementById("menu-setlist-config").onclick = e => {
+const openConfigScreen = (screenId) => {
+    if (!isAuthenticated && screenId !== 'user-list-screen' && screenId !== 'stats-screen') { // Permitir acceso a user-list y stats sin contraseña
+        const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
+        if (password && password.toLowerCase() === PASSWORD.toLowerCase()) { isAuthenticated = true; }
+        else { alert("Contraseña incorrecta."); return false; }
+    }
+    // Para user-list-screen y stats-screen, no se pide contraseña si no está autenticado, simplemente se muestra.
+    // Si ya está autenticado, cualquier pantalla de config se muestra.
+    if (isAuthenticated || screenId === 'user-list-screen' || screenId === 'stats-screen') {
+        closeAll();
+        const screen = document.getElementById(screenId);
+        if (screen) {
+            screen.style.display = "block";
+            if (screenId === 'user-list-screen') { // Asegurar que los usuarios se renderizan al abrir esta pantalla
+                renderUsers();
+            }
+        } else {
+             console.error(`Pantalla ${screenId} no encontrada.`);
+        }
+        return true;
+    }
+    return false; // Si no está autenticado y la pantalla requiere contraseña
+}
+
+document.getElementById("menu-setlist-config").onclick = e => {
     e.preventDefault();
-    if (!isAuthenticated) {
-      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-        isAuthenticated = true;
-      } else {
-        alert("Contraseña incorrecta. Acceso denegado.");
-        return;
-      }
+    if (openConfigScreen("setlist-config-screen")) {
+        document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
+        document.getElementById("setlist1-url").value = setlistConfig.setlist1.url === "URL_POR_CONFIGURAR_1" ? "" : setlistConfig.setlist1.url;
+        document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
+        const setlist2Url = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
+        document.getElementById("setlist2-url").value = setlist2Url === "URL_POR_CONFIGURAR_2" ? "" : setlist2Url;
+        document.getElementById("setlistStar-name").value = setlistConfig.setlistStar.name;
+        document.getElementById("setlistStar-url").value = setlistConfig.setlistStar.url === "URL_POR_CONFIGURAR_STAR" ? "" : setlistConfig.setlistStar.url;
     }
-    closeAll();
-    const s = document.getElementById("setlist-config-screen");
-    s.style.display = "block";
-    document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
-    document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
-    document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
-    document.getElementById("setlist2-url").value = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
-  };
-
-  document.getElementById("close-setlist-config").onclick = () => {
+};
+document.getElementById("close-setlist-config").onclick = () => {
     document.getElementById("setlist-config-screen").style.display = "none";
     document.getElementById("setlist-message").textContent = "";
-  };
-
-  document.getElementById("guardar-setlist-config").onclick = async () => {
-    const setlistMessage = document.getElementById("setlist-message");
-    setlistMessage.textContent = "";
-    const n1 = document.getElementById("setlist1-name").value.trim(),
-          u1 = document.getElementById("setlist1-url").value.trim(),
-          n2 = document.getElementById("setlist2-name").value.trim(),
-          raw = document.getElementById("setlist2-url").value.trim();
-    if (!n1 || !u1 || !n2 || !raw) {
-      setlistMessage.className = "error-message";
-      setlistMessage.textContent = "Completa todos los campos";
-      return;
-    }
+};
+document.getElementById("guardar-setlist-config").onclick = async () => {
+    const msg = document.getElementById("setlist-message"); msg.textContent = "";
+    const n1 = document.getElementById("setlist1-name").value.trim(), u1 = document.getElementById("setlist1-url").value.trim();
+    const n2 = document.getElementById("setlist2-name").value.trim(), raw2 = document.getElementById("setlist2-url").value.trim();
+    const nStar = document.getElementById("setlistStar-name").value.trim(), uStar = document.getElementById("setlistStar-url").value.trim();
+    if (!n1||!u1||!n2||!raw2||!nStar||!uStar) { msg.className="error-message"; msg.textContent="Completa todos los campos."; return; }
     try {
-      setlistConfig.setlist1 = { name: n1, url: u1 };
-      setlistConfig.setlist2 = { name: n2, url: raw.startsWith("http") ? raw : `https://www.bandhelper.com/feed/set_list/${raw}` };
-      await saveSetlistConfig();
-      await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist()]);
-      document.getElementById("setlist-config-screen").style.display = "none";
-      setlistMessage.className = "success-message";
-      setlistMessage.textContent = "Configuración guardada correctamente";
-    } catch (e) {
-      setlistMessage.className = "error-message";
-      setlistMessage.textContent = "Error al guardar configuración: " + e.message;
-    }
-  };
+        setlistConfig.setlist1={name:n1, url:u1};
+        setlistConfig.setlist2={name:n2, url:raw2.startsWith("http")?raw2:`https://www.bandhelper.com/feed/set_list/${raw2}`};
+        setlistConfig.setlistStar={name:nStar, url:uStar};
+        await saveSetlistConfig();
+        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
+        document.getElementById("setlist-config-screen").style.display="none";
+    } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message; }
+};
 
-  /* --- Usuarios screen */
-  document.getElementById("menu-user-mgmt").onclick = e => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-        isAuthenticated = true;
-      } else {
-        alert("Contraseña incorrecta. Acceso denegado.");
-        return;
-      }
-    }
-    closeAll();
-    document.getElementById("user-mgmt-screen").style.display = "block";
-  };
-
-  document.getElementById("close-user-mgmt").onclick = () => {
+document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); openConfigScreen("user-mgmt-screen"); };
+document.getElementById("close-user-mgmt").onclick = () => {
     document.getElementById("user-mgmt-screen").style.display = "none";
     document.getElementById("user-message").textContent = "";
     resetUserForm();
-  };
-
-  document.getElementById("add-user").onclick = async () => {
-    const userMessage = document.getElementById("user-message");
-    userMessage.textContent = "";
-    const name = document.getElementById("user-name").value.trim();
-    const nickname = document.getElementById("user-nickname").value.trim();
-    const roleSelect = document.getElementById("user-role");
-    const roles = Array.from(roleSelect.selectedOptions).map(option => option.value);
-    if (!name) {
-      userMessage.className = "error-message";
-      userMessage.textContent = "Introduce un nombre válido";
-      return;
-    }
-    if (!nickname) {
-      userMessage.className = "error-message";
-      userMessage.textContent = "Introduce un apodo válido";
-      return;
-    }
-    if (roles.length === 0) {
-      userMessage.className = "error-message";
-      userMessage.textContent = "Selecciona al menos un rol";
-      return;
-    }
+};
+document.getElementById("add-user").onclick = async () => {
+    const msg = document.getElementById("user-message"); msg.textContent = "";
+    const name = document.getElementById("user-name").value.trim(), nickname = document.getElementById("user-nickname").value.trim();
+    const roles = Array.from(document.getElementById("user-role").selectedOptions).map(o=>o.value);
+    if(!name||!nickname||roles.length===0){ msg.className="error-message"; msg.textContent="Nombre, apodo y rol son obligatorios."; return; }
     try {
-      if (editingUserIndex !== null) {
-        const oldName = users[editingUserIndex].name;
-        users[editingUserIndex] = { name, nickname, roles };
-        // Actualizar asistencias si el nombre cambió
-        if (oldName !== name) {
-          rehearsals.forEach(r => {
-            if (Array.isArray(r.attendance)) {
-              r.attendance.forEach(a => {
-                if (a.name === oldName) {
-                  a.name = name;
-                }
-              });
-            }
-          });
-          await saveRehearsals();
-        }
-        userMessage.className = "success-message";
-        userMessage.textContent = "Usuario actualizado correctamente";
-      } else {
-        users.push({ name, nickname, roles });
-        userMessage.className = "success-message";
-        userMessage.textContent = "Usuario añadido correctamente";
-      }
-      await saveUsers();
-      resetUserForm();
-    } catch (e) {
-      userMessage.className = "error-message";
-      userMessage.textContent = "Error al guardar usuario: " + e.message;
-    }
-  };
+        if(editingUserIndex!==null){
+            const oldName = users[editingUserIndex].name;
+            users[editingUserIndex]={name,nickname,roles};
+            if(oldName!==name){ rehearsals.forEach(r=>{ if(Array.isArray(r.attendance)){r.attendance.forEach(a=>{if(a.name===oldName)a.name=name;});}}); await saveRehearsals(); }
+            msg.textContent="Usuario actualizado.";
+        } else { users.push({name,nickname,roles}); msg.textContent="Usuario añadido."; }
+        await saveUsers();
+        msg.className="success-message";
+        resetUserForm();
+    } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message; }
+};
+document.getElementById("cancel-edit-user").onclick = () => { resetUserForm(); document.getElementById("user-message").textContent = ""; };
 
-  document.getElementById("cancel-edit-user").onclick = () => {
-    resetUserForm();
-    document.getElementById("user-message").textContent = "";
-  };
-
-  /* --- Ensayos screen */
-  document.getElementById("menu-rehearsal").onclick = e => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña para acceder a la configuración:");
-      if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-        isAuthenticated = true;
-      } else {
-        alert("Contraseña incorrecta. Acceso denegado.");
-        return;
-      }
-    }
-    closeAll();
-    document.getElementById("rehearsal-screen").style.display = "block";
-  };
-
-  document.getElementById("close-rehearsal").onclick = () => {
+document.getElementById("menu-rehearsal").onclick = e => { e.preventDefault(); openConfigScreen("rehearsal-screen"); };
+document.getElementById("close-rehearsal").onclick = () => {
     document.getElementById("rehearsal-screen").style.display = "none";
     document.getElementById("rehearsal-message").textContent = "";
     resetRehearsalForm();
-  };
+};
+document.getElementById("add-rehearsal").onclick = async () => {
+    const msg = document.getElementById("rehearsal-message"); msg.textContent="";
+    const date=document.getElementById("rehearsal-date").value,startTime=document.getElementById("rehearsal-start-time").value,endTime=document.getElementById("rehearsal-end-time").value,loc=document.getElementById("rehearsal-location").value.trim();
+    if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return;}
+    if(calculateDuration(startTime,endTime)<=0){msg.className="error-message";msg.textContent="Hora fin posterior a inicio.";return;}
+    try{
+        const newData={date,startTime,endTime,location:loc,attendance:[]};
+        if(editingRehearsalIndex!==null){
+            newData.attendance=rehearsals[editingRehearsalIndex].attendance||[];
+            rehearsals[editingRehearsalIndex]=newData;
+            msg.textContent="Ensayo actualizado.";
+        } else { rehearsals.push(newData); msg.textContent="Ensayo añadido."; }
+        await saveRehearsals();
+        msg.className="success-message";
+        resetRehearsalForm();
+    } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message;}
+};
+document.getElementById("cancel-edit-rehearsal").onclick = () => { resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = ""; };
 
-  document.getElementById("add-rehearsal").onclick = async () => {
-    const rehearsalMessage = document.getElementById("rehearsal-message");
-    rehearsalMessage.textContent = "";
-    const date = document.getElementById("rehearsal-date").value;
-    const startTime = document.getElementById("rehearsal-start-time").value;
-    const endTime = document.getElementById("rehearsal-end-time").value;
-    const loc = document.getElementById("rehearsal-location").value.trim();
+document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(openConfigScreen("stats-screen")){ updateMonthFilter(); renderStats(); }};
+document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
+document.getElementById("stats-month-filter").addEventListener("change", renderStats);
 
-    if (!date || !startTime || !endTime || !loc) {
-      rehearsalMessage.className = "error-message";
-      rehearsalMessage.textContent = "Completa todos los campos";
-      return;
-    }
+// Nuevo: Para la pantalla de lista de usuarios
+document.getElementById("menu-user-list-display").onclick = e => { 
+    e.preventDefault(); 
+    openConfigScreen("user-list-screen"); // renderUsers() se llama dentro de openConfigScreen si es user-list-screen
+};
+document.getElementById("close-user-list-screen").onclick = () => {
+    document.getElementById("user-list-screen").style.display = "none";
+};
 
-    // Validar que la hora de fin sea posterior a la hora de inicio
-    const durationSeconds = calculateDuration(startTime, endTime);
-    if (durationSeconds <= 0) {
-      rehearsalMessage.className = "error-message";
-      rehearsalMessage.textContent = "La hora de fin debe ser posterior a la hora de inicio";
-      return;
-    }
 
-    try {
-      if (editingRehearsalIndex !== null) {
-        // Editar ensayo existente
-        rehearsals[editingRehearsalIndex] = {
-          date,
-          startTime,
-          endTime,
-          location: loc,
-          attendance: rehearsals[editingRehearsalIndex].attendance || []
-        };
-        rehearsalMessage.className = "success-message";
-        rehearsalMessage.textContent = "Ensayo actualizado correctamente";
-      } else {
-        // Añadir nuevo ensayo
-        rehearsals.push({ date, startTime, endTime, location: loc, attendance: [] });
-        rehearsalMessage.className = "success-message";
-        rehearsalMessage.textContent = "Ensayo añadido correctamente";
-      }
-      await saveRehearsals();
-      resetRehearsalForm();
-    } catch (e) {
-      rehearsalMessage.className = "error-message";
-      rehearsalMessage.textContent = "Error al guardar ensayo: " + e.message;
-    }
-  };
-
-  document.getElementById("cancel-edit-rehearsal").onclick = () => {
-    resetRehearsalForm();
-    document.getElementById("rehearsal-message").textContent = "";
-  };
-
-  /* --- Estadísticas screen */
-  document.getElementById("menu-stats").onclick = e => {
-    e.preventDefault();
-    closeAll();
-    document.getElementById("stats-screen").style.display = "block";
-    updateMonthFilter(); // Actualizar las opciones del filtro de meses
-    renderStats();
-  };
-
-  document.getElementById("close-stats").onclick = () => {
-    document.getElementById("stats-screen").style.display = "none";
-  };
-
-  // Añadir evento al filtro de meses
-  document.getElementById("stats-month-filter").addEventListener("change", () => {
-    renderStats();
-  });
-
-  /* ---------- 12. Carga inicial ---------- */
-  document.addEventListener("DOMContentLoaded", async () => {
-    updateConnectionStatus(); // Verificar estado de conexión al cargar
-
-    try {
+/* ---------- 12. Carga inicial ---------- */
+document.addEventListener("DOMContentLoaded", async () => {
+  updateConnectionStatus();
+  try {
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
-    } catch (e) {
-      console.error("Error al cargar datos de Firestore:", e);
-      // El mensaje ya se muestra a través del indicador de conexión
-    }
+  } catch (e) { console.error("Error en carga inicial de Firestore:", e); }
 
-    let songs1 = [], songs2 = [];
-    try {
-      songs1 = await cargarPrimerSetlist();
-    } catch (e) {
-      console.error("Fallo al cargar el primer setlist:", e);
-    }
+  let songs1 = [], songs2 = [], songsStar = [];
+  try { songs1 = await cargarPrimerSetlist(); } catch (e) { console.error("Fallo carga Setlist Ensayo:", e); }
+  try { songs2 = await cargarSegundoSetlist(); } catch (e) { console.error("Fallo carga Setlist Próx. Concierto:", e); }
+  try { songsStar = await cargarStarSetlist(); } catch (e) { console.error("Fallo carga Setlist Estrella:", e); }
 
-    try {
-      songs2 = await cargarSegundoSetlist();
-    } catch (e) {
-      console.error("Fallo al cargar el segundo setlist:", e);
-    }
-
-    document.getElementById("download-btn").onclick = () => {
-      if (songs1.length > 0) {
-        genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf");
-      } else {
-        alert("No hay canciones disponibles para descargar el PDF del setlist de ensayos.");
-      }
-    };
-
-    document.getElementById("download-btn-2").onclick = () => {
-      if (songs2.length > 0) {
-        genPDF(songs2, setlistConfig.setlist2.name, "setlist_concierto.pdf");
-      } else {
-        alert("No hay canciones disponibles para descargar el PDF del setlist del concierto.");
-      }
-    };
-
-    setTimeout(modifyBandHelperTable, 1000);
-  });
-  </script>
+  document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf"); else alert("No hay canciones en Setlist Ensayo."); };
+  document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_prox_concierto.pdf"); else alert("No hay canciones en Setlist Próx. Concierto."); };
+  document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, "setlist_estrella.pdf"); else alert("No hay canciones en Setlist Estrella."); };
+  
+  setTimeout(processBandHelperTable, 1500); 
+});
+</script>
 </body>
 </html>
