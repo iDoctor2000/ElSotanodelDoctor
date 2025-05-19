@@ -1299,42 +1299,42 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 </script>
 
-<button id="testWriteButton" style="position: fixed; top: 100px; left: 10px; z-index: 100000; padding: 10px; background-color: orange; color: black; border: 2px solid red; font-weight: bold;">
-    Probar Escritura Directa a concert_details
+<button id="testWriteButton" style="position: fixed; top: 100px; left: 10px; z-index: 100000; padding: 10px; background-color: lightgreen; color: black; border: 2px solid darkgreen; font-weight: bold;">
+    Probar Escritura a Colección ALEATORIA
 </button>
 
 <script>
-    // Esta función DEBE estar definida DESPUÉS de que Firebase y 'db' (firebase.firestore()) hayan sido inicializados.
-    async function testWriteConcertDetails() {
-        console.log("Intentando escritura de prueba directa a concert_details...");
+    async function testWriteConcertDetails() { // Cambiado el nombre para reflejar la prueba actual
+        console.log("Intentando escritura de prueba a una COLECCIÓN ALEATORIA...");
         
         if (typeof firebase === 'undefined' || typeof firebase.firestore === 'undefined') {
-            console.error("Firebase o Firestore no están disponibles. Asegúrate de que los scripts de Firebase se cargaron e inicializaron antes de este punto.");
+            console.error("Firebase o Firestore no están disponibles.");
             alert("Error crítico: Firebase no está listo para la prueba.");
             return;
         }
 
         try {
             const firestoreInstance = firebase.firestore(); 
-            const testDocRef = firestoreInstance.collection('concert_details').doc('testConcertSimpleId_DirectButton003');
+            // CAMBIO: Usar un nombre de colección completamente nuevo y aleatorio
+            const randomCollectionName = 'test_collection_' + Date.now(); // Nombre único cada vez
+            const testDocRef = firestoreInstance.collection(randomCollectionName).doc('testDocInRandomCollection');
             
-            console.log("Referencia al documento para prueba directa:", testDocRef.path); 
+            console.log(`Referencia al documento para prueba en colección ALEATORIA: ${testDocRef.path}`); 
 
-            // Solicitud de escritura
-            console.log("%cFirestore: Intentando .set() en " + testDocRef.path, "color: blue;");
+            console.log(`%cFirestore: Intentando .set() en ${testDocRef.path}`, "color: blue;");
             await testDocRef.set({
-                name: "Test Directo Desde Botón Naranja",
-                location: "Sala de Pruebas Botón Naranja",
+                name: "Test en Colección Aleatoria",
+                description: "Esto es una prueba para ver si las reglas globales funcionan.",
                 testTimestamp: new Date().toISOString(),
                 randomNumber: Math.random() 
             });
 
-            console.log("%cESCRITURA DE PRUEBA a concert_details ¡EXITOSA!", "color: green; font-weight: bold;");
-            alert("¡Escritura de prueba a concert_details exitosa!");
+            console.log(`%cESCRITURA DE PRUEBA a ${randomCollectionName} ¡EXITOSA!`, "color: green; font-weight: bold;");
+            alert(`¡Escritura de prueba a la colección '${randomCollectionName}' exitosa!`);
 
         } catch (error) {
-            console.error("%cERROR en escritura de prueba a concert_details:", "color: red; font-weight: bold;", error);
-            let errorMessage = "ERROR en escritura de prueba a concert_details:\n";
+            console.error(`%cERROR en escritura de prueba a colección ALEATORIA (${randomCollectionName}):`, "color: red; font-weight: bold;", error);
+            let errorMessage = `ERROR en escritura de prueba a colección ALEATORIA (${randomCollectionName}):\n`;
             errorMessage += "Mensaje: " + error.message + "\n";
             if (error.code) {
                 errorMessage += "Código de error: " + error.code + "\n";
@@ -1343,7 +1343,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 errorMessage += "Detalles: " + error.details + "\n";
             }
             if (error.stack) { 
-                console.log("Stack del error de prueba directa:", error.stack);
+                console.log("Stack del error de prueba en colección aleatoria:", error.stack);
             }
             alert(errorMessage);
         }
@@ -1352,7 +1352,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.addEventListener('DOMContentLoaded', (event) => {
         const testButton = document.getElementById('testWriteButton');
         if (testButton) {
-            testButton.onclick = testWriteConcertDetails;
+            testButton.onclick = testWriteConcertDetails; // Asegúrate que el nombre de la función coincida
         } else {
             console.error("Botón de prueba 'testWriteButton' no encontrado en el DOM.");
         }
