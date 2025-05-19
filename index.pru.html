@@ -884,10 +884,10 @@ function processBandHelperTable() {
 
   if(loadingMessage) loadingMessage.style.display = "none"; 
   console.log("processBandHelperTable: Tabla de BandHelper ENCONTRADA:", table);
-  console.log("Estructura interna de la tabla de BandHelper (table.innerHTML):", table.innerHTML); 
+  // console.log("Estructura interna de la tabla de BandHelper (table.innerHTML):", table.innerHTML); // Comentado para reducir logs
 
   if (table.dataset.processed === "true") { 
-      console.log("processBandHelperTable: Tabla ya procesada. Saltando.");
+      // console.log("processBandHelperTable: Tabla ya procesada. Saltando."); // Comentado para reducir logs
       return;
   }
   table.dataset.processed = "true";
@@ -896,10 +896,10 @@ function processBandHelperTable() {
   let isHeaderInTbody = false;
 
   if (!headerRow) { 
-      console.log("processBandHelperTable: No se encontró 'thead tr'. Buscando alternativas para la cabecera...");
+      // console.log("processBandHelperTable: No se encontró 'thead tr'. Buscando alternativas para la cabecera..."); // Comentado
       if (table.rows.length > 0 && table.rows[0].cells.length > 0 && table.rows[0].cells[0].tagName.toLowerCase() === 'th') {
           headerRow = table.rows[0];
-          console.log("processBandHelperTable: Usando la primera fila de la tabla (table.rows[0]) como cabecera porque contiene TH.");
+          // console.log("processBandHelperTable: Usando la primera fila de la tabla (table.rows[0]) como cabecera porque contiene TH."); // Comentado
       } else {
           const tbody = table.querySelector("tbody");
           if (tbody && tbody.rows.length > 0) {
@@ -907,14 +907,14 @@ function processBandHelperTable() {
               if (firstTbodyRow.querySelector("th")) {
                   headerRow = firstTbodyRow;
                   isHeaderInTbody = true; 
-                  console.log("processBandHelperTable: Usando la primera fila de 'tbody' como cabecera (contiene 'th').");
+                  // console.log("processBandHelperTable: Usando la primera fila de 'tbody' como cabecera (contiene 'th')."); // Comentado
               } else {
                   console.warn("processBandHelperTable: La tabla de BandHelper no parece tener una fila de cabecera formal con <th>. La columna 'Detalles' no tendrá título.");
               }
           }
       }
   } else {
-      console.log("processBandHelperTable: Fila de cabecera encontrada en 'thead tr'.");
+      // console.log("processBandHelperTable: Fila de cabecera encontrada en 'thead tr'."); // Comentado
   }
   
   if (headerRow) {
@@ -924,32 +924,32 @@ function processBandHelperTable() {
           th.textContent = "Detalles";
           th.style.textAlign = "center";
           headerRow.appendChild(th);
-          console.log("processBandHelperTable: Cabecera 'Detalles' (<th>) añadida a la fila de cabecera encontrada:", headerRow);
+          // console.log("processBandHelperTable: Cabecera 'Detalles' (<th>) añadida a la fila de cabecera encontrada:", headerRow); // Comentado
       } else {
-          console.log("processBandHelperTable: Cabecera 'Detalles' ya existente en la fila de cabecera encontrada.");
+          // console.log("processBandHelperTable: Cabecera 'Detalles' ya existente en la fila de cabecera encontrada."); // Comentado
       }
   }
 
   const dataRowsSource = table.querySelector("tbody") ? table.querySelectorAll("tbody tr") : []; 
   let dataRows = Array.from(dataRowsSource);
 
-  console.log(`processBandHelperTable: Inicialmente ${dataRows.length} filas de datos (tbody tr) encontradas.`);
+  // console.log(`processBandHelperTable: Inicialmente ${dataRows.length} filas de datos (tbody tr) encontradas.`); // Comentado
   
   if (dataRows.length === 0 && table.rows.length > (headerRow ? 1:0) ) {
       console.warn("processBandHelperTable: No se encontraron filas en 'tbody' o estaba vacío. Intentando procesar todas las filas de la tabla excepto la posible cabecera.");
       let allRowsInTable = Array.from(table.rows);
       if (headerRow && allRowsInTable.length > 0 && allRowsInTable[0] === headerRow) {
           allRowsInTable.shift(); 
-          console.log("processBandHelperTable: Cabecera eliminada de la lista de filas a procesar.");
+          // console.log("processBandHelperTable: Cabecera eliminada de la lista de filas a procesar."); // Comentado
       }
       dataRows = allRowsInTable; 
-      console.log(`processBandHelperTable: Ahora procesando ${dataRows.length} filas (potencialmente sin tbody).`);
+      // console.log(`processBandHelperTable: Ahora procesando ${dataRows.length} filas (potencialmente sin tbody).`); // Comentado
   }
 
   for (let i = 0; i < dataRows.length; i++) { 
     const row = dataRows[i];
     if (isHeaderInTbody && i === 0 && row === headerRow) { 
-        console.log("processBandHelperTable: Saltando fila de cabecera que estaba en tbody.");
+        // console.log("processBandHelperTable: Saltando fila de cabecera que estaba en tbody."); // Comentado
         continue;
     }
 
@@ -1014,7 +1014,7 @@ function processBandHelperTable() {
         locationCell.appendChild(calendarBtn);
     }
   }
-  console.log("processBandHelperTable: Procesamiento de tabla BandHelper FINALIZADO.");
+  // console.log("processBandHelperTable: Procesamiento de tabla BandHelper FINALIZADO."); // Comentado
 }
 
 const concertDetailModal = document.getElementById('concert-details-modal');
@@ -1114,14 +1114,14 @@ document.getElementById('save-concert-details').onclick = async () => {
         lastUpdated: new Date().toISOString() 
     };
 
-    console.log("Intentando guardar en Firestore. Documento ID:", concertId, "Datos:", concertData);
+    console.log("Intentando guardar en Firestore (función original). Documento ID:", concertId, "Datos:", concertData);
 
     try {
         await saveDoc('concert_details', concertId, concertData, true); 
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente.";
     } catch (error) {
-        console.error("Error al guardar detalles del concierto en Firestore:", error);
+        console.error("Error al guardar detalles del concierto en Firestore (función original):", error);
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = `Error al guardar: ${error.message}. Verifica los permisos de Firestore.`;
     }
@@ -1305,11 +1305,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 <script>
     // Esta función DEBE estar definida DESPUÉS de que Firebase y 'db' (firebase.firestore()) hayan sido inicializados.
-    // Por eso la pongo en un nuevo bloque de script aquí, asumiendo que el script principal anterior ya ha corrido.
     async function testWriteConcertDetails() {
         console.log("Intentando escritura de prueba directa a concert_details...");
         
-        // Asegurarnos de que firebase está disponible. 'db' debería estarlo si el script anterior se ejecutó.
         if (typeof firebase === 'undefined' || typeof firebase.firestore === 'undefined') {
             console.error("Firebase o Firestore no están disponibles. Asegúrate de que los scripts de Firebase se cargaron e inicializaron antes de este punto.");
             alert("Error crítico: Firebase no está listo para la prueba.");
@@ -1317,11 +1315,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         try {
-            const firestoreInstance = firebase.firestore(); // Usamos la instancia global de firebase
+            const firestoreInstance = firebase.firestore(); 
             const testDocRef = firestoreInstance.collection('concert_details').doc('testConcertSimpleId_DirectButton003');
             
-            console.log("Referencia al documento:", testDocRef.path); // Log para ver la ruta
+            console.log("Referencia al documento para prueba directa:", testDocRef.path); 
 
+            // Solicitud de escritura
+            console.log("%cFirestore: Intentando .set() en " + testDocRef.path, "color: blue;");
             await testDocRef.set({
                 name: "Test Directo Desde Botón Naranja",
                 location: "Sala de Pruebas Botón Naranja",
@@ -1342,24 +1342,19 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (error.details) {
                 errorMessage += "Detalles: " + error.details + "\n";
             }
-            if (error.stack) { // Incluimos el stack trace en la consola para más info
-                console.log("Stack del error de prueba:", error.stack);
+            if (error.stack) { 
+                console.log("Stack del error de prueba directa:", error.stack);
             }
             alert(errorMessage);
         }
     }
 
-    // Asignar el evento onclick al botón de prueba
-    // Es importante que esto se ejecute después de que el DOM esté completamente cargado
-    // o al menos después de que el botón exista. Ponerlo aquí al final es seguro.
     document.addEventListener('DOMContentLoaded', (event) => {
         const testButton = document.getElementById('testWriteButton');
         if (testButton) {
             testButton.onclick = testWriteConcertDetails;
         } else {
             console.error("Botón de prueba 'testWriteButton' no encontrado en el DOM.");
-            // Si el botón se añade dinámicamente o muy tarde, este listener podría fallar.
-            // Pero como lo hemos puesto directamente en el HTML, debería estar.
         }
     });
 </script>
