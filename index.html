@@ -2,16 +2,16 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>El Sótano del Doctor – Intranet</title>
+  <title>El Sótano del Doctor – Uso Interno</title>
 
   <link rel="icon" type="image/x-icon" href="assets/favicon_ElSotanoDr.ico">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-  <meta property="og:title"       content="El Sótano del Doctor – Intranet">
+  <meta property="og:title"       content="El Sótano del Doctor – Uso Interno">
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
   <meta property="og:image"       content="assets/logo_negro copia.jpg"> <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://tusitioweb.com"> <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"        content="El Sótano del Doctor – Intranet">
+  <meta name="twitter:title"        content="El Sótano del Doctor – Uso Interno">
   <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
   <meta name="twitter:image"        content="assets/logo_negro copia.jpg"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -59,6 +59,18 @@
     }
     .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 20px; }
     .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
+    /* Estilo para el título del concierto en el modal */
+    #concert-detail-title-display {
+        color: #fff; 
+        font-size: 1em; 
+        font-weight: normal; 
+        margin-top: -15px; 
+        margin-bottom: 20px; 
+        text-align: left; /* Justificado a la izquierda */
+        border-bottom: 1px solid #333; 
+        padding-bottom: 10px; 
+        padding-left: 5px; /* Pequeño padding a la izquierda */
+    }
     .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
     .modal-content input[type="text"],
     .modal-content input[type="time"],
@@ -112,7 +124,7 @@
                                 color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { /* #usuarios ya no es una sección principal */
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { 
         background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px
     }
     #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 {
@@ -224,7 +236,8 @@
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#" id="menu-stats">Estadísticas</a>
-    <a href="#" id="menu-user-list-display">Usuarios Registrados</a> <a href="#" id="menu-config">Configuración</a>
+    <a href="#" id="menu-user-list-display">Usuarios Registrados</a> 
+    <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
       <a href="#" id="menu-setlist-config">Configurar Setlists</a>
       <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
@@ -236,6 +249,8 @@
   <div id="concert-details-modal" class="modal-backdrop">
     <div class="modal-content">
         <h3>Detalles del Concierto</h3>
+        <h4 id="concert-detail-title-display"></h4> 
+        
         <input type="hidden" id="concert-detail-id">
         
         <label for="concert-detail-location">Detalles adicionales de la ubicación:</label>
@@ -320,7 +335,8 @@
   <div id="user-list-screen" class="config-screen">
     <button class="close-btn" id="close-user-list-screen">Cerrar</button>
     <h2>Usuarios Registrados</h2>
-    <div class="table-wrapper" style="padding: 0 10px;"> <table>
+    <div class="table-wrapper" style="padding: 0 10px;"> 
+        <table>
             <thead>
                 <tr>
                     <th>Nombre</th>
@@ -328,7 +344,8 @@
                     <th>Roles</th>
                 </tr>
             </thead>
-            <tbody id="users-body"> </tbody>
+            <tbody id="users-body"> 
+            </tbody>
         </table>
     </div>
   </div>
@@ -372,7 +389,7 @@
       </div>
     </section>
 
-    </main>
+  </main>
 
   <footer>© 2025 El Sótano del Doctor. All Rights Reserved.</footer>
 
@@ -505,9 +522,9 @@ async function withRetry(fn, maxRetries = 3, delay = 2000) {
 /* ---------- 2. Acceso Firestore ---------- */
 async function loadDoc(collection, docId, fallback) {
   try {
-    console.log(`Firestore: Intentando cargar ${collection}/${docId}`);
+    // console.log(`Firestore: Intentando cargar ${collection}/${docId}`); 
     const snap = await db.collection(collection).doc(docId).get();
-    console.log(`Firestore: Carga de ${collection}/${docId} ${snap.exists ? 'exitosa' : 'no existe'}`);
+    // console.log(`Firestore: Carga de ${collection}/${docId} ${snap.exists ? 'exitosa' : 'no existe'}`); 
     return snap.exists ? snap.data() : fallback;
   } catch (e) {
     console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); 
@@ -516,9 +533,9 @@ async function loadDoc(collection, docId, fallback) {
 }
 async function saveDoc(collection, docId, data, merge = false) {
   try {
-    console.log(`Firestore: Intentando guardar en ${collection}/${docId}`, data);
+    // console.log(`Firestore: Intentando guardar en ${collection}/${docId}`, data); 
     await db.collection(collection).doc(docId).set(data, { merge });
-    console.log(`Firestore: Guardado de ${collection}/${docId} exitoso`);
+    // console.log(`Firestore: Guardado de ${collection}/${docId} exitoso`); 
     return true;
   } catch (e) {
     console.error(`Error al guardar documento ${collection}/${docId}:`, e.message, e); 
@@ -598,14 +615,9 @@ const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar,
 let users = [];
 let editingUserIndex = null;
 function renderUsers() {
-    const tbodyMgmt = document.getElementById("user-table-body"); // Para la pantalla de gestión
-    const tbodyDisplay = document.getElementById("users-body");   // Para la nueva pantalla de visualización
+    const tbodyMgmt = document.getElementById("user-table-body"); 
+    const tbodyDisplay = document.getElementById("users-body");   
 
-    if (!tbodyMgmt || !tbodyDisplay) { 
-        console.warn("Una o ambas tablas de usuarios no encontradas en el DOM. (tbodyMgmt:", tbodyMgmt, ", tbodyDisplay:", tbodyDisplay, ")"); 
-        // No retornar aquí, intentar popular la que exista.
-    }
-    
     if (tbodyMgmt) tbodyMgmt.innerHTML = "";
     if (tbodyDisplay) tbodyDisplay.innerHTML = "";
 
@@ -638,9 +650,9 @@ function renderUsers() {
             if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)) {
                 rehearsals.forEach(r => { if (Array.isArray(r.attendance)) { r.attendance = r.attendance.filter(a => a.name !== userToDelete.name); } });
                 users.splice(userIndex, 1);
-                await saveUsers(); // Esto llamará a renderUsers() de nuevo
+                await saveUsers(); 
                 await saveRehearsals();
-                renderStats(); // renderStats también usa la lista de usuarios
+                renderStats(); 
             }
         });
         tbodyMgmt.querySelectorAll(".edit-user").forEach(btn => btn.onclick = () => {
@@ -666,9 +678,9 @@ async function loadUsers() {
 async function saveUsers() {
     try {
         await withRetry(() => saveDoc("intranet", "users", { users }));
-        renderUsers(); // Actualiza ambas tablas
-        renderRehearsals(); // Si los nombres de usuario cambian, esto podría ser relevante
-        renderStats(); // Las estadísticas por usuario se actualizan
+        renderUsers(); 
+        renderRehearsals(); 
+        renderStats(); 
         return true;
     } catch (e) { console.error("Error al guardar usuarios:", e); throw e; }
 }
@@ -990,23 +1002,26 @@ function processBandHelperTable() {
     if (!detailCell.querySelector('.details-btn')) {
         const dateCellText = cells[0].textContent.trim();
         const eventCellContent = cells[2] ? cells[2].textContent.trim() : "Evento Desconocido";
-        const eventTitleFromCell = eventCellContent.split('\n')[0].trim() || "Evento Sin Título";
+        // CORRECCIÓN: El título del evento se toma de la celda correcta (cells[1] según la estructura de BandHelper)
+        const eventTitleFromCell = cells[1] ? cells[1].textContent.trim().split('\n')[0].trim() : "Evento Sin Título";
         const concertId = sanitizeFirebaseKey(`${dateCellText}_${eventTitleFromCell}`);
         
         const detailsBtn = document.createElement("button");
         detailsBtn.className = "details-btn";
         detailsBtn.innerHTML = "➡️";
         detailsBtn.title = "Ver/Editar Detalles del Concierto";
-        detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellText, eventTitleFromCell, eventCellContent);
+        // Pasar eventTitleFromCell a openConcertDetailModal
+        detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellText, eventTitleFromCell, eventCellContent); 
         
         detailCell.appendChild(detailsBtn);
     }
 
-    const locationCell = cells[2]; 
+    const locationCell = cells[2]; // La ubicación suele estar en la tercera celda (índice 2) o en una celda de "custom field"
     if (locationCell && !locationCell.querySelector('.calendar-btn')) {
-        const eventNameText = locationCell.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
+        const eventNameText = cells[1] ? cells[1].textContent.trim().split('\n')[0].trim() : "Evento Sin Título"; // Usar el nombre del evento para el calendario
         const dateCellContent = cells[0].textContent.trim();
-        const timeCellContent = cells[1]?.textContent.trim() || "20:00";
+        const timeCellContent = cells[1]?.textContent.trim().split(',')[1]?.trim().split(' a ')[0] || "20:00"; // Intentar extraer hora de inicio
+        
         const dateParts = dateCellContent.match(/(\d+)\s+de\s+(\w+)/i);
         let icsDate = new Date().toISOString().split('T')[0];
         if (dateParts) {
@@ -1023,7 +1038,7 @@ function processBandHelperTable() {
         const calendarBtn = document.createElement('button');
         calendarBtn.className = 'calendar-btn'; calendarBtn.title = 'Añadir a mi calendario';
         calendarBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';
-        calendarBtn.onclick = () => generateICS(`Concierto: ${eventNameText}`, icsDate, timeCellContent, eventNameText, `Concierto de El Sótano del Doctor en ${eventNameText}`);
+        calendarBtn.onclick = () => generateICS(`Concierto: ${eventNameText}`, icsDate, timeCellContent, eventCellContent.split('\n').slice(1).join(', ') || eventNameText, `Concierto de El Sótano del Doctor en ${eventNameText}`);
         locationCell.appendChild(document.createTextNode(" "));
         locationCell.appendChild(calendarBtn);
     }
@@ -1037,6 +1052,11 @@ async function openConcertDetailModal(concertId, concertDate, concertTitle, conc
     concertDetailMessage.className = "success-message"; 
 
     document.getElementById('concert-detail-id').value = concertId;
+    const concertTitleDisplay = document.getElementById('concert-detail-title-display');
+    if (concertTitleDisplay) {
+        // Usar el concertTitle que se pasa (que viene de la celda correcta de la tabla)
+        concertTitleDisplay.textContent = concertTitle || "Título no disponible"; 
+    }
     
     document.getElementById('concert-detail-location').value = '';
     document.getElementById('concert-detail-soundsetup').value = ''; 
@@ -1173,13 +1193,11 @@ const setupMenuLink = (menuId, targetId) => {
         };
     } else { console.warn(`Enlace ${menuId} no encontrado.`); }
 };
-// Enlaces a secciones principales
 setupMenuLink("menu-rehearsals-setlist-section", "setlists");
 setupMenuLink("menu-rehearsals-section", "rehearsals");
 setupMenuLink("menu-second-setlist-section", "second-setlist");
 setupMenuLink("menu-star-setlist-section", "star-setlist");
 setupMenuLink("menu-concerts-section", "calendario");
-// Ya no hay enlace directo a #usuarios en main, se maneja con openConfigScreen
 
 document.getElementById("menu-config").onclick = e => {
     e.preventDefault();
@@ -1193,19 +1211,17 @@ document.getElementById("menu-config").onclick = e => {
 };
 
 const openConfigScreen = (screenId) => {
-    if (!isAuthenticated && screenId !== 'user-list-screen' && screenId !== 'stats-screen') { // Permitir acceso a user-list y stats sin contraseña
+    if (!isAuthenticated && screenId !== 'user-list-screen' && screenId !== 'stats-screen') { 
         const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
         if (password && password.toLowerCase() === PASSWORD.toLowerCase()) { isAuthenticated = true; }
         else { alert("Contraseña incorrecta."); return false; }
     }
-    // Para user-list-screen y stats-screen, no se pide contraseña si no está autenticado, simplemente se muestra.
-    // Si ya está autenticado, cualquier pantalla de config se muestra.
     if (isAuthenticated || screenId === 'user-list-screen' || screenId === 'stats-screen') {
         closeAll();
         const screen = document.getElementById(screenId);
         if (screen) {
             screen.style.display = "block";
-            if (screenId === 'user-list-screen') { // Asegurar que los usuarios se renderizan al abrir esta pantalla
+            if (screenId === 'user-list-screen') { 
                 renderUsers();
             }
         } else {
@@ -1213,7 +1229,7 @@ const openConfigScreen = (screenId) => {
         }
         return true;
     }
-    return false; // Si no está autenticado y la pantalla requiere contraseña
+    return false; 
 }
 
 document.getElementById("menu-setlist-config").onclick = e => {
@@ -1302,15 +1318,13 @@ document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(op
 document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
 document.getElementById("stats-month-filter").addEventListener("change", renderStats);
 
-// Nuevo: Para la pantalla de lista de usuarios
 document.getElementById("menu-user-list-display").onclick = e => { 
     e.preventDefault(); 
-    openConfigScreen("user-list-screen"); // renderUsers() se llama dentro de openConfigScreen si es user-list-screen
+    openConfigScreen("user-list-screen"); 
 };
 document.getElementById("close-user-list-screen").onclick = () => {
     document.getElementById("user-list-screen").style.display = "none";
 };
-
 
 /* ---------- 12. Carga inicial ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
