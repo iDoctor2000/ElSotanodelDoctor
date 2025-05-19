@@ -358,19 +358,8 @@
 
 <script>
 /* ---------- 0. Firebase ---------- */
-// MUY IMPORTANTE: Configura tus REGLAS DE SEGURIDAD en Firestore para permitir la lectura/escritura
-// en la colección 'concert_details'. Sin esto, el modal de detalles del concierto dará error.
-// Para desarrollo, puedes usar:
-// service cloud.firestore {
-//   match /databases/{database}/documents {
-//     match /{document=**} { // Esto es muy permisivo
-//       allow read, write: if true;
-//     }
-//   }
-// }
-// ¡Recuerda restringir esto para producción!
 const firebaseConfig = {
-  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw", // Reemplaza con tu API Key real si esta es de prueba
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw", 
   authDomain: "sotanointranet.firebaseapp.com",
   projectId: "sotanointranet",
   messagingSenderId: "756955233128",
@@ -385,7 +374,7 @@ if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" ||
 }
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore(); // 'db' ahora está disponible globalmente en este script
+const db = firebase.firestore(); 
 firebase.firestore().enablePersistence()
   .catch(err => { console.warn("Persistencia Firestore no habilitada:", err.code === 'failed-precondition' ? 'Múltiples pestañas.' : err.message); });
 
@@ -449,9 +438,7 @@ function generateICS(title, date, startTime, location, description = "", duratio
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
-// Sanitize Firebase keys more aggressively
 const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
-
 
 /* ---------- 1.5. Manejo de conexión ---------- */
 const connectionStatus = document.getElementById("connection-status");
@@ -884,10 +871,9 @@ function processBandHelperTable() {
 
   if(loadingMessage) loadingMessage.style.display = "none"; 
   console.log("processBandHelperTable: Tabla de BandHelper ENCONTRADA:", table);
-  // console.log("Estructura interna de la tabla de BandHelper (table.innerHTML):", table.innerHTML); // Comentado para reducir logs
+  // console.log("Estructura interna de la tabla de BandHelper (table.innerHTML):", table.innerHTML); 
 
   if (table.dataset.processed === "true") { 
-      // console.log("processBandHelperTable: Tabla ya procesada. Saltando."); // Comentado para reducir logs
       return;
   }
   table.dataset.processed = "true";
@@ -896,10 +882,8 @@ function processBandHelperTable() {
   let isHeaderInTbody = false;
 
   if (!headerRow) { 
-      // console.log("processBandHelperTable: No se encontró 'thead tr'. Buscando alternativas para la cabecera..."); // Comentado
       if (table.rows.length > 0 && table.rows[0].cells.length > 0 && table.rows[0].cells[0].tagName.toLowerCase() === 'th') {
           headerRow = table.rows[0];
-          // console.log("processBandHelperTable: Usando la primera fila de la tabla (table.rows[0]) como cabecera porque contiene TH."); // Comentado
       } else {
           const tbody = table.querySelector("tbody");
           if (tbody && tbody.rows.length > 0) {
@@ -907,14 +891,11 @@ function processBandHelperTable() {
               if (firstTbodyRow.querySelector("th")) {
                   headerRow = firstTbodyRow;
                   isHeaderInTbody = true; 
-                  // console.log("processBandHelperTable: Usando la primera fila de 'tbody' como cabecera (contiene 'th')."); // Comentado
               } else {
                   console.warn("processBandHelperTable: La tabla de BandHelper no parece tener una fila de cabecera formal con <th>. La columna 'Detalles' no tendrá título.");
               }
           }
       }
-  } else {
-      // console.log("processBandHelperTable: Fila de cabecera encontrada en 'thead tr'."); // Comentado
   }
   
   if (headerRow) {
@@ -924,32 +905,24 @@ function processBandHelperTable() {
           th.textContent = "Detalles";
           th.style.textAlign = "center";
           headerRow.appendChild(th);
-          // console.log("processBandHelperTable: Cabecera 'Detalles' (<th>) añadida a la fila de cabecera encontrada:", headerRow); // Comentado
-      } else {
-          // console.log("processBandHelperTable: Cabecera 'Detalles' ya existente en la fila de cabecera encontrada."); // Comentado
       }
   }
 
   const dataRowsSource = table.querySelector("tbody") ? table.querySelectorAll("tbody tr") : []; 
   let dataRows = Array.from(dataRowsSource);
-
-  // console.log(`processBandHelperTable: Inicialmente ${dataRows.length} filas de datos (tbody tr) encontradas.`); // Comentado
   
   if (dataRows.length === 0 && table.rows.length > (headerRow ? 1:0) ) {
       console.warn("processBandHelperTable: No se encontraron filas en 'tbody' o estaba vacío. Intentando procesar todas las filas de la tabla excepto la posible cabecera.");
       let allRowsInTable = Array.from(table.rows);
       if (headerRow && allRowsInTable.length > 0 && allRowsInTable[0] === headerRow) {
           allRowsInTable.shift(); 
-          // console.log("processBandHelperTable: Cabecera eliminada de la lista de filas a procesar."); // Comentado
       }
       dataRows = allRowsInTable; 
-      // console.log(`processBandHelperTable: Ahora procesando ${dataRows.length} filas (potencialmente sin tbody).`); // Comentado
   }
 
   for (let i = 0; i < dataRows.length; i++) { 
     const row = dataRows[i];
     if (isHeaderInTbody && i === 0 && row === headerRow) { 
-        // console.log("processBandHelperTable: Saltando fila de cabecera que estaba en tbody."); // Comentado
         continue;
     }
 
@@ -1014,7 +987,6 @@ function processBandHelperTable() {
         locationCell.appendChild(calendarBtn);
     }
   }
-  // console.log("processBandHelperTable: Procesamiento de tabla BandHelper FINALIZADO."); // Comentado
 }
 
 const concertDetailModal = document.getElementById('concert-details-modal');
@@ -1160,14 +1132,12 @@ const setupMenuLink = (menuId, targetId) => {
         };
     } else { console.warn(`Enlace ${menuId} no encontrado.`); }
 };
-// Orden del menú actualizado
 setupMenuLink("menu-rehearsals-setlist-section", "setlists");
 setupMenuLink("menu-rehearsals-section", "rehearsals");
 setupMenuLink("menu-second-setlist-section", "second-setlist");
 setupMenuLink("menu-star-setlist-section", "star-setlist");
 setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-users-section", "usuarios");
-
 
 document.getElementById("menu-config").onclick = e => {
     e.preventDefault();
@@ -1299,52 +1269,60 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 </script>
 
-<button id="testWriteButton" style="position: fixed; top: 100px; left: 10px; z-index: 100000; padding: 10px; background-color: lightgreen; color: black; border: 2px solid darkgreen; font-weight: bold;">
-    Probar Escritura a Colección ALEATORIA
+<button id="testWriteButton" style="position: fixed; top: 100px; left: 10px; z-index: 100000; padding: 10px; background-color: lightblue; color: black; border: 2px solid blue; font-weight: bold;">
+    Probar Escritura Aleatoria v3.3
 </button>
 
 <script>
-    async function testWriteConcertDetails() { // El nombre de la función sigue siendo el mismo para que el onclick funcione
-        const randomCollectionName = 'test_collection_' + Date.now(); // Definir aquí para que esté disponible en el catch
-        console.log(`Intentando escritura de prueba a la COLECCIÓN ALEATORIA: ${randomCollectionName}...`);
+    async function testWriteConcertDetails() { 
+        const testButton = document.getElementById('testWriteButton'); // Para deshabilitar durante la prueba
+        const originalButtonText = testButton.textContent;
+        testButton.textContent = "Probando...";
+        testButton.disabled = true;
+
+        const collectionNameToTest = 'test_collection_v3_3_' + Date.now(); 
+        console.log(`Intentando escritura de prueba a la COLECCIÓN ALEATORIA: ${collectionNameToTest}...`);
         
         if (typeof firebase === 'undefined' || typeof firebase.firestore === 'undefined') {
             console.error("Firebase o Firestore no están disponibles.");
             alert("Error crítico: Firebase no está listo para la prueba.");
+            testButton.textContent = originalButtonText;
+            testButton.disabled = false;
             return;
         }
 
         try {
             const firestoreInstance = firebase.firestore(); 
-            const testDocRef = firestoreInstance.collection(randomCollectionName).doc('testDocInRandomCollection');
+            const testDocRef = firestoreInstance.collection(collectionNameToTest).doc('testDocInRandomCollection_v3_3');
             
             console.log(`Referencia al documento para prueba en colección ALEATORIA: ${testDocRef.path}`); 
 
             console.log(`%cFirestore: Intentando .set() en ${testDocRef.path}`, "color: blue;");
             await testDocRef.set({
-                name: "Test en Colección Aleatoria",
+                name: "Test en Colección Aleatoria v3.3",
                 description: "Esto es una prueba para ver si las reglas globales funcionan.",
                 testTimestamp: new Date().toISOString(),
                 randomNumber: Math.random() 
             });
 
-            console.log(`%cESCRITURA DE PRUEBA a ${randomCollectionName} ¡EXITOSA!`, "color: green; font-weight: bold;");
-            alert(`¡Escritura de prueba a la colección '${randomCollectionName}' exitosa!`);
+            console.log(`%cESCRITURA DE PRUEBA a ${collectionNameToTest} ¡EXITOSA!`, "color: green; font-weight: bold;");
+            alert(`¡Escritura de prueba a la colección '${collectionNameToTest}' exitosa!`);
 
         } catch (error) {
-            console.error(`%cERROR en escritura de prueba a colección ALEATORIA (${randomCollectionName}):`, "color: red; font-weight: bold;", error);
-            let errorMessage = `ERROR en escritura de prueba a colección ALEATORIA (${randomCollectionName}):\n`;
+            // Bloque catch simplificado para mostrar primero el error de Firestore
+            console.error(`%cERROR CRUDO de Firestore al intentar escribir en ${collectionNameToTest}:`, "color: red; font-weight: bold;", error);
+            
+            let errorMessage = `ERROR en escritura de prueba a colección ALEATORIA (${collectionNameToTest}):\n`;
             errorMessage += "Mensaje: " + error.message + "\n";
             if (error.code) {
                 errorMessage += "Código de error: " + error.code + "\n";
             }
-            if (error.details) {
-                errorMessage += "Detalles: " + error.details + "\n";
-            }
-            if (error.stack) { 
-                console.log("Stack del error de prueba en colección aleatoria:", error.stack);
-            }
+            // No usamos error.details aquí porque a veces es un objeto complejo no útil para alert.
+            // El error completo ya está en la consola con el console.error de arriba.
             alert(errorMessage);
+        } finally {
+            testButton.textContent = originalButtonText;
+            testButton.disabled = false;
         }
     }
 
