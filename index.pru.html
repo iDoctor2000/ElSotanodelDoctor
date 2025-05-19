@@ -500,7 +500,7 @@ async function loadDoc(collection, docId, fallback) {
     const snap = await db.collection(collection).doc(docId).get();
     return snap.exists ? snap.data() : fallback;
   } catch (e) {
-    console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); // Añadido 'e' para más detalles
+    console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); 
     return fallback; 
   }
 }
@@ -509,7 +509,7 @@ async function saveDoc(collection, docId, data, merge = false) {
     await db.collection(collection).doc(docId).set(data, { merge });
     return true;
   } catch (e) {
-    console.error(`Error al guardar documento ${collection}/${docId}:`, e.message, e); // Añadido 'e' para más detalles
+    console.error(`Error al guardar documento ${collection}/${docId}:`, e.message, e); 
     throw e; 
   }
 }
@@ -1304,8 +1304,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 </button>
 
 <script>
-    async function testWriteConcertDetails() { // Cambiado el nombre para reflejar la prueba actual
-        console.log("Intentando escritura de prueba a una COLECCIÓN ALEATORIA...");
+    async function testWriteConcertDetails() { // El nombre de la función sigue siendo el mismo para que el onclick funcione
+        const randomCollectionName = 'test_collection_' + Date.now(); // Definir aquí para que esté disponible en el catch
+        console.log(`Intentando escritura de prueba a la COLECCIÓN ALEATORIA: ${randomCollectionName}...`);
         
         if (typeof firebase === 'undefined' || typeof firebase.firestore === 'undefined') {
             console.error("Firebase o Firestore no están disponibles.");
@@ -1315,8 +1316,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         try {
             const firestoreInstance = firebase.firestore(); 
-            // CAMBIO: Usar un nombre de colección completamente nuevo y aleatorio
-            const randomCollectionName = 'test_collection_' + Date.now(); // Nombre único cada vez
             const testDocRef = firestoreInstance.collection(randomCollectionName).doc('testDocInRandomCollection');
             
             console.log(`Referencia al documento para prueba en colección ALEATORIA: ${testDocRef.path}`); 
@@ -1352,7 +1351,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.addEventListener('DOMContentLoaded', (event) => {
         const testButton = document.getElementById('testWriteButton');
         if (testButton) {
-            testButton.onclick = testWriteConcertDetails; // Asegúrate que el nombre de la función coincida
+            testButton.onclick = testWriteConcertDetails;
         } else {
             console.error("Botón de prueba 'testWriteButton' no encontrado en el DOM.");
         }
