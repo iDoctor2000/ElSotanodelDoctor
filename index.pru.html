@@ -905,10 +905,15 @@ async function genPDF(songs, title, fileName) {
     // 1. Cargar y añadir la imagen de fondo primero
     try {
         console.log("Intentando cargar la imagen de plantilla para el PDF...");
+        console.log("Base URI del documento:", document.baseURI); // Para depurar la ruta base
         const imgData = await new Promise((resolve, reject) => {
             const img = new Image();
+            // Para asegurar que la carga no se vea afectada por CORS si se prueba localmente con file://
+            // y la imagen está en una ruta relativa, no se necesita crossOrigin.
+            // Si la imagen estuviera en un dominio diferente, sí sería necesario.
+            // img.crossOrigin = "Anonymous"; 
             img.onload = () => {
-                console.log("Imagen de plantilla cargada correctamente.");
+                console.log("Imagen de plantilla cargada correctamente desde:", img.src);
                 const canvas = document.createElement('canvas');
                 canvas.width = img.width;
                 canvas.height = img.height;
@@ -917,16 +922,13 @@ async function genPDF(songs, title, fileName) {
                 resolve(canvas.toDataURL('image/png'));
             };
             img.onerror = (err) => {
-                console.error("Error en img.onerror al cargar la imagen de plantilla para el PDF:", err);
+                console.error("Error en img.onerror al cargar la imagen de plantilla para el PDF desde:", img.src, "Error:", err);
                 reject(err);
             };
-            // IMPORTANTE: Asegúrate de que esta ruta sea correcta y accesible desde tu HTML.
-            // Si el HTML está en la raíz y la imagen en 'assets/nombre.png', la ruta es correcta.
-            // Si el HTML está en una subcarpeta, la ruta podría necesitar ser '../assets/nombre.png' o una ruta absoluta.
-            img.src = 'assets/Plantilla_pdf_ESDD_001.png'; 
+            img.src = 'assets/Plantilla_pdf_ESDD_001.png'; // Ruta relativa a tu HTML
             console.log("Establecido img.src a:", img.src);
-            if (img.complete) { // Si la imagen ya está en caché
-                 console.log("Imagen de plantilla ya estaba en caché.");
+             if (img.complete) { // Si la imagen ya está en caché
+                 console.log("Imagen de plantilla ya estaba en caché (ruta:", img.src, ")");
                  const canvas = document.createElement('canvas');
                  canvas.width = img.width;
                  canvas.height = img.height;
@@ -939,7 +941,6 @@ async function genPDF(songs, title, fileName) {
         console.log("Imagen de plantilla añadida al PDF.");
     } catch (e) {
         console.error("No se pudo añadir la plantilla de fondo al PDF. Error detallado:", e);
-        // Continuar sin la imagen de fondo si falla
     }
 
     const contentMarginTop = 120; 
@@ -947,18 +948,21 @@ async function genPDF(songs, title, fileName) {
     const contentMarginBottom = 100; 
     let currentY = contentMarginTop;
 
+    // Título "SETLIST"
     doc.setFont("times", "bold"); 
-    doc.setFontSize(24); // Reducido ligeramente
+    doc.setFontSize(22); // Ligeramente más pequeño
     doc.setTextColor(0, 0, 0); 
-    const mainSetlistTitle = "SETLIST"; // Sin adornos por ahora, para simplicidad con fuentes
+    const mainSetlistTitle = "SETLIST";
     doc.text(mainSetlistTitle, pageWidth / 2, currentY, { align: "center" });
-    currentY += 24 + 10; 
+    currentY += 22 + 10; 
 
+    // Nombre del Setlist (el que viene como 'title' de la función)
     doc.setFont("times", "bold");
     doc.setFontSize(16);
     doc.text(title, pageWidth / 2, currentY, { align: "center" });
     currentY += 16 + 5;
 
+    // Detalles (Nº canciones, Tiempo total)
     const totalSongsText = `${songs.length} canciones`;
     const totalTimeValue = songs.reduce((a, s) => a + parseDuration(s.duration), 0);
     const totalTimeText = `Tiempo total: ${toHHMM(totalTimeValue)}`;
@@ -967,6 +971,7 @@ async function genPDF(songs, title, fileName) {
     doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
+    // Tabla de Canciones
     doc.autoTable({
         startY: currentY,
         head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
@@ -979,8 +984,8 @@ async function genPDF(songs, title, fileName) {
         ]),
         theme: 'grid', 
         headStyles: { 
-            fillColor: [50, 50, 50], // Un gris más oscuro para la cabecera
-            textColor: [255, 255, 255], // Texto blanco para la cabecera
+            fillColor: [50, 50, 50], 
+            textColor: [255, 255, 255], 
             font: "helvetica", 
             fontStyle: 'bold',
             halign: 'center'
@@ -994,7 +999,7 @@ async function genPDF(songs, title, fileName) {
             textColor: [0,0,0], 
         },
         alternateRowStyles: { 
-            fillColor: [235, 235, 235] // Gris muy claro para filas alternas
+            fillColor: [235, 235, 235] 
         },
         columnStyles: {
             0: { halign: 'center', cellWidth: 25 }, 
@@ -1006,7 +1011,7 @@ async function genPDF(songs, title, fileName) {
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
         didDrawPage: function (data) {
-            // El pie de página está en la plantilla de imagen, no es necesario añadirlo aquí
+            // El pie de página está en la plantilla de imagen
         }
     });
 
