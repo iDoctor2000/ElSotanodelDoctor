@@ -554,7 +554,7 @@ async function loadDoc(collection, docId, fallback) {
 async function saveDoc(collection, docId, data, merge = false) {
   try {
     console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge);
-    await db.collection(collection).doc(docId).set(data, { merge: merge }); // Asegurar que el flag merge se pasa explícitamente
+    await db.collection(collection).doc(docId).set(data, { merge: merge }); 
     console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`);
     return true;
   } catch (e) {
@@ -921,10 +921,9 @@ async function loadFontAsBase64(fontPath) {
     }
 }
 
-// Variable global para indicar si la fuente personalizada está cargada
 let customFontLoaded = false; 
-// Nombre que le daremos a la fuente en jsPDF
 const CUSTOM_FONT_NAME_IN_PDF = "BleedingCowboysCustom"; 
+const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png'; // Ruta a tu plantilla
 
 async function genPDF(songs, title, fileName) {
     const { jsPDF } = window.jspdf;
@@ -934,27 +933,28 @@ async function genPDF(songs, title, fileName) {
     
     // Intentar cargar y registrar la fuente personalizada si aún no se ha hecho
     if (!customFontLoaded) {
-        const fontFile = 'assets/Bleeding_Cowboys.ttf';
-        const fontNameInVFS = 'Bleeding_Cowboys.ttf'; // Nombre del archivo en VFS
+        const fontFile = 'assets/Bleeding_Cowboys.ttf'; // Asegúrate que este archivo existe en 'assets'
+        const fontNameInVFS = 'Bleeding_Cowboys.ttf';
         console.log(`Intentando cargar fuente personalizada: ${fontFile}`);
         const fontBase64 = await loadFontAsBase64(fontFile);
         if (fontBase64) {
             try {
                 doc.addFileToVFS(fontNameInVFS, fontBase64);
-                doc.addFont(fontNameInVFS, CUSTOM_FONT_NAME_IN_PDF, 'normal'); // 'normal' es el estilo
+                doc.addFont(fontNameInVFS, CUSTOM_FONT_NAME_IN_PDF, 'normal');
                 customFontLoaded = true;
                 console.log(`Fuente ${CUSTOM_FONT_NAME_IN_PDF} registrada en jsPDF.`);
             } catch (fontError) {
                 console.error(`Error al registrar la fuente ${CUSTOM_FONT_NAME_IN_PDF} en jsPDF:`, fontError);
-                customFontLoaded = false; // Marcar como no cargada si falla el registro
+                customFontLoaded = false; 
             }
         } else {
             console.warn(`No se pudo cargar la fuente ${fontFile}. Se usará una fuente estándar.`);
         }
     }
 
+    // 1. Cargar y añadir la imagen de fondo primero
     try {
-        console.log("Intentando cargar la imagen de plantilla para el PDF...");
+        console.log("Intentando cargar la imagen de plantilla para el PDF:", PDF_BACKGROUND_IMAGE_PATH);
         console.log("Base URI del documento:", document.baseURI); 
         const imgData = await new Promise((resolve, reject) => {
             const img = new Image();
@@ -969,9 +969,9 @@ async function genPDF(songs, title, fileName) {
             };
             img.onerror = (err) => {
                 console.error("Error en img.onerror al cargar la imagen de plantilla para el PDF desde:", img.src, "Error:", err);
-                reject(new Error("Error al cargar la imagen de plantilla."));
+                reject(new Error("Error al cargar la imagen de plantilla. Verifique la ruta y que el archivo exista en la carpeta 'assets'."));
             };
-            img.src = 'assets/Plantilla_pdf_ESDD_001.png'; 
+            img.src = PDF_BACKGROUND_IMAGE_PATH; 
             console.log("Establecido img.src a:", img.src);
              if (img.complete && img.naturalHeight !== 0) { 
                  console.log("Imagen de plantilla ya estaba en caché y cargada (ruta:", img.src, ")");
@@ -1005,8 +1005,10 @@ async function genPDF(songs, title, fileName) {
     // Título "SETLIST"
     if (customFontLoaded) {
         doc.setFont(CUSTOM_FONT_NAME_IN_PDF);
+        console.log("Usando fuente personalizada para SETLIST:", CUSTOM_FONT_NAME_IN_PDF);
     } else {
         doc.setFont("times", "bold"); 
+        console.log("Usando fuente Times para SETLIST.");
     }
     doc.setFontSize(22); 
     doc.setTextColor(0, 0, 0); 
