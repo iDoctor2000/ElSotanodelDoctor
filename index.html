@@ -2,16 +2,16 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>El Sótano del Doctor – Uso Interno</title>
+  <title>El Sótano del Doctor – Intranet</title>
 
   <link rel="icon" type="image/x-icon" href="assets/favicon_ElSotanoDr.ico">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-  <meta property="og:title"       content="El Sótano del Doctor – Uso Interno">
+  <meta property="og:title"       content="El Sótano del Doctor – Intranet">
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
   <meta property="og:image"       content="assets/logo_negro copia.jpg"> <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://tusitioweb.com"> <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"        content="El Sótano del Doctor – Uso Interno">
+  <meta name="twitter:title"        content="El Sótano del Doctor – Intranet">
   <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
   <meta name="twitter:image"        content="assets/logo_negro copia.jpg"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -36,14 +36,8 @@
     .sidebar a:hover{color:#0cf}
     .sidebar .submenu { margin-left: 15px; }
     .sidebar .submenu a { padding: 5px 0; font-size: 0.95em; }
-    /* Estilo para el enlace de Configuración */
-    .sidebar a#menu-config {
-      color: #FFD700; /* Color dorado */
-      font-weight: bold;
-    }
-    .sidebar a#menu-config:hover {
-      color: #fff2a7; /* Dorado más claro para hover */
-    }
+    .sidebar a#menu-config { color: #FFD700; font-weight: bold; }
+    .sidebar a#menu-config:hover { color: #fff2a7; }
     #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9998;display:none}
     #overlay.show{display:block}
     
@@ -57,19 +51,23 @@
         box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 100%; max-width: 600px;
         max-height: 90vh; overflow-y: auto; position: relative;
     }
-    .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 20px; }
+    .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 5px; } 
     .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
-    /* Estilo para el título del concierto en el modal */
     #concert-detail-title-display {
         color: #fff; 
         font-size: 1em; 
         font-weight: normal; 
-        margin-top: -15px; 
+        margin-top: 0px; 
         margin-bottom: 20px; 
-        text-align: left; /* Justificado a la izquierda */
+        text-align: left; 
         border-bottom: 1px solid #333; 
         padding-bottom: 10px; 
-        padding-left: 5px; /* Pequeño padding a la izquierda */
+        padding-left: 0px; 
+    }
+     #concert-detail-title-display .concert-date {
+        font-style: italic;
+        font-size: 0.9em;
+        margin-left: 8px;
     }
     .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
     .modal-content input[type="text"],
@@ -143,6 +141,18 @@
     }
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
+    th.calendar-col-header, td.calendar-col { /* Renombrado para cabecera específica */
+        width: 50px; 
+        text-align: center;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+    th.details-col-header { /* Nueva clase para cabecera de detalles */
+        width: 50px;
+        text-align: center;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
     tr:nth-child(even){background:#1a1a1a}
     
     .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
@@ -150,7 +160,7 @@
     #total-time, #total-time-star, #total-time-2{color:#0cf;margin-top:10px;text-align:center}
 
     footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
-    .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; vertical-align: middle; }
+    .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 0; vertical-align: middle; }
     .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
     .calendar-btn:hover svg { fill: #09b; }
     .details-btn { font-size: 1.5em; color: #0cf; }
@@ -205,6 +215,7 @@
       .table-wrapper { overflow-x: hidden; }
       table { width: 100%; min-width: unset; font-size: 0.85em; }
       th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
+      th.calendar-col-header, td.calendar-col, th.details-col-header { width: 40px; padding: 8px 2px;} 
       #second-setlist .table-wrapper table, #star-setlist .table-wrapper table { min-width: unset; }
       .stats-table table { font-size: 0.85em; }
       .modal-content { width: 95%; padding: 15px; } 
@@ -362,7 +373,18 @@
 
     <section id="rehearsals">
       <h2>Próximos Ensayos</h2>
-      <div class="table-wrapper"><table id="rehearsal-main-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div>
+      <div class="table-wrapper"><table id="rehearsal-main-table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Lugar</th>
+                <th class="calendar-col-header">Cal</th> 
+                <th>Confirmar Asistencia</th>
+            </tr>
+        </thead>
+        <tbody id="rehearsal-main-body"></tbody>
+      </table></div>
     </section>
 
     <section id="second-setlist">
@@ -437,7 +459,7 @@ const calculateDuration = (startTime, endTime) => {
   const startSeconds = startH * 3600 + startM * 60;
   const endSeconds = endH * 3600 + endM * 60;
   let duration = endSeconds - startSeconds;
-  if (duration < 0) duration += 24 * 3600;
+  if (duration < 0) duration += 24 * 3600; // Cruza la medianoche
   return duration;
 };
 const formatDateWithDay = dateStr => {
@@ -522,9 +544,7 @@ async function withRetry(fn, maxRetries = 3, delay = 2000) {
 /* ---------- 2. Acceso Firestore ---------- */
 async function loadDoc(collection, docId, fallback) {
   try {
-    // console.log(`Firestore: Intentando cargar ${collection}/${docId}`); 
     const snap = await db.collection(collection).doc(docId).get();
-    // console.log(`Firestore: Carga de ${collection}/${docId} ${snap.exists ? 'exitosa' : 'no existe'}`); 
     return snap.exists ? snap.data() : fallback;
   } catch (e) {
     console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); 
@@ -533,9 +553,7 @@ async function loadDoc(collection, docId, fallback) {
 }
 async function saveDoc(collection, docId, data, merge = false) {
   try {
-    // console.log(`Firestore: Intentando guardar en ${collection}/${docId}`, data); 
     await db.collection(collection).doc(docId).set(data, { merge });
-    // console.log(`Firestore: Guardado de ${collection}/${docId} exitoso`); 
     return true;
   } catch (e) {
     console.error(`Error al guardar documento ${collection}/${docId}:`, e.message, e); 
@@ -614,6 +632,8 @@ const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar,
 /* ---------- 6. Usuarios ---------- */
 let users = [];
 let editingUserIndex = null;
+const excludedRehearsalUsers = ["Ximo", "Ginés Torres"]; 
+
 function renderUsers() {
     const tbodyMgmt = document.getElementById("user-table-body"); 
     const tbodyDisplay = document.getElementById("users-body");   
@@ -706,11 +726,16 @@ function renderRehearsals() {
     if (!Array.isArray(rehearsals) || rehearsals.length === 0) {
         const emptyMsgConfig = '<tr><td colspan="6">No hay ensayos programados.</td></tr>';
         tbodyConfig.innerHTML = emptyMsgConfig;
-        const emptyMsgMain = '<tr><td colspan="4">No hay próximos ensayos.</td></tr>';
+        const emptyMsgMain = '<tr><td colspan="5">No hay próximos ensayos.</td></tr>'; 
         tbodyMain.innerHTML = emptyMsgMain;
         return;
     }
-    const userOptions = users.length > 0 ? users.map(user => `<option value="${user.name}">${user.nickname || user.name}</option>`).join("") : `<option value="" disabled>No hay usuarios</option>`;
+    
+    const availableUsersForRehearsal = users.filter(user => !excludedRehearsalUsers.includes(user.name));
+    const userOptions = availableUsersForRehearsal.length > 0 ?
+        availableUsersForRehearsal.map(user => `<option value="${user.name}">${user.nickname || user.name}</option>`).join("")
+        : `<option value="" disabled>No hay usuarios disponibles</option>`;
+
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     rehearsals.forEach((r, i) => {
@@ -730,7 +755,8 @@ function renderRehearsals() {
         tbodyConfig.insertAdjacentHTML("beforeend", `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
         const rehearsalDate = new Date(r.date + 'T00:00:00Z'); 
         if (rehearsalDate >= today) {
-            tbodyMain.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}<button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td><td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`);
+            const calendarCell = `<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
+            tbodyMain.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`);
         }
     });
     tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn => btn.onclick = () => {
@@ -933,129 +959,168 @@ function processBandHelperTable() {
 
   let headerRow = table.querySelector("thead tr"); 
   let isHeaderInTbody = false;
+  const bandHelperHeaders = ["Fecha/Hora", "Evento", "Lugar", "Cal", "Info"]; // Nuevas cabeceras
 
   if (!headerRow) { 
       if (table.rows.length > 0 && table.rows[0].cells.length > 0 && table.rows[0].cells[0].tagName.toLowerCase() === 'th') {
           headerRow = table.rows[0];
+          // Limpiar cabeceras existentes y re-crear para asegurar el orden y contenido
+          headerRow.innerHTML = ''; 
+          bandHelperHeaders.forEach(text => {
+              const th = document.createElement('th');
+              th.textContent = text;
+              if (text === "Cal" || text === "Info") {
+                  th.classList.add(text === "Cal" ? "calendar-col-header" : "details-col-header");
+              }
+              headerRow.appendChild(th);
+          });
+
       } else {
           const tbody = table.querySelector("tbody");
           if (tbody && tbody.rows.length > 0) {
               const firstTbodyRow = tbody.rows[0];
-              if (firstTbodyRow.querySelector("th")) {
+              if (firstTbodyRow.querySelector("th")) { // Si la cabecera está en tbody
                   headerRow = firstTbodyRow;
                   isHeaderInTbody = true; 
-              } else {
-                  console.warn("processBandHelperTable: La tabla de BandHelper no parece tener una fila de cabecera formal con <th>. La columna 'Detalles' no tendrá título.");
+                  headerRow.innerHTML = ''; // Limpiar y re-crear
+                  bandHelperHeaders.forEach(text => {
+                      const th = document.createElement('th');
+                      th.textContent = text;
+                       if (text === "Cal" || text === "Info") {
+                          th.classList.add(text === "Cal" ? "calendar-col-header" : "details-col-header");
+                      }
+                      headerRow.appendChild(th);
+                  });
+              } else { // No hay cabecera formal, crearla en thead
+                  const thead = table.tHead || table.createTHead();
+                  headerRow = thead.insertRow(0);
+                  bandHelperHeaders.forEach(text => {
+                      const th = document.createElement('th');
+                      th.textContent = text;
+                       if (text === "Cal" || text === "Info") {
+                          th.classList.add(text === "Cal" ? "calendar-col-header" : "details-col-header");
+                      }
+                      headerRow.appendChild(th);
+                  });
               }
           }
       }
+  } else { // Cabecera existe en thead, asegurar columnas correctas
+      headerRow.innerHTML = ''; // Limpiar y re-crear
+      bandHelperHeaders.forEach(text => {
+          const th = document.createElement('th');
+          th.textContent = text;
+          if (text === "Cal" || text === "Info") {
+              th.classList.add(text === "Cal" ? "calendar-col-header" : "details-col-header");
+          }
+          headerRow.appendChild(th);
+      });
   }
   
-  if (headerRow) {
-      if (!headerRow.querySelector(".details-header")) {
-          const th = document.createElement("th"); 
-          th.className = "details-header";
-          th.textContent = "Detalles";
-          th.style.textAlign = "center";
-          headerRow.appendChild(th);
-      }
-  }
-
   const dataRowsSource = table.querySelector("tbody") ? table.querySelectorAll("tbody tr") : []; 
   let dataRows = Array.from(dataRowsSource);
   
   if (dataRows.length === 0 && table.rows.length > (headerRow ? 1:0) ) {
-      console.warn("processBandHelperTable: No se encontraron filas en 'tbody' o estaba vacío. Intentando procesar todas las filas de la tabla excepto la posible cabecera.");
-      let allRowsInTable = Array.from(table.rows);
-      if (headerRow && allRowsInTable.length > 0 && allRowsInTable[0] === headerRow) {
-          allRowsInTable.shift(); 
-      }
-      dataRows = allRowsInTable; 
+      console.warn("processBandHelperTable: No se encontraron filas en 'tbody'.");
+      return;
   }
 
-  for (let i = 0; i < dataRows.length; i++) { 
-    const row = dataRows[i];
-    if (isHeaderInTbody && i === 0 && row === headerRow) { 
-        continue;
+  dataRows.forEach((row, rowIndex) => {
+    if (isHeaderInTbody && rowIndex === 0 && row === headerRow) { 
+        return; // Saltar fila de cabecera si estaba en tbody
     }
 
-    const cells = row.cells; 
+    const originalCells = Array.from(row.cells); // Copiar celdas originales
     
-    if (cells.length < 3) { 
-        console.warn(`processBandHelperTable: Fila de datos ${i} con ${cells.length} celdas. Mínimo 3 esperadas (Fecha, Hora, Evento). Saltando.`);
-        continue; 
-    }
+    // Limpiar la fila actual para reconstruirla con el orden correcto
+    row.innerHTML = ''; 
 
-    let detailCell;
-    const expectedCellCount = headerRow ? headerRow.cells.length : cells.length + 1;
+    // Celda 0: Fecha/Hora
+    const dateCell = row.insertCell();
+    dateCell.textContent = originalCells[0]?.textContent.trim() || "";
+    const dateCellFullText = dateCell.textContent;
 
-    if (cells.length < expectedCellCount) {
-        detailCell = row.insertCell(-1); 
-    } else { 
-        detailCell = cells[expectedCellCount - 1]; 
-        detailCell.innerHTML = ''; 
-    }
-
-    detailCell.className = "details-cell"; 
-    detailCell.style.textAlign = "center";
+    // Celda 1: Evento
+    const eventCell = row.insertCell();
+    const eventTitleFromCell = originalCells[1]?.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
+    eventCell.textContent = eventTitleFromCell;
     
-    if (!detailCell.querySelector('.details-btn')) {
-        const dateCellText = cells[0].textContent.trim();
-        const eventCellContent = cells[2] ? cells[2].textContent.trim() : "Evento Desconocido";
-        // CORRECCIÓN: El título del evento se toma de la celda correcta (cells[1] según la estructura de BandHelper)
-        const eventTitleFromCell = cells[1] ? cells[1].textContent.trim().split('\n')[0].trim() : "Evento Sin Título";
-        const concertId = sanitizeFirebaseKey(`${dateCellText}_${eventTitleFromCell}`);
-        
-        const detailsBtn = document.createElement("button");
-        detailsBtn.className = "details-btn";
-        detailsBtn.innerHTML = "➡️";
-        detailsBtn.title = "Ver/Editar Detalles del Concierto";
-        // Pasar eventTitleFromCell a openConcertDetailModal
-        detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellText, eventTitleFromCell, eventCellContent); 
-        
-        detailCell.appendChild(detailsBtn);
+    // Celda 2: Lugar (tomado del campo adicional original, que era originalCells[3])
+    const locationCell = row.insertCell();
+    locationCell.textContent = originalCells[3]?.textContent.trim().split('\n')[0].trim() || originalCells[2]?.textContent.trim().split('\n')[0].trim() || ""; // Priorizar campo adicional
+
+    // Celda 3: Calendario
+    const calendarDisplayCell = row.insertCell();
+    calendarDisplayCell.className = "calendar-col";
+    calendarDisplayCell.style.textAlign = "center";
+
+    // Celda 4: Detalles
+    const detailDisplayCell = row.insertCell();
+    detailDisplayCell.className = "calendar-col"; // Usar 'calendar-col' para ancho similar
+    detailDisplayCell.style.textAlign = "center";
+
+    // --- Lógica para botones ---
+    const dateForId = dateCellFullText.split(',')[0].trim();
+    const concertId = sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
+    
+    const detailsBtn = document.createElement("button");
+    detailsBtn.className = "details-btn";
+    detailsBtn.innerHTML = "➡️";
+    detailsBtn.title = "Ver/Editar Detalles del Concierto";
+    detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellFullText, eventTitleFromCell, locationCell.textContent); 
+    detailDisplayCell.appendChild(detailsBtn);
+
+    let icsDate = new Date().toISOString().split('T')[0]; 
+    let startTimeForICS = "20:00"; 
+    let durationSecondsForICS = 2 * 3600; 
+
+    const dateMatch = dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/); 
+    if (dateMatch) {
+        let year = parseInt(dateMatch[3], 10);
+        year += (year < 70 ? 2000 : 1900); 
+        icsDate = `${year}-${dateMatch[2]}-${dateMatch[1]}`;
     }
 
-    const locationCell = cells[2]; // La ubicación suele estar en la tercera celda (índice 2) o en una celda de "custom field"
-    if (locationCell && !locationCell.querySelector('.calendar-btn')) {
-        const eventNameText = cells[1] ? cells[1].textContent.trim().split('\n')[0].trim() : "Evento Sin Título"; // Usar el nombre del evento para el calendario
-        const dateCellContent = cells[0].textContent.trim();
-        const timeCellContent = cells[1]?.textContent.trim().split(',')[1]?.trim().split(' a ')[0] || "20:00"; // Intentar extraer hora de inicio
-        
-        const dateParts = dateCellContent.match(/(\d+)\s+de\s+(\w+)/i);
-        let icsDate = new Date().toISOString().split('T')[0];
-        if (dateParts) {
-            const day = dateParts[1]; const monthName = dateParts[2];
-            const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-            const month = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
-            if (month !== -1) {
-                let year = new Date().getFullYear();
-                const currentMonth = new Date().getMonth();
-                if (month < currentMonth && (currentMonth - month > 6)) year++; 
-                icsDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            }
-        }
-        const calendarBtn = document.createElement('button');
-        calendarBtn.className = 'calendar-btn'; calendarBtn.title = 'Añadir a mi calendario';
-        calendarBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';
-        calendarBtn.onclick = () => generateICS(`Concierto: ${eventNameText}`, icsDate, timeCellContent, eventCellContent.split('\n').slice(1).join(', ') || eventNameText, `Concierto de El Sótano del Doctor en ${eventNameText}`);
-        locationCell.appendChild(document.createTextNode(" "));
-        locationCell.appendChild(calendarBtn);
+    const timeRangeMatch = dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/); 
+    const singleTimeMatch = dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/); 
+
+    if (timeRangeMatch) {
+        startTimeForICS = timeRangeMatch[1];
+        durationSecondsForICS = calculateDuration(timeRangeMatch[1], timeRangeMatch[2]);
+        if (durationSecondsForICS <= 0) durationSecondsForICS = 2 * 3600;
+    } else if (singleTimeMatch) {
+        startTimeForICS = singleTimeMatch[1];
     }
-  }
+    
+    const locationForICS = locationCell.textContent || eventTitleFromCell;
+    const descriptionForICS = `Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;
+
+    const calendarBtn = document.createElement('button');
+    calendarBtn.className = 'calendar-btn'; calendarBtn.title = 'Añadir a mi calendario';
+    calendarBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';
+    calendarBtn.onclick = () => generateICS(
+        `Concierto: ${eventTitleFromCell}`,
+        icsDate,
+        startTimeForICS,
+        locationForICS,
+        descriptionForICS,
+        durationSecondsForICS
+    );
+    calendarDisplayCell.appendChild(calendarBtn);
+  });
 }
 
 const concertDetailModal = document.getElementById('concert-details-modal');
 const concertDetailMessage = document.getElementById('concert-detail-message');
-async function openConcertDetailModal(concertId, concertDate, concertTitle, concertLocationOriginal) {
+async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
     concertDetailMessage.textContent = ""; 
     concertDetailMessage.className = "success-message"; 
 
     document.getElementById('concert-detail-id').value = concertId;
     const concertTitleDisplay = document.getElementById('concert-detail-title-display');
     if (concertTitleDisplay) {
-        // Usar el concertTitle que se pasa (que viene de la celda correcta de la tabla)
-        concertTitleDisplay.textContent = concertTitle || "Título no disponible"; 
+        const datePartOnly = concertFullDateText.split(',')[0].trim(); 
+        concertTitleDisplay.innerHTML = `${concertTitle || "Título no disponible"} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`; 
     }
     
     document.getElementById('concert-detail-location').value = '';
