@@ -11,9 +11,9 @@
   <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
   <meta property="og:image"       content="assets/logo_negro copia.jpg"> <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://tusitioweb.com"> <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="El Sótano del Doctor – Uso Interno">
+  <meta name="twitter:title"        content="El Sótano del Doctor – Uso Interno">
   <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
-  <meta name="twitter:image"       content="assets/logo_negro copia.jpg"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="twitter:image"        content="assets/logo_negro copia.jpg"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -29,7 +29,7 @@
     .hamburger{cursor:pointer;border:1px solid #0cf;border-radius:4px;padding:5px}
     .hamburger div{width:25px;height:3px;background:#0cf;margin:4px 0}
     .sidebar{position:fixed;top:0;left:0;width:250px;height:100%;background:#111;border-right:1px solid #222;
-             padding:20px;box-shadow:2px 0 10px rgba(0,255,255,.1);transform:translateX(-250px);transition:.3s;z-index:9999}
+            padding:20px;box-shadow:2px 0 10px rgba(0,255,255,.1);transform:translateX(-250px);transition:.3s;z-index:9999}
     .sidebar.show{transform:translateX(0)}
     .sidebar h2{color:#0cf;margin:0}
     .sidebar a{display:block;color:#fff;text-decoration:none;margin:10px 0;padding:5px 0;border-bottom:1px solid #222}
@@ -91,17 +91,17 @@
     .modal-field-group input[type="time"] { text-align: left; }
 
     .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
-                   overflow-y:auto;padding:80px 20px 20px}
+                    overflow-y:auto;padding:80px 20px 20px}
     .config-screen h2{color:#0cf;text-align:center;margin:20px 0}
     .config-screen h3{color:#0cf;margin:20px 0 10px}
     .config-screen label{display:block;margin:10px 0 5px}
     .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
-                                              border:1px solid #333;border-radius:5px}
+                                                border:1px solid #333;border-radius:5px}
     .config-screen select[multiple] { height: 150px; }
     .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .config-screen button:hover{background:#09b}
     .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;
-                              color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
+                                color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
     #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #usuarios {
@@ -385,7 +385,7 @@ if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" ||
 }
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db = firebase.firestore(); // 'db' ahora está disponible globalmente en este script
 firebase.firestore().enablePersistence()
   .catch(err => { console.warn("Persistencia Firestore no habilitada:", err.code === 'failed-precondition' ? 'Múltiples pestañas.' : err.message); });
 
@@ -500,7 +500,7 @@ async function loadDoc(collection, docId, fallback) {
     const snap = await db.collection(collection).doc(docId).get();
     return snap.exists ? snap.data() : fallback;
   } catch (e) {
-    console.error(`Error al cargar documento ${collection}/${docId}:`, e.message);
+    console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); // Añadido 'e' para más detalles
     return fallback; 
   }
 }
@@ -509,7 +509,7 @@ async function saveDoc(collection, docId, data, merge = false) {
     await db.collection(collection).doc(docId).set(data, { merge });
     return true;
   } catch (e) {
-    console.error(`Error al guardar documento ${collection}/${docId}:`, e.message);
+    console.error(`Error al guardar documento ${collection}/${docId}:`, e.message, e); // Añadido 'e' para más detalles
     throw e; 
   }
 }
@@ -862,7 +862,7 @@ function processBandHelperTable() {
       console.error("processBandHelperTable: Contenedor 'bandhelper-concerts-container' no encontrado.");
       return;
   }
-  
+ 
   console.log(`processBandHelperTable: Intento ${processTableAttempts + 1} para encontrar la tabla de BandHelper.`);
   const table = container.querySelector("table"); 
   const loadingMessage = document.getElementById("bandhelper-loading-message");
@@ -1035,7 +1035,7 @@ async function openConcertDetailModal(concertId, concertDate, concertTitle, conc
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando músicos...';
 
-    const excludedMusicians = ["Ximo", "Ginés Torres"]; // Excluir a "Ginés Torres" (con acento)
+    const excludedMusicians = ["Ximo", "Ginés Torres"]; 
 
     if (users && users.length > 0) {
         musiciansListDiv.innerHTML = ''; 
@@ -1297,6 +1297,71 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   setTimeout(processBandHelperTable, 1500); 
 });
-  </script>
+</script>
+
+<button id="testWriteButton" style="position: fixed; top: 100px; left: 10px; z-index: 100000; padding: 10px; background-color: orange; color: black; border: 2px solid red; font-weight: bold;">
+    Probar Escritura Directa a concert_details
+</button>
+
+<script>
+    // Esta función DEBE estar definida DESPUÉS de que Firebase y 'db' (firebase.firestore()) hayan sido inicializados.
+    // Por eso la pongo en un nuevo bloque de script aquí, asumiendo que el script principal anterior ya ha corrido.
+    async function testWriteConcertDetails() {
+        console.log("Intentando escritura de prueba directa a concert_details...");
+        
+        // Asegurarnos de que firebase está disponible. 'db' debería estarlo si el script anterior se ejecutó.
+        if (typeof firebase === 'undefined' || typeof firebase.firestore === 'undefined') {
+            console.error("Firebase o Firestore no están disponibles. Asegúrate de que los scripts de Firebase se cargaron e inicializaron antes de este punto.");
+            alert("Error crítico: Firebase no está listo para la prueba.");
+            return;
+        }
+
+        try {
+            const firestoreInstance = firebase.firestore(); // Usamos la instancia global de firebase
+            const testDocRef = firestoreInstance.collection('concert_details').doc('testConcertSimpleId_DirectButton003');
+            
+            console.log("Referencia al documento:", testDocRef.path); // Log para ver la ruta
+
+            await testDocRef.set({
+                name: "Test Directo Desde Botón Naranja",
+                location: "Sala de Pruebas Botón Naranja",
+                testTimestamp: new Date().toISOString(),
+                randomNumber: Math.random() 
+            });
+
+            console.log("%cESCRITURA DE PRUEBA a concert_details ¡EXITOSA!", "color: green; font-weight: bold;");
+            alert("¡Escritura de prueba a concert_details exitosa!");
+
+        } catch (error) {
+            console.error("%cERROR en escritura de prueba a concert_details:", "color: red; font-weight: bold;", error);
+            let errorMessage = "ERROR en escritura de prueba a concert_details:\n";
+            errorMessage += "Mensaje: " + error.message + "\n";
+            if (error.code) {
+                errorMessage += "Código de error: " + error.code + "\n";
+            }
+            if (error.details) {
+                errorMessage += "Detalles: " + error.details + "\n";
+            }
+            if (error.stack) { // Incluimos el stack trace en la consola para más info
+                console.log("Stack del error de prueba:", error.stack);
+            }
+            alert(errorMessage);
+        }
+    }
+
+    // Asignar el evento onclick al botón de prueba
+    // Es importante que esto se ejecute después de que el DOM esté completamente cargado
+    // o al menos después de que el botón exista. Ponerlo aquí al final es seguro.
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const testButton = document.getElementById('testWriteButton');
+        if (testButton) {
+            testButton.onclick = testWriteConcertDetails;
+        } else {
+            console.error("Botón de prueba 'testWriteButton' no encontrado en el DOM.");
+            // Si el botón se añade dinámicamente o muy tarde, este listener podría fallar.
+            // Pero como lo hemos puesto directamente en el HTML, debería estar.
+        }
+    });
+</script>
 </body>
 </html>
