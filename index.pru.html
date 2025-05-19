@@ -359,9 +359,10 @@
 <script>
 /* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw", 
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
   authDomain: "sotanointranet.firebaseapp.com",
   projectId: "sotanointranet",
+  storageBucket: "sotanointranet.appspot.com", // Asegúrate que esta línea esté y sea correcta
   messagingSenderId: "756955233128",
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
@@ -871,7 +872,6 @@ function processBandHelperTable() {
 
   if(loadingMessage) loadingMessage.style.display = "none"; 
   console.log("processBandHelperTable: Tabla de BandHelper ENCONTRADA:", table);
-  // console.log("Estructura interna de la tabla de BandHelper (table.innerHTML):", table.innerHTML); 
 
   if (table.dataset.processed === "true") { 
       return;
@@ -1270,17 +1270,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 </script>
 
 <button id="testWriteButton" style="position: fixed; top: 100px; left: 10px; z-index: 100000; padding: 10px; background-color: lightblue; color: black; border: 2px solid blue; font-weight: bold;">
-    Probar Escritura Aleatoria v3.3
+    Probar Escritura Aleatoria v3.4
 </button>
 
 <script>
     async function testWriteConcertDetails() { 
-        const testButton = document.getElementById('testWriteButton'); // Para deshabilitar durante la prueba
+        const testButton = document.getElementById('testWriteButton');
         const originalButtonText = testButton.textContent;
-        testButton.textContent = "Probando...";
+        testButton.textContent = "Probando v3.4...";
         testButton.disabled = true;
 
-        const collectionNameToTest = 'test_collection_v3_3_' + Date.now(); 
+        const collectionNameToTest = 'test_collection_v3_4_' + Date.now(); 
         console.log(`Intentando escritura de prueba a la COLECCIÓN ALEATORIA: ${collectionNameToTest}...`);
         
         if (typeof firebase === 'undefined' || typeof firebase.firestore === 'undefined') {
@@ -1293,13 +1293,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         try {
             const firestoreInstance = firebase.firestore(); 
-            const testDocRef = firestoreInstance.collection(collectionNameToTest).doc('testDocInRandomCollection_v3_3');
+            const testDocRef = firestoreInstance.collection(collectionNameToTest).doc('testDocInRandomCollection_v3_4');
             
             console.log(`Referencia al documento para prueba en colección ALEATORIA: ${testDocRef.path}`); 
 
             console.log(`%cFirestore: Intentando .set() en ${testDocRef.path}`, "color: blue;");
             await testDocRef.set({
-                name: "Test en Colección Aleatoria v3.3",
+                name: "Test en Colección Aleatoria v3.4",
                 description: "Esto es una prueba para ver si las reglas globales funcionan.",
                 testTimestamp: new Date().toISOString(),
                 randomNumber: Math.random() 
@@ -1309,7 +1309,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             alert(`¡Escritura de prueba a la colección '${collectionNameToTest}' exitosa!`);
 
         } catch (error) {
-            // Bloque catch simplificado para mostrar primero el error de Firestore
             console.error(`%cERROR CRUDO de Firestore al intentar escribir en ${collectionNameToTest}:`, "color: red; font-weight: bold;", error);
             
             let errorMessage = `ERROR en escritura de prueba a colección ALEATORIA (${collectionNameToTest}):\n`;
@@ -1317,8 +1316,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (error.code) {
                 errorMessage += "Código de error: " + error.code + "\n";
             }
-            // No usamos error.details aquí porque a veces es un objeto complejo no útil para alert.
-            // El error completo ya está en la consola con el console.error de arriba.
             alert(errorMessage);
         } finally {
             testButton.textContent = originalButtonText;
