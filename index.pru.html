@@ -898,7 +898,13 @@ function renderStats() {
 }
 
 /* ---------- 9. PDF ---------- */
-// Función auxiliar para cargar fuentes TTF y convertirlas a base64
+// Variables globales para el estado de carga de las fuentes
+let bleedingCowboysFontLoaded = false;
+let chalkBoardFontLoaded = false;
+const BLEEDING_COWBOYS_FONT_NAME_IN_PDF = "BleedingCowboysCustom"; 
+const CHALK_BOARD_FONT_NAME_IN_PDF = "ChalkBoardCustom";
+const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png';
+
 async function loadFontAsBase64(fontPath) {
     try {
         const response = await fetch(fontPath);
@@ -912,7 +918,7 @@ async function loadFontAsBase64(fontPath) {
                 const base64 = reader.result.split(',')[1];
                 resolve(base64);
             };
-            reader.onerror = (error) => reject(new Error("Error del FileReader al convertir fuente a Base64: " + error));
+            reader.onerror = (error) => reject(new Error("Error del FileReader al convertir fuente a Base64: " + error.message));
             reader.readAsDataURL(blob);
         });
     } catch (error) {
@@ -921,45 +927,57 @@ async function loadFontAsBase64(fontPath) {
     }
 }
 
-let customFontLoaded = false; 
-const CUSTOM_FONT_NAME_IN_PDF = "BleedingCowboysCustom"; 
-const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png'; // Ruta a tu plantilla
-
 async function genPDF(songs, title, fileName) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Intentar cargar y registrar la fuente personalizada si aún no se ha hecho
-    if (!customFontLoaded) {
-        const fontFile = 'assets/Bleeding_Cowboys.ttf'; // Asegúrate que este archivo existe en 'assets'
-        const fontNameInVFS = 'Bleeding_Cowboys.ttf';
-        console.log(`Intentando cargar fuente personalizada: ${fontFile}`);
-        const fontBase64 = await loadFontAsBase64(fontFile);
-        if (fontBase64) {
+    // Cargar Bleeding Cowboys si no está cargada
+    if (!bleedingCowboysFontLoaded) {
+        const fontFileBC = 'assets/Bleeding_Cowboys.ttf';
+        const fontNameInVFSBC = 'Bleeding_Cowboys.ttf';
+        console.log(`Intentando cargar fuente personalizada: ${fontFileBC}`);
+        const fontBase64BC = await loadFontAsBase64(fontFileBC);
+        if (fontBase64BC) {
             try {
-                doc.addFileToVFS(fontNameInVFS, fontBase64);
-                doc.addFont(fontNameInVFS, CUSTOM_FONT_NAME_IN_PDF, 'normal');
-                customFontLoaded = true;
-                console.log(`Fuente ${CUSTOM_FONT_NAME_IN_PDF} registrada en jsPDF.`);
+                doc.addFileToVFS(fontNameInVFSBC, fontBase64BC);
+                doc.addFont(fontNameInVFSBC, BLEEDING_COWBOYS_FONT_NAME_IN_PDF, 'normal');
+                bleedingCowboysFontLoaded = true;
+                console.log(`Fuente ${BLEEDING_COWBOYS_FONT_NAME_IN_PDF} registrada en jsPDF.`);
             } catch (fontError) {
-                console.error(`Error al registrar la fuente ${CUSTOM_FONT_NAME_IN_PDF} en jsPDF:`, fontError);
-                customFontLoaded = false; 
+                console.error(`Error al registrar la fuente ${BLEEDING_COWBOYS_FONT_NAME_IN_PDF} en jsPDF:`, fontError);
             }
         } else {
-            console.warn(`No se pudo cargar la fuente ${fontFile}. Se usará una fuente estándar.`);
+            console.warn(`No se pudo cargar la fuente ${fontFileBC}.`);
         }
     }
 
-    // 1. Cargar y añadir la imagen de fondo primero
+    // Cargar Chalk Board si no está cargada
+    if (!chalkBoardFontLoaded) {
+        const fontFileCB = 'assets/Chalk_Board.ttf'; // Asegúrate que este es el nombre correcto
+        const fontNameInVFSCB = 'Chalk_Board.ttf';
+        console.log(`Intentando cargar fuente personalizada: ${fontFileCB}`);
+        const fontBase64CB = await loadFontAsBase64(fontFileCB);
+        if (fontBase64CB) {
+            try {
+                doc.addFileToVFS(fontNameInVFSCB, fontBase64CB);
+                doc.addFont(fontNameInVFSCB, CHALK_BOARD_FONT_NAME_IN_PDF, 'normal');
+                chalkBoardFontLoaded = true;
+                console.log(`Fuente ${CHALK_BOARD_FONT_NAME_IN_PDF} registrada en jsPDF.`);
+            } catch (fontError) {
+                console.error(`Error al registrar la fuente ${CHALK_BOARD_FONT_NAME_IN_PDF} en jsPDF:`, fontError);
+            }
+        } else {
+            console.warn(`No se pudo cargar la fuente ${fontFileCB}.`);
+        }
+    }
+
     try {
         console.log("Intentando cargar la imagen de plantilla para el PDF:", PDF_BACKGROUND_IMAGE_PATH);
-        console.log("Base URI del documento:", document.baseURI); 
         const imgData = await new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
-                console.log("Imagen de plantilla cargada correctamente desde:", img.src);
                 const canvas = document.createElement('canvas');
                 canvas.width = img.width;
                 canvas.height = img.height;
@@ -967,14 +985,9 @@ async function genPDF(songs, title, fileName) {
                 ctx.drawImage(img, 0, 0);
                 resolve(canvas.toDataURL('image/png'));
             };
-            img.onerror = (err) => {
-                console.error("Error en img.onerror al cargar la imagen de plantilla para el PDF desde:", img.src, "Error:", err);
-                reject(new Error("Error al cargar la imagen de plantilla. Verifique la ruta y que el archivo exista en la carpeta 'assets'."));
-            };
+            img.onerror = (err) => reject(new Error("Error al cargar la imagen de plantilla. Verifique la ruta y que el archivo exista."));
             img.src = PDF_BACKGROUND_IMAGE_PATH; 
-            console.log("Establecido img.src a:", img.src);
              if (img.complete && img.naturalHeight !== 0) { 
-                 console.log("Imagen de plantilla ya estaba en caché y cargada (ruta:", img.src, ")");
                  const canvas = document.createElement('canvas');
                  canvas.width = img.width;
                  canvas.height = img.height;
@@ -982,7 +995,6 @@ async function genPDF(songs, title, fileName) {
                  ctx.drawImage(img, 0, 0);
                  resolve(canvas.toDataURL('image/png'));
             } else if (img.complete && img.naturalHeight === 0) {
-                console.warn("Imagen de plantilla en caché pero parece inválida (altura 0). Rechazando.");
                 reject(new Error("Imagen de plantilla en caché pero inválida."));
             }
         });
@@ -1003,12 +1015,10 @@ async function genPDF(songs, title, fileName) {
     let currentY = contentMarginTop;
 
     // Título "SETLIST"
-    if (customFontLoaded) {
-        doc.setFont(CUSTOM_FONT_NAME_IN_PDF);
-        console.log("Usando fuente personalizada para SETLIST:", CUSTOM_FONT_NAME_IN_PDF);
+    if (bleedingCowboysFontLoaded) {
+        doc.setFont(BLEEDING_COWBOYS_FONT_NAME_IN_PDF);
     } else {
         doc.setFont("times", "bold"); 
-        console.log("Usando fuente Times para SETLIST.");
     }
     doc.setFontSize(22); 
     doc.setTextColor(0, 0, 0); 
@@ -1029,6 +1039,9 @@ async function genPDF(songs, title, fileName) {
     doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
+    const tableFont = chalkBoardFontLoaded ? CHALK_BOARD_FONT_NAME_IN_PDF : "helvetica";
+    console.log("Fuente para la tabla:", tableFont);
+
     doc.autoTable({
         startY: currentY,
         head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
@@ -1043,12 +1056,12 @@ async function genPDF(songs, title, fileName) {
         headStyles: { 
             fillColor: [50, 50, 50], 
             textColor: [255, 255, 255], 
-            font: "helvetica", 
-            fontStyle: 'bold',
+            font: tableFont, // Aplicar Chalk_Board a cabeceras
+            fontStyle: 'bold', // El estilo bold podría no aplicar si la fuente no lo tiene
             halign: 'center'
         },
         styles: { 
-            font: "helvetica", 
+            font: tableFont, // Aplicar Chalk_Board al cuerpo
             fontSize: 9, 
             cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
             lineColor: [80, 80, 80], 
