@@ -42,7 +42,7 @@
         height: 60px; 
     }
     .logo img.logo-main{
-        width:150px; 
+        width: 135px; /* <<-- AJUSTADO */
         height:auto;
         vertical-align: middle; 
     }
@@ -216,10 +216,9 @@
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
     
-    /* --- NUEVOS ESTILOS PARA TABLAS DE SETLIST --- */
-    #setlists table th:nth-child(3), /* Key Header */
-    #setlists table th:nth-child(4), /* Tempo Header */
-    #setlists table th:nth-child(5), /* Time Header */
+    #setlists table th:nth-child(3), 
+    #setlists table th:nth-child(4), 
+    #setlists table th:nth-child(5), 
     #second-setlist table th:nth-child(3),
     #second-setlist table th:nth-child(4),
     #second-setlist table th:nth-child(5),
@@ -229,9 +228,9 @@
         text-align: center;
     }
 
-    #setlists table td:nth-child(3), /* Key Data */
-    #setlists table td:nth-child(4), /* Tempo Data */
-    #setlists table td:nth-child(5), /* Time Data */
+    #setlists table td:nth-child(3), 
+    #setlists table td:nth-child(4), 
+    #setlists table td:nth-child(5), 
     #second-setlist table td:nth-child(3),
     #second-setlist table td:nth-child(4),
     #second-setlist table td:nth-child(5),
@@ -240,7 +239,6 @@
     #star-setlist table td:nth-child(5) {
         text-align: center;
     }
-    /* --- FIN NUEVOS ESTILOS PARA TABLAS DE SETLIST --- */
 
     th.calendar-col-header, td.calendar-col { 
         width: 50px; 
@@ -312,7 +310,9 @@
 
     @media(max-width:768px){
       header { height: 55px; padding: 8px 15px; } 
-      .logo img.logo-main{width:120px}
+      .logo img.logo-main{
+          width: 110px; /* <<-- AJUSTADO */
+      }
       .logo-intranet{height:35px}
       .hamburger div{width:20px}
 
@@ -499,8 +499,10 @@
             <tr>
               <th>#</th>
               <th>Título</th>
-              <th>Key</th>  <th>Tempo</th>
-              <th>Time</th> </tr>
+              <th>Key</th>
+              <th>Tempo</th>
+              <th>Time</th>
+            </tr>
           </thead>
           <tbody id="setlist-body"></tbody>
         </table>
@@ -534,8 +536,10 @@
             <tr>
               <th>#</th>
               <th>Canción</th>
-              <th>Key</th>  <th>Tempo</th>
-              <th>Time</th> </tr>
+              <th>Key</th>
+              <th>Tempo</th>
+              <th>Time</th>
+            </tr>
           </thead>
           <tbody id="second-body"></tbody>
         </table>
@@ -553,8 +557,10 @@
             <tr>
               <th>#</th>
               <th>Título</th>
-              <th>Key</th>  <th>Tempo</th>
-              <th>Time</th> </tr>
+              <th>Key</th>
+              <th>Tempo</th>
+              <th>Time</th>
+            </tr>
           </thead>
           <tbody id="star-setlist-body"></tbody>
         </table>
@@ -1204,7 +1210,7 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
 
     doc.autoTable({
         startY: currentY,
-        head: [["#", "Título", "Key", "Tempo", "Time"]], // <<-- CAMBIO AQUÍ
+        head: [["#", "Título", "Key", "Tempo", "Time"]], 
         body: tableBody,
         theme: 'grid', 
         headStyles: { 
@@ -1229,9 +1235,9 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
         columnStyles: {
             0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
             1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   
-            2: { halign: 'center', cellWidth: 60, fontSize: 9 },  // Key
-            3: { halign: 'center', cellWidth: 60, fontSize: 9 },  // Tempo
-            4: { halign: 'center', cellWidth: 60, fontSize: 9 }   // Time
+            2: { halign: 'center', cellWidth: 60, fontSize: 9 },  
+            3: { halign: 'center', cellWidth: 60, fontSize: 9 },  
+            4: { halign: 'center', cellWidth: 60, fontSize: 9 }   
         },
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
