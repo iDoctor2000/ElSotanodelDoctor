@@ -42,7 +42,7 @@
         height: 60px; 
     }
     .logo img.logo-main{
-        width: 135px; /* <<-- AJUSTADO */
+        width: 135px; 
         height:auto;
         vertical-align: middle; 
     }
@@ -106,7 +106,8 @@
     }
 
     .modal-backdrop {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        display: none; 
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 10px;
     }
     .modal-backdrop.show { display: flex; }
@@ -311,7 +312,7 @@
     @media(max-width:768px){
       header { height: 55px; padding: 8px 15px; } 
       .logo img.logo-main{
-          width: 110px; /* <<-- AJUSTADO */
+          width: 110px; 
       }
       .logo-intranet{height:35px}
       .hamburger div{width:20px}
@@ -1416,11 +1417,9 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     }
 
     try {
-        console.log("Abriendo modal para concertId:", concertId);
         const details = await withRetry(() => loadDoc('concert_details', concertId, {})); 
         
         if (details && Object.keys(details).length > 0) { 
-            console.log("Detalles cargados desde Firestore:", details);
             document.getElementById('concert-detail-location').value = details.locationDetails || '';
             document.getElementById('concert-detail-soundsetup').value = details.soundSetupTime || ''; 
             document.getElementById('concert-detail-instrumentssetup').value = details.instrumentsSetupTime || ''; 
@@ -1433,18 +1432,18 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
                     const checkbox = musiciansListDiv.querySelector(`input[value="${attendeeName}"]`); 
                     if (checkbox) {
                         checkbox.checked = true;
-                    } else {
-                        console.warn("No se encontró checkbox para el asistente:", attendeeName);
                     }
                 });
             }
-        } else {
-            console.log("No se encontraron detalles previos en Firestore para este concierto o el documento está vacío:", concertId);
         }
     } catch (error) { 
         console.error("Error al intentar cargar detalles del concierto desde Firestore:", error);
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}.`;
+    }
+
+    if (concertDetailModal.style.display === "none") { // <<-- MODIFICACIÓN AQUÍ
+        concertDetailModal.style.display = ""; 
     }
     concertDetailModal.classList.add('show'); 
 }
@@ -1473,8 +1472,6 @@ document.getElementById('save-concert-details').onclick = async () => {
         lastUpdated: new Date().toISOString() 
     };
 
-    console.log("Intentando guardar en Firestore. Documento ID:", concertId, "Datos:", concertData);
-
     try {
         await withRetry(() => saveDoc('concert_details', concertId, concertData, true)); 
         concertDetailMessage.className = "success-message";
@@ -1493,11 +1490,15 @@ document.getElementById('close-concert-details-modal').onclick = () => {
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
 const PASSWORD = "Sotano2014"; 
 let isAuthenticated = false;
-function closeAll() { 
-    document.querySelectorAll(".config-screen, .modal-backdrop").forEach(s => {
-        s.classList.remove("show"); 
-        s.style.display = "none"; 
+
+function closeAll() { // <<-- MODIFICACIÓN AQUÍ
+    document.querySelectorAll(".config-screen").forEach(s => {
+        s.style.display = "none";
     });
+    document.querySelectorAll(".modal-backdrop").forEach(s => {
+        s.classList.remove("show");
+    });
+
     sidebar.classList.remove("show");
     overlay.classList.remove("show");
     document.getElementById("config-submenu").style.display = "none";
@@ -1505,6 +1506,7 @@ function closeAll() {
     if (typeof resetRehearsalForm === "function") resetRehearsalForm();
     document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message").forEach(el => el.textContent = "");
 }
+
 document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); };
 overlay.onclick = closeAll;
