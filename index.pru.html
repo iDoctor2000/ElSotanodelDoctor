@@ -27,32 +27,31 @@
     *,*::before,*::after{box-sizing:border-box}
     html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
     
-    /* --- NUEVOS ESTILOS / MODIFICACIONES --- */
     header{
         background:#111;
-        padding:10px 20px; /* Reducir un poco el padding para una barra más compacta */
+        padding:10px 20px; 
         display:flex;
         align-items:center;
         justify-content:space-between;
-        position:fixed; /* <<-- CAMBIO CLAVE: Hacer el header fijo */
+        position:fixed; 
         top:0;
         left:0;
         width:100%;
-        z-index:1000; /* Encima del contenido, debajo del sidebar/modales */
-        border-bottom: 1px solid #222; /* Delimitar visualmente */
-        height: 60px; /* Altura fija para el header */
+        z-index:1000; 
+        border-bottom: 1px solid #222; 
+        height: 60px; 
     }
     .logo img.logo-main{
-        width:150px; /* Ajustar tamaño para header fijo */
+        width:150px; 
         height:auto;
-        vertical-align: middle; /* Mejor alineación si el header tiene altura fija */
+        vertical-align: middle; 
     }
     .logo-intranet{
         position:absolute;
         left:50%;
-        top:50%; /* Centrado vertical en el header */
+        top:50%; 
         transform:translate(-50%,-50%);
-        height:45px; /* Ajustar tamaño */
+        height:45px; 
         width:auto;
     }
     .hamburger{
@@ -60,28 +59,28 @@
         border:1px solid #0cf;
         border-radius:4px;
         padding:5px;
-        z-index: 1001; /* Asegurar que está encima de otros elementos del header */
+        z-index: 1001; 
     }
     .hamburger div{width:25px;height:3px;background:#0cf;margin:4px 0}
     
     .sidebar{
         position:fixed;
-        top:0; /* Sidebar comienza desde el tope de la ventana */
+        top:0; 
         left:0;
-        width:280px; /* Ancho del sidebar */
-        height:100vh; /* Sidebar ocupa toda la altura de la ventana */
-        background:#1a1a1a; /* Un fondo ligeramente distinto al header */
+        width:280px; 
+        height:100vh; 
+        background:#1a1a1a; 
         border-right:1px solid #222;
         padding: 20px;
-        padding-top: calc(60px + 20px); /* <<-- CAMBIO CLAVE: Header height (60px) + padding deseado (20px) */
-        box-shadow:3px 0 15px rgba(0,200,200,.15); /* Sombra más pronunciada */
-        transform:translateX(-100%); /* <<-- CAMBIO CLAVE: Oculto completamente a la izquierda */
+        padding-top: calc(60px + 20px); 
+        box-shadow:3px 0 15px rgba(0,200,200,.15); 
+        transform:translateX(-100%); 
         transition:transform .3s ease-in-out;
         z-index:9999; 
         overflow-y: auto;
     }
     .sidebar.show{
-        transform:translateX(0); /* Mostrar sidebar */
+        transform:translateX(0); 
     }
     .sidebar h2{color:#0cf;margin:0 0 20px 0;}
     .sidebar a{display:block;color:#fff;text-decoration:none;margin:12px 0;padding:10px 5px;border-bottom:1px solid #333; font-size: 1em;}
@@ -89,13 +88,13 @@
     .sidebar a:hover{color:#0cf}
     .sidebar .submenu { margin-left: 15px; margin-top: 10px; }
     .sidebar .submenu a { padding: 8px 0; font-size: 0.9em; border-top: 1px solid #2a2a2a; border-bottom: none; margin: 5px 0;}
-    .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; } /* Más separación para config */
+    .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; } 
     .sidebar a#menu-config:hover { color: #fff2a7; }
     
     #overlay{
         position:fixed;top:0;left:0;width:100%;height:100%;
-        background:rgba(0,0,0,.75); /* Overlay un poco más oscuro */
-        z-index:5000; /* Debajo del sidebar, encima del main */
+        background:rgba(0,0,0,.75); 
+        z-index:5000; 
         display:none;
         opacity: 0;
         transition: opacity .3s ease-in-out;
@@ -103,9 +102,8 @@
     #overlay.show{display:block; opacity: 1;}
     
     main {
-        padding-top: 75px; /* <<-- CAMBIO CLAVE: Header height (60px) + un pequeño margen (15px) */
+        padding-top: 75px; 
     }
-    /* --- FIN NUEVOS ESTILOS / MODIFICACIONES --- */
 
     .modal-backdrop {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -175,12 +173,12 @@
     .modal-field-group input[type="time"] { text-align: left; }
 
     .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;
-        z-index:10001; /* <<-- Asegurar que esté por encima de todo */
+        z-index:10001; 
         overflow-y:auto;
-        padding: 20px; /* Padding general */
-        padding-top: calc(60px + 20px); /* <<-- CAMBIO CLAVE: Header height (60px) + padding (20px) */
+        padding: 20px; 
+        padding-top: calc(60px + 20px); 
     }
-    .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px;} /* Ajustar márgenes */
+    .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px;} 
     .config-screen h3{color:#0cf;margin:20px 0 10px}
     .config-screen label{display:block;margin:10px 0 5px}
     .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
@@ -190,11 +188,11 @@
     .config-screen button:hover{background:#09b}
     .config-screen .close-btn{
         position:absolute;
-        top:15px; /* Ajustar posición relativa al padding-top del config-screen (60px+20px) -> 15px desde el borde del contenido*/
+        top:15px; 
         right:20px;
         font-size:1.2em;background:none;border:1px solid #0cf;
         color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer;
-        z-index: 10002; /* Encima del contenido del config screen */
+        z-index: 10002; 
     }
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
@@ -217,6 +215,33 @@
     }
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
+    
+    /* --- NUEVOS ESTILOS PARA TABLAS DE SETLIST --- */
+    #setlists table th:nth-child(3), /* Key Header */
+    #setlists table th:nth-child(4), /* Tempo Header */
+    #setlists table th:nth-child(5), /* Time Header */
+    #second-setlist table th:nth-child(3),
+    #second-setlist table th:nth-child(4),
+    #second-setlist table th:nth-child(5),
+    #star-setlist table th:nth-child(3),
+    #star-setlist table th:nth-child(4),
+    #star-setlist table th:nth-child(5) {
+        text-align: center;
+    }
+
+    #setlists table td:nth-child(3), /* Key Data */
+    #setlists table td:nth-child(4), /* Tempo Data */
+    #setlists table td:nth-child(5), /* Time Data */
+    #second-setlist table td:nth-child(3),
+    #second-setlist table td:nth-child(4),
+    #second-setlist table td:nth-child(5),
+    #star-setlist table td:nth-child(3),
+    #star-setlist table td:nth-child(4),
+    #star-setlist table td:nth-child(5) {
+        text-align: center;
+    }
+    /* --- FIN NUEVOS ESTILOS PARA TABLAS DE SETLIST --- */
+
     th.calendar-col-header, td.calendar-col { 
         width: 50px; 
         text-align: center;
@@ -263,7 +288,7 @@
     .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; }
     #connection-status {
       position: fixed; 
-      top: calc(60px + 5px); /* <<-- CAMBIO: Debajo del header fijo */
+      top: calc(60px + 5px); 
       right: 10px; 
       background: rgba(0, 0, 0, 0.8); color: #fff;
       padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none;
@@ -281,32 +306,32 @@
     #firebase-critical-error-banner {
         background-color: red; color: white; padding: 15px; text-align: center;
         position: fixed; 
-        top: 0; /* Se mostrará encima del header fijo si es necesario */
+        top: 0; 
         left: 0; width: 100%; z-index: 100001; font-weight: bold;
     }
 
     @media(max-width:768px){
-      header { height: 55px; padding: 8px 15px; } /* Header más pequeño en móviles */
+      header { height: 55px; padding: 8px 15px; } 
       .logo img.logo-main{width:120px}
       .logo-intranet{height:35px}
       .hamburger div{width:20px}
 
       .sidebar{
           width:260px; 
-          padding-top: calc(55px + 15px); /* Ajustar padding para nuevo header height */
+          padding-top: calc(55px + 15px); 
       }
       main {
-          padding-top: 65px; /* Ajustar padding para nuevo header height */
+          padding-top: 65px; 
       }
       .config-screen {
-          padding-top: calc(55px + 15px); /* Ajustar padding para nuevo header height */
+          padding-top: calc(55px + 15px); 
       }
       .config-screen .close-btn{
           top:10px; 
           right:15px;
       }
       #connection-status { 
-          top: calc(55px + 5px); /* Ajustar para nuevo header height */
+          top: calc(55px + 5px); 
           right: 5px; font-size: 0.8em; 
       }
 
@@ -314,7 +339,7 @@
       .attendance-form select { width: 100%; }
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
       
-      .table-wrapper { overflow-x: hidden; } /* Considerar si realmente quieres ocultar el scroll horizontal en tablas en móvil */
+      .table-wrapper { overflow-x: hidden; } 
       table { width: 100%; min-width: unset; font-size: 0.85em; }
       th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
       th.calendar-col-header, td.calendar-col, th.details-col-header { width: 40px; padding: 8px 2px;} 
@@ -383,7 +408,7 @@
 
         <h4>Músicos Asistentes al Concierto</h4>
         <div id="musicians-attendance-list">
-            </div>
+        </div>
         
         <button id="save-concert-details">Guardar Detalles</button>
         <button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button>
@@ -468,7 +493,18 @@
     <section id="setlists">
       <h2>Setlist Próximo Ensayo</h2>
       <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"><table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Título</th>
+              <th>Key</th>  <th>Tempo</th>
+              <th>Time</th> </tr>
+          </thead>
+          <tbody id="setlist-body"></tbody>
+        </table>
+      </div>
       <button class="download-btn" id="download-btn">Descargar PDF</button>
       <p id="total-time"></p>
     </section>
@@ -492,7 +528,18 @@
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"><table id="second-list-table"><thead><tr><th>#</th><th>Canción</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="second-body"></tbody></table></div>
+      <div class="table-wrapper">
+        <table id="second-list-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Canción</th>
+              <th>Key</th>  <th>Tempo</th>
+              <th>Time</th> </tr>
+          </thead>
+          <tbody id="second-body"></tbody>
+        </table>
+      </div>
       <button class="download-btn" id="download-btn-2">Descargar PDF</button>
       <p id="total-time-2"></p>
     </section>
@@ -500,7 +547,18 @@
     <section id="star-setlist">
       <h2>Setlist Concierto Estrella</h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"><table><thead><tr><th>#</th><th>Título</th><th>Tonalidad</th><th>Tempo</th><th>Duración</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Título</th>
+              <th>Key</th>  <th>Tempo</th>
+              <th>Time</th> </tr>
+          </thead>
+          <tbody id="star-setlist-body"></tbody>
+        </table>
+      </div>
       <button class="download-btn" id="download-btn-star">Descargar PDF</button>
       <p id="total-time-star"></p>
     </section>
@@ -520,7 +578,7 @@
 <script>
 /* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw", // Esta clave parece de ejemplo, asegúrate que sea la tuya real de un proyecto configurado
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw", 
   authDomain: "sotanointranet.firebaseapp.com",
   projectId: "sotanointranet",
   storageBucket: "sotanointranet.appspot.com", 
@@ -529,7 +587,7 @@ const firebaseConfig = {
 };
 
 if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || 
-    (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { // Condición más específica para placeholder
+    (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { 
     const banner = document.getElementById('firebase-critical-error-banner');
     if (banner) banner.style.display = 'block';
     console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");
@@ -572,13 +630,13 @@ const calculateDuration = (startTime, endTime) => {
   return duration;
 };
 const formatDateWithDay = dateStr => {
-  const date = new Date(dateStr + 'T00:00:00Z'); // Asegurar que se interprete como UTC para evitar problemas de zona horaria
+  const date = new Date(dateStr + 'T00:00:00Z'); 
   const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;
 };
 const getMonthYear = dateStr => {
-  const date = new Date(dateStr + 'T00:00:00Z'); // UTC
+  const date = new Date(dateStr + 'T00:00:00Z'); 
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 };
@@ -587,7 +645,6 @@ function generateICS(title, date, startTime, location, description = "", duratio
   const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
   const formatICSDate = d => {
     const pad = (num) => String(num).padStart(2, '0');
-    // Usar UTC para las fechas en ICS para consistencia
     return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
   };
   const startICS = formatICSDate(startDate);
@@ -699,12 +756,12 @@ async function loadSetlistConfig() {
     updateDynamicSetlistTitles();
   } catch (e) {
     console.error("Error al cargar la configuración de setlists:", e);
-    updateDynamicSetlistTitles(); // Asegurar que los títulos por defecto se muestren
+    updateDynamicSetlistTitles(); 
   }
 }
 
 async function saveSetlistConfig() {
-  updateDynamicSetlistTitles(); // Actualizar los títulos en la UI antes de guardar
+  updateDynamicSetlistTitles(); 
   return await withRetry(() => saveDoc("intranet", "setlists", { config: setlistConfig }));
 }
 
@@ -783,10 +840,9 @@ function renderUsers() {
             const userToDelete = users[userIndex];
             if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)) {
                 rehearsals.forEach(r => { if (Array.isArray(r.attendance)) { r.attendance = r.attendance.filter(a => a.name !== userToDelete.name); } });
-                // TODO: Eliminar asistencia de conciertos si se implementa
                 users.splice(userIndex, 1);
                 await saveUsers(); 
-                await saveRehearsals(); // Guardar ensayos por si se modificaron asistencias
+                await saveRehearsals(); 
                 renderStats(); 
             }
         });
@@ -806,7 +862,6 @@ async function loadUsers() {
     try {
         const data = await withRetry(() => loadDoc("intranet", "users", { users: [] }));
         users = Array.isArray(data.users) ? data.users : [];
-        // Filtrar usuarios malformados si es necesario
         users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles));
         renderUsers();
     } catch (e) { console.error("Error al cargar usuarios:", e); }
@@ -815,7 +870,7 @@ async function saveUsers() {
     try {
         await withRetry(() => saveDoc("intranet", "users", { users }));
         renderUsers(); 
-        renderRehearsals(); // Re-render ensayos por si los nombres de usuario/apodos cambiaron
+        renderRehearsals(); 
         renderStats(); 
         return true;
     } catch (e) { console.error("Error al guardar usuarios:", e); throw e; }
@@ -853,17 +908,15 @@ function renderRehearsals() {
         : `<option value="" disabled>No hay usuarios disponibles</option>`;
 
     const now = new Date();
-    // Crear una fecha "today" que solo considera año, mes y día, ignorando la hora para la comparación
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
 
     rehearsals.forEach((r, i) => {
-        // Migración de 'time' a 'startTime'/'endTime' si es necesario
         if (r.time && (!r.startTime || !r.endTime)) {
             r.startTime = r.time;
             const [hours, minutes] = r.time.split(":").map(Number);
-            const endHours = (hours + 2) % 24; // Asume 2h de ensayo
+            const endHours = (hours + 2) % 24; 
             r.endTime = `${String(endHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-            delete r.time; // Eliminar el campo obsoleto
+            delete r.time; 
         }
 
         const formattedDate = formatDateWithDay(r.date);
@@ -874,8 +927,8 @@ function renderRehearsals() {
         const summary = `<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
         tbodyConfig.insertAdjacentHTML("beforeend", `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
         
-        const rehearsalDate = new Date(r.date + 'T00:00:00Z'); // Fecha del ensayo en UTC para comparar con 'today'
-        if (rehearsalDate >= today) { // Solo mostrar ensayos de hoy en adelante
+        const rehearsalDate = new Date(r.date + 'T00:00:00Z'); 
+        if (rehearsalDate >= today) { 
             const calendarCell = `<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
             tbodyMain.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`);
         }
@@ -894,7 +947,7 @@ function renderRehearsals() {
         if (confirm("¿Estás seguro de que deseas eliminar este ensayo?")) {
             rehearsals.splice(parseInt(btn.dataset.i, 10), 1);
             await saveRehearsals();
-            renderStats(); // Actualizar estadísticas
+            renderStats(); 
         }
     });
     tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn => btn.onclick = async () => {
@@ -904,7 +957,7 @@ function renderRehearsals() {
             rehearsal.attendance = [];
             await saveRehearsals();
             document.getElementById("rehearsal-message").textContent = "Asistencias eliminadas.";
-            renderStats(); // Actualizar estadísticas
+            renderStats(); 
         }
     });
     tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => {
@@ -924,8 +977,8 @@ function renderRehearsals() {
             else rehearsal.attendance.push({ name, attending });
             try {
                 await saveRehearsals();
-                userSelect.value = ""; responseSelect.value = ""; // Resetear selects
-                renderStats(); // Actualizar estadísticas
+                userSelect.value = ""; responseSelect.value = ""; 
+                renderStats(); 
             } catch (e) { alert("Error al guardar asistencia: " + e.message); }
         };
     });
@@ -941,7 +994,7 @@ async function saveRehearsals() {
     try {
         await withRetry(() => saveDoc("intranet", "rehearsals", { rehearsals }));
         renderRehearsals();
-        renderStats(); // Asegurar que las estadísticas se actualizan al guardar ensayos
+        renderStats(); 
         return true;
     } catch (e) { console.error("Error al guardar ensayos:", e); throw e; }
 }
@@ -1094,13 +1147,13 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
             };
             img.onerror = () => reject(new Error("Error al cargar la imagen de plantilla."));
             img.src = PDF_BACKGROUND_IMAGE_PATH; 
-             if (img.complete && img.naturalHeight !== 0) { // Check if image is already loaded (e.g. from cache)
+             if (img.complete && img.naturalHeight !== 0) { 
                 const canvas = document.createElement('canvas');
                 canvas.width = img.width; canvas.height = img.height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
                 resolve(canvas.toDataURL('image/png'));
-            } else if (img.complete && img.naturalHeight === 0) { // Cached but broken
+            } else if (img.complete && img.naturalHeight === 0) { 
                 reject(new Error("Imagen de plantilla en caché pero inválida."));
             }
         });
@@ -1119,18 +1172,18 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     let currentY = contentMarginTop;
 
     doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
-    if (!bleedingCowboysRegistered) doc.setFontType("bold"); // Fallback
+    if (!bleedingCowboysRegistered) doc.setFontType("bold"); 
     doc.setFontSize(28); 
     doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
     currentY += 28 + 10; 
 
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
-    if (!carnevaleeRegistered) doc.setFontType("bold"); // Fallback
+    if (!carnevaleeRegistered) doc.setFontType("bold"); 
     doc.setFontSize(22); 
     doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
     currentY += 22 + 5;
 
-    doc.setFont("times", "italic"); // Usar una fuente estándar para este texto
+    doc.setFont("times", "italic"); 
     doc.setFontSize(10);
     const totalSongsText = `${songs.length} canciones`;
     const totalTimeValue = songs.reduce((a, s) => a + parseDuration(s.duration), 0);
@@ -1138,7 +1191,7 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
-    const tableFont = "helvetica"; // Fuente estándar para la tabla
+    const tableFont = "helvetica"; 
     const tableHeadFont = "helvetica";
 
     const tableBody = songs.map((s, i) => [
@@ -1151,7 +1204,7 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
 
     doc.autoTable({
         startY: currentY,
-        head: [["#", "Título", "Key", "Tempo", "Time"]], 
+        head: [["#", "Título", "Key", "Tempo", "Time"]], // <<-- CAMBIO AQUÍ
         body: tableBody,
         theme: 'grid', 
         headStyles: { 
@@ -1176,14 +1229,13 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
         columnStyles: {
             0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
             1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   
-            2: { halign: 'center', cellWidth: 60, fontSize: 9 },  
-            3: { halign: 'center', cellWidth: 60, fontSize: 9 },  
-            4: { halign: 'center', cellWidth: 60, fontSize: 9 }   
+            2: { halign: 'center', cellWidth: 60, fontSize: 9 },  // Key
+            3: { halign: 'center', cellWidth: 60, fontSize: 9 },  // Tempo
+            4: { halign: 'center', cellWidth: 60, fontSize: 9 }   // Time
         },
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
         didDrawPage: function (data) {
-            // Podrías añadir números de página o re-dibujar el fondo si es necesario
         }
     });
     doc.save(`${cleanFileName}.pdf`); 
@@ -1221,18 +1273,18 @@ function processBandHelperTable() {
   if(loadingMessage) loadingMessage.style.display = "none"; 
 
   if (table.dataset.processed === "true") { 
-      return; // Evitar reprocesar
+      return; 
   }
   table.dataset.processed = "true";
 
   let headerRow = table.querySelector("thead tr"); 
   const desiredHeaders = ["Fecha/Hora", "Evento", "Lugar", "Cal", "Info"]; 
 
-  if (!table.tHead) { // Crear thead si no existe
+  if (!table.tHead) { 
       table.createTHead();
   }
-  headerRow = table.tHead.rows[0] || table.tHead.insertRow(0); // Obtener o crear la fila del header
-  headerRow.innerHTML = ''; // Limpiar headers existentes
+  headerRow = table.tHead.rows[0] || table.tHead.insertRow(0); 
+  headerRow.innerHTML = ''; 
   desiredHeaders.forEach(text => {
       const th = document.createElement('th');
       th.textContent = text;
@@ -1241,16 +1293,14 @@ function processBandHelperTable() {
       headerRow.appendChild(th);
   });
   
-  const dataRowsSource = table.querySelector("tbody") ? Array.from(table.querySelectorAll("tbody tr")) : []; // Convertir a Array para evitar problemas con NodeList viva
+  const dataRowsSource = table.querySelector("tbody") ? Array.from(table.querySelectorAll("tbody tr")) : []; 
   
   dataRowsSource.forEach((row) => {
-    const originalCells = Array.from(row.cells); // Copiar celdas originales
-    row.innerHTML = ''; // Limpiar la fila para reconstruirla
+    const originalCells = Array.from(row.cells); 
+    row.innerHTML = ''; 
 
-    // Extraer datos con más cuidado, manejando posibles undefined
     const dateCellFullText = originalCells[0]?.textContent.trim() || "";
     const eventTitleFromCell = originalCells[1]?.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
-    // Intentar obtener la ubicación de la columna de Lugar, y si no, de la de Pago/Notas
     const locationText = originalCells[3]?.textContent.trim().split('\n')[0].trim() || originalCells[2]?.textContent.trim().split('\n')[0].trim() || "";
 
     row.insertCell().textContent = dateCellFullText;    
@@ -1258,49 +1308,46 @@ function processBandHelperTable() {
     row.insertCell().textContent = locationText;       
 
     const calendarDisplayCell = row.insertCell();
-    calendarDisplayCell.className = "calendar-col"; // Para estilos de ancho
+    calendarDisplayCell.className = "calendar-col"; 
     calendarDisplayCell.style.textAlign = "center";
 
     const detailDisplayCell = row.insertCell();
-    detailDisplayCell.className = "details-col-header"; // Usar la misma clase que el header para el ancho
+    detailDisplayCell.className = "details-col-header"; 
     detailDisplayCell.style.textAlign = "center";
 
-    const dateForId = dateCellFullText.split(',')[0].trim(); // Solo la fecha para el ID
+    const dateForId = dateCellFullText.split(',')[0].trim(); 
     const concertId = sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
     
     const detailsBtn = document.createElement("button");
     detailsBtn.className = "details-btn";
-    detailsBtn.innerHTML = "➡️"; // O un ícono SVG/FontAwesome
+    detailsBtn.innerHTML = "➡️"; 
     detailsBtn.title = "Ver/Editar Detalles del Concierto";
     detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellFullText, eventTitleFromCell, locationText); 
     detailDisplayCell.appendChild(detailsBtn);
 
-    // Lógica para el botón de calendario (ICS)
-    let icsDate = new Date().toISOString().split('T')[0]; // Fecha por defecto (hoy)
-    let startTimeForICS = "20:00"; // Hora por defecto
-    let durationSecondsForICS = 2 * 3600; // Duración por defecto (2 horas)
+    let icsDate = new Date().toISOString().split('T')[0]; 
+    let startTimeForICS = "20:00"; 
+    let durationSecondsForICS = 2 * 3600; 
 
-    // Parsear fecha: dd/mm/yy
     const dateMatch = dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/); 
     if (dateMatch) {
         let year = parseInt(dateMatch[3], 10);
-        year += (year < 70 ? 2000 : 1900); // Asumir siglo XXI para años < 70
-        icsDate = `${year}-${dateMatch[2]}-${dateMatch[1]}`; // Formato YYYY-MM-DD
+        year += (year < 70 ? 2000 : 1900); 
+        icsDate = `${year}-${dateMatch[2]}-${dateMatch[1]}`; 
     }
 
-    // Parsear hora (rango o simple)
     const timeRangeMatch = dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/); 
-    const singleTimeMatch = dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/); // Hora después de la coma
+    const singleTimeMatch = dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/); 
 
     if (timeRangeMatch) {
         startTimeForICS = timeRangeMatch[1];
         durationSecondsForICS = calculateDuration(timeRangeMatch[1], timeRangeMatch[2]);
-        if (durationSecondsForICS <= 0) durationSecondsForICS = 2 * 3600; // Fallback si la duración es inválida
+        if (durationSecondsForICS <= 0) durationSecondsForICS = 2 * 3600; 
     } else if (singleTimeMatch) {
         startTimeForICS = singleTimeMatch[1];
     }
     
-    const locationForICS = locationText || eventTitleFromCell; // Usar título si no hay lugar
+    const locationForICS = locationText || eventTitleFromCell; 
     const descriptionForICS = `Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;
 
     const calendarBtn = document.createElement('button');
@@ -1322,7 +1369,7 @@ const concertDetailModal = document.getElementById('concert-details-modal');
 const concertDetailMessage = document.getElementById('concert-detail-message');
 async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
     concertDetailMessage.textContent = ""; 
-    concertDetailMessage.className = "success-message"; // Resetear clase
+    concertDetailMessage.className = "success-message"; 
 
     document.getElementById('concert-detail-id').value = concertId;
     const concertTitleDisplay = document.getElementById('concert-detail-title-display');
@@ -1331,7 +1378,6 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
         concertTitleDisplay.innerHTML = `${decodeHtmlEntities(concertTitle) || "Título no disponible"} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`; 
     }
     
-    // Limpiar campos del modal
     document.getElementById('concert-detail-location').value = '';
     document.getElementById('concert-detail-soundsetup').value = ''; 
     document.getElementById('concert-detail-instrumentssetup').value = ''; 
@@ -1342,21 +1388,21 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando músicos...';
 
-    const excludedMusicians = ["Ximo", "Ginés Torres"]; // Nombres a excluir
+    const excludedMusicians = ["Ximo", "Ginés Torres"]; 
 
     if (users && users.length > 0) {
-        musiciansListDiv.innerHTML = ''; // Limpiar antes de añadir
-        users.filter(user => !excludedMusicians.includes(user.name)) // Excluir músicos específicos
+        musiciansListDiv.innerHTML = ''; 
+        users.filter(user => !excludedMusicians.includes(user.name)) 
              .forEach(user => {
                 const userDiv = document.createElement('div');
-                const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`; // ID único
+                const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`; 
                 userDiv.innerHTML = `
                     <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}">
                     <label for="${checkboxId}">${user.name} (${user.nickname})</label>
                 `;
                 musiciansListDiv.appendChild(userDiv);
         });
-        if (musiciansListDiv.children.length === 0) { // Si después de filtrar no quedan músicos
+        if (musiciansListDiv.children.length === 0) { 
             musiciansListDiv.innerHTML = 'No hay otros músicos para listar.';
         }
     } else { 
@@ -1365,7 +1411,7 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
 
     try {
         console.log("Abriendo modal para concertId:", concertId);
-        const details = await withRetry(() => loadDoc('concert_details', concertId, {})); // Usar withRetry
+        const details = await withRetry(() => loadDoc('concert_details', concertId, {})); 
         
         if (details && Object.keys(details).length > 0) { 
             console.log("Detalles cargados desde Firestore:", details);
@@ -1378,7 +1424,6 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             
             if (details.attendees && Array.isArray(details.attendees)) {
                 details.attendees.forEach(attendeeName => {
-                    // Buscar por 'value' que es el nickname
                     const checkbox = musiciansListDiv.querySelector(`input[value="${attendeeName}"]`); 
                     if (checkbox) {
                         checkbox.checked = true;
@@ -1408,7 +1453,7 @@ document.getElementById('save-concert-details').onclick = async () => {
 
     const selectedAttendees = [];
     document.querySelectorAll('#musicians-attendance-list input[type="checkbox"]:checked').forEach(checkbox => { 
-        selectedAttendees.push(checkbox.value); // Guardar el valor (nickname)
+        selectedAttendees.push(checkbox.value); 
     });
 
     const concertData = {
@@ -1418,14 +1463,14 @@ document.getElementById('save-concert-details').onclick = async () => {
         soundcheckTime: document.getElementById('concert-detail-soundcheck').value,
         showTime: document.getElementById('concert-detail-showtime').value,
         generalNotes: document.getElementById('concert-detail-notes').value.trim(),
-        attendees: selectedAttendees, // Guardar nicknames
+        attendees: selectedAttendees, 
         lastUpdated: new Date().toISOString() 
     };
 
     console.log("Intentando guardar en Firestore. Documento ID:", concertId, "Datos:", concertData);
 
     try {
-        await withRetry(() => saveDoc('concert_details', concertId, concertData, true)); // Usar withRetry 
+        await withRetry(() => saveDoc('concert_details', concertId, concertData, true)); 
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente.";
     } catch (error) {
@@ -1442,10 +1487,10 @@ document.getElementById('close-concert-details-modal').onclick = () => {
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
 const PASSWORD = "Sotano2014"; 
 let isAuthenticated = false;
-function closeAll() { // Esta función es crucial para la nueva UI
+function closeAll() { 
     document.querySelectorAll(".config-screen, .modal-backdrop").forEach(s => {
-        s.classList.remove("show"); // Para modales que usan .show para display:flex
-        s.style.display = "none"; // Para config-screens que usan display:block
+        s.classList.remove("show"); 
+        s.style.display = "none"; 
     });
     sidebar.classList.remove("show");
     overlay.classList.remove("show");
@@ -1463,13 +1508,12 @@ const setupMenuLink = (menuId, targetId) => {
     if (link) {
         link.onclick = e => {
             e.preventDefault();
-            closeAll(); // Cerrar el menú y overlay antes de navegar
+            closeAll(); 
             const targetElement = document.getElementById(targetId);
             if (targetElement) { 
-                // Ajustar el scroll para tener en cuenta el header fijo
                 const headerOffset = document.querySelector('header').offsetHeight || 60;
                 const elementPosition = targetElement.getBoundingClientRect().top;
-                const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; // 10px de margen extra
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; 
 
                 window.scrollTo({
                      top: offsetPosition,
@@ -1493,10 +1537,10 @@ document.getElementById("menu-config").onclick = e => {
         const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
         if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
             isAuthenticated = true;
-            submenu.style.display = submenu.style.display === "block" ? "none" : "block"; // Toggle
+            submenu.style.display = submenu.style.display === "block" ? "none" : "block"; 
         } else { alert("Contraseña incorrecta."); return; }
     } else { 
-        submenu.style.display = submenu.style.display === "block" ? "none" : "block"; // Toggle
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block"; 
     }
 };
 
@@ -1507,14 +1551,13 @@ const openConfigScreen = (screenId) => {
         else { alert("Contraseña incorrecta."); return false; }
     }
     if (isAuthenticated || screenId === 'user-list-screen' || screenId === 'stats-screen') {
-        closeAll(); // Cerrar sidebar y cualquier otra pantalla abierta
+        closeAll(); 
         const screen = document.getElementById(screenId);
         if (screen) {
-            screen.style.display = "block"; // Mostrar la pantalla de configuración
+            screen.style.display = "block"; 
             if (screenId === 'user-list-screen') { 
-                renderUsers(); // Actualizar lista de usuarios
+                renderUsers(); 
             }
-            // Asegurar que el scroll de la pantalla de config esté al inicio
             screen.scrollTop = 0; 
         } else {
              console.error(`Pantalla ${screenId} no encontrada.`);
@@ -1552,7 +1595,7 @@ document.getElementById("guardar-setlist-config").onclick = async () => {
         setlistConfig.setlistStar={name:nStar, url:uStar};
         await saveSetlistConfig();
         await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
-        document.getElementById("setlist-config-screen").style.display="none"; // Cerrar al guardar
+        document.getElementById("setlist-config-screen").style.display="none"; 
     } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message; }
 };
 
@@ -1571,12 +1614,11 @@ document.getElementById("add-user").onclick = async () => {
         if(editingUserIndex!==null){
             const oldName = users[editingUserIndex].name;
             users[editingUserIndex]={name,nickname,roles};
-            // Si el nombre cambia, actualizar en asistencias
             if(oldName!==name){ rehearsals.forEach(r=>{ if(Array.isArray(r.attendance)){r.attendance.forEach(a=>{if(a.name===oldName)a.name=name;});}}); await saveRehearsals(); }
             msg.textContent="Usuario actualizado.";
         } else { users.push({name,nickname,roles}); msg.textContent="Usuario añadido."; }
         await saveUsers();
-        msg.className="success-message"; // Cambiar clase para éxito
+        msg.className="success-message"; 
         resetUserForm();
     } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message; }
 };
@@ -1594,14 +1636,14 @@ document.getElementById("add-rehearsal").onclick = async () => {
     if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return;}
     if(calculateDuration(startTime,endTime)<=0){msg.className="error-message";msg.textContent="Hora fin posterior a inicio.";return;}
     try{
-        const newData={date,startTime,endTime,location:loc,attendance:[]}; // Iniciar asistencia vacía
+        const newData={date,startTime,endTime,location:loc,attendance:[]}; 
         if(editingRehearsalIndex!==null){
-            newData.attendance=rehearsals[editingRehearsalIndex].attendance||[]; // Mantener asistencias si se edita
+            newData.attendance=rehearsals[editingRehearsalIndex].attendance||[]; 
             rehearsals[editingRehearsalIndex]=newData;
             msg.textContent="Ensayo actualizado.";
         } else { rehearsals.push(newData); msg.textContent="Ensayo añadido."; }
         await saveRehearsals();
-        msg.className="success-message"; // Cambiar clase para éxito
+        msg.className="success-message"; 
         resetRehearsalForm();
     } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message;}
 };
@@ -1635,7 +1677,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay canciones en Setlist Próx. Concierto."); };
   document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay canciones en Setlist Estrella."); };
   
-  // Dar un poco más de tiempo para que el widget de BandHelper cargue
   setTimeout(processBandHelperTable, 2000); 
 });
 </script>
