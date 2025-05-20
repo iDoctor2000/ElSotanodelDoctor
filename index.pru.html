@@ -451,10 +451,8 @@ const toHHMM = s => {
   return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 };
 const toHours = s => (s / 3600).toFixed(2);
-// La función clean original eliminaba caracteres como la ñ. La modificamos o eliminamos su uso donde sea necesario.
-// Por ahora, no la usaremos para los datos que van al PDF, ya que queremos que jsPDF maneje la codificación.
-// const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim(); 
-const cleanForDisplay = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim(); // Para uso en HTML si es necesario
+// No usaremos clean() para los datos del PDF para preservar caracteres especiales.
+const cleanForDisplay = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim(); 
 
 const calculateDuration = (startTime, endTime) => {
   if (!startTime || !endTime) return 0;
@@ -463,7 +461,7 @@ const calculateDuration = (startTime, endTime) => {
   const startSeconds = startH * 3600 + startM * 60;
   const endSeconds = endH * 3600 + endM * 60;
   let duration = endSeconds - startSeconds;
-  if (duration < 0) duration += 24 * 3600; // Cruza la medianoche
+  if (duration < 0) duration += 24 * 3600; 
   return duration;
 };
 const formatDateWithDay = dateStr => {
@@ -503,6 +501,8 @@ function generateICS(title, date, startTime, location, description = "", duratio
   URL.revokeObjectURL(url);
 }
 const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
+const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, '_');
+
 
 /* ---------- 1.5. Manejo de conexión ---------- */
 const connectionStatus = document.getElementById("connection-status");
@@ -617,7 +617,6 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     songs.forEach((s, i) => {
       const secs = parseDuration(s.duration || "0");
       total += secs;
-      // Usar cleanForDisplay para el HTML, no para los datos que van al PDF
       tbody.insertAdjacentHTML("beforeend",
         `<tr><td>${i + 1}</td><td>${s.name || "Sin título"}</td><td>${s.key || "-"}</td><td>${s.tempo || "-"}</td><td>${toMMSS(secs)}</td></tr>`
       );
@@ -906,13 +905,12 @@ function renderStats() {
 const fontDataCache = {};
 const PDF_FONT_PATHS = {
     bleedingCowboys: 'assets/Bleeding_Cowboys.ttf',
-    carnevalee: 'assets/Carnevalee_Freakshow.ttf',
-    // chalkBoard: 'assets/Chalk_Board.ttf' // No se usará Chalk_Board para la tabla por problemas de caracteres
+    carnevalee: 'assets/Carnevalee_Freakshow.ttf'
+    // No incluimos Chalk_Board aquí ya que usaremos Helvetica para la tabla
 };
 const PDF_FONT_NAMES = {
     bleedingCowboys: "BleedingCowboysCustom",
-    carnevalee: "CarnevaleeCustom",
-    // chalkBoard: "ChalkBoardCustom" 
+    carnevalee: "CarnevaleeCustom"
 };
 const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png';
 
@@ -959,12 +957,16 @@ async function registerFontWithDoc(doc, fontPath, fontVFSAlias, fontNameInDoc) {
     return false; 
 }
 
-async function genPDF(songs, setlistTitle, fileName) {
+async function genPDF(songs, setlistTitle, rawFileName) { // rawFileName es el título del setlist
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
+    // Limpiar el nombre del archivo
+    const cleanFileName = sanitizeForPdfFilename(rawFileName) || "setlist";
+
+
     let bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
     let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
 
@@ -1006,14 +1008,14 @@ async function genPDF(songs, setlistTitle, fileName) {
 
     doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
     if (!bleedingCowboysRegistered) doc.setFontType("bold");
-    doc.setFontSize(28); // Aumentado
+    doc.setFontSize(28); 
     doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
     currentY += 28 + 10; 
 
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
     if (!carnevaleeRegistered) doc.setFontType("bold");
-    doc.setFontSize(22); // Aumentado
-    doc.text(setlistTitle, pageWidth / 2, currentY, { align: "center" });
+    doc.setFontSize(22); 
+    doc.text(setlistTitle, pageWidth / 2, currentY, { align: "center" }); // Usar el título del setlist pasado
     currentY += 22 + 5;
 
     doc.setFont("times", "italic");
@@ -1032,23 +1034,23 @@ async function genPDF(songs, setlistTitle, fileName) {
         head: [["#", "Título", "Key", "Tempo", "Time"]], // Nombres de columna actualizados
         body: songs.map((s, i) => [
             i + 1, 
-            s.name || "", // No usar clean() aquí para preservar caracteres
+            s.name || "", 
             s.key || "", 
             s.tempo || "", 
             toMMSS(parseDuration(s.duration))
         ]),
         theme: 'grid', 
         headStyles: { 
-            fillColor: [220, 220, 220], // Fondo gris claro para cabeceras
-            textColor: [0, 0, 0],    // Texto negro para cabeceras
+            fillColor: [220, 220, 220], 
+            textColor: [0, 0, 0],    
             font: tableHeadFont, 
             fontStyle: 'bold',
             halign: 'center',
-            fontSize: 10 // Tamaño reducido para cabeceras
+            fontSize: 10 // Tamaño reducido
         },
         styles: { 
             font: tableFont, 
-            fontSize: 9, // Tamaño base para datos de la tabla
+            fontSize: 9, 
             cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
             lineColor: [80, 80, 80], 
             lineWidth: 0.5,
@@ -1058,17 +1060,17 @@ async function genPDF(songs, setlistTitle, fileName) {
             fillColor: [248, 248, 248] 
         },
         columnStyles: {
-            0: { halign: 'center', cellWidth: 25, fontSize: 9 }, // #
-            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   // Título (tamaño aumentado)
-            2: { halign: 'center', cellWidth: 60, fontSize: 9 },  // Key
-            3: { halign: 'center', cellWidth: 60, fontSize: 9 },  // Tempo
-            4: { halign: 'center', cellWidth: 60, fontSize: 9 }   // Time
+            0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
+            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   // Título de canción más grande
+            2: { halign: 'center', cellWidth: 60, fontSize: 9 },  
+            3: { halign: 'center', cellWidth: 60, fontSize: 9 },  
+            4: { halign: 'center', cellWidth: 60, fontSize: 9 }   
         },
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
         didDrawPage: function (data) {}
     });
-    doc.save(fileName + ".pdf"); // Asegurar extensión .pdf
+    doc.save(`${cleanFileName}.pdf`); // Usar el nombre del setlist para el archivo
 }
 
 
@@ -1488,9 +1490,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   try { songs2 = await cargarSegundoSetlist(); } catch (e) { console.error("Fallo carga Setlist Próx. Concierto:", e); }
   try { songsStar = await cargarStarSetlist(); } catch (e) { console.error("Fallo carga Setlist Estrella:", e); }
 
-  document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf"); else alert("No hay canciones en Setlist Ensayo."); };
-  document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_prox_concierto.pdf"); else alert("No hay canciones en Setlist Próx. Concierto."); };
-  document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, "setlist_estrella.pdf"); else alert("No hay canciones en Setlist Estrella."); };
+  document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay canciones en Setlist Ensayo."); };
+  document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay canciones en Setlist Próx. Concierto."); };
+  document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay canciones en Setlist Estrella."); };
   
   setTimeout(processBandHelperTable, 1500); 
 });
