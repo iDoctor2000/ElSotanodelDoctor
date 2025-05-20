@@ -451,7 +451,15 @@ const toHHMM = s => {
   return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 };
 const toHours = s => (s / 3600).toFixed(2);
-const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
+
+// Función para decodificar entidades HTML (necesaria si los datos del feed vienen así)
+function decodeHtmlEntities(text) {
+    if (typeof text !== 'string') return text;
+    const textArea = document.createElement('textarea');
+    textArea.innerHTML = text;
+    return textArea.value;
+}
+
 const calculateDuration = (startTime, endTime) => {
   if (!startTime || !endTime) return 0;
   const [startH, startM] = startTime.split(":").map(Number);
@@ -459,7 +467,7 @@ const calculateDuration = (startTime, endTime) => {
   const startSeconds = startH * 3600 + startM * 60;
   const endSeconds = endH * 3600 + endM * 60;
   let duration = endSeconds - startSeconds;
-  if (duration < 0) duration += 24 * 3600; // Cruza la medianoche
+  if (duration < 0) duration += 24 * 3600; 
   return duration;
 };
 const formatDateWithDay = dateStr => {
@@ -499,6 +507,8 @@ function generateICS(title, date, startTime, location, description = "", duratio
   URL.revokeObjectURL(url);
 }
 const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
+const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|#$.[\]]/g, '_').replace(/\s+/g, '_');
+
 
 /* ---------- 1.5. Manejo de conexión ---------- */
 const connectionStatus = document.getElementById("connection-status");
@@ -613,8 +623,9 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     songs.forEach((s, i) => {
       const secs = parseDuration(s.duration || "0");
       total += secs;
+      // Usar el nombre de la canción directamente, sin clean() para el PDF
       tbody.insertAdjacentHTML("beforeend",
-        `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
+        `<tr><td>${i + 1}</td><td>${s.name || "Sin título"}</td><td>${s.key || "-"}</td><td>${s.tempo || "-"}</td><td>${toMMSS(secs)}</td></tr>`
       );
     });
     document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(total);
@@ -898,21 +909,22 @@ function renderStats() {
 }
 
 /* ---------- 9. PDF ---------- */
-// Caché global para los datos de las fuentes en Base64
 const fontDataCache = {};
-
-const BLEEDING_COWBOYS_FONT_NAME_IN_PDF = "BleedingCowboysCustom"; 
-const CHALK_BOARD_FONT_NAME_IN_PDF = "ChalkBoardCustom";
-const CARNEVALEE_FONT_NAME_IN_PDF = "CarnevaleeCustom"; 
+const PDF_FONT_PATHS = {
+    bleedingCowboys: 'assets/Bleeding_Cowboys.ttf',
+    carnevalee: 'assets/Carnevalee_Freakshow.ttf'
+};
+const PDF_FONT_NAMES = {
+    bleedingCowboys: "BleedingCowboysCustom",
+    carnevalee: "CarnevaleeCustom"
+};
 const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png';
 
 async function loadFontAsBase64(fontPath) {
     if (fontDataCache[fontPath]) {
-        // console.log(`Fuente ${fontPath} ya estaba en caché.`);
         return fontDataCache[fontPath];
     }
     try {
-        // console.log(`Cargando fuente ${fontPath} desde el servidor...`);
         const response = await fetch(fontPath);
         if (!response.ok) {
             throw new Error(`No se pudo cargar la fuente: ${response.statusText} (URL: ${fontPath})`);
@@ -921,69 +933,47 @@ async function loadFontAsBase64(fontPath) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                const base64 = reader.result.split(',')[1];
-                fontDataCache[fontPath] = base64; // Guardar en caché
-                // console.log(`Fuente ${fontPath} cargada y convertida a Base64.`);
-                resolve(base64);
+                fontDataCache[fontPath] = reader.result.split(',')[1];
+                resolve(fontDataCache[fontPath]);
             };
-            reader.onerror = (error) => {
-                console.error("Error del FileReader:", error);
-                reject(new Error("Error del FileReader al convertir fuente a Base64."));
-            };
+            reader.onerror = (error) => reject(new Error("Error del FileReader al convertir fuente a Base64: " + error.message));
             reader.readAsDataURL(blob);
         });
     } catch (error) {
         console.error(`Error crítico cargando la fuente ${fontPath}:`, error);
-        fontDataCache[fontPath] = null; // Marcar como fallida en caché para no reintentar innecesariamente
+        fontDataCache[fontPath] = null; 
         return null; 
     }
 }
 
-async function genPDF(songs, title, fileName) {
+async function registerFontWithDoc(doc, fontPath, fontVFSAlias, fontNameInDoc) {
+    const fontBase64 = await loadFontAsBase64(fontPath);
+    if (fontBase64) {
+        try {
+            doc.addFileToVFS(fontVFSAlias, fontBase64); 
+            doc.addFont(fontVFSAlias, fontNameInDoc, 'normal'); 
+            console.log(`Fuente ${fontNameInDoc} registrada en jsPDF desde ${fontPath}.`);
+            return true; 
+        } catch (fontError) {
+            console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`, fontError);
+        }
+    } else {
+        console.warn(`No se pudo cargar la fuente ${fontPath} para registrarla.`);
+    }
+    return false; 
+}
+
+async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    let bleedingCowboysRegistered = false;
-    let chalkBoardRegistered = false;
-    let carnevaleeRegistered = false;
+    const cleanFileName = sanitizeForPdfFilename(rawFileNameForPdf) || "setlist";
 
-    // Cargar y registrar Bleeding Cowboys
-    const fontFileBC = 'assets/Bleeding_Cowboys.ttf';
-    const fontBase64BC = await loadFontAsBase64(fontFileBC);
-    if (fontBase64BC) {
-        try {
-            doc.addFileToVFS(fontFileBC, fontBase64BC); // Usar el nombre de archivo como nombre en VFS
-            doc.addFont(fontFileBC, BLEEDING_COWBOYS_FONT_NAME_IN_PDF, 'normal');
-            bleedingCowboysRegistered = true;
-            console.log(`Fuente ${BLEEDING_COWBOYS_FONT_NAME_IN_PDF} registrada con la instancia actual del PDF.`);
-        } catch (e) { console.error(`Error registrando ${BLEEDING_COWBOYS_FONT_NAME_IN_PDF}:`, e); }
-    }
-
-    // Cargar y registrar Chalk Board
-    const fontFileCB = 'assets/Chalk_Board.ttf';
-    const fontBase64CB = await loadFontAsBase64(fontFileCB);
-    if (fontBase64CB) {
-        try {
-            doc.addFileToVFS(fontFileCB, fontBase64CB);
-            doc.addFont(fontFileCB, CHALK_BOARD_FONT_NAME_IN_PDF, 'normal');
-            chalkBoardRegistered = true;
-            console.log(`Fuente ${CHALK_BOARD_FONT_NAME_IN_PDF} registrada con la instancia actual del PDF.`);
-        } catch (e) { console.error(`Error registrando ${CHALK_BOARD_FONT_NAME_IN_PDF}:`, e); }
-    }
-    
-    // Cargar y registrar Carnevalee Freakshow
-    const fontFileCF = 'assets/Carnevalee_Freakshow.ttf';
-    const fontBase64CF = await loadFontAsBase64(fontFileCF);
-    if (fontBase64CF) {
-        try {
-            doc.addFileToVFS(fontFileCF, fontBase64CF);
-            doc.addFont(fontFileCF, CARNEVALEE_FONT_NAME_IN_PDF, 'normal');
-            carnevaleeRegistered = true;
-            console.log(`Fuente ${CARNEVALEE_FONT_NAME_IN_PDF} registrada con la instancia actual del PDF.`);
-        } catch (e) { console.error(`Error registrando ${CARNEVALEE_FONT_NAME_IN_PDF}:`, e); }
-    }
+    let bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
+    let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
+    // No cargamos Chalk_Board, usaremos Helvetica para la tabla
 
     try {
         const imgData = await new Promise((resolve, reject) => {
@@ -1013,26 +1003,25 @@ async function genPDF(songs, title, fileName) {
         doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S'); 
         doc.setFontSize(10); doc.setTextColor(150,0,0); 
         doc.text("Advertencia: No se pudo cargar la plantilla de fondo.", pageWidth / 2, pageHeight / 2, { align: "center" });
-        doc.setTextColor(0,0,0); 
     }
 
+    doc.setTextColor(0, 0, 0); 
     const contentMarginTop = 120; 
     const contentMarginSides = 60; 
     const contentMarginBottom = 100; 
     let currentY = contentMarginTop;
 
-    doc.setFont(bleedingCowboysRegistered ? BLEEDING_COWBOYS_FONT_NAME_IN_PDF : "times", 'normal');
-    if (!bleedingCowboysRegistered && doc.getFont().fontName !== "times") doc.setFont("times", "bold"); // Asegurar fallback si la fuente no cargó
-    doc.setFontSize(22); 
-    doc.setTextColor(0, 0, 0); 
+    doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
+    if (!bleedingCowboysRegistered) doc.setFontType("bold");
+    doc.setFontSize(28); 
     doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
-    currentY += 22 + 10; 
+    currentY += 28 + 10; 
 
-    doc.setFont(carnevaleeRegistered ? CARNEVALEE_FONT_NAME_IN_PDF : "times", 'normal');
-    if (!carnevaleeRegistered && doc.getFont().fontName !== "times") doc.setFont("times", "bold");
-    doc.setFontSize(18); 
-    doc.text(title, pageWidth / 2, currentY, { align: "center" });
-    currentY += 18 + 5;
+    doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
+    if (!carnevaleeRegistered) doc.setFontType("bold");
+    doc.setFontSize(22); 
+    doc.text(setlistDynamicName, pageWidth / 2, currentY, { align: "center" }); // Usar el título del setlist pasado
+    currentY += 22 + 5;
 
     doc.setFont("times", "italic");
     doc.setFontSize(10);
@@ -1042,54 +1031,54 @@ async function genPDF(songs, title, fileName) {
     doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
-    const tableFontToUse = chalkBoardRegistered ? CHALK_BOARD_FONT_NAME_IN_PDF : "helvetica";
-    const tableHeadFontToUse = chalkBoardRegistered ? CHALK_BOARD_FONT_NAME_IN_PDF : "helvetica";
+    const tableFont = "helvetica"; 
+    const tableHeadFont = "helvetica";
+
+    // Preparar datos para la tabla, decodificando entidades HTML
+    const tableBody = songs.map((s, i) => [
+        i + 1, 
+        decodeHtmlEntities(s.name || ""), // Decodificar nombre de canción
+        decodeHtmlEntities(s.key || ""), 
+        decodeHtmlEntities(s.tempo || ""), 
+        toMMSS(parseDuration(s.duration))
+    ]);
 
     doc.autoTable({
         startY: currentY,
-        head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
-        body: songs.map((s, i) => [
-            i + 1, 
-            s.name || "", 
-            s.key || "", 
-            s.tempo || "", 
-            toMMSS(parseDuration(s.duration))
-        ]),
+        head: [["#", "Título", "Key", "Tempo", "Time"]], 
+        body: tableBody,
         theme: 'grid', 
         headStyles: { 
-            fillColor: [50, 50, 50], 
-            textColor: [255, 255, 255], 
-            font: tableHeadFontToUse, 
-            fontStyle: 'normal',
+            fillColor: [220, 220, 220], 
+            textColor: [0, 0, 0],    
+            font: tableHeadFont, 
+            fontStyle: 'bold',
             halign: 'center',
-            fontSize: chalkBoardRegistered ? 11 : 10 // Ajustar tamaño si es Chalkboard
+            fontSize: 10 
         },
         styles: { 
-            font: tableFontToUse, 
-            fontSize: chalkBoardRegistered ? 10 : 9, // Ajustar tamaño si es Chalkboard
+            font: tableFont, 
+            fontSize: 9, 
             cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
             lineColor: [80, 80, 80], 
             lineWidth: 0.5,
             textColor: [0,0,0], 
         },
         alternateRowStyles: { 
-            fillColor: [235, 235, 235] 
+            fillColor: [248, 248, 248] 
         },
         columnStyles: {
-            0: { halign: 'center', cellWidth: 25 }, 
-            1: { halign: 'left', cellWidth: 'auto' },   
-            2: { halign: 'center', cellWidth: 60 },  
-            3: { halign: 'center', cellWidth: 60 },  
-            4: { halign: 'center', cellWidth: 60 }   
+            0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
+            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   
+            2: { halign: 'center', cellWidth: 60, fontSize: 9 },  
+            3: { halign: 'center', cellWidth: 60, fontSize: 9 },  
+            4: { halign: 'center', cellWidth: 60, fontSize: 9 }   
         },
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
-        didDrawPage: function (data) {
-            // El pie de página está en la plantilla de imagen
-        }
+        didDrawPage: function (data) {}
     });
-
-    doc.save(fileName);
+    doc.save(`${cleanFileName}.pdf`); 
 }
 
 
@@ -1509,9 +1498,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   try { songs2 = await cargarSegundoSetlist(); } catch (e) { console.error("Fallo carga Setlist Próx. Concierto:", e); }
   try { songsStar = await cargarStarSetlist(); } catch (e) { console.error("Fallo carga Setlist Estrella:", e); }
 
-  document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf"); else alert("No hay canciones en Setlist Ensayo."); };
-  document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_prox_concierto.pdf"); else alert("No hay canciones en Setlist Próx. Concierto."); };
-  document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, "setlist_estrella.pdf"); else alert("No hay canciones en Setlist Estrella."); };
+  document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay canciones en Setlist Ensayo."); };
+  document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay canciones en Setlist Próx. Concierto."); };
+  document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay canciones en Setlist Estrella."); };
   
   setTimeout(processBandHelperTable, 1500); 
 });
