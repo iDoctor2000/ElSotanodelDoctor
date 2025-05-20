@@ -902,12 +902,12 @@ const fontDataCache = {};
 const PDF_FONT_PATHS = {
     bleedingCowboys: 'assets/Bleeding_Cowboys.ttf',
     carnevalee: 'assets/Carnevalee_Freakshow.ttf',
-    chalkBoard: 'assets/Chalk_Board.ttf'
+    // chalkBoard: 'assets/Chalk_Board.ttf' // Comentado ya que usaremos Helvetica para la tabla
 };
 const PDF_FONT_NAMES = {
     bleedingCowboys: "BleedingCowboysCustom",
     carnevalee: "CarnevaleeCustom",
-    chalkBoard: "ChalkBoardCustom"
+    // chalkBoard: "ChalkBoardCustom" 
 };
 const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png';
 
@@ -938,24 +938,20 @@ async function loadFontAsBase64(fontPath) {
 }
 
 async function registerFontWithDoc(doc, fontPath, fontVFSAlias, fontNameInDoc) {
-    // Primero, intentar cargar desde la caché o fetch
     const fontBase64 = await loadFontAsBase64(fontPath);
     if (fontBase64) {
         try {
-            // Verificar si la fuente ya está en VFS para esta instancia de doc
-            // (jsPDF no tiene un método directo para esto, así que registramos siempre
-            // pero la carga desde caché evita el fetch repetido)
             doc.addFileToVFS(fontVFSAlias, fontBase64); 
-            doc.addFont(fontVFSAlias, fontNameInDoc, 'normal'); // 'normal' es el estilo
+            doc.addFont(fontVFSAlias, fontNameInDoc, 'normal'); 
             console.log(`Fuente ${fontNameInDoc} registrada en jsPDF desde ${fontPath}.`);
-            return true; // Indica que la fuente está lista para usarse en esta instancia de doc
+            return true; 
         } catch (fontError) {
             console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`, fontError);
         }
     } else {
         console.warn(`No se pudo cargar la fuente ${fontPath} para registrarla.`);
     }
-    return false; // Indica que la fuente no está lista
+    return false; 
 }
 
 async function genPDF(songs, setlistTitle, fileName) {
@@ -966,8 +962,7 @@ async function genPDF(songs, setlistTitle, fileName) {
     
     let bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
     let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
-    // Para la tabla, usaremos Helvetica para asegurar la correcta visualización de 'ñ' y tildes.
-    // let chalkBoardRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.chalkBoard, 'Chalk_Board.ttf', PDF_FONT_NAMES.chalkBoard);
+    // No necesitamos cargar Chalk_Board si vamos a usar Helvetica para la tabla
 
     try {
         const imgData = await new Promise((resolve, reject) => {
@@ -1008,16 +1003,16 @@ async function genPDF(songs, setlistTitle, fileName) {
     // Título "SETLIST"
     doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
     if (!bleedingCowboysRegistered) doc.setFontType("bold");
-    doc.setFontSize(26); // Aumentado
+    doc.setFontSize(28); // Aumentado
     doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
-    currentY += 26 + 10; 
+    currentY += 28 + 10; 
 
     // Nombre del Setlist
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
     if (!carnevaleeRegistered) doc.setFontType("bold");
-    doc.setFontSize(20); // Aumentado
+    doc.setFontSize(22); // Aumentado
     doc.text(setlistTitle, pageWidth / 2, currentY, { align: "center" });
-    currentY += 20 + 5;
+    currentY += 22 + 5;
 
     doc.setFont("times", "italic");
     doc.setFontSize(10);
@@ -1027,13 +1022,12 @@ async function genPDF(songs, setlistTitle, fileName) {
     doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
-    // Usar Helvetica para la tabla para asegurar la correcta visualización de caracteres especiales
-    const tableFontToUse = "helvetica"; 
-    const tableHeadFontToUse = "helvetica";
+    const tableFont = "helvetica"; // Usar Helvetica para la tabla
+    const tableHeadFont = "helvetica";
 
     doc.autoTable({
         startY: currentY,
-        head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
+        head: [["#", "Título", "Key", "Tempo", "Time"]], // Nombres de columna actualizados
         body: songs.map((s, i) => [
             i + 1, 
             s.name || "", 
@@ -1043,30 +1037,30 @@ async function genPDF(songs, setlistTitle, fileName) {
         ]),
         theme: 'grid', 
         headStyles: { 
-            fillColor: [50, 50, 50], 
-            textColor: [255, 255, 255], 
-            font: tableHeadFontToUse, 
+            fillColor: [220, 220, 220], // Fondo gris claro para cabeceras
+            textColor: [0, 0, 0],    // Texto negro para cabeceras
+            font: tableHeadFont, 
             fontStyle: 'bold',
             halign: 'center',
-            fontSize: 12 // Aumentado
+            fontSize: 10 // Tamaño reducido para cabeceras
         },
         styles: { 
-            font: tableFontToUse, 
-            fontSize: 11, // Aumentado
+            font: tableFont, 
+            fontSize: 9, // Tamaño base para datos de la tabla
             cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
             lineColor: [80, 80, 80], 
             lineWidth: 0.5,
             textColor: [0,0,0], 
         },
         alternateRowStyles: { 
-            fillColor: [235, 235, 235] 
+            fillColor: [248, 248, 248] 
         },
         columnStyles: {
-            0: { halign: 'center', cellWidth: 25 }, 
-            1: { halign: 'left', cellWidth: 'auto' },   
-            2: { halign: 'center', cellWidth: 60 },  
-            3: { halign: 'center', cellWidth: 60 },  
-            4: { halign: 'center', cellWidth: 60 }   
+            0: { halign: 'center', cellWidth: 25, fontSize: 9 }, // #
+            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   // Título (tamaño mantenido)
+            2: { halign: 'center', cellWidth: 60, fontSize: 9 },  // Key
+            3: { halign: 'center', cellWidth: 60, fontSize: 9 },  // Tempo
+            4: { halign: 'center', cellWidth: 60, fontSize: 9 }   // Time
         },
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
