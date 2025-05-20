@@ -918,7 +918,7 @@ async function loadFontAsBase64(fontPath) {
     try {
         const response = await fetch(fontPath);
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status} al cargar ${fontPath}`);
+            throw new Error(`No se pudo cargar la fuente: ${response.statusText} (URL: ${fontPath})`);
         }
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
@@ -927,7 +927,7 @@ async function loadFontAsBase64(fontPath) {
                 fontDataCache[fontPath] = reader.result.split(',')[1];
                 resolve(fontDataCache[fontPath]);
             };
-            reader.onerror = (error) => reject(new Error("FileReader error: " + error.message));
+            reader.onerror = (error) => reject(new Error("Error del FileReader al convertir fuente a Base64: " + error.message));
             reader.readAsDataURL(blob);
         });
     } catch (error) {
@@ -938,20 +938,24 @@ async function loadFontAsBase64(fontPath) {
 }
 
 async function registerFontWithDoc(doc, fontPath, fontVFSAlias, fontNameInDoc) {
+    // Primero, intentar cargar desde la caché o fetch
     const fontBase64 = await loadFontAsBase64(fontPath);
     if (fontBase64) {
         try {
-            doc.addFileToVFS(fontVFSAlias, fontBase64);
-            doc.addFont(fontVFSAlias, fontNameInDoc, 'normal');
+            // Verificar si la fuente ya está en VFS para esta instancia de doc
+            // (jsPDF no tiene un método directo para esto, así que registramos siempre
+            // pero la carga desde caché evita el fetch repetido)
+            doc.addFileToVFS(fontVFSAlias, fontBase64); 
+            doc.addFont(fontVFSAlias, fontNameInDoc, 'normal'); // 'normal' es el estilo
             console.log(`Fuente ${fontNameInDoc} registrada en jsPDF desde ${fontPath}.`);
-            return true;
+            return true; // Indica que la fuente está lista para usarse en esta instancia de doc
         } catch (fontError) {
             console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`, fontError);
         }
     } else {
-        console.warn(`No se pudo cargar la fuente ${fontPath}.`);
+        console.warn(`No se pudo cargar la fuente ${fontPath} para registrarla.`);
     }
-    return false;
+    return false; // Indica que la fuente no está lista
 }
 
 async function genPDF(songs, setlistTitle, fileName) {
@@ -959,11 +963,11 @@ async function genPDF(songs, setlistTitle, fileName) {
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-
-    // Registrar fuentes con la instancia actual de jsPDF
-    const bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
-    const carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
-    const chalkBoardRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.chalkBoard, 'Chalk_Board.ttf', PDF_FONT_NAMES.chalkBoard);
+    
+    let bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
+    let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
+    // Para la tabla, usaremos Helvetica para asegurar la correcta visualización de 'ñ' y tildes.
+    // let chalkBoardRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.chalkBoard, 'Chalk_Board.ttf', PDF_FONT_NAMES.chalkBoard);
 
     try {
         const imgData = await new Promise((resolve, reject) => {
@@ -976,8 +980,8 @@ async function genPDF(songs, setlistTitle, fileName) {
                 resolve(canvas.toDataURL('image/png'));
             };
             img.onerror = () => reject(new Error("Error al cargar la imagen de plantilla."));
-            img.src = PDF_BACKGROUND_IMAGE_PATH;
-            if (img.complete && img.naturalHeight !== 0) {
+            img.src = PDF_BACKGROUND_IMAGE_PATH; 
+             if (img.complete && img.naturalHeight !== 0) { 
                  const canvas = document.createElement('canvas');
                  canvas.width = img.width; canvas.height = img.height;
                  const ctx = canvas.getContext('2d');
@@ -995,7 +999,7 @@ async function genPDF(songs, setlistTitle, fileName) {
         doc.text("Advertencia: No se pudo cargar la plantilla de fondo.", pageWidth / 2, pageHeight / 2, { align: "center" });
     }
 
-    doc.setTextColor(0, 0, 0); // Asegurar texto negro por defecto
+    doc.setTextColor(0, 0, 0); 
     const contentMarginTop = 120; 
     const contentMarginSides = 60; 
     const contentMarginBottom = 100; 
@@ -1004,11 +1008,11 @@ async function genPDF(songs, setlistTitle, fileName) {
     // Título "SETLIST"
     doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
     if (!bleedingCowboysRegistered) doc.setFontType("bold");
-    doc.setFontSize(24); // Aumentado
+    doc.setFontSize(26); // Aumentado
     doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
-    currentY += 24 + 10; 
+    currentY += 26 + 10; 
 
-    // Nombre del Setlist (el que viene como 'title' de la función)
+    // Nombre del Setlist
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
     if (!carnevaleeRegistered) doc.setFontType("bold");
     doc.setFontSize(20); // Aumentado
@@ -1023,8 +1027,9 @@ async function genPDF(songs, setlistTitle, fileName) {
     doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
-    const tableFontToUse = chalkBoardRegistered ? PDF_FONT_NAMES.chalkBoard : "helvetica";
-    const tableHeadFontToUse = chalkBoardRegistered ? PDF_FONT_NAMES.chalkBoard : "helvetica";
+    // Usar Helvetica para la tabla para asegurar la correcta visualización de caracteres especiales
+    const tableFontToUse = "helvetica"; 
+    const tableHeadFontToUse = "helvetica";
 
     doc.autoTable({
         startY: currentY,
@@ -1041,13 +1046,13 @@ async function genPDF(songs, setlistTitle, fileName) {
             fillColor: [50, 50, 50], 
             textColor: [255, 255, 255], 
             font: tableHeadFontToUse, 
-            fontStyle: 'normal',
+            fontStyle: 'bold',
             halign: 'center',
-            fontSize: chalkBoardRegistered ? 11 : 10 
+            fontSize: 12 // Aumentado
         },
         styles: { 
             font: tableFontToUse, 
-            fontSize: chalkBoardRegistered ? 10 : 9, 
+            fontSize: 11, // Aumentado
             cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
             lineColor: [80, 80, 80], 
             lineWidth: 0.5,
@@ -1069,6 +1074,7 @@ async function genPDF(songs, setlistTitle, fileName) {
     });
     doc.save(fileName);
 }
+
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
 let processTableAttempts = 0;
