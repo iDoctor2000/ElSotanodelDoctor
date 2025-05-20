@@ -7,13 +7,16 @@
   <link rel="icon" type="image/x-icon" href="assets/favicon_ElSotanoDr.ico">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-  <meta property="og:title"       content="El Sótano del Doctor – Intranet">
-  <meta property="og:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
-  <meta property="og:image"       content="assets/logo_negro copia.jpg"> <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://tusitioweb.com"> <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"        content="El Sótano del Doctor – Intranet">
+  <meta property="og:title"        content="El Sótano del Doctor – Intranet">
+  <meta property="og:description"  content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
+  <meta property="og:image"        content="assets/logo_negro copia.jpg">
+  <meta property="og:type"         content="website">
+  <meta property="og:url"          content="https://tusitioweb.com">
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="El Sótano del Doctor – Intranet">
   <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
-  <meta name="twitter:image"        content="assets/logo_negro copia.jpg"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="twitter:image"       content="assets/logo_negro copia.jpg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -23,24 +26,87 @@
   <style>
     *,*::before,*::after{box-sizing:border-box}
     html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
-    header{background:#111;padding:20px 20px;display:flex;align-items:center;justify-content:space-between;position:relative}
-    .logo img.logo-main{width:180px;height:auto}
-    .logo-intranet{position:absolute;left:50%;transform:translateX(-50%);height:60px;width:auto}
-    .hamburger{cursor:pointer;border:1px solid #0cf;border-radius:4px;padding:5px}
-    .hamburger div{width:25px;height:3px;background:#0cf;margin:4px 0}
-    .sidebar{position:fixed;top:0;left:0;width:250px;height:100%;background:#111;border-right:1px solid #222;
-            padding:20px;box-shadow:2px 0 10px rgba(0,255,255,.1);transform:translateX(-250px);transition:.3s;z-index:9999; overflow-y: auto;}
-    .sidebar.show{transform:translateX(0)}
-    .sidebar h2{color:#0cf;margin:0}
-    .sidebar a{display:block;color:#fff;text-decoration:none;margin:10px 0;padding:5px 0;border-bottom:1px solid #222}
-    .sidebar a:hover{color:#0cf}
-    .sidebar .submenu { margin-left: 15px; }
-    .sidebar .submenu a { padding: 5px 0; font-size: 0.95em; }
-    .sidebar a#menu-config { color: #FFD700; font-weight: bold; }
-    .sidebar a#menu-config:hover { color: #fff2a7; }
-    #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9998;display:none}
-    #overlay.show{display:block}
     
+    /* --- NUEVOS ESTILOS / MODIFICACIONES --- */
+    header{
+        background:#111;
+        padding:10px 20px; /* Reducir un poco el padding para una barra más compacta */
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        position:fixed; /* <<-- CAMBIO CLAVE: Hacer el header fijo */
+        top:0;
+        left:0;
+        width:100%;
+        z-index:1000; /* Encima del contenido, debajo del sidebar/modales */
+        border-bottom: 1px solid #222; /* Delimitar visualmente */
+        height: 60px; /* Altura fija para el header */
+    }
+    .logo img.logo-main{
+        width:150px; /* Ajustar tamaño para header fijo */
+        height:auto;
+        vertical-align: middle; /* Mejor alineación si el header tiene altura fija */
+    }
+    .logo-intranet{
+        position:absolute;
+        left:50%;
+        top:50%; /* Centrado vertical en el header */
+        transform:translate(-50%,-50%);
+        height:45px; /* Ajustar tamaño */
+        width:auto;
+    }
+    .hamburger{
+        cursor:pointer;
+        border:1px solid #0cf;
+        border-radius:4px;
+        padding:5px;
+        z-index: 1001; /* Asegurar que está encima de otros elementos del header */
+    }
+    .hamburger div{width:25px;height:3px;background:#0cf;margin:4px 0}
+    
+    .sidebar{
+        position:fixed;
+        top:0; /* Sidebar comienza desde el tope de la ventana */
+        left:0;
+        width:280px; /* Ancho del sidebar */
+        height:100vh; /* Sidebar ocupa toda la altura de la ventana */
+        background:#1a1a1a; /* Un fondo ligeramente distinto al header */
+        border-right:1px solid #222;
+        padding: 20px;
+        padding-top: calc(60px + 20px); /* <<-- CAMBIO CLAVE: Header height (60px) + padding deseado (20px) */
+        box-shadow:3px 0 15px rgba(0,200,200,.15); /* Sombra más pronunciada */
+        transform:translateX(-100%); /* <<-- CAMBIO CLAVE: Oculto completamente a la izquierda */
+        transition:transform .3s ease-in-out;
+        z-index:9999; 
+        overflow-y: auto;
+    }
+    .sidebar.show{
+        transform:translateX(0); /* Mostrar sidebar */
+    }
+    .sidebar h2{color:#0cf;margin:0 0 20px 0;}
+    .sidebar a{display:block;color:#fff;text-decoration:none;margin:12px 0;padding:10px 5px;border-bottom:1px solid #333; font-size: 1em;}
+    .sidebar a:last-of-type { border-bottom: none; }
+    .sidebar a:hover{color:#0cf}
+    .sidebar .submenu { margin-left: 15px; margin-top: 10px; }
+    .sidebar .submenu a { padding: 8px 0; font-size: 0.9em; border-top: 1px solid #2a2a2a; border-bottom: none; margin: 5px 0;}
+    .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; } /* Más separación para config */
+    .sidebar a#menu-config:hover { color: #fff2a7; }
+    
+    #overlay{
+        position:fixed;top:0;left:0;width:100%;height:100%;
+        background:rgba(0,0,0,.75); /* Overlay un poco más oscuro */
+        z-index:5000; /* Debajo del sidebar, encima del main */
+        display:none;
+        opacity: 0;
+        transition: opacity .3s ease-in-out;
+    }
+    #overlay.show{display:block; opacity: 1;}
+    
+    main {
+        padding-top: 75px; /* <<-- CAMBIO CLAVE: Header height (60px) + un pequeño margen (15px) */
+    }
+    /* --- FIN NUEVOS ESTILOS / MODIFICACIONES --- */
+
     .modal-backdrop {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 10px;
@@ -108,18 +174,28 @@
     .modal-field-group > div { flex: 1; min-width: 200px; }
     .modal-field-group input[type="time"] { text-align: left; }
 
-    .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;
-                    overflow-y:auto;padding:80px 20px 20px}
-    .config-screen h2{color:#0cf;text-align:center;margin:20px 0}
+    .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;
+        z-index:10001; /* <<-- Asegurar que esté por encima de todo */
+        overflow-y:auto;
+        padding: 20px; /* Padding general */
+        padding-top: calc(60px + 20px); /* <<-- CAMBIO CLAVE: Header height (60px) + padding (20px) */
+    }
+    .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px;} /* Ajustar márgenes */
     .config-screen h3{color:#0cf;margin:20px 0 10px}
     .config-screen label{display:block;margin:10px 0 5px}
     .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
-                                                border:1px solid #333;border-radius:5px}
+        border:1px solid #333;border-radius:5px}
     .config-screen select[multiple] { height: 150px; }
     .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .config-screen button:hover{background:#09b}
-    .config-screen .close-btn{position:absolute;top:20px;right:20px;font-size:1.2em;background:none;border:1px solid #0cf;
-                                color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer}
+    .config-screen .close-btn{
+        position:absolute;
+        top:15px; /* Ajustar posición relativa al padding-top del config-screen (60px+20px) -> 15px desde el borde del contenido*/
+        right:20px;
+        font-size:1.2em;background:none;border:1px solid #0cf;
+        color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer;
+        z-index: 10002; /* Encima del contenido del config screen */
+    }
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
     #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { 
@@ -186,7 +262,10 @@
     .attending-no { color: #f00; }
     .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; }
     #connection-status {
-      position: fixed; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.8); color: #fff;
+      position: fixed; 
+      top: calc(60px + 5px); /* <<-- CAMBIO: Debajo del header fijo */
+      right: 10px; 
+      background: rgba(0, 0, 0, 0.8); color: #fff;
       padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none;
     }
     #connection-status.offline { background: #f00; }
@@ -201,18 +280,41 @@
     
     #firebase-critical-error-banner {
         background-color: red; color: white; padding: 15px; text-align: center;
-        position: fixed; top: 0; left: 0; width: 100%; z-index: 100001; font-weight: bold;
+        position: fixed; 
+        top: 0; /* Se mostrará encima del header fijo si es necesario */
+        left: 0; width: 100%; z-index: 100001; font-weight: bold;
     }
 
     @media(max-width:768px){
+      header { height: 55px; padding: 8px 15px; } /* Header más pequeño en móviles */
+      .logo img.logo-main{width:120px}
+      .logo-intranet{height:35px}
       .hamburger div{width:20px}
-      .logo img.logo-main{width:150px}
-      .logo-intranet{height:50px}
+
+      .sidebar{
+          width:260px; 
+          padding-top: calc(55px + 15px); /* Ajustar padding para nuevo header height */
+      }
+      main {
+          padding-top: 65px; /* Ajustar padding para nuevo header height */
+      }
+      .config-screen {
+          padding-top: calc(55px + 15px); /* Ajustar padding para nuevo header height */
+      }
+      .config-screen .close-btn{
+          top:10px; 
+          right:15px;
+      }
+      #connection-status { 
+          top: calc(55px + 5px); /* Ajustar para nuevo header height */
+          right: 5px; font-size: 0.8em; 
+      }
+
       .attendance-form { flex-direction: column; align-items: flex-start; }
       .attendance-form select { width: 100%; }
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
-      #connection-status { top: 70px; right: 5px; font-size: 0.8em; }
-      .table-wrapper { overflow-x: hidden; }
+      
+      .table-wrapper { overflow-x: hidden; } /* Considerar si realmente quieres ocultar el scroll horizontal en tablas en móvil */
       table { width: 100%; min-width: unset; font-size: 0.85em; }
       th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
       th.calendar-col-header, td.calendar-col, th.details-col-header { width: 40px; padding: 8px 2px;} 
@@ -418,7 +520,7 @@
 <script>
 /* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw", // Esta clave parece de ejemplo, asegúrate que sea la tuya real de un proyecto configurado
   authDomain: "sotanointranet.firebaseapp.com",
   projectId: "sotanointranet",
   storageBucket: "sotanointranet.appspot.com", 
@@ -427,7 +529,7 @@ const firebaseConfig = {
 };
 
 if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || 
-    (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30) ) { 
+    (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { // Condición más específica para placeholder
     const banner = document.getElementById('firebase-critical-error-banner');
     if (banner) banner.style.display = 'block';
     console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");
@@ -452,7 +554,6 @@ const toHHMM = s => {
 };
 const toHours = s => (s / 3600).toFixed(2);
 
-// Función para decodificar entidades HTML (necesaria si los datos del feed vienen así)
 function decodeHtmlEntities(text) {
     if (typeof text !== 'string') return text;
     const textArea = document.createElement('textarea');
@@ -471,13 +572,13 @@ const calculateDuration = (startTime, endTime) => {
   return duration;
 };
 const formatDateWithDay = dateStr => {
-  const date = new Date(dateStr + 'T00:00:00Z'); 
+  const date = new Date(dateStr + 'T00:00:00Z'); // Asegurar que se interprete como UTC para evitar problemas de zona horaria
   const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;
 };
 const getMonthYear = dateStr => {
-  const date = new Date(dateStr + 'T00:00:00Z'); 
+  const date = new Date(dateStr + 'T00:00:00Z'); // UTC
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 };
@@ -486,7 +587,8 @@ function generateICS(title, date, startTime, location, description = "", duratio
   const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
   const formatICSDate = d => {
     const pad = (num) => String(num).padStart(2, '0');
-    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    // Usar UTC para las fechas en ICS para consistencia
+    return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
   };
   const startICS = formatICSDate(startDate);
   const endICS = formatICSDate(endDate);
@@ -597,12 +699,12 @@ async function loadSetlistConfig() {
     updateDynamicSetlistTitles();
   } catch (e) {
     console.error("Error al cargar la configuración de setlists:", e);
-    updateDynamicSetlistTitles();
+    updateDynamicSetlistTitles(); // Asegurar que los títulos por defecto se muestren
   }
 }
 
 async function saveSetlistConfig() {
-  updateDynamicSetlistTitles();
+  updateDynamicSetlistTitles(); // Actualizar los títulos en la UI antes de guardar
   return await withRetry(() => saveDoc("intranet", "setlists", { config: setlistConfig }));
 }
 
@@ -623,9 +725,8 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     songs.forEach((s, i) => {
       const secs = parseDuration(s.duration || "0");
       total += secs;
-      // Usar el nombre de la canción directamente, sin clean() para el PDF
       tbody.insertAdjacentHTML("beforeend",
-        `<tr><td>${i + 1}</td><td>${s.name || "Sin título"}</td><td>${s.key || "-"}</td><td>${s.tempo || "-"}</td><td>${toMMSS(secs)}</td></tr>`
+        `<tr><td>${i + 1}</td><td>${decodeHtmlEntities(s.name || "Sin título")}</td><td>${decodeHtmlEntities(s.key || "-")}</td><td>${decodeHtmlEntities(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
       );
     });
     document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(total);
@@ -682,9 +783,10 @@ function renderUsers() {
             const userToDelete = users[userIndex];
             if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)) {
                 rehearsals.forEach(r => { if (Array.isArray(r.attendance)) { r.attendance = r.attendance.filter(a => a.name !== userToDelete.name); } });
+                // TODO: Eliminar asistencia de conciertos si se implementa
                 users.splice(userIndex, 1);
                 await saveUsers(); 
-                await saveRehearsals();
+                await saveRehearsals(); // Guardar ensayos por si se modificaron asistencias
                 renderStats(); 
             }
         });
@@ -704,6 +806,7 @@ async function loadUsers() {
     try {
         const data = await withRetry(() => loadDoc("intranet", "users", { users: [] }));
         users = Array.isArray(data.users) ? data.users : [];
+        // Filtrar usuarios malformados si es necesario
         users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles));
         renderUsers();
     } catch (e) { console.error("Error al cargar usuarios:", e); }
@@ -712,7 +815,7 @@ async function saveUsers() {
     try {
         await withRetry(() => saveDoc("intranet", "users", { users }));
         renderUsers(); 
-        renderRehearsals(); 
+        renderRehearsals(); // Re-render ensayos por si los nombres de usuario/apodos cambiaron
         renderStats(); 
         return true;
     } catch (e) { console.error("Error al guardar usuarios:", e); throw e; }
@@ -750,15 +853,19 @@ function renderRehearsals() {
         : `<option value="" disabled>No hay usuarios disponibles</option>`;
 
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // Crear una fecha "today" que solo considera año, mes y día, ignorando la hora para la comparación
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
+
     rehearsals.forEach((r, i) => {
+        // Migración de 'time' a 'startTime'/'endTime' si es necesario
         if (r.time && (!r.startTime || !r.endTime)) {
             r.startTime = r.time;
             const [hours, minutes] = r.time.split(":").map(Number);
-            const endHours = (hours + 2) % 24;
+            const endHours = (hours + 2) % 24; // Asume 2h de ensayo
             r.endTime = `${String(endHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-            delete r.time;
+            delete r.time; // Eliminar el campo obsoleto
         }
+
         const formattedDate = formatDateWithDay(r.date);
         const durationSeconds = calculateDuration(r.startTime, r.endTime);
         const durationText = toHHMM(durationSeconds);
@@ -766,8 +873,9 @@ function renderRehearsals() {
         const getAttendeeNicknames = (status) => attendance.filter(a => a.attending === status).map(a => { const user = users.find(u => u.name === a.name); return user ? user.nickname : a.name; }).join(", ") || "Ninguno";
         const summary = `<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
         tbodyConfig.insertAdjacentHTML("beforeend", `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
-        const rehearsalDate = new Date(r.date + 'T00:00:00Z'); 
-        if (rehearsalDate >= today) {
+        
+        const rehearsalDate = new Date(r.date + 'T00:00:00Z'); // Fecha del ensayo en UTC para comparar con 'today'
+        if (rehearsalDate >= today) { // Solo mostrar ensayos de hoy en adelante
             const calendarCell = `<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
             tbodyMain.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`);
         }
@@ -786,7 +894,7 @@ function renderRehearsals() {
         if (confirm("¿Estás seguro de que deseas eliminar este ensayo?")) {
             rehearsals.splice(parseInt(btn.dataset.i, 10), 1);
             await saveRehearsals();
-            renderStats();
+            renderStats(); // Actualizar estadísticas
         }
     });
     tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn => btn.onclick = async () => {
@@ -796,7 +904,7 @@ function renderRehearsals() {
             rehearsal.attendance = [];
             await saveRehearsals();
             document.getElementById("rehearsal-message").textContent = "Asistencias eliminadas.";
-            renderStats();
+            renderStats(); // Actualizar estadísticas
         }
     });
     tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => {
@@ -816,8 +924,8 @@ function renderRehearsals() {
             else rehearsal.attendance.push({ name, attending });
             try {
                 await saveRehearsals();
-                userSelect.value = ""; responseSelect.value = "";
-                renderStats();
+                userSelect.value = ""; responseSelect.value = ""; // Resetear selects
+                renderStats(); // Actualizar estadísticas
             } catch (e) { alert("Error al guardar asistencia: " + e.message); }
         };
     });
@@ -833,7 +941,7 @@ async function saveRehearsals() {
     try {
         await withRetry(() => saveDoc("intranet", "rehearsals", { rehearsals }));
         renderRehearsals();
-        renderStats();
+        renderStats(); // Asegurar que las estadísticas se actualizan al guardar ensayos
         return true;
     } catch (e) { console.error("Error al guardar ensayos:", e); throw e; }
 }
@@ -973,7 +1081,6 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
 
     let bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
     let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
-    // No cargamos Chalk_Board, usaremos Helvetica para la tabla
 
     try {
         const imgData = await new Promise((resolve, reject) => {
@@ -987,13 +1094,13 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
             };
             img.onerror = () => reject(new Error("Error al cargar la imagen de plantilla."));
             img.src = PDF_BACKGROUND_IMAGE_PATH; 
-             if (img.complete && img.naturalHeight !== 0) { 
-                 const canvas = document.createElement('canvas');
-                 canvas.width = img.width; canvas.height = img.height;
-                 const ctx = canvas.getContext('2d');
-                 ctx.drawImage(img, 0, 0);
-                 resolve(canvas.toDataURL('image/png'));
-            } else if (img.complete && img.naturalHeight === 0) {
+             if (img.complete && img.naturalHeight !== 0) { // Check if image is already loaded (e.g. from cache)
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width; canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            } else if (img.complete && img.naturalHeight === 0) { // Cached but broken
                 reject(new Error("Imagen de plantilla en caché pero inválida."));
             }
         });
@@ -1012,18 +1119,18 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     let currentY = contentMarginTop;
 
     doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
-    if (!bleedingCowboysRegistered) doc.setFontType("bold");
+    if (!bleedingCowboysRegistered) doc.setFontType("bold"); // Fallback
     doc.setFontSize(28); 
     doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
     currentY += 28 + 10; 
 
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
-    if (!carnevaleeRegistered) doc.setFontType("bold");
+    if (!carnevaleeRegistered) doc.setFontType("bold"); // Fallback
     doc.setFontSize(22); 
-    doc.text(setlistDynamicName, pageWidth / 2, currentY, { align: "center" }); // Usar el título del setlist pasado
+    doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
     currentY += 22 + 5;
 
-    doc.setFont("times", "italic");
+    doc.setFont("times", "italic"); // Usar una fuente estándar para este texto
     doc.setFontSize(10);
     const totalSongsText = `${songs.length} canciones`;
     const totalTimeValue = songs.reduce((a, s) => a + parseDuration(s.duration), 0);
@@ -1031,13 +1138,12 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
-    const tableFont = "helvetica"; 
+    const tableFont = "helvetica"; // Fuente estándar para la tabla
     const tableHeadFont = "helvetica";
 
-    // Preparar datos para la tabla, decodificando entidades HTML
     const tableBody = songs.map((s, i) => [
         i + 1, 
-        decodeHtmlEntities(s.name || ""), // Decodificar nombre de canción
+        decodeHtmlEntities(s.name || ""), 
         decodeHtmlEntities(s.key || ""), 
         decodeHtmlEntities(s.tempo || ""), 
         toMMSS(parseDuration(s.duration))
@@ -1050,7 +1156,7 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
         theme: 'grid', 
         headStyles: { 
             fillColor: [220, 220, 220], 
-            textColor: [0, 0, 0],    
+            textColor: [0, 0, 0],   
             font: tableHeadFont, 
             fontStyle: 'bold',
             halign: 'center',
@@ -1076,7 +1182,9 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
         },
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
-        didDrawPage: function (data) {}
+        didDrawPage: function (data) {
+            // Podrías añadir números de página o re-dibujar el fondo si es necesario
+        }
     });
     doc.save(`${cleanFileName}.pdf`); 
 }
@@ -1113,18 +1221,18 @@ function processBandHelperTable() {
   if(loadingMessage) loadingMessage.style.display = "none"; 
 
   if (table.dataset.processed === "true") { 
-      return;
+      return; // Evitar reprocesar
   }
   table.dataset.processed = "true";
 
   let headerRow = table.querySelector("thead tr"); 
   const desiredHeaders = ["Fecha/Hora", "Evento", "Lugar", "Cal", "Info"]; 
 
-  if (!table.tHead) {
+  if (!table.tHead) { // Crear thead si no existe
       table.createTHead();
   }
-  headerRow = table.tHead.rows[0] || table.tHead.insertRow(0);
-  headerRow.innerHTML = ''; 
+  headerRow = table.tHead.rows[0] || table.tHead.insertRow(0); // Obtener o crear la fila del header
+  headerRow.innerHTML = ''; // Limpiar headers existentes
   desiredHeaders.forEach(text => {
       const th = document.createElement('th');
       th.textContent = text;
@@ -1133,14 +1241,16 @@ function processBandHelperTable() {
       headerRow.appendChild(th);
   });
   
-  const dataRowsSource = table.querySelector("tbody") ? table.querySelectorAll("tbody tr") : []; 
+  const dataRowsSource = table.querySelector("tbody") ? Array.from(table.querySelectorAll("tbody tr")) : []; // Convertir a Array para evitar problemas con NodeList viva
   
   dataRowsSource.forEach((row) => {
-    const originalCells = Array.from(row.cells); 
-    row.innerHTML = ''; 
+    const originalCells = Array.from(row.cells); // Copiar celdas originales
+    row.innerHTML = ''; // Limpiar la fila para reconstruirla
 
+    // Extraer datos con más cuidado, manejando posibles undefined
     const dateCellFullText = originalCells[0]?.textContent.trim() || "";
     const eventTitleFromCell = originalCells[1]?.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
+    // Intentar obtener la ubicación de la columna de Lugar, y si no, de la de Pago/Notas
     const locationText = originalCells[3]?.textContent.trim().split('\n')[0].trim() || originalCells[2]?.textContent.trim().split('\n')[0].trim() || "";
 
     row.insertCell().textContent = dateCellFullText;    
@@ -1148,46 +1258,49 @@ function processBandHelperTable() {
     row.insertCell().textContent = locationText;       
 
     const calendarDisplayCell = row.insertCell();
-    calendarDisplayCell.className = "calendar-col";
+    calendarDisplayCell.className = "calendar-col"; // Para estilos de ancho
     calendarDisplayCell.style.textAlign = "center";
 
     const detailDisplayCell = row.insertCell();
-    detailDisplayCell.className = "calendar-col"; 
+    detailDisplayCell.className = "details-col-header"; // Usar la misma clase que el header para el ancho
     detailDisplayCell.style.textAlign = "center";
 
-    const dateForId = dateCellFullText.split(',')[0].trim();
+    const dateForId = dateCellFullText.split(',')[0].trim(); // Solo la fecha para el ID
     const concertId = sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
     
     const detailsBtn = document.createElement("button");
     detailsBtn.className = "details-btn";
-    detailsBtn.innerHTML = "➡️";
+    detailsBtn.innerHTML = "➡️"; // O un ícono SVG/FontAwesome
     detailsBtn.title = "Ver/Editar Detalles del Concierto";
     detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellFullText, eventTitleFromCell, locationText); 
     detailDisplayCell.appendChild(detailsBtn);
 
-    let icsDate = new Date().toISOString().split('T')[0]; 
-    let startTimeForICS = "20:00"; 
-    let durationSecondsForICS = 2 * 3600; 
+    // Lógica para el botón de calendario (ICS)
+    let icsDate = new Date().toISOString().split('T')[0]; // Fecha por defecto (hoy)
+    let startTimeForICS = "20:00"; // Hora por defecto
+    let durationSecondsForICS = 2 * 3600; // Duración por defecto (2 horas)
 
+    // Parsear fecha: dd/mm/yy
     const dateMatch = dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/); 
     if (dateMatch) {
         let year = parseInt(dateMatch[3], 10);
-        year += (year < 70 ? 2000 : 1900); 
-        icsDate = `${year}-${dateMatch[2]}-${dateMatch[1]}`;
+        year += (year < 70 ? 2000 : 1900); // Asumir siglo XXI para años < 70
+        icsDate = `${year}-${dateMatch[2]}-${dateMatch[1]}`; // Formato YYYY-MM-DD
     }
 
+    // Parsear hora (rango o simple)
     const timeRangeMatch = dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/); 
-    const singleTimeMatch = dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/); 
+    const singleTimeMatch = dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/); // Hora después de la coma
 
     if (timeRangeMatch) {
         startTimeForICS = timeRangeMatch[1];
         durationSecondsForICS = calculateDuration(timeRangeMatch[1], timeRangeMatch[2]);
-        if (durationSecondsForICS <= 0) durationSecondsForICS = 2 * 3600;
+        if (durationSecondsForICS <= 0) durationSecondsForICS = 2 * 3600; // Fallback si la duración es inválida
     } else if (singleTimeMatch) {
         startTimeForICS = singleTimeMatch[1];
     }
     
-    const locationForICS = locationText || eventTitleFromCell;
+    const locationForICS = locationText || eventTitleFromCell; // Usar título si no hay lugar
     const descriptionForICS = `Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;
 
     const calendarBtn = document.createElement('button');
@@ -1209,15 +1322,16 @@ const concertDetailModal = document.getElementById('concert-details-modal');
 const concertDetailMessage = document.getElementById('concert-detail-message');
 async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
     concertDetailMessage.textContent = ""; 
-    concertDetailMessage.className = "success-message"; 
+    concertDetailMessage.className = "success-message"; // Resetear clase
 
     document.getElementById('concert-detail-id').value = concertId;
     const concertTitleDisplay = document.getElementById('concert-detail-title-display');
     if (concertTitleDisplay) {
         const datePartOnly = concertFullDateText.split(',')[0].trim(); 
-        concertTitleDisplay.innerHTML = `${concertTitle || "Título no disponible"} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`; 
+        concertTitleDisplay.innerHTML = `${decodeHtmlEntities(concertTitle) || "Título no disponible"} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`; 
     }
     
+    // Limpiar campos del modal
     document.getElementById('concert-detail-location').value = '';
     document.getElementById('concert-detail-soundsetup').value = ''; 
     document.getElementById('concert-detail-instrumentssetup').value = ''; 
@@ -1228,21 +1342,21 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando músicos...';
 
-    const excludedMusicians = ["Ximo", "Ginés Torres"]; 
+    const excludedMusicians = ["Ximo", "Ginés Torres"]; // Nombres a excluir
 
     if (users && users.length > 0) {
-        musiciansListDiv.innerHTML = ''; 
-        users.filter(user => !excludedMusicians.includes(user.name)) 
+        musiciansListDiv.innerHTML = ''; // Limpiar antes de añadir
+        users.filter(user => !excludedMusicians.includes(user.name)) // Excluir músicos específicos
              .forEach(user => {
                 const userDiv = document.createElement('div');
-                const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`;
+                const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`; // ID único
                 userDiv.innerHTML = `
                     <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}">
                     <label for="${checkboxId}">${user.name} (${user.nickname})</label>
                 `;
                 musiciansListDiv.appendChild(userDiv);
         });
-        if (musiciansListDiv.children.length === 0) {
+        if (musiciansListDiv.children.length === 0) { // Si después de filtrar no quedan músicos
             musiciansListDiv.innerHTML = 'No hay otros músicos para listar.';
         }
     } else { 
@@ -1251,7 +1365,7 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
 
     try {
         console.log("Abriendo modal para concertId:", concertId);
-        const details = await loadDoc('concert_details', concertId, {}); 
+        const details = await withRetry(() => loadDoc('concert_details', concertId, {})); // Usar withRetry
         
         if (details && Object.keys(details).length > 0) { 
             console.log("Detalles cargados desde Firestore:", details);
@@ -1264,7 +1378,8 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             
             if (details.attendees && Array.isArray(details.attendees)) {
                 details.attendees.forEach(attendeeName => {
-                    const checkbox = musiciansListDiv.querySelector(`input[value="${attendeeName}"]`);
+                    // Buscar por 'value' que es el nickname
+                    const checkbox = musiciansListDiv.querySelector(`input[value="${attendeeName}"]`); 
                     if (checkbox) {
                         checkbox.checked = true;
                     } else {
@@ -1276,9 +1391,9 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             console.log("No se encontraron detalles previos en Firestore para este concierto o el documento está vacío:", concertId);
         }
     } catch (error) { 
-        console.error("Error al intentar cargar detalles del concierto desde Firestore (manejado en openConcertDetailModal):", error);
+        console.error("Error al intentar cargar detalles del concierto desde Firestore:", error);
         concertDetailMessage.className = "error-message";
-        concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}. Verifica los permisos de Firestore.`;
+        concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}.`;
     }
     concertDetailModal.classList.add('show'); 
 }
@@ -1293,7 +1408,7 @@ document.getElementById('save-concert-details').onclick = async () => {
 
     const selectedAttendees = [];
     document.querySelectorAll('#musicians-attendance-list input[type="checkbox"]:checked').forEach(checkbox => { 
-        selectedAttendees.push(checkbox.value); 
+        selectedAttendees.push(checkbox.value); // Guardar el valor (nickname)
     });
 
     const concertData = {
@@ -1303,20 +1418,20 @@ document.getElementById('save-concert-details').onclick = async () => {
         soundcheckTime: document.getElementById('concert-detail-soundcheck').value,
         showTime: document.getElementById('concert-detail-showtime').value,
         generalNotes: document.getElementById('concert-detail-notes').value.trim(),
-        attendees: selectedAttendees,
+        attendees: selectedAttendees, // Guardar nicknames
         lastUpdated: new Date().toISOString() 
     };
 
-    console.log("Intentando guardar en Firestore (función original). Documento ID:", concertId, "Datos:", concertData);
+    console.log("Intentando guardar en Firestore. Documento ID:", concertId, "Datos:", concertData);
 
     try {
-        await saveDoc('concert_details', concertId, concertData, true); 
+        await withRetry(() => saveDoc('concert_details', concertId, concertData, true)); // Usar withRetry 
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente.";
     } catch (error) {
-        console.error("Error al guardar detalles del concierto en Firestore (función original):", error);
+        console.error("Error al guardar detalles del concierto en Firestore:", error);
         concertDetailMessage.className = "error-message";
-        concertDetailMessage.textContent = `Error al guardar: ${error.message}. Verifica los permisos de Firestore.`;
+        concertDetailMessage.textContent = `Error al guardar: ${error.message}.`;
     }
 };
 document.getElementById('close-concert-details-modal').onclick = () => {
@@ -1327,9 +1442,11 @@ document.getElementById('close-concert-details-modal').onclick = () => {
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
 const PASSWORD = "Sotano2014"; 
 let isAuthenticated = false;
-function closeAll() {
-    document.querySelectorAll(".config-screen, .modal-backdrop").forEach(s => s.classList.remove("show"));
-    document.querySelectorAll(".config-screen").forEach(s => s.style.display = "none");
+function closeAll() { // Esta función es crucial para la nueva UI
+    document.querySelectorAll(".config-screen, .modal-backdrop").forEach(s => {
+        s.classList.remove("show"); // Para modales que usan .show para display:flex
+        s.style.display = "none"; // Para config-screens que usan display:block
+    });
     sidebar.classList.remove("show");
     overlay.classList.remove("show");
     document.getElementById("config-submenu").style.display = "none";
@@ -1346,9 +1463,19 @@ const setupMenuLink = (menuId, targetId) => {
     if (link) {
         link.onclick = e => {
             e.preventDefault();
-            closeAll();
+            closeAll(); // Cerrar el menú y overlay antes de navegar
             const targetElement = document.getElementById(targetId);
-            if (targetElement) { targetElement.scrollIntoView({ behavior: "smooth" }); }
+            if (targetElement) { 
+                // Ajustar el scroll para tener en cuenta el header fijo
+                const headerOffset = document.querySelector('header').offsetHeight || 60;
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; // 10px de margen extra
+
+                window.scrollTo({
+                     top: offsetPosition,
+                     behavior: "smooth"
+                });
+            }
             else { console.warn(`Elemento ${targetId} no encontrado.`); }
         };
     } else { console.warn(`Enlace ${menuId} no encontrado.`); }
@@ -1361,13 +1488,16 @@ setupMenuLink("menu-concerts-section", "calendario");
 
 document.getElementById("menu-config").onclick = e => {
     e.preventDefault();
+    const submenu = document.getElementById("config-submenu");
     if (!isAuthenticated) {
         const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
         if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
             isAuthenticated = true;
-            document.getElementById("config-submenu").style.display = "block";
+            submenu.style.display = submenu.style.display === "block" ? "none" : "block"; // Toggle
         } else { alert("Contraseña incorrecta."); return; }
-    } else { document.getElementById("config-submenu").style.display = "block"; }
+    } else { 
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block"; // Toggle
+    }
 };
 
 const openConfigScreen = (screenId) => {
@@ -1377,13 +1507,15 @@ const openConfigScreen = (screenId) => {
         else { alert("Contraseña incorrecta."); return false; }
     }
     if (isAuthenticated || screenId === 'user-list-screen' || screenId === 'stats-screen') {
-        closeAll();
+        closeAll(); // Cerrar sidebar y cualquier otra pantalla abierta
         const screen = document.getElementById(screenId);
         if (screen) {
-            screen.style.display = "block";
+            screen.style.display = "block"; // Mostrar la pantalla de configuración
             if (screenId === 'user-list-screen') { 
-                renderUsers();
+                renderUsers(); // Actualizar lista de usuarios
             }
+            // Asegurar que el scroll de la pantalla de config esté al inicio
+            screen.scrollTop = 0; 
         } else {
              console.error(`Pantalla ${screenId} no encontrada.`);
         }
@@ -1420,7 +1552,7 @@ document.getElementById("guardar-setlist-config").onclick = async () => {
         setlistConfig.setlistStar={name:nStar, url:uStar};
         await saveSetlistConfig();
         await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
-        document.getElementById("setlist-config-screen").style.display="none";
+        document.getElementById("setlist-config-screen").style.display="none"; // Cerrar al guardar
     } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message; }
 };
 
@@ -1439,11 +1571,12 @@ document.getElementById("add-user").onclick = async () => {
         if(editingUserIndex!==null){
             const oldName = users[editingUserIndex].name;
             users[editingUserIndex]={name,nickname,roles};
+            // Si el nombre cambia, actualizar en asistencias
             if(oldName!==name){ rehearsals.forEach(r=>{ if(Array.isArray(r.attendance)){r.attendance.forEach(a=>{if(a.name===oldName)a.name=name;});}}); await saveRehearsals(); }
             msg.textContent="Usuario actualizado.";
         } else { users.push({name,nickname,roles}); msg.textContent="Usuario añadido."; }
         await saveUsers();
-        msg.className="success-message";
+        msg.className="success-message"; // Cambiar clase para éxito
         resetUserForm();
     } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message; }
 };
@@ -1461,14 +1594,14 @@ document.getElementById("add-rehearsal").onclick = async () => {
     if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return;}
     if(calculateDuration(startTime,endTime)<=0){msg.className="error-message";msg.textContent="Hora fin posterior a inicio.";return;}
     try{
-        const newData={date,startTime,endTime,location:loc,attendance:[]};
+        const newData={date,startTime,endTime,location:loc,attendance:[]}; // Iniciar asistencia vacía
         if(editingRehearsalIndex!==null){
-            newData.attendance=rehearsals[editingRehearsalIndex].attendance||[];
+            newData.attendance=rehearsals[editingRehearsalIndex].attendance||[]; // Mantener asistencias si se edita
             rehearsals[editingRehearsalIndex]=newData;
             msg.textContent="Ensayo actualizado.";
         } else { rehearsals.push(newData); msg.textContent="Ensayo añadido."; }
         await saveRehearsals();
-        msg.className="success-message";
+        msg.className="success-message"; // Cambiar clase para éxito
         resetRehearsalForm();
     } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message;}
 };
@@ -1502,7 +1635,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay canciones en Setlist Próx. Concierto."); };
   document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay canciones en Setlist Estrella."); };
   
-  setTimeout(processBandHelperTable, 1500); 
+  // Dar un poco más de tiempo para que el widget de BandHelper cargue
+  setTimeout(processBandHelperTable, 2000); 
 });
 </script>
 </body>
