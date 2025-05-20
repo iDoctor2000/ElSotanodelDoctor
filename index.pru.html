@@ -451,7 +451,11 @@ const toHHMM = s => {
   return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 };
 const toHours = s => (s / 3600).toFixed(2);
-const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
+// La función clean original eliminaba caracteres como la ñ. La modificamos o eliminamos su uso donde sea necesario.
+// Por ahora, no la usaremos para los datos que van al PDF, ya que queremos que jsPDF maneje la codificación.
+// const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim(); 
+const cleanForDisplay = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim(); // Para uso en HTML si es necesario
+
 const calculateDuration = (startTime, endTime) => {
   if (!startTime || !endTime) return 0;
   const [startH, startM] = startTime.split(":").map(Number);
@@ -613,8 +617,9 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     songs.forEach((s, i) => {
       const secs = parseDuration(s.duration || "0");
       total += secs;
+      // Usar cleanForDisplay para el HTML, no para los datos que van al PDF
       tbody.insertAdjacentHTML("beforeend",
-        `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
+        `<tr><td>${i + 1}</td><td>${s.name || "Sin título"}</td><td>${s.key || "-"}</td><td>${s.tempo || "-"}</td><td>${toMMSS(secs)}</td></tr>`
       );
     });
     document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(total);
@@ -902,7 +907,7 @@ const fontDataCache = {};
 const PDF_FONT_PATHS = {
     bleedingCowboys: 'assets/Bleeding_Cowboys.ttf',
     carnevalee: 'assets/Carnevalee_Freakshow.ttf',
-    // chalkBoard: 'assets/Chalk_Board.ttf' // Comentado ya que usaremos Helvetica para la tabla
+    // chalkBoard: 'assets/Chalk_Board.ttf' // No se usará Chalk_Board para la tabla por problemas de caracteres
 };
 const PDF_FONT_NAMES = {
     bleedingCowboys: "BleedingCowboysCustom",
@@ -962,7 +967,6 @@ async function genPDF(songs, setlistTitle, fileName) {
     
     let bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
     let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
-    // No necesitamos cargar Chalk_Board si vamos a usar Helvetica para la tabla
 
     try {
         const imgData = await new Promise((resolve, reject) => {
@@ -1000,14 +1004,12 @@ async function genPDF(songs, setlistTitle, fileName) {
     const contentMarginBottom = 100; 
     let currentY = contentMarginTop;
 
-    // Título "SETLIST"
     doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
     if (!bleedingCowboysRegistered) doc.setFontType("bold");
     doc.setFontSize(28); // Aumentado
     doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
     currentY += 28 + 10; 
 
-    // Nombre del Setlist
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
     if (!carnevaleeRegistered) doc.setFontType("bold");
     doc.setFontSize(22); // Aumentado
@@ -1022,7 +1024,7 @@ async function genPDF(songs, setlistTitle, fileName) {
     doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
-    const tableFont = "helvetica"; // Usar Helvetica para la tabla
+    const tableFont = "helvetica"; 
     const tableHeadFont = "helvetica";
 
     doc.autoTable({
@@ -1030,7 +1032,7 @@ async function genPDF(songs, setlistTitle, fileName) {
         head: [["#", "Título", "Key", "Tempo", "Time"]], // Nombres de columna actualizados
         body: songs.map((s, i) => [
             i + 1, 
-            s.name || "", 
+            s.name || "", // No usar clean() aquí para preservar caracteres
             s.key || "", 
             s.tempo || "", 
             toMMSS(parseDuration(s.duration))
@@ -1057,7 +1059,7 @@ async function genPDF(songs, setlistTitle, fileName) {
         },
         columnStyles: {
             0: { halign: 'center', cellWidth: 25, fontSize: 9 }, // #
-            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   // Título (tamaño mantenido)
+            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   // Título (tamaño aumentado)
             2: { halign: 'center', cellWidth: 60, fontSize: 9 },  // Key
             3: { halign: 'center', cellWidth: 60, fontSize: 9 },  // Tempo
             4: { halign: 'center', cellWidth: 60, fontSize: 9 }   // Time
@@ -1066,7 +1068,7 @@ async function genPDF(songs, setlistTitle, fileName) {
         pageBreak: 'auto',
         didDrawPage: function (data) {}
     });
-    doc.save(fileName);
+    doc.save(fileName + ".pdf"); // Asegurar extensión .pdf
 }
 
 
