@@ -451,8 +451,14 @@ const toHHMM = s => {
   return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 };
 const toHours = s => (s / 3600).toFixed(2);
-// No usaremos clean() para los datos del PDF para preservar caracteres especiales.
-const cleanForDisplay = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim(); 
+
+// Función para decodificar entidades HTML (necesaria si los datos del feed vienen así)
+function decodeHtmlEntities(text) {
+    if (typeof text !== 'string') return text;
+    const textArea = document.createElement('textarea');
+    textArea.innerHTML = text;
+    return textArea.value;
+}
 
 const calculateDuration = (startTime, endTime) => {
   if (!startTime || !endTime) return 0;
@@ -501,7 +507,7 @@ function generateICS(title, date, startTime, location, description = "", duratio
   URL.revokeObjectURL(url);
 }
 const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
-const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, '_');
+const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|#$.[\]]/g, '_').replace(/\s+/g, '_');
 
 
 /* ---------- 1.5. Manejo de conexión ---------- */
@@ -617,6 +623,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     songs.forEach((s, i) => {
       const secs = parseDuration(s.duration || "0");
       total += secs;
+      // Usar el nombre de la canción directamente, sin clean() para el PDF
       tbody.insertAdjacentHTML("beforeend",
         `<tr><td>${i + 1}</td><td>${s.name || "Sin título"}</td><td>${s.key || "-"}</td><td>${s.tempo || "-"}</td><td>${toMMSS(secs)}</td></tr>`
       );
@@ -906,7 +913,6 @@ const fontDataCache = {};
 const PDF_FONT_PATHS = {
     bleedingCowboys: 'assets/Bleeding_Cowboys.ttf',
     carnevalee: 'assets/Carnevalee_Freakshow.ttf'
-    // No incluimos Chalk_Board aquí ya que usaremos Helvetica para la tabla
 };
 const PDF_FONT_NAMES = {
     bleedingCowboys: "BleedingCowboysCustom",
@@ -957,18 +963,17 @@ async function registerFontWithDoc(doc, fontPath, fontVFSAlias, fontNameInDoc) {
     return false; 
 }
 
-async function genPDF(songs, setlistTitle, rawFileName) { // rawFileName es el título del setlist
+async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Limpiar el nombre del archivo
-    const cleanFileName = sanitizeForPdfFilename(rawFileName) || "setlist";
-
+    const cleanFileName = sanitizeForPdfFilename(rawFileNameForPdf) || "setlist";
 
     let bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
     let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
+    // No cargamos Chalk_Board, usaremos Helvetica para la tabla
 
     try {
         const imgData = await new Promise((resolve, reject) => {
@@ -1015,7 +1020,7 @@ async function genPDF(songs, setlistTitle, rawFileName) { // rawFileName es el t
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
     if (!carnevaleeRegistered) doc.setFontType("bold");
     doc.setFontSize(22); 
-    doc.text(setlistTitle, pageWidth / 2, currentY, { align: "center" }); // Usar el título del setlist pasado
+    doc.text(setlistDynamicName, pageWidth / 2, currentY, { align: "center" }); // Usar el título del setlist pasado
     currentY += 22 + 5;
 
     doc.setFont("times", "italic");
@@ -1029,16 +1034,19 @@ async function genPDF(songs, setlistTitle, rawFileName) { // rawFileName es el t
     const tableFont = "helvetica"; 
     const tableHeadFont = "helvetica";
 
+    // Preparar datos para la tabla, decodificando entidades HTML
+    const tableBody = songs.map((s, i) => [
+        i + 1, 
+        decodeHtmlEntities(s.name || ""), // Decodificar nombre de canción
+        decodeHtmlEntities(s.key || ""), 
+        decodeHtmlEntities(s.tempo || ""), 
+        toMMSS(parseDuration(s.duration))
+    ]);
+
     doc.autoTable({
         startY: currentY,
-        head: [["#", "Título", "Key", "Tempo", "Time"]], // Nombres de columna actualizados
-        body: songs.map((s, i) => [
-            i + 1, 
-            s.name || "", 
-            s.key || "", 
-            s.tempo || "", 
-            toMMSS(parseDuration(s.duration))
-        ]),
+        head: [["#", "Título", "Key", "Tempo", "Time"]], 
+        body: tableBody,
         theme: 'grid', 
         headStyles: { 
             fillColor: [220, 220, 220], 
@@ -1046,7 +1054,7 @@ async function genPDF(songs, setlistTitle, rawFileName) { // rawFileName es el t
             font: tableHeadFont, 
             fontStyle: 'bold',
             halign: 'center',
-            fontSize: 10 // Tamaño reducido
+            fontSize: 10 
         },
         styles: { 
             font: tableFont, 
@@ -1061,7 +1069,7 @@ async function genPDF(songs, setlistTitle, rawFileName) { // rawFileName es el t
         },
         columnStyles: {
             0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
-            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   // Título de canción más grande
+            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   
             2: { halign: 'center', cellWidth: 60, fontSize: 9 },  
             3: { halign: 'center', cellWidth: 60, fontSize: 9 },  
             4: { halign: 'center', cellWidth: 60, fontSize: 9 }   
@@ -1070,7 +1078,7 @@ async function genPDF(songs, setlistTitle, rawFileName) { // rawFileName es el t
         pageBreak: 'auto',
         didDrawPage: function (data) {}
     });
-    doc.save(`${cleanFileName}.pdf`); // Usar el nombre del setlist para el archivo
+    doc.save(`${cleanFileName}.pdf`); 
 }
 
 
