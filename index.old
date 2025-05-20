@@ -1,4 +1,4 @@
-/* ---------- Funcionalidades SIN mejora de los pdfs---------- */
+/* ---------- Ultima estable antes de APP ---------- */
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -142,13 +142,13 @@
     }
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
-    th.calendar-col-header, td.calendar-col { /* Renombrado para cabecera específica */
+    th.calendar-col-header, td.calendar-col { 
         width: 50px; 
         text-align: center;
         padding-left: 5px;
         padding-right: 5px;
     }
-    th.details-col-header { /* Nueva clase para cabecera de detalles */
+    th.details-col-header { 
         width: 50px;
         text-align: center;
         padding-left: 5px;
@@ -452,7 +452,15 @@ const toHHMM = s => {
   return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 };
 const toHours = s => (s / 3600).toFixed(2);
-const clean = s => (s || "").replace(/[^\x00-\xFF]/g, "").trim();
+
+// Función para decodificar entidades HTML (necesaria si los datos del feed vienen así)
+function decodeHtmlEntities(text) {
+    if (typeof text !== 'string') return text;
+    const textArea = document.createElement('textarea');
+    textArea.innerHTML = text;
+    return textArea.value;
+}
+
 const calculateDuration = (startTime, endTime) => {
   if (!startTime || !endTime) return 0;
   const [startH, startM] = startTime.split(":").map(Number);
@@ -460,7 +468,7 @@ const calculateDuration = (startTime, endTime) => {
   const startSeconds = startH * 3600 + startM * 60;
   const endSeconds = endH * 3600 + endM * 60;
   let duration = endSeconds - startSeconds;
-  if (duration < 0) duration += 24 * 3600; // Cruza la medianoche
+  if (duration < 0) duration += 24 * 3600; 
   return duration;
 };
 const formatDateWithDay = dateStr => {
@@ -500,6 +508,8 @@ function generateICS(title, date, startTime, location, description = "", duratio
   URL.revokeObjectURL(url);
 }
 const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
+const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|#$.[\]]/g, '_').replace(/\s+/g, '_');
+
 
 /* ---------- 1.5. Manejo de conexión ---------- */
 const connectionStatus = document.getElementById("connection-status");
@@ -554,10 +564,12 @@ async function loadDoc(collection, docId, fallback) {
 }
 async function saveDoc(collection, docId, data, merge = false) {
   try {
-    await db.collection(collection).doc(docId).set(data, { merge });
+    console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge);
+    await db.collection(collection).doc(docId).set(data, { merge: merge }); 
+    console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`);
     return true;
   } catch (e) {
-    console.error(`Error al guardar documento ${collection}/${docId}:`, e.message, e); 
+    console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); 
     throw e; 
   }
 }
@@ -612,8 +624,9 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     songs.forEach((s, i) => {
       const secs = parseDuration(s.duration || "0");
       total += secs;
+      // Usar el nombre de la canción directamente, sin clean() para el PDF
       tbody.insertAdjacentHTML("beforeend",
-        `<tr><td>${i + 1}</td><td>${clean(s.name || "Sin título")}</td><td>${clean(s.key || "-")}</td><td>${clean(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
+        `<tr><td>${i + 1}</td><td>${s.name || "Sin título"}</td><td>${s.key || "-"}</td><td>${s.tempo || "-"}</td><td>${toMMSS(secs)}</td></tr>`
       );
     });
     document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(total);
@@ -897,28 +910,178 @@ function renderStats() {
 }
 
 /* ---------- 9. PDF ---------- */
-async function genPDF(songs, title, fileName) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "pt", format: "A4" });
+const fontDataCache = {};
+const PDF_FONT_PATHS = {
+    bleedingCowboys: 'assets/Bleeding_Cowboys.ttf',
+    carnevalee: 'assets/Carnevalee_Freakshow.ttf'
+};
+const PDF_FONT_NAMES = {
+    bleedingCowboys: "BleedingCowboysCustom",
+    carnevalee: "CarnevaleeCustom"
+};
+const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png';
+
+async function loadFontAsBase64(fontPath) {
+    if (fontDataCache[fontPath]) {
+        return fontDataCache[fontPath];
+    }
     try {
-        const blob = await (await fetch("assets/logo_negro copia.jpg")).blob(); 
-        const base = await new Promise((ok, ko) => {
-            const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(blob);
+        const response = await fetch(fontPath);
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar la fuente: ${response.statusText} (URL: ${fontPath})`);
+        }
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                fontDataCache[fontPath] = reader.result.split(',')[1];
+                resolve(fontDataCache[fontPath]);
+            };
+            reader.onerror = (error) => reject(new Error("Error del FileReader al convertir fuente a Base64: " + error.message));
+            reader.readAsDataURL(blob);
         });
-        doc.addImage(base, "JPEG", 40, 30, 60, 60);
-    } catch (e) { console.error("Error al cargar el logo para el PDF:", e); }
-    doc.setFontSize(16); doc.text(`Setlist - ${title}`, 120, 50);
-    const totalTime = toHHMM(songs.reduce((a, s) => a + parseDuration(s.duration), 0));
-    doc.setFontSize(12); doc.text(`${songs.length} canciones, ${totalTime} total`, 120, 70);
-    doc.autoTable({
-        startY: 100,
-        head: [["#", "Título", "Tonalidad", "Tempo", "Duración"]],
-        body: songs.map((s, i) => [i + 1, s.name || "", s.key || "", s.tempo || "", toMMSS(parseDuration(s.duration))]),
-        headStyles: { fillColor: [60, 60, 60], textColor: [255, 255, 255], fontStyle: "bold" },
-        styles: { fontSize: 10, cellPadding: 5 }
-    });
-    doc.save(fileName);
+    } catch (error) {
+        console.error(`Error crítico cargando la fuente ${fontPath}:`, error);
+        fontDataCache[fontPath] = null; 
+        return null; 
+    }
 }
+
+async function registerFontWithDoc(doc, fontPath, fontVFSAlias, fontNameInDoc) {
+    const fontBase64 = await loadFontAsBase64(fontPath);
+    if (fontBase64) {
+        try {
+            doc.addFileToVFS(fontVFSAlias, fontBase64); 
+            doc.addFont(fontVFSAlias, fontNameInDoc, 'normal'); 
+            console.log(`Fuente ${fontNameInDoc} registrada en jsPDF desde ${fontPath}.`);
+            return true; 
+        } catch (fontError) {
+            console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`, fontError);
+        }
+    } else {
+        console.warn(`No se pudo cargar la fuente ${fontPath} para registrarla.`);
+    }
+    return false; 
+}
+
+async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    
+    const cleanFileName = sanitizeForPdfFilename(rawFileNameForPdf) || "setlist";
+
+    let bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
+    let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
+    // No cargamos Chalk_Board, usaremos Helvetica para la tabla
+
+    try {
+        const imgData = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width; canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            };
+            img.onerror = () => reject(new Error("Error al cargar la imagen de plantilla."));
+            img.src = PDF_BACKGROUND_IMAGE_PATH; 
+             if (img.complete && img.naturalHeight !== 0) { 
+                 const canvas = document.createElement('canvas');
+                 canvas.width = img.width; canvas.height = img.height;
+                 const ctx = canvas.getContext('2d');
+                 ctx.drawImage(img, 0, 0);
+                 resolve(canvas.toDataURL('image/png'));
+            } else if (img.complete && img.naturalHeight === 0) {
+                reject(new Error("Imagen de plantilla en caché pero inválida."));
+            }
+        });
+        doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+    } catch (e) {
+        console.error("No se pudo añadir la plantilla de fondo al PDF:", e);
+        doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S'); 
+        doc.setFontSize(10); doc.setTextColor(150,0,0); 
+        doc.text("Advertencia: No se pudo cargar la plantilla de fondo.", pageWidth / 2, pageHeight / 2, { align: "center" });
+    }
+
+    doc.setTextColor(0, 0, 0); 
+    const contentMarginTop = 120; 
+    const contentMarginSides = 60; 
+    const contentMarginBottom = 100; 
+    let currentY = contentMarginTop;
+
+    doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
+    if (!bleedingCowboysRegistered) doc.setFontType("bold");
+    doc.setFontSize(28); 
+    doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
+    currentY += 28 + 10; 
+
+    doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
+    if (!carnevaleeRegistered) doc.setFontType("bold");
+    doc.setFontSize(22); 
+    doc.text(setlistDynamicName, pageWidth / 2, currentY, { align: "center" }); // Usar el título del setlist pasado
+    currentY += 22 + 5;
+
+    doc.setFont("times", "italic");
+    doc.setFontSize(10);
+    const totalSongsText = `${songs.length} canciones`;
+    const totalTimeValue = songs.reduce((a, s) => a + parseDuration(s.duration), 0);
+    const totalTimeText = `Tiempo total: ${toHHMM(totalTimeValue)}`;
+    doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
+    currentY += 10 + 20; 
+
+    const tableFont = "helvetica"; 
+    const tableHeadFont = "helvetica";
+
+    // Preparar datos para la tabla, decodificando entidades HTML
+    const tableBody = songs.map((s, i) => [
+        i + 1, 
+        decodeHtmlEntities(s.name || ""), // Decodificar nombre de canción
+        decodeHtmlEntities(s.key || ""), 
+        decodeHtmlEntities(s.tempo || ""), 
+        toMMSS(parseDuration(s.duration))
+    ]);
+
+    doc.autoTable({
+        startY: currentY,
+        head: [["#", "Título", "Key", "Tempo", "Time"]], 
+        body: tableBody,
+        theme: 'grid', 
+        headStyles: { 
+            fillColor: [220, 220, 220], 
+            textColor: [0, 0, 0],    
+            font: tableHeadFont, 
+            fontStyle: 'bold',
+            halign: 'center',
+            fontSize: 10 
+        },
+        styles: { 
+            font: tableFont, 
+            fontSize: 9, 
+            cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
+            lineColor: [80, 80, 80], 
+            lineWidth: 0.5,
+            textColor: [0,0,0], 
+        },
+        alternateRowStyles: { 
+            fillColor: [248, 248, 248] 
+        },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
+            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   
+            2: { halign: 'center', cellWidth: 60, fontSize: 9 },  
+            3: { halign: 'center', cellWidth: 60, fontSize: 9 },  
+            4: { halign: 'center', cellWidth: 60, fontSize: 9 }   
+        },
+        margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
+        pageBreak: 'auto',
+        didDrawPage: function (data) {}
+    });
+    doc.save(`${cleanFileName}.pdf`); 
+}
+
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
 let processTableAttempts = 0;
@@ -931,14 +1094,12 @@ function processBandHelperTable() {
       return;
   }
  
-  console.log(`processBandHelperTable: Intento ${processTableAttempts + 1} para encontrar la tabla de BandHelper.`);
   const table = container.querySelector("table"); 
   const loadingMessage = document.getElementById("bandhelper-loading-message");
 
   if (!table) {
     processTableAttempts++;
     if (processTableAttempts < MAX_PROCESS_ATTEMPTS) {
-      console.log("processBandHelperTable: Tabla de BandHelper NO encontrada. Reintentando en 500ms...");
       setTimeout(processBandHelperTable, 500); 
     } else {
       console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de", MAX_PROCESS_ATTEMPTS, "intentos.");
@@ -951,7 +1112,6 @@ function processBandHelperTable() {
   }
 
   if(loadingMessage) loadingMessage.style.display = "none"; 
-  console.log("processBandHelperTable: Tabla de BandHelper ENCONTRADA:", table);
 
   if (table.dataset.processed === "true") { 
       return;
@@ -959,108 +1119,43 @@ function processBandHelperTable() {
   table.dataset.processed = "true";
 
   let headerRow = table.querySelector("thead tr"); 
-  let isHeaderInTbody = false;
-  const bandHelperHeaders = ["Fecha/Hora", "Evento", "Lugar", "Cal", "Info"]; // Nuevas cabeceras
+  const desiredHeaders = ["Fecha/Hora", "Evento", "Lugar", "Cal", "Info"]; 
 
-  if (!headerRow) { 
-      if (table.rows.length > 0 && table.rows[0].cells.length > 0 && table.rows[0].cells[0].tagName.toLowerCase() === 'th') {
-          headerRow = table.rows[0];
-          // Limpiar cabeceras existentes y re-crear para asegurar el orden y contenido
-          headerRow.innerHTML = ''; 
-          bandHelperHeaders.forEach(text => {
-              const th = document.createElement('th');
-              th.textContent = text;
-              if (text === "Cal" || text === "Info") {
-                  th.classList.add(text === "Cal" ? "calendar-col-header" : "details-col-header");
-              }
-              headerRow.appendChild(th);
-          });
-
-      } else {
-          const tbody = table.querySelector("tbody");
-          if (tbody && tbody.rows.length > 0) {
-              const firstTbodyRow = tbody.rows[0];
-              if (firstTbodyRow.querySelector("th")) { // Si la cabecera está en tbody
-                  headerRow = firstTbodyRow;
-                  isHeaderInTbody = true; 
-                  headerRow.innerHTML = ''; // Limpiar y re-crear
-                  bandHelperHeaders.forEach(text => {
-                      const th = document.createElement('th');
-                      th.textContent = text;
-                       if (text === "Cal" || text === "Info") {
-                          th.classList.add(text === "Cal" ? "calendar-col-header" : "details-col-header");
-                      }
-                      headerRow.appendChild(th);
-                  });
-              } else { // No hay cabecera formal, crearla en thead
-                  const thead = table.tHead || table.createTHead();
-                  headerRow = thead.insertRow(0);
-                  bandHelperHeaders.forEach(text => {
-                      const th = document.createElement('th');
-                      th.textContent = text;
-                       if (text === "Cal" || text === "Info") {
-                          th.classList.add(text === "Cal" ? "calendar-col-header" : "details-col-header");
-                      }
-                      headerRow.appendChild(th);
-                  });
-              }
-          }
-      }
-  } else { // Cabecera existe en thead, asegurar columnas correctas
-      headerRow.innerHTML = ''; // Limpiar y re-crear
-      bandHelperHeaders.forEach(text => {
-          const th = document.createElement('th');
-          th.textContent = text;
-          if (text === "Cal" || text === "Info") {
-              th.classList.add(text === "Cal" ? "calendar-col-header" : "details-col-header");
-          }
-          headerRow.appendChild(th);
-      });
+  if (!table.tHead) {
+      table.createTHead();
   }
+  headerRow = table.tHead.rows[0] || table.tHead.insertRow(0);
+  headerRow.innerHTML = ''; 
+  desiredHeaders.forEach(text => {
+      const th = document.createElement('th');
+      th.textContent = text;
+      if (text === "Cal") th.classList.add("calendar-col-header");
+      if (text === "Info") th.classList.add("details-col-header");
+      headerRow.appendChild(th);
+  });
   
   const dataRowsSource = table.querySelector("tbody") ? table.querySelectorAll("tbody tr") : []; 
-  let dataRows = Array.from(dataRowsSource);
   
-  if (dataRows.length === 0 && table.rows.length > (headerRow ? 1:0) ) {
-      console.warn("processBandHelperTable: No se encontraron filas en 'tbody'.");
-      return;
-  }
-
-  dataRows.forEach((row, rowIndex) => {
-    if (isHeaderInTbody && rowIndex === 0 && row === headerRow) { 
-        return; // Saltar fila de cabecera si estaba en tbody
-    }
-
-    const originalCells = Array.from(row.cells); // Copiar celdas originales
-    
-    // Limpiar la fila actual para reconstruirla con el orden correcto
+  dataRowsSource.forEach((row) => {
+    const originalCells = Array.from(row.cells); 
     row.innerHTML = ''; 
 
-    // Celda 0: Fecha/Hora
-    const dateCell = row.insertCell();
-    dateCell.textContent = originalCells[0]?.textContent.trim() || "";
-    const dateCellFullText = dateCell.textContent;
-
-    // Celda 1: Evento
-    const eventCell = row.insertCell();
+    const dateCellFullText = originalCells[0]?.textContent.trim() || "";
     const eventTitleFromCell = originalCells[1]?.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
-    eventCell.textContent = eventTitleFromCell;
-    
-    // Celda 2: Lugar (tomado del campo adicional original, que era originalCells[3])
-    const locationCell = row.insertCell();
-    locationCell.textContent = originalCells[3]?.textContent.trim().split('\n')[0].trim() || originalCells[2]?.textContent.trim().split('\n')[0].trim() || ""; // Priorizar campo adicional
+    const locationText = originalCells[3]?.textContent.trim().split('\n')[0].trim() || originalCells[2]?.textContent.trim().split('\n')[0].trim() || "";
 
-    // Celda 3: Calendario
+    row.insertCell().textContent = dateCellFullText;    
+    row.insertCell().textContent = eventTitleFromCell; 
+    row.insertCell().textContent = locationText;       
+
     const calendarDisplayCell = row.insertCell();
     calendarDisplayCell.className = "calendar-col";
     calendarDisplayCell.style.textAlign = "center";
 
-    // Celda 4: Detalles
     const detailDisplayCell = row.insertCell();
-    detailDisplayCell.className = "calendar-col"; // Usar 'calendar-col' para ancho similar
+    detailDisplayCell.className = "calendar-col"; 
     detailDisplayCell.style.textAlign = "center";
 
-    // --- Lógica para botones ---
     const dateForId = dateCellFullText.split(',')[0].trim();
     const concertId = sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
     
@@ -1068,7 +1163,7 @@ function processBandHelperTable() {
     detailsBtn.className = "details-btn";
     detailsBtn.innerHTML = "➡️";
     detailsBtn.title = "Ver/Editar Detalles del Concierto";
-    detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellFullText, eventTitleFromCell, locationCell.textContent); 
+    detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellFullText, eventTitleFromCell, locationText); 
     detailDisplayCell.appendChild(detailsBtn);
 
     let icsDate = new Date().toISOString().split('T')[0]; 
@@ -1093,7 +1188,7 @@ function processBandHelperTable() {
         startTimeForICS = singleTimeMatch[1];
     }
     
-    const locationForICS = locationCell.textContent || eventTitleFromCell;
+    const locationForICS = locationText || eventTitleFromCell;
     const descriptionForICS = `Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;
 
     const calendarBtn = document.createElement('button');
@@ -1404,9 +1499,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   try { songs2 = await cargarSegundoSetlist(); } catch (e) { console.error("Fallo carga Setlist Próx. Concierto:", e); }
   try { songsStar = await cargarStarSetlist(); } catch (e) { console.error("Fallo carga Setlist Estrella:", e); }
 
-  document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, "setlist_ensayos.pdf"); else alert("No hay canciones en Setlist Ensayo."); };
-  document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, "setlist_prox_concierto.pdf"); else alert("No hay canciones en Setlist Próx. Concierto."); };
-  document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, "setlist_estrella.pdf"); else alert("No hay canciones en Setlist Estrella."); };
+  document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay canciones en Setlist Ensayo."); };
+  document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay canciones en Setlist Próx. Concierto."); };
+  document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay canciones en Setlist Estrella."); };
   
   setTimeout(processBandHelperTable, 1500); 
 });
