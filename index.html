@@ -255,7 +255,7 @@
     }
     tr:nth-child(even){background:#1a1a1a}
     
-    .download-btn{display:block;margin:20px auto 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
+    .download-btn{display:inline-block;margin:20px 5px 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
     #total-time, #total-time-star, #total-time-2{color:#0cf;margin-top:10px;text-align:center}
 
@@ -286,11 +286,11 @@
     .attending-no { color: #f00; }
     .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; }
     #connection-status {
-      position: fixed; 
-      top: calc(60px + 5px); 
-      right: 10px; 
-      background: rgba(0, 0, 0, 0.8); color: #fff;
-      padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none;
+        position: fixed; 
+        top: calc(60px + 5px); 
+        right: 10px; 
+        background: rgba(0, 0, 0, 0.8); color: #fff;
+        padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none;
     }
     #connection-status.offline { background: #f00; }
     #connection-status.retrying { background: #ff9800; }
@@ -508,7 +508,8 @@
           <tbody id="setlist-body"></tbody>
         </table>
       </div>
-      <button class="download-btn" id="download-btn">Descargar PDF</button>
+      <div style="text-align: center;"> <button class="download-btn" id="download-btn">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn">Pdf Simple</button> </div>
       <p id="total-time"></p>
     </section>
 
@@ -545,7 +546,8 @@
           <tbody id="second-body"></tbody>
         </table>
       </div>
-      <button class="download-btn" id="download-btn-2">Descargar PDF</button>
+      <div style="text-align: center;"> <button class="download-btn" id="download-btn-2">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button> </div>
       <p id="total-time-2"></p>
     </section>
     
@@ -566,7 +568,8 @@
           <tbody id="star-setlist-body"></tbody>
         </table>
       </div>
-      <button class="download-btn" id="download-btn-star">Descargar PDF</button>
+      <div style="text-align: center;"> <button class="download-btn" id="download-btn-star">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button> </div>
       <p id="total-time-star"></p>
     </section>
 
@@ -1131,6 +1134,36 @@ async function registerFontWithDoc(doc, fontPath, fontVFSAlias, fontNameInDoc) {
     return false; 
 }
 
+// --- NUEVO: Helper para cargar imagen de fondo para PDFs ---
+async function getBackgroundImageDataURL() {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width; canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = (err) => reject(new Error("Error al cargar la imagen de plantilla: " + err.message));
+        img.src = PDF_BACKGROUND_IMAGE_PATH;
+        
+        // Manejar imágenes cacheadas que podrían no disparar 'onload' consistentemente
+        if (img.complete) {
+            if (img.naturalHeight !== 0) {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width; canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            } else {
+                 reject(new Error("Imagen de plantilla en caché pero inválida."));
+            }
+        }
+    });
+}
+
+
 async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
@@ -1141,30 +1174,11 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
 
     let bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
     let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
-
+    
+    let backgroundImageData = null;
     try {
-        const imgData = await new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width; canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                resolve(canvas.toDataURL('image/png'));
-            };
-            img.onerror = () => reject(new Error("Error al cargar la imagen de plantilla."));
-            img.src = PDF_BACKGROUND_IMAGE_PATH; 
-             if (img.complete && img.naturalHeight !== 0) { 
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width; canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                resolve(canvas.toDataURL('image/png'));
-            } else if (img.complete && img.naturalHeight === 0) { 
-                reject(new Error("Imagen de plantilla en caché pero inválida."));
-            }
-        });
-        doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+        backgroundImageData = await getBackgroundImageDataURL();
+        doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
     } catch (e) {
         console.error("No se pudo añadir la plantilla de fondo al PDF:", e);
         doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S'); 
@@ -1216,7 +1230,7 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
         theme: 'grid', 
         headStyles: { 
             fillColor: [220, 220, 220], 
-            textColor: [0, 0, 0],   
+            textColor: [0, 0, 0],    
             font: tableHeadFont, 
             fontStyle: 'bold',
             halign: 'center',
@@ -1243,9 +1257,77 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
         didDrawPage: function (data) {
+            // --- MODIFICACIÓN: Añadir fondo a nuevas páginas si es necesario ---
+            if (data.pageNumber > 1 && backgroundImageData) {
+                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+            }
         }
     });
     doc.save(`${cleanFileName}.pdf`); 
+}
+
+// --- NUEVO: Función para generar PDF Básico ---
+async function genBasicPDF(songs, setlistDynamicName, rawFileNameForPdf) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    
+    const cleanFileName = sanitizeForPdfFilename(rawFileNameForPdf) || "setlist";
+
+    // Registrar fuentes (similar a genPDF, las VFS son por instancia de doc)
+    let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
+    // BleedingCowboys no se usa directamente en este PDF según el diseño, pero se podría cargar si se quisiera para algo.
+
+    let backgroundImageData = null;
+    try {
+        backgroundImageData = await getBackgroundImageDataURL();
+        doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+    } catch (e) {
+        console.error("No se pudo añadir la plantilla de fondo al PDF básico:", e);
+        doc.setFontSize(10); doc.setTextColor(150,0,0); 
+        doc.text("Advertencia: No se pudo cargar la plantilla de fondo.", pageWidth / 2, 30, { align: "center" });
+    }
+
+    doc.setTextColor(0, 0, 0); 
+    const contentMarginTop = 120; 
+    const contentMarginSides = 60;
+    const contentMarginBottom = 100;
+    let currentY = contentMarginTop;
+    
+    const setlistNameFontSize = 22; // Coherente con el nombre del setlist en genPDF
+    const songTitleFontSize = 16;    // 11pt (de genPDF) + 5pt
+    const songTitleLineHeight = songTitleFontSize * 1.5; // Espacio entre títulos de canciones
+
+    // Nombre del Setlist (Título principal de este PDF)
+    doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
+    if (!carnevaleeRegistered) doc.setFontType("bolditalic"); // Estilo de fallback
+    doc.setFontSize(setlistNameFontSize);
+    doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
+    currentY += setlistNameFontSize + 40; // Espacio después del título principal
+
+    // Títulos de las Canciones
+    doc.setFont("helvetica", 'normal'); // Fuente estándar para los títulos de canciones
+    doc.setFontSize(songTitleFontSize);
+
+    for (let i = 0; i < songs.length; i++) {
+        const song = songs[i];
+        const songName = decodeHtmlEntities(song.name || "Canción sin título");
+        
+        if (currentY + songTitleLineHeight > pageHeight - contentMarginBottom) {
+            doc.addPage();
+            if (backgroundImageData) {
+                doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+            }
+            currentY = contentMarginTop; // Resetear Y para la nueva página
+            // Opcional: volver a dibujar el título del setlist en nuevas páginas? Por ahora no.
+        }
+        
+        doc.text(songName, pageWidth / 2, currentY, { align: "center" });
+        currentY += songTitleLineHeight; 
+    }
+
+    doc.save(`${cleanFileName}_Basico.pdf`);
 }
 
 
@@ -1312,7 +1394,7 @@ function processBandHelperTable() {
 
     row.insertCell().textContent = dateCellFullText;    
     row.insertCell().textContent = eventTitleFromCell; 
-    row.insertCell().textContent = locationText;       
+    row.insertCell().textContent = locationText;        
 
     const calendarDisplayCell = row.insertCell();
     calendarDisplayCell.className = "calendar-col"; 
@@ -1378,6 +1460,9 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     concertDetailMessage.textContent = ""; 
     concertDetailMessage.className = "success-message"; 
 
+    // --- MODIFICACIÓN: Bloquear scroll del body ---
+    document.body.style.overflow = 'hidden';
+
     document.getElementById('concert-detail-id').value = concertId;
     const concertTitleDisplay = document.getElementById('concert-detail-title-display');
     if (concertTitleDisplay) {
@@ -1400,7 +1485,7 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     if (users && users.length > 0) {
         musiciansListDiv.innerHTML = ''; 
         users.filter(user => !excludedMusicians.includes(user.name)) 
-             .forEach(user => {
+            .forEach(user => {
                 const userDiv = document.createElement('div');
                 const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`; 
                 userDiv.innerHTML = `
@@ -1442,9 +1527,6 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
         concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}.`;
     }
 
-    if (concertDetailModal.style.display === "none") { // <<-- MODIFICACIÓN AQUÍ
-        concertDetailModal.style.display = ""; 
-    }
     concertDetailModal.classList.add('show'); 
 }
 document.getElementById('save-concert-details').onclick = async () => {
@@ -1482,16 +1564,20 @@ document.getElementById('save-concert-details').onclick = async () => {
         concertDetailMessage.textContent = `Error al guardar: ${error.message}.`;
     }
 };
+
+// --- MODIFICACIÓN: close-concert-details-modal ahora llama a closeAll ---
 document.getElementById('close-concert-details-modal').onclick = () => {
-    concertDetailModal.classList.remove('show');
+    closeAll(); // Esto quitará la clase 'show' y restaurará el scroll del body
 };
+
 
 /* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
 const PASSWORD = "Sotano2014"; 
 let isAuthenticated = false;
 
-function closeAll() { // <<-- MODIFICACIÓN AQUÍ
+// --- MODIFICACIÓN: closeAll ahora también restaura el scroll del body ---
+function closeAll() { 
     document.querySelectorAll(".config-screen").forEach(s => {
         s.style.display = "none";
     });
@@ -1505,6 +1591,7 @@ function closeAll() { // <<-- MODIFICACIÓN AQUÍ
     if (typeof resetUserForm === "function") resetUserForm();
     if (typeof resetRehearsalForm === "function") resetRehearsalForm();
     document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message").forEach(el => el.textContent = "");
+    document.body.style.overflow = ''; // Restaura el scroll del body
 }
 
 document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
@@ -1524,8 +1611,8 @@ const setupMenuLink = (menuId, targetId) => {
                 const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; 
 
                 window.scrollTo({
-                     top: offsetPosition,
-                     behavior: "smooth"
+                        top: offsetPosition,
+                        behavior: "smooth"
                 });
             }
             else { console.warn(`Elemento ${targetId} no encontrado.`); }
@@ -1682,8 +1769,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   try { songsStar = await cargarStarSetlist(); } catch (e) { console.error("Fallo carga Setlist Estrella:", e); }
 
   document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay canciones en Setlist Ensayo."); };
+  // --- NUEVO: Listener para PDF Básico Ensayo ---
+  document.getElementById("download-basic-btn").onclick = () => { if (songs1.length > 0) genBasicPDF(songs1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay canciones en Setlist Ensayo para PDF básico."); };
+  
   document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay canciones en Setlist Próx. Concierto."); };
+  // --- NUEVO: Listener para PDF Básico Próx. Concierto ---
+  document.getElementById("download-basic-btn-2").onclick = () => { if (songs2.length > 0) genBasicPDF(songs2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay canciones en Setlist Próx. Concierto para PDF básico."); };
+  
   document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay canciones en Setlist Estrella."); };
+  // --- NUEVO: Listener para PDF Básico Estrella ---
+  document.getElementById("download-basic-btn-star").onclick = () => { if (songsStar.length > 0) genBasicPDF(songsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay canciones en Setlist Estrella para PDF básico."); };
   
   setTimeout(processBandHelperTable, 2000); 
 });
