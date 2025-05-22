@@ -136,6 +136,7 @@
     }
     .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
     .modal-content input[type="text"],
+    .modal-content input[type="url"], /* */
     .modal-content input[type="time"],
     .modal-content textarea {
         width: 100%; padding: 10px; background: #222; color: #fff;
@@ -395,6 +396,11 @@
         <label for="concert-detail-location">Detalles adicionales de la ubicación:</label>
         <textarea id="concert-detail-location"></textarea>
 
+        <label for="concert-detail-gmaps-link">Enlace de Google Maps (Lugar Evento):</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+            <input type="url" id="concert-detail-gmaps-link" placeholder="https://maps.app.goo.gl/example" style="flex-grow: 1; margin-bottom: 0;">
+            <button id="open-gmaps-link-btn" style="display:none; padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; line-height: 1.5;">Abrir Mapa</button>
+        </div>
         <div class="modal-field-group">
             <div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div>
             <div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div>
@@ -1145,7 +1151,7 @@ async function getBackgroundImageDataURL() {
             ctx.drawImage(img, 0, 0);
             resolve(canvas.toDataURL('image/png'));
         };
-        img.onerror = (err) => reject(new Error("Error al cargar la imagen de plantilla: " + err.message));
+        img.onerror = (err) => reject(new Error("Error al cargar la imagen de plantilla: " + (err.message || err.toString()))); // Mejorar el mensaje de error
         img.src = PDF_BACKGROUND_IMAGE_PATH;
         
         // Manejar imágenes cacheadas que podrían no disparar 'onload' consistentemente
@@ -1156,7 +1162,7 @@ async function getBackgroundImageDataURL() {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
                 resolve(canvas.toDataURL('image/png'));
-            } else {
+            } else if (img.src) { // Solo rechazar si el src está presente y la imagen es inválida
                  reject(new Error("Imagen de plantilla en caché pero inválida."));
             }
         }
@@ -1230,7 +1236,7 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
         theme: 'grid', 
         headStyles: { 
             fillColor: [220, 220, 220], 
-            textColor: [0, 0, 0],    
+            textColor: [0, 0, 0],   
             font: tableHeadFont, 
             fontStyle: 'bold',
             halign: 'center',
@@ -1249,7 +1255,7 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
         },
         columnStyles: {
             0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
-            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },   
+            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },  
             2: { halign: 'center', cellWidth: 60, fontSize: 9 },  
             3: { halign: 'center', cellWidth: 60, fontSize: 9 },  
             4: { halign: 'center', cellWidth: 60, fontSize: 9 }   
@@ -1259,7 +1265,7 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
         didDrawPage: function (data) {
             // --- MODIFICACIÓN: Añadir fondo a nuevas páginas si es necesario ---
             if (data.pageNumber > 1 && backgroundImageData) {
-                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+                doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
             }
         }
     });
@@ -1277,7 +1283,6 @@ async function genBasicPDF(songs, setlistDynamicName, rawFileNameForPdf) {
 
     // Registrar fuentes (similar a genPDF, las VFS son por instancia de doc)
     let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
-    // BleedingCowboys no se usa directamente en este PDF según el diseño, pero se podría cargar si se quisiera para algo.
 
     let backgroundImageData = null;
     try {
@@ -1320,7 +1325,6 @@ async function genBasicPDF(songs, setlistDynamicName, rawFileNameForPdf) {
                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
             }
             currentY = contentMarginTop; // Resetear Y para la nueva página
-            // Opcional: volver a dibujar el título del setlist en nuevas páginas? Por ahora no.
         }
         
         doc.text(songName, pageWidth / 2, currentY, { align: "center" });
@@ -1341,7 +1345,7 @@ function processBandHelperTable() {
       console.error("processBandHelperTable: Contenedor 'bandhelper-concerts-container' no encontrado.");
       return;
   }
- 
+
   const table = container.querySelector("table"); 
   const loadingMessage = document.getElementById("bandhelper-loading-message");
 
@@ -1456,11 +1460,12 @@ function processBandHelperTable() {
 
 const concertDetailModal = document.getElementById('concert-details-modal');
 const concertDetailMessage = document.getElementById('concert-detail-message');
+
+// **** INICIO FUNCIÓN MODIFICADA openConcertDetailModal ****
 async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
     concertDetailMessage.textContent = ""; 
     concertDetailMessage.className = "success-message"; 
 
-    // --- MODIFICACIÓN: Bloquear scroll del body ---
     document.body.style.overflow = 'hidden';
 
     document.getElementById('concert-detail-id').value = concertId;
@@ -1476,6 +1481,13 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     document.getElementById('concert-detail-soundcheck').value = '';
     document.getElementById('concert-detail-showtime').value = '';
     document.getElementById('concert-detail-notes').value = '';
+
+    // **** INICIO CÓDIGO NUEVO PARA GMAPS ****
+    document.getElementById('concert-detail-gmaps-link').value = '';
+    const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
+    openGmapsBtn.style.display = 'none';
+    openGmapsBtn.onclick = null; // Limpiar evento onclick previo
+    // **** FIN CÓDIGO NUEVO PARA GMAPS ****
     
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando músicos...';
@@ -1512,6 +1524,21 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             document.getElementById('concert-detail-showtime').value = details.showTime || '';
             document.getElementById('concert-detail-notes').value = details.generalNotes || '';
             
+            // **** INICIO CÓDIGO NUEVO PARA CARGAR Y MOSTRAR GMAPS LINK ****
+            const gmapsLink = details.googleMapsLink || '';
+            document.getElementById('concert-detail-gmaps-link').value = gmapsLink;
+            if (gmapsLink) {
+                openGmapsBtn.style.display = 'inline-block';
+                // Asegurarse de que el enlace se abre correctamente
+                openGmapsBtn.onclick = () => { 
+                    const currentLink = document.getElementById('concert-detail-gmaps-link').value.trim();
+                    if(currentLink) window.open(currentLink, '_blank'); 
+                };
+            } else {
+                openGmapsBtn.style.display = 'none';
+            }
+            // **** FIN CÓDIGO NUEVO PARA CARGAR Y MOSTRAR GMAPS LINK ****
+            
             if (details.attendees && Array.isArray(details.attendees)) {
                 details.attendees.forEach(attendeeName => {
                     const checkbox = musiciansListDiv.querySelector(`input[value="${attendeeName}"]`); 
@@ -1520,15 +1547,22 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
                     }
                 });
             }
+        } else { // Si no hay detalles, asegurar que el botón de gmaps está oculto
+             openGmapsBtn.style.display = 'none';
         }
     } catch (error) { 
         console.error("Error al intentar cargar detalles del concierto desde Firestore:", error);
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}.`;
+        openGmapsBtn.style.display = 'none'; // Ocultar en caso de error también
     }
 
     concertDetailModal.classList.add('show'); 
 }
+// **** FIN FUNCIÓN MODIFICADA openConcertDetailModal ****
+
+
+// **** INICIO ONCLICK MODIFICADO save-concert-details ****
 document.getElementById('save-concert-details').onclick = async () => {
     const concertId = document.getElementById('concert-detail-id').value;
     const concertDetailMessage = document.getElementById('concert-detail-message'); 
@@ -1543,6 +1577,8 @@ document.getElementById('save-concert-details').onclick = async () => {
         selectedAttendees.push(checkbox.value); 
     });
 
+    const gmapsLinkValue = document.getElementById('concert-detail-gmaps-link').value.trim(); // Obtener valor del nuevo campo
+
     const concertData = {
         locationDetails: document.getElementById('concert-detail-location').value.trim(),
         soundSetupTime: document.getElementById('concert-detail-soundsetup').value, 
@@ -1551,6 +1587,7 @@ document.getElementById('save-concert-details').onclick = async () => {
         showTime: document.getElementById('concert-detail-showtime').value,
         generalNotes: document.getElementById('concert-detail-notes').value.trim(),
         attendees: selectedAttendees, 
+        googleMapsLink: gmapsLinkValue, // Añadir nuevo campo a los datos a guardar
         lastUpdated: new Date().toISOString() 
     };
 
@@ -1558,12 +1595,28 @@ document.getElementById('save-concert-details').onclick = async () => {
         await withRetry(() => saveDoc('concert_details', concertId, concertData, true)); 
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente.";
+
+        // **** INICIO CÓDIGO NUEVO PARA ACTUALIZAR BOTÓN GMAPS TRAS GUARDAR ****
+        const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
+        if (gmapsLinkValue) {
+            openGmapsBtn.style.display = 'inline-block';
+            openGmapsBtn.onclick = () => { 
+                const currentLink = document.getElementById('concert-detail-gmaps-link').value.trim();
+                if(currentLink) window.open(currentLink, '_blank');
+            };
+        } else {
+            openGmapsBtn.style.display = 'none';
+        }
+        // **** FIN CÓDIGO NUEVO PARA ACTUALIZAR BOTÓN GMAPS TRAS GUARDAR ****
+
     } catch (error) {
         console.error("Error al guardar detalles del concierto en Firestore:", error);
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = `Error al guardar: ${error.message}.`;
     }
 };
+// **** FIN ONCLICK MODIFICADO save-concert-details ****
+
 
 // --- MODIFICACIÓN: close-concert-details-modal ahora llama a closeAll ---
 document.getElementById('close-concert-details-modal').onclick = () => {
