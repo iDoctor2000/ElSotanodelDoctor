@@ -242,6 +242,21 @@
         text-align: center;
     }
 
+    /* Estilos para filas de pausas en tablas HTML */
+    .break-row td {
+        font-style: italic;
+        color: #bbb; 
+        background-color: #1a1a1a; /* Un fondo sutilmente distinto si se prefiere */
+    }
+    .break-row td:first-child { /* Celda del número (puede estar vacía o con un símbolo) */
+        color: #555; 
+        text-align: center;
+    }
+    .break-row td:nth-child(2) { /* Celda del nombre de la pausa */
+       /* font-weight: bold; Opcional */
+    }
+
+
     th.calendar-col-header, td.calendar-col { 
         width: 50px; 
         text-align: center;
@@ -782,6 +797,7 @@ async function saveSetlistConfig() {
 }
 
 /* ---------- Setlist Genérico (Adaptado para los tres) ---------- */
+// ***** INICIO FUNCIÓN MODIFICADA cargarSetlistGenerico *****
 async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
   try {
     if (!configEntry.url || configEntry.url.startsWith("URL_POR_CONFIGURAR")) {
@@ -790,20 +806,44 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     const response = await fetch(configEntry.url);
     if (!response.ok) throw new Error(`Error en la respuesta de la API: ${response.statusText} (URL: ${configEntry.url})`);
     const data = await response.json();
-    const songs = (Array.isArray(data) ? data : (data.items || [])).filter(i => i.type === "song");
+    
+    // MODIFICACIÓN: Cambiar el filtro para incluir canciones y pausas
+    // IMPORTANTE: Verifica que el tipo de tus pausas sea "break". Ajústalo si es necesario.
+    const items = (Array.isArray(data) ? data : (data.items || [])).filter(
+      i => i.type === "song" || i.type === "break" 
+    );
 
     const tbody = document.getElementById(tbodyId);
     tbody.innerHTML = "";
     let total = 0;
-    songs.forEach((s, i) => {
-      const secs = parseDuration(s.duration || "0");
+
+    items.forEach((item, i) => { 
+      const secs = parseDuration(item.duration || "0");
       total += secs;
-      tbody.insertAdjacentHTML("beforeend",
-        `<tr><td>${i + 1}</td><td>${decodeHtmlEntities(s.name || "Sin título")}</td><td>${decodeHtmlEntities(s.key || "-")}</td><td>${decodeHtmlEntities(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
-      );
+
+      if (item.type === "song") {
+        tbody.insertAdjacentHTML("beforeend",
+          `<tr>
+            <td>${i + 1}</td>
+            <td>${decodeHtmlEntities(item.name || "Sin título")}</td>
+            <td>${decodeHtmlEntities(item.key || "-")}</td>
+            <td>${decodeHtmlEntities(item.tempo || "-")}</td>
+            <td>${toMMSS(secs)}</td>
+          </tr>`
+        );
+      } else if (item.type === "break") { 
+        // NUEVO: HTML para mostrar las pausas en la tabla.
+        // La clase 'break-row' se define en el CSS.
+        tbody.insertAdjacentHTML("beforeend",
+          `<tr class="break-row">
+            <td>»</td> <td>${decodeHtmlEntities(item.name || "Pausa")}</td>
+            <td>-</td> <td>-</td> <td>${toMMSS(secs)}</td>
+          </tr>`
+        );
+      }
     });
     document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(total);
-    return songs;
+    return items; // Devolver todos los items (canciones y pausas)
   } catch (e) {
     console.error(`${defaultErrorMessage}:`, e);
     document.getElementById(tbodyId).innerHTML = `<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;
@@ -811,6 +851,8 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     return [];
   }
 }
+// ***** FIN FUNCIÓN MODIFICADA cargarSetlistGenerico *****
+
 
 const cargarPrimerSetlist = () => cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
 const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto");
@@ -1140,7 +1182,6 @@ async function registerFontWithDoc(doc, fontPath, fontVFSAlias, fontNameInDoc) {
     return false; 
 }
 
-// --- NUEVO: Helper para cargar imagen de fondo para PDFs ---
 async function getBackgroundImageDataURL() {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -1151,10 +1192,9 @@ async function getBackgroundImageDataURL() {
             ctx.drawImage(img, 0, 0);
             resolve(canvas.toDataURL('image/png'));
         };
-        img.onerror = (err) => reject(new Error("Error al cargar la imagen de plantilla: " + (err.message || err.toString()))); // Mejorar el mensaje de error
+        img.onerror = (err) => reject(new Error("Error al cargar la imagen de plantilla: " + (err.message || err.toString())));
         img.src = PDF_BACKGROUND_IMAGE_PATH;
         
-        // Manejar imágenes cacheadas que podrían no disparar 'onload' consistentemente
         if (img.complete) {
             if (img.naturalHeight !== 0) {
                 const canvas = document.createElement('canvas');
@@ -1162,15 +1202,15 @@ async function getBackgroundImageDataURL() {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
                 resolve(canvas.toDataURL('image/png'));
-            } else if (img.src) { // Solo rechazar si el src está presente y la imagen es inválida
-                 reject(new Error("Imagen de plantilla en caché pero inválida."));
+            } else if (img.src) { 
+                reject(new Error("Imagen de plantilla en caché pero inválida."));
             }
         }
     });
 }
 
-
-async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
+// ***** INICIO FUNCIÓN MODIFICADA genPDF *****
+async function genPDF(items, setlistDynamicName, rawFileNameForPdf) { // Nombre del parámetro cambiado de songs a items
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -1212,22 +1252,40 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
 
     doc.setFont("times", "italic"); 
     doc.setFontSize(10);
-    const totalSongsText = `${songs.length} canciones`;
-    const totalTimeValue = songs.reduce((a, s) => a + parseDuration(s.duration), 0);
+    // MODIFICACIÓN: El texto ahora refleja "elementos" en lugar de solo "canciones"
+    const totalItemsText = `${items.length} elementos (canciones/pausas)`; 
+    const totalTimeValue = items.reduce((a, item) => a + parseDuration(item.duration), 0);
     const totalTimeText = `Tiempo total: ${toHHMM(totalTimeValue)}`;
-    doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
+    doc.text(`${totalItemsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
     const tableFont = "helvetica"; 
     const tableHeadFont = "helvetica";
 
-    const tableBody = songs.map((s, i) => [
-        i + 1, 
-        decodeHtmlEntities(s.name || ""), 
-        decodeHtmlEntities(s.key || ""), 
-        decodeHtmlEntities(s.tempo || ""), 
-        toMMSS(parseDuration(s.duration))
-    ]);
+    // MODIFICACIÓN: Crear `tableBody` manejando canciones y pausas
+    // IMPORTANTE: Verifica que el tipo de tus pausas sea "break". Ajústalo si es necesario.
+    const tableBody = items.map((item, i) => {
+        const secs = parseDuration(item.duration);
+        if (item.type === "song") {
+            return [
+                i + 1, 
+                decodeHtmlEntities(item.name || "Sin título"),
+                decodeHtmlEntities(item.key || "-"),
+                decodeHtmlEntities(item.tempo || "-"),
+                toMMSS(secs)
+            ];
+        } else if (item.type === "break") { 
+            return [
+                // Representación de una pausa en la tabla
+                { content: "»", styles: { halign: 'center', fontStyle: 'italic', textColor: [128,128,128] } }, 
+                { content: decodeHtmlEntities(item.name || "Pausa"), styles: { fontStyle: 'italic' } }, 
+                { content: "-", styles: { halign: 'center', fontStyle: 'italic' } }, 
+                { content: "-", styles: { halign: 'center', fontStyle: 'italic' } }, 
+                { content: toMMSS(secs), styles: { halign: 'center', fontStyle: 'italic' } }
+            ];
+        }
+        return []; 
+    });
 
     doc.autoTable({
         startY: currentY,
@@ -1235,35 +1293,24 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
         body: tableBody,
         theme: 'grid', 
         headStyles: { 
-            fillColor: [220, 220, 220], 
-            textColor: [0, 0, 0],   
-            font: tableHeadFont, 
-            fontStyle: 'bold',
-            halign: 'center',
-            fontSize: 10 
+            fillColor: [220, 220, 220], textColor: [0, 0, 0], font: tableHeadFont, 
+            fontStyle: 'bold', halign: 'center', fontSize: 10 
         },
         styles: { 
-            font: tableFont, 
-            fontSize: 9, 
-            cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
-            lineColor: [80, 80, 80], 
-            lineWidth: 0.5,
-            textColor: [0,0,0], 
+            font: tableFont, fontSize: 9, cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
+            lineColor: [80, 80, 80], lineWidth: 0.5, textColor: [0,0,0], 
         },
-        alternateRowStyles: { 
-            fillColor: [248, 248, 248] 
-        },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
         columnStyles: {
             0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
-            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },  
-            2: { halign: 'center', cellWidth: 60, fontSize: 9 },  
-            3: { halign: 'center', cellWidth: 60, fontSize: 9 },  
-            4: { halign: 'center', cellWidth: 60, fontSize: 9 }   
+            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },
+            2: { halign: 'center', cellWidth: 60, fontSize: 9 },   
+            3: { halign: 'center', cellWidth: 60, fontSize: 9 },   
+            4: { halign: 'center', cellWidth: 60, fontSize: 9 }    
         },
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
         didDrawPage: function (data) {
-            // --- MODIFICACIÓN: Añadir fondo a nuevas páginas si es necesario ---
             if (data.pageNumber > 1 && backgroundImageData) {
                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
             }
@@ -1271,9 +1318,11 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     });
     doc.save(`${cleanFileName}.pdf`); 
 }
+// ***** FIN FUNCIÓN MODIFICADA genPDF *****
 
-// --- NUEVO: Función para generar PDF Básico ---
-async function genBasicPDF(songs, setlistDynamicName, rawFileNameForPdf) {
+
+// ***** INICIO FUNCIÓN MODIFICADA genBasicPDF *****
+async function genBasicPDF(items, setlistDynamicName, rawFileNameForPdf) { // Nombre del parámetro cambiado de songs a items
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -1281,7 +1330,6 @@ async function genBasicPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     
     const cleanFileName = sanitizeForPdfFilename(rawFileNameForPdf) || "setlist";
 
-    // Registrar fuentes (similar a genPDF, las VFS son por instancia de doc)
     let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
 
     let backgroundImageData = null;
@@ -1300,39 +1348,46 @@ async function genBasicPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     const contentMarginBottom = 100;
     let currentY = contentMarginTop;
     
-    const setlistNameFontSize = 22; // Coherente con el nombre del setlist en genPDF
-    const songTitleFontSize = 16;    // 11pt (de genPDF) + 5pt
-    const songTitleLineHeight = songTitleFontSize * 1.5; // Espacio entre títulos de canciones
+    const setlistNameFontSize = 22;
+    const songTitleFontSize = 16;   
+    const songTitleLineHeight = songTitleFontSize * 1.5; 
 
-    // Nombre del Setlist (Título principal de este PDF)
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
-    if (!carnevaleeRegistered) doc.setFontType("bolditalic"); // Estilo de fallback
+    if (!carnevaleeRegistered) doc.setFontType("bolditalic"); 
     doc.setFontSize(setlistNameFontSize);
     doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
-    currentY += setlistNameFontSize + 40; // Espacio después del título principal
+    currentY += setlistNameFontSize + 40; 
 
-    // Títulos de las Canciones
-    doc.setFont("helvetica", 'normal'); // Fuente estándar para los títulos de canciones
-    doc.setFontSize(songTitleFontSize);
-
-    for (let i = 0; i < songs.length; i++) {
-        const song = songs[i];
-        const songName = decodeHtmlEntities(song.name || "Canción sin título");
+    // MODIFICACIÓN: Iterar sobre `items` y formatear canciones y pausas
+    // IMPORTANTE: Verifica que el tipo de tus pausas sea "break". Ajústalo si es necesario.
+    for (let i = 0; i < items.length; i++) { 
+        const item = items[i];
+        const itemName = decodeHtmlEntities(item.name || (item.type === "song" ? "Canción sin título" : "Pausa"));
+        const itemDurationMMSS = toMMSS(parseDuration(item.duration));
         
         if (currentY + songTitleLineHeight > pageHeight - contentMarginBottom) {
             doc.addPage();
             if (backgroundImageData) {
                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
             }
-            currentY = contentMarginTop; // Resetear Y para la nueva página
+            currentY = contentMarginTop; 
         }
         
-        doc.text(songName, pageWidth / 2, currentY, { align: "center" });
+        if (item.type === "song") {
+            doc.setFont("helvetica", 'normal'); 
+            doc.setFontSize(songTitleFontSize);
+            doc.text(itemName, pageWidth / 2, currentY, { align: "center" });
+        } else if (item.type === "break") { 
+            doc.setFont("helvetica", 'italic'); 
+            doc.setFontSize(songTitleFontSize - 2); // Opcional: un poco más pequeño para pausas
+            doc.text(`${itemName} (${itemDurationMMSS})`, pageWidth / 2, currentY, { align: "center" });
+        }
         currentY += songTitleLineHeight; 
     }
 
     doc.save(`${cleanFileName}_Basico.pdf`);
 }
+// ***** FIN FUNCIÓN MODIFICADA genBasicPDF *****
 
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
@@ -1461,7 +1516,6 @@ function processBandHelperTable() {
 const concertDetailModal = document.getElementById('concert-details-modal');
 const concertDetailMessage = document.getElementById('concert-detail-message');
 
-// **** INICIO FUNCIÓN MODIFICADA openConcertDetailModal ****
 async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
     concertDetailMessage.textContent = ""; 
     concertDetailMessage.className = "success-message"; 
@@ -1482,12 +1536,10 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     document.getElementById('concert-detail-showtime').value = '';
     document.getElementById('concert-detail-notes').value = '';
 
-    // **** INICIO CÓDIGO NUEVO PARA GMAPS ****
     document.getElementById('concert-detail-gmaps-link').value = '';
     const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
     openGmapsBtn.style.display = 'none';
-    openGmapsBtn.onclick = null; // Limpiar evento onclick previo
-    // **** FIN CÓDIGO NUEVO PARA GMAPS ****
+    openGmapsBtn.onclick = null; 
     
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando músicos...';
@@ -1524,12 +1576,10 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             document.getElementById('concert-detail-showtime').value = details.showTime || '';
             document.getElementById('concert-detail-notes').value = details.generalNotes || '';
             
-            // **** INICIO CÓDIGO NUEVO PARA CARGAR Y MOSTRAR GMAPS LINK ****
             const gmapsLink = details.googleMapsLink || '';
             document.getElementById('concert-detail-gmaps-link').value = gmapsLink;
             if (gmapsLink) {
                 openGmapsBtn.style.display = 'inline-block';
-                // Asegurarse de que el enlace se abre correctamente
                 openGmapsBtn.onclick = () => { 
                     const currentLink = document.getElementById('concert-detail-gmaps-link').value.trim();
                     if(currentLink) window.open(currentLink, '_blank'); 
@@ -1537,7 +1587,6 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             } else {
                 openGmapsBtn.style.display = 'none';
             }
-            // **** FIN CÓDIGO NUEVO PARA CARGAR Y MOSTRAR GMAPS LINK ****
             
             if (details.attendees && Array.isArray(details.attendees)) {
                 details.attendees.forEach(attendeeName => {
@@ -1547,22 +1596,19 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
                     }
                 });
             }
-        } else { // Si no hay detalles, asegurar que el botón de gmaps está oculto
+        } else { 
              openGmapsBtn.style.display = 'none';
         }
     } catch (error) { 
         console.error("Error al intentar cargar detalles del concierto desde Firestore:", error);
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}.`;
-        openGmapsBtn.style.display = 'none'; // Ocultar en caso de error también
+        openGmapsBtn.style.display = 'none'; 
     }
 
     concertDetailModal.classList.add('show'); 
 }
-// **** FIN FUNCIÓN MODIFICADA openConcertDetailModal ****
 
-
-// **** INICIO ONCLICK MODIFICADO save-concert-details ****
 document.getElementById('save-concert-details').onclick = async () => {
     const concertId = document.getElementById('concert-detail-id').value;
     const concertDetailMessage = document.getElementById('concert-detail-message'); 
@@ -1577,7 +1623,7 @@ document.getElementById('save-concert-details').onclick = async () => {
         selectedAttendees.push(checkbox.value); 
     });
 
-    const gmapsLinkValue = document.getElementById('concert-detail-gmaps-link').value.trim(); // Obtener valor del nuevo campo
+    const gmapsLinkValue = document.getElementById('concert-detail-gmaps-link').value.trim();
 
     const concertData = {
         locationDetails: document.getElementById('concert-detail-location').value.trim(),
@@ -1587,7 +1633,7 @@ document.getElementById('save-concert-details').onclick = async () => {
         showTime: document.getElementById('concert-detail-showtime').value,
         generalNotes: document.getElementById('concert-detail-notes').value.trim(),
         attendees: selectedAttendees, 
-        googleMapsLink: gmapsLinkValue, // Añadir nuevo campo a los datos a guardar
+        googleMapsLink: gmapsLinkValue, 
         lastUpdated: new Date().toISOString() 
     };
 
@@ -1596,7 +1642,6 @@ document.getElementById('save-concert-details').onclick = async () => {
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente.";
 
-        // **** INICIO CÓDIGO NUEVO PARA ACTUALIZAR BOTÓN GMAPS TRAS GUARDAR ****
         const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
         if (gmapsLinkValue) {
             openGmapsBtn.style.display = 'inline-block';
@@ -1607,7 +1652,6 @@ document.getElementById('save-concert-details').onclick = async () => {
         } else {
             openGmapsBtn.style.display = 'none';
         }
-        // **** FIN CÓDIGO NUEVO PARA ACTUALIZAR BOTÓN GMAPS TRAS GUARDAR ****
 
     } catch (error) {
         console.error("Error al guardar detalles del concierto en Firestore:", error);
@@ -1615,12 +1659,9 @@ document.getElementById('save-concert-details').onclick = async () => {
         concertDetailMessage.textContent = `Error al guardar: ${error.message}.`;
     }
 };
-// **** FIN ONCLICK MODIFICADO save-concert-details ****
 
-
-// --- MODIFICACIÓN: close-concert-details-modal ahora llama a closeAll ---
 document.getElementById('close-concert-details-modal').onclick = () => {
-    closeAll(); // Esto quitará la clase 'show' y restaurará el scroll del body
+    closeAll(); 
 };
 
 
@@ -1629,7 +1670,6 @@ const sidebar = document.getElementById("sidebar-menu"), overlay = document.getE
 const PASSWORD = "Sotano2014"; 
 let isAuthenticated = false;
 
-// --- MODIFICACIÓN: closeAll ahora también restaura el scroll del body ---
 function closeAll() { 
     document.querySelectorAll(".config-screen").forEach(s => {
         s.style.display = "none";
@@ -1644,7 +1684,7 @@ function closeAll() {
     if (typeof resetUserForm === "function") resetUserForm();
     if (typeof resetRehearsalForm === "function") resetRehearsalForm();
     document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message").forEach(el => el.textContent = "");
-    document.body.style.overflow = ''; // Restaura el scroll del body
+    document.body.style.overflow = ''; 
 }
 
 document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
@@ -1816,21 +1856,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
   } catch (e) { console.error("Error en carga inicial de Firestore:", e); }
 
+  // Las variables songs1, songs2, songsStar ahora contendrán arrays de items (canciones y pausas)
+  // si cargarSetlistGenerico se modificó para devolver 'items'.
   let songs1 = [], songs2 = [], songsStar = [];
   try { songs1 = await cargarPrimerSetlist(); } catch (e) { console.error("Fallo carga Setlist Ensayo:", e); }
   try { songs2 = await cargarSegundoSetlist(); } catch (e) { console.error("Fallo carga Setlist Próx. Concierto:", e); }
   try { songsStar = await cargarStarSetlist(); } catch (e) { console.error("Fallo carga Setlist Estrella:", e); }
 
   document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay canciones en Setlist Ensayo."); };
-  // --- NUEVO: Listener para PDF Básico Ensayo ---
   document.getElementById("download-basic-btn").onclick = () => { if (songs1.length > 0) genBasicPDF(songs1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay canciones en Setlist Ensayo para PDF básico."); };
   
   document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay canciones en Setlist Próx. Concierto."); };
-  // --- NUEVO: Listener para PDF Básico Próx. Concierto ---
   document.getElementById("download-basic-btn-2").onclick = () => { if (songs2.length > 0) genBasicPDF(songs2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay canciones en Setlist Próx. Concierto para PDF básico."); };
   
   document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay canciones en Setlist Estrella."); };
-  // --- NUEVO: Listener para PDF Básico Estrella ---
   document.getElementById("download-basic-btn-star").onclick = () => { if (songsStar.length > 0) genBasicPDF(songsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay canciones en Setlist Estrella para PDF básico."); };
   
   setTimeout(processBandHelperTable, 2000); 
