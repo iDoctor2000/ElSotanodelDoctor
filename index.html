@@ -136,7 +136,7 @@
     }
     .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
     .modal-content input[type="text"],
-    .modal-content input[type="url"], /* */
+    .modal-content input[type="url"], 
     .modal-content input[type="time"],
     .modal-content textarea {
         width: 100%; padding: 10px; background: #222; color: #fff;
@@ -242,6 +242,34 @@
         text-align: center;
     }
 
+    .break-row td {
+        font-style: italic;
+        color: #ccc; 
+        background-color: #161616;
+    }
+     .break-row td:first-child { 
+        color: #777;
+        text-align: center;
+    }
+    .break-row td:nth-child(3), 
+    .break-row td:nth-child(4), 
+    .break-row td:nth-child(5) { 
+        text-align: center;
+    }
+
+    /* ===== ESTILO MODIFICADO PARA CABECERAS DE SET ===== */
+    .set-header-row td {
+        font-weight: bold;
+        text-align: center;
+        background-color: #383838; /* Un gris un poco más claro que el #2a2a2a anterior y que el thead (#222) */
+        color: #0cf; 
+        padding-top: 12px;    /* Ajustado para igualar altura de celdas de canción */
+        padding-bottom: 12px; /* Ajustado para igualar altura de celdas de canción */
+        border-top: 1px solid #505050 !important;  /* Borde superior un poco más claro que el borde de celda normal (#333) */
+        border-bottom: 1px solid #505050 !important; /* Borde inferior */
+    }
+    /* ================================================= */
+
     th.calendar-col-header, td.calendar-col { 
         width: 50px; 
         text-align: center;
@@ -254,7 +282,7 @@
         padding-left: 5px;
         padding-right: 5px;
     }
-    tr:nth-child(even){background:#1a1a1a}
+    tr:nth-child(even):not(.set-header-row):not(.break-row){background:#1a1a1a}
     
     .download-btn{display:inline-block;margin:20px 5px 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
@@ -615,18 +643,31 @@ firebase.firestore().enablePersistence()
   .catch(err => { console.warn("Persistencia Firestore no habilitada:", err.code === 'failed-precondition' ? 'Múltiples pestañas.' : err.message); });
 
 /* ---------- 1. Utilidades ---------- */
-const parseDuration = str => {
+const parseDuration = str => { 
   if (!str) return 0;
   if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; }
   const n = parseInt(str, 10); return isNaN(n) ? 0 : n;
 };
-const toMMSS = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+const toMMSS = s => {
+    if (isNaN(s) || s === null || s === undefined) {
+        s = 0;
+    }
+    const totalSeconds = Math.round(s); 
+    return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
+};
 const toHHMM = s => {
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
+  if (isNaN(s) || s === null || s === undefined) {
+        s = 0;
+  }
+  const totalSeconds = Math.round(s);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
   return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 };
-const toHours = s => (s / 3600).toFixed(2);
+const toHours = s => {
+    if (isNaN(s) || s === null || s === undefined) return (0).toFixed(2);
+    return (s / 3600).toFixed(2);
+};
 
 function decodeHtmlEntities(text) {
     if (typeof text !== 'string') return text;
@@ -781,36 +822,196 @@ async function saveSetlistConfig() {
   return await withRetry(() => saveDoc("intranet", "setlists", { config: setlistConfig }));
 }
 
-/* ---------- Setlist Genérico (Adaptado para los tres) ---------- */
+// ***** INICIO FUNCIÓN cargarSetlistGenerico MODIFICADA *****
 async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
+  console.log(`[cargarSetlistGenerico] Iniciando para tbodyId: ${tbodyId}, configURL: ${configEntry.url}`);
   try {
     if (!configEntry.url || configEntry.url.startsWith("URL_POR_CONFIGURAR")) {
+      console.warn(`[cargarSetlistGenerico] URL no configurada o es placeholder para ${tbodyId}`);
       throw new Error("URL no configurada.");
     }
     const response = await fetch(configEntry.url);
-    if (!response.ok) throw new Error(`Error en la respuesta de la API: ${response.statusText} (URL: ${configEntry.url})`);
-    const data = await response.json();
-    const songs = (Array.isArray(data) ? data : (data.items || [])).filter(i => i.type === "song");
+    if (!response.ok) {
+      console.error(`[cargarSetlistGenerico] Error en la respuesta de la API para ${tbodyId}. Status: ${response.status}, URL: ${configEntry.url}`);
+      throw new Error(`Error en la respuesta de la API (${response.status}): ${response.statusText}`);
+    }
+    
+    const rawData = await response.json();
+    console.log(`[cargarSetlistGenerico] rawData para ${tbodyId}:`, JSON.parse(JSON.stringify(rawData))); 
+    
+    const dataToProcess = Array.isArray(rawData) ? rawData : (rawData.items || []);
+    console.log(`[cargarSetlistGenerico] dataToProcess para ${tbodyId} (antes de filtrar):`, JSON.parse(JSON.stringify(dataToProcess)));
+
+    // Pre-procesar todos los ítems para calcular duraciones y tipos
+    const processedItems = dataToProcess.map(item => {
+      if (!item || (item.type !== "song" && item.type !== "set")) {
+        console.warn(`[cargarSetlistGenerico PRE-PROC] Ítem ignorado, tipo inválido o ítem nulo:`, item);
+        return null; 
+      }
+
+      let rawDurationValue = parseFloat(item.duration);
+      let durationIsInvalidOrMissing = isNaN(rawDurationValue) || rawDurationValue === 0;
+
+      if (isNaN(rawDurationValue)) {
+          rawDurationValue = 0;
+          durationIsInvalidOrMissing = true; 
+      }
+      
+      let durationInSeconds;
+      const itemName = item.name || item.title || (item.type === "song" ? "Canción sin título" : "Set sin nombre");
+      // Asegúrate de que tu expresión regular coincida con los nombres de tus descansos
+      const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);
+
+      // Inicializar flags
+      item.isSong = false;
+      item.isBreak = false;
+      item.isSetHeader = false;
+
+      if (item.type === "song") {
+          durationInSeconds = rawDurationValue; 
+          item.isSong = true;
+          console.log(`[cargarSetlistGenerico PRE-PROC] CANCIÓN: '${itemName}'. Duración original (asumida en segundos): ${rawDurationValue}`);
+      } else if (item.type === "set") {
+          if (isBreakByName) { 
+              item.isBreak = true;
+              if (durationIsInvalidOrMissing) { 
+                  durationInSeconds = 3 * 60; 
+                  console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' sin duración válida ('${item.duration}'). Asignando 3 minutos (${durationInSeconds}s).`);
+              } else { 
+                  durationInSeconds = rawDurationValue * 60; // Duración del descanso en minutos del JSON
+                   console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' con duración ${rawDurationValue} min (${durationInSeconds}s).`);
+              }
+          } else { 
+              item.isSetHeader = true;
+              // Para cabeceras de set, la duración original del item.duration (en minutos) se usa para el cálculo inicial.
+              // El cálculo de la suma de canciones del set se hará después.
+              durationInSeconds = rawDurationValue * 60; 
+              console.log(`[cargarSetlistGenerico PRE-PROC] SET HEADER: '${itemName}'. Duración original del item (asumida en minutos): ${rawDurationValue} (${durationInSeconds}s). La duración del bloque se calculará.`);
+          }
+      } else {
+          durationInSeconds = 0;
+      }
+      
+      item.calculatedDurationSeconds = durationInSeconds;
+      item.displayName = decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : (item.isBreak ? "Pausa" : "Set")));
+      item.originalJSONDuration = item.duration; 
+      return item;
+    }).filter(item => item !== null);
+
+    console.log(`[cargarSetlistGenerico] ProcessedItems para ${tbodyId} (después de pre-procesar y filtrar nulos):`, JSON.parse(JSON.stringify(processedItems)));
 
     const tbody = document.getElementById(tbodyId);
     tbody.innerHTML = "";
-    let total = 0;
-    songs.forEach((s, i) => {
-      const secs = parseDuration(s.duration || "0");
-      total += secs;
-      tbody.insertAdjacentHTML("beforeend",
-        `<tr><td>${i + 1}</td><td>${decodeHtmlEntities(s.name || "Sin título")}</td><td>${decodeHtmlEntities(s.key || "-")}</td><td>${decodeHtmlEntities(s.tempo || "-")}</td><td>${toMMSS(secs)}</td></tr>`
-      );
+    let songCount = 0; 
+    
+    const setlistStructure = [];
+    let currentSet = null;
+
+    processedItems.forEach(item => {
+        if (item.isSetHeader) {
+            if (currentSet) {
+                currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0);
+                setlistStructure.push(currentSet);
+            }
+            currentSet = { ...item, songs: [], calculatedBlockDurationSeconds: 0 }; 
+        } else if (item.isBreak) {
+            if (currentSet) { 
+                currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0);
+                setlistStructure.push(currentSet);
+                currentSet = null; 
+            }
+            setlistStructure.push(item); 
+        } else if (item.isSong) {
+            if (!currentSet) { 
+                console.warn(`[cargarSetlistGenerico] Canción '${item.displayName}' encontrada sin un Set Header previo. Creando set implícito "Set General".`);
+                currentSet = { 
+                    isSetHeader: true, 
+                    displayName: "Set General", // Nombre para set implícito
+                    calculatedDurationSeconds: 0, 
+                    songs: [], 
+                    calculatedBlockDurationSeconds: 0 
+                };
+            }
+            currentSet.songs.push(item);
+        }
     });
-    document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(total);
-    return songs;
+
+    if (currentSet) {
+        currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0);
+        setlistStructure.push(currentSet);
+    }
+    
+    console.log(`[cargarSetlistGenerico] SetlistStructure final para ${tbodyId}:`, JSON.parse(JSON.stringify(setlistStructure)));
+
+    let totalSecondsOverall = 0;
+    setlistStructure.forEach(blockOrItem => {
+        if (blockOrItem.isSetHeader) {
+            const setHeaderTime = toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0);
+            console.log(`[cargarSetlistGenerico HTML] Renderizando SET HEADER: ${blockOrItem.displayName} (${setHeaderTime})`);
+            tbody.insertAdjacentHTML("beforeend",
+              `<tr class="set-header-row">
+                <td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td>
+              </tr>`
+            );
+            totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
+            blockOrItem.songs.forEach(song => {
+                songCount++;
+                const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
+                tbody.insertAdjacentHTML("beforeend",
+                  `<tr>
+                    <td>${songCount}</td>
+                    <td>${song.displayName}</td>
+                    <td>${decodeHtmlEntities(song.key || "-")}</td>
+                    <td>${decodeHtmlEntities(song.tempo || "-")}</td>
+                    <td>${songFormattedTime}</td>
+                  </tr>`
+                );
+            });
+        } else if (blockOrItem.isBreak) {
+            const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
+            console.log(`[cargarSetlistGenerico HTML] Renderizando BREAK: ${blockOrItem.displayName} (${breakFormattedTime})`);
+            tbody.insertAdjacentHTML("beforeend",
+              `<tr class="break-row">
+                <td></td>
+                <td style="font-style:italic;">${blockOrItem.displayName}</td>
+                <td style="font-style:italic; text-align:center;">-</td>
+                <td style="font-style:italic; text-align:center;">-</td>
+                <td style="font-style:italic; text-align:center;">${breakFormattedTime}</td>
+              </tr>`
+            );
+        } else if (blockOrItem.isSong) { // Para canciones que quedaron huérfanas (no debería pasar con el set implícito)
+            songCount++;
+            const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
+            console.warn(`[cargarSetlistGenerico HTML] Renderizando canción HUÉRFANA: ${blockOrItem.displayName}`);
+            tbody.insertAdjacentHTML("beforeend",
+              `<tr>
+                <td>${songCount}</td>
+                <td>${blockOrItem.displayName}</td>
+                <td>${decodeHtmlEntities(blockOrItem.key || "-")}</td>
+                <td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td>
+                <td>${songFormattedTime}</td>
+              </tr>`
+            );
+        }
+    });
+
+    document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(totalSecondsOverall);
+    console.log(`[cargarSetlistGenerico] Finalizado para ${tbodyId}. Tiempo total final calculado: ${toHHMM(totalSecondsOverall)}`);
+    
+    return setlistStructure; 
+
   } catch (e) {
-    console.error(`${defaultErrorMessage}:`, e);
-    document.getElementById(tbodyId).innerHTML = `<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;
-    document.getElementById(totalTimeId).textContent = "";
+    console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`, e);
+    const tbody = document.getElementById(tbodyId);
+    if(tbody) tbody.innerHTML = `<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;
+    const totalTimeElem = document.getElementById(totalTimeId);
+    if(totalTimeElem) totalTimeElem.textContent = "Error al calcular tiempo.";
     return [];
   }
 }
+// ***** FIN FUNCIÓN cargarSetlistGenerico *****
 
 const cargarPrimerSetlist = () => cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
 const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto");
@@ -900,6 +1101,7 @@ function resetUserForm() {
     document.getElementById("cancel-edit-user").style.display = "none";
     editingUserIndex = null;
 }
+
 
 /* ---------- 7. Ensayos ---------- */
 let rehearsals = [];
@@ -1024,6 +1226,7 @@ function resetRehearsalForm() {
     editingRehearsalIndex = null;
 }
 
+
 /* ---------- 8. Estadísticas ---------- */
 function updateMonthFilter() {
     const select = document.getElementById("stats-month-filter");
@@ -1085,6 +1288,7 @@ function renderStats() {
     });
 }
 
+
 /* ---------- 9. PDF ---------- */
 const fontDataCache = {};
 const PDF_FONT_PATHS = {
@@ -1140,7 +1344,6 @@ async function registerFontWithDoc(doc, fontPath, fontVFSAlias, fontNameInDoc) {
     return false; 
 }
 
-// --- NUEVO: Helper para cargar imagen de fondo para PDFs ---
 async function getBackgroundImageDataURL() {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -1151,10 +1354,9 @@ async function getBackgroundImageDataURL() {
             ctx.drawImage(img, 0, 0);
             resolve(canvas.toDataURL('image/png'));
         };
-        img.onerror = (err) => reject(new Error("Error al cargar la imagen de plantilla: " + (err.message || err.toString()))); // Mejorar el mensaje de error
+        img.onerror = (err) => reject(new Error("Error al cargar la imagen de plantilla: " + (err.message || err.toString())));
         img.src = PDF_BACKGROUND_IMAGE_PATH;
         
-        // Manejar imágenes cacheadas que podrían no disparar 'onload' consistentemente
         if (img.complete) {
             if (img.naturalHeight !== 0) {
                 const canvas = document.createElement('canvas');
@@ -1162,15 +1364,16 @@ async function getBackgroundImageDataURL() {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
                 resolve(canvas.toDataURL('image/png'));
-            } else if (img.src) { // Solo rechazar si el src está presente y la imagen es inválida
-                 reject(new Error("Imagen de plantilla en caché pero inválida."));
+            } else if (img.src) { 
+                reject(new Error("Imagen de plantilla en caché pero inválida."));
             }
         }
     });
 }
 
-
-async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
+// ***** INICIO FUNCIÓN genPDF MODIFICADA *****
+// La función genPDF ahora espera `setlistStructure` (que es un array de bloques/ítems)
+async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -1185,7 +1388,7 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     try {
         backgroundImageData = await getBackgroundImageDataURL();
         doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
-    } catch (e) {
+    } catch (e) { 
         console.error("No se pudo añadir la plantilla de fondo al PDF:", e);
         doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S'); 
         doc.setFontSize(10); doc.setTextColor(150,0,0); 
@@ -1212,22 +1415,65 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
 
     doc.setFont("times", "italic"); 
     doc.setFontSize(10);
-    const totalSongsText = `${songs.length} canciones`;
-    const totalTimeValue = songs.reduce((a, s) => a + parseDuration(s.duration), 0);
-    const totalTimeText = `Tiempo total: ${toHHMM(totalTimeValue)}`;
-    doc.text(`${totalSongsText}  |  ${totalTimeText}`, pageWidth / 2, currentY, { align: "center" });
+    
+    let totalOverallSeconds = 0;
+    let totalSongCount = 0;
+    setlistStructure.forEach(blockOrItem => {
+        if (blockOrItem.isSetHeader) {
+            totalOverallSeconds += blockOrItem.calculatedBlockDurationSeconds || 0;
+            totalSongCount += blockOrItem.songs ? blockOrItem.songs.length : 0;
+        } else if (blockOrItem.isBreak) {
+            totalOverallSeconds += blockOrItem.calculatedDurationSeconds || 0;
+        } else if (blockOrItem.isSong) { // Canciones huérfanas (no deberían ocurrir)
+            totalOverallSeconds += blockOrItem.calculatedDurationSeconds || 0;
+            totalSongCount++;
+        }
+    });
+    const totalItemsText = `${totalSongCount} canciones`; // Mostrar solo el conteo de canciones para más claridad
+    doc.text(`${totalItemsText}  |  Tiempo total: ${toHHMM(totalOverallSeconds)}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
     const tableFont = "helvetica"; 
     const tableHeadFont = "helvetica";
+    let pdfSongNumber = 0;
+    const tableBody = [];
 
-    const tableBody = songs.map((s, i) => [
-        i + 1, 
-        decodeHtmlEntities(s.name || ""), 
-        decodeHtmlEntities(s.key || ""), 
-        decodeHtmlEntities(s.tempo || ""), 
-        toMMSS(parseDuration(s.duration))
-    ]);
+    setlistStructure.forEach(blockOrItem => {
+        if (blockOrItem.isSetHeader) {
+            tableBody.push([
+                { content: `${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0)})`, colSpan: 5, styles: { halign: 'center', fontStyle: 'bold', fillColor: [230, 230, 230], textColor: [0,0,0], fontSize: 10 } }
+            ]);
+            if (blockOrItem.songs) {
+                blockOrItem.songs.forEach(song => {
+                    pdfSongNumber++;
+                    tableBody.push([
+                        pdfSongNumber, 
+                        song.displayName,
+                        decodeHtmlEntities(song.key || "-"),
+                        decodeHtmlEntities(song.tempo || "-"),
+                        toMMSS(song.calculatedDurationSeconds || 0)
+                    ]);
+                });
+            }
+        } else if (blockOrItem.isBreak) { 
+            tableBody.push([ 
+                { content: "»", styles: { halign: 'center', fontStyle: 'italic', textColor: [100,100,100] } },
+                { content: blockOrItem.displayName, styles: { fontStyle: 'italic', textColor: [80,80,80] } },
+                { content: "-", styles: { halign: 'center', fontStyle: 'italic', textColor: [150,150,150] } },
+                { content: "-", styles: { halign: 'center', fontStyle: 'italic', textColor: [150,150,150] } },
+                { content: toMMSS(blockOrItem.calculatedDurationSeconds || 0), styles: { halign: 'center', fontStyle: 'italic', textColor: [80,80,80] } }
+            ]);
+        } else if (blockOrItem.isSong) { // Canciones huérfanas
+             pdfSongNumber++;
+             tableBody.push([
+                pdfSongNumber, 
+                blockOrItem.displayName,
+                decodeHtmlEntities(blockOrItem.key || "-"),
+                decodeHtmlEntities(blockOrItem.tempo || "-"),
+                toMMSS(blockOrItem.calculatedDurationSeconds || 0)
+            ]);
+        }
+    });
 
     doc.autoTable({
         startY: currentY,
@@ -1235,35 +1481,23 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
         body: tableBody,
         theme: 'grid', 
         headStyles: { 
-            fillColor: [220, 220, 220], 
-            textColor: [0, 0, 0],   
-            font: tableHeadFont, 
-            fontStyle: 'bold',
-            halign: 'center',
-            fontSize: 10 
+            fillColor: [200, 200, 200], textColor: [0, 0, 0], font: tableHeadFont, 
+            fontStyle: 'bold', halign: 'center', fontSize: 10 
         },
         styles: { 
-            font: tableFont, 
-            fontSize: 9, 
-            cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
-            lineColor: [80, 80, 80], 
-            lineWidth: 0.5,
-            textColor: [0,0,0], 
-        },
-        alternateRowStyles: { 
-            fillColor: [248, 248, 248] 
+            font: tableFont, fontSize: 9, cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
+            lineColor: [80, 80, 80], lineWidth: 0.5, textColor: [0,0,0], 
         },
         columnStyles: {
             0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
-            1: { halign: 'left', cellWidth: 'auto', fontSize: 11 },  
-            2: { halign: 'center', cellWidth: 60, fontSize: 9 },  
-            3: { halign: 'center', cellWidth: 60, fontSize: 9 },  
-            4: { halign: 'center', cellWidth: 60, fontSize: 9 }   
+            1: { halign: 'left', cellWidth: 'auto', fontSize: 10 }, 
+            2: { halign: 'center', cellWidth: 50, fontSize: 9 },   
+            3: { halign: 'center', cellWidth: 50, fontSize: 9 },   
+            4: { halign: 'center', cellWidth: 50, fontSize: 9 }    
         },
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
         didDrawPage: function (data) {
-            // --- MODIFICACIÓN: Añadir fondo a nuevas páginas si es necesario ---
             if (data.pageNumber > 1 && backgroundImageData) {
                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
             }
@@ -1271,9 +1505,11 @@ async function genPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     });
     doc.save(`${cleanFileName}.pdf`); 
 }
+// ***** FIN FUNCIÓN genPDF MODIFICADA *****
 
-// --- NUEVO: Función para generar PDF Básico ---
-async function genBasicPDF(songs, setlistDynamicName, rawFileNameForPdf) {
+
+// ***** INICIO FUNCIÓN genBasicPDF MODIFICADA *****
+async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -1281,18 +1517,13 @@ async function genBasicPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     
     const cleanFileName = sanitizeForPdfFilename(rawFileNameForPdf) || "setlist";
 
-    // Registrar fuentes (similar a genPDF, las VFS son por instancia de doc)
     let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
 
     let backgroundImageData = null;
     try {
         backgroundImageData = await getBackgroundImageDataURL();
         doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
-    } catch (e) {
-        console.error("No se pudo añadir la plantilla de fondo al PDF básico:", e);
-        doc.setFontSize(10); doc.setTextColor(150,0,0); 
-        doc.text("Advertencia: No se pudo cargar la plantilla de fondo.", pageWidth / 2, 30, { align: "center" });
-    }
+    } catch (e) { /* ... manejo de error ... */ }
 
     doc.setTextColor(0, 0, 0); 
     const contentMarginTop = 120; 
@@ -1300,39 +1531,63 @@ async function genBasicPDF(songs, setlistDynamicName, rawFileNameForPdf) {
     const contentMarginBottom = 100;
     let currentY = contentMarginTop;
     
-    const setlistNameFontSize = 22; // Coherente con el nombre del setlist en genPDF
-    const songTitleFontSize = 16;    // 11pt (de genPDF) + 5pt
-    const songTitleLineHeight = songTitleFontSize * 1.5; // Espacio entre títulos de canciones
+    const setlistNameFontSize = 22;
+    const itemTitleFontSize = 14;   
+    const setHeaderFontSize = 16; 
+    const itemLineHeight = itemTitleFontSize * 1.6; 
 
-    // Nombre del Setlist (Título principal de este PDF)
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
-    if (!carnevaleeRegistered) doc.setFontType("bolditalic"); // Estilo de fallback
     doc.setFontSize(setlistNameFontSize);
     doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
-    currentY += setlistNameFontSize + 40; // Espacio después del título principal
+    currentY += setlistNameFontSize + 30; 
 
-    // Títulos de las Canciones
-    doc.setFont("helvetica", 'normal'); // Fuente estándar para los títulos de canciones
-    doc.setFontSize(songTitleFontSize);
-
-    for (let i = 0; i < songs.length; i++) {
-        const song = songs[i];
-        const songName = decodeHtmlEntities(song.name || "Canción sin título");
-        
-        if (currentY + songTitleLineHeight > pageHeight - contentMarginBottom) {
+    setlistStructure.forEach((blockOrItem, idx) => {
+        if (currentY + itemLineHeight * 2.5 > pageHeight - contentMarginBottom) { // Aumentado margen para evitar cortes
             doc.addPage();
             if (backgroundImageData) {
                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
             }
-            currentY = contentMarginTop; // Resetear Y para la nueva página
+            currentY = contentMarginTop; 
         }
         
-        doc.text(songName, pageWidth / 2, currentY, { align: "center" });
-        currentY += songTitleLineHeight; 
-    }
+        if (blockOrItem.isSetHeader) {
+            if (idx > 0) currentY += itemLineHeight * 0.3; 
+            doc.setFont("helvetica", 'bold'); 
+            doc.setFontSize(setHeaderFontSize);
+            doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
+            currentY += itemLineHeight;
+            
+            if (blockOrItem.songs) {
+                blockOrItem.songs.forEach(song => {
+                    if (currentY + itemLineHeight > pageHeight - contentMarginBottom) {
+                        doc.addPage(); if (backgroundImageData) doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight); currentY = contentMarginTop;
+                    }
+                    doc.setFont("helvetica", 'normal'); 
+                    doc.setFontSize(itemTitleFontSize);
+                    doc.text(song.displayName, pageWidth / 2, currentY, { align: "center" });
+                    currentY += itemLineHeight;
+                });
+            }
+             if (idx < setlistStructure.length -1 && (setlistStructure[idx+1].isBreak || setlistStructure[idx+1].isSong)) currentY += itemLineHeight * 0.3;
 
+
+        } else if (blockOrItem.isBreak) { 
+            if (idx > 0) currentY += itemLineHeight * 0.2;
+            doc.setFont("helvetica", 'italic'); 
+            doc.setFontSize(itemTitleFontSize - 1); 
+            doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
+            currentY += itemLineHeight;
+             if (idx < setlistStructure.length -1) currentY += itemLineHeight * 0.2;
+        } else if (blockOrItem.isSong) { // Canciones huérfanas
+            doc.setFont("helvetica", 'normal'); 
+            doc.setFontSize(itemTitleFontSize);
+            doc.text(blockOrItem.displayName, pageWidth / 2, currentY, { align: "center" });
+            currentY += itemLineHeight;
+        }
+    });
     doc.save(`${cleanFileName}_Basico.pdf`);
 }
+// ***** FIN FUNCIÓN genBasicPDF MODIFICADA *****
 
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
@@ -1461,7 +1716,6 @@ function processBandHelperTable() {
 const concertDetailModal = document.getElementById('concert-details-modal');
 const concertDetailMessage = document.getElementById('concert-detail-message');
 
-// **** INICIO FUNCIÓN MODIFICADA openConcertDetailModal ****
 async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
     concertDetailMessage.textContent = ""; 
     concertDetailMessage.className = "success-message"; 
@@ -1482,12 +1736,10 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     document.getElementById('concert-detail-showtime').value = '';
     document.getElementById('concert-detail-notes').value = '';
 
-    // **** INICIO CÓDIGO NUEVO PARA GMAPS ****
     document.getElementById('concert-detail-gmaps-link').value = '';
     const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
     openGmapsBtn.style.display = 'none';
-    openGmapsBtn.onclick = null; // Limpiar evento onclick previo
-    // **** FIN CÓDIGO NUEVO PARA GMAPS ****
+    openGmapsBtn.onclick = null; 
     
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando músicos...';
@@ -1524,12 +1776,10 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             document.getElementById('concert-detail-showtime').value = details.showTime || '';
             document.getElementById('concert-detail-notes').value = details.generalNotes || '';
             
-            // **** INICIO CÓDIGO NUEVO PARA CARGAR Y MOSTRAR GMAPS LINK ****
             const gmapsLink = details.googleMapsLink || '';
             document.getElementById('concert-detail-gmaps-link').value = gmapsLink;
             if (gmapsLink) {
                 openGmapsBtn.style.display = 'inline-block';
-                // Asegurarse de que el enlace se abre correctamente
                 openGmapsBtn.onclick = () => { 
                     const currentLink = document.getElementById('concert-detail-gmaps-link').value.trim();
                     if(currentLink) window.open(currentLink, '_blank'); 
@@ -1537,7 +1787,6 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             } else {
                 openGmapsBtn.style.display = 'none';
             }
-            // **** FIN CÓDIGO NUEVO PARA CARGAR Y MOSTRAR GMAPS LINK ****
             
             if (details.attendees && Array.isArray(details.attendees)) {
                 details.attendees.forEach(attendeeName => {
@@ -1547,22 +1796,19 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
                     }
                 });
             }
-        } else { // Si no hay detalles, asegurar que el botón de gmaps está oculto
+        } else { 
              openGmapsBtn.style.display = 'none';
         }
     } catch (error) { 
         console.error("Error al intentar cargar detalles del concierto desde Firestore:", error);
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}.`;
-        openGmapsBtn.style.display = 'none'; // Ocultar en caso de error también
+        openGmapsBtn.style.display = 'none'; 
     }
 
     concertDetailModal.classList.add('show'); 
 }
-// **** FIN FUNCIÓN MODIFICADA openConcertDetailModal ****
 
-
-// **** INICIO ONCLICK MODIFICADO save-concert-details ****
 document.getElementById('save-concert-details').onclick = async () => {
     const concertId = document.getElementById('concert-detail-id').value;
     const concertDetailMessage = document.getElementById('concert-detail-message'); 
@@ -1577,7 +1823,7 @@ document.getElementById('save-concert-details').onclick = async () => {
         selectedAttendees.push(checkbox.value); 
     });
 
-    const gmapsLinkValue = document.getElementById('concert-detail-gmaps-link').value.trim(); // Obtener valor del nuevo campo
+    const gmapsLinkValue = document.getElementById('concert-detail-gmaps-link').value.trim();
 
     const concertData = {
         locationDetails: document.getElementById('concert-detail-location').value.trim(),
@@ -1587,7 +1833,7 @@ document.getElementById('save-concert-details').onclick = async () => {
         showTime: document.getElementById('concert-detail-showtime').value,
         generalNotes: document.getElementById('concert-detail-notes').value.trim(),
         attendees: selectedAttendees, 
-        googleMapsLink: gmapsLinkValue, // Añadir nuevo campo a los datos a guardar
+        googleMapsLink: gmapsLinkValue, 
         lastUpdated: new Date().toISOString() 
     };
 
@@ -1596,7 +1842,6 @@ document.getElementById('save-concert-details').onclick = async () => {
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente.";
 
-        // **** INICIO CÓDIGO NUEVO PARA ACTUALIZAR BOTÓN GMAPS TRAS GUARDAR ****
         const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
         if (gmapsLinkValue) {
             openGmapsBtn.style.display = 'inline-block';
@@ -1607,7 +1852,6 @@ document.getElementById('save-concert-details').onclick = async () => {
         } else {
             openGmapsBtn.style.display = 'none';
         }
-        // **** FIN CÓDIGO NUEVO PARA ACTUALIZAR BOTÓN GMAPS TRAS GUARDAR ****
 
     } catch (error) {
         console.error("Error al guardar detalles del concierto en Firestore:", error);
@@ -1615,12 +1859,9 @@ document.getElementById('save-concert-details').onclick = async () => {
         concertDetailMessage.textContent = `Error al guardar: ${error.message}.`;
     }
 };
-// **** FIN ONCLICK MODIFICADO save-concert-details ****
 
-
-// --- MODIFICACIÓN: close-concert-details-modal ahora llama a closeAll ---
 document.getElementById('close-concert-details-modal').onclick = () => {
-    closeAll(); // Esto quitará la clase 'show' y restaurará el scroll del body
+    closeAll(); 
 };
 
 
@@ -1629,7 +1870,6 @@ const sidebar = document.getElementById("sidebar-menu"), overlay = document.getE
 const PASSWORD = "Sotano2014"; 
 let isAuthenticated = false;
 
-// --- MODIFICACIÓN: closeAll ahora también restaura el scroll del body ---
 function closeAll() { 
     document.querySelectorAll(".config-screen").forEach(s => {
         s.style.display = "none";
@@ -1644,7 +1884,7 @@ function closeAll() {
     if (typeof resetUserForm === "function") resetUserForm();
     if (typeof resetRehearsalForm === "function") resetRehearsalForm();
     document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message").forEach(el => el.textContent = "");
-    document.body.style.overflow = ''; // Restaura el scroll del body
+    document.body.style.overflow = ''; 
 }
 
 document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
@@ -1809,31 +2049,49 @@ document.getElementById("close-user-list-screen").onclick = () => {
     document.getElementById("user-list-screen").style.display = "none";
 };
 
+
 /* ---------- 12. Carga inicial ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
+  console.log("[DOMContentLoaded] Iniciando carga de la aplicación.");
   updateConnectionStatus();
   try {
+      console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
       await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
-  } catch (e) { console.error("Error en carga inicial de Firestore:", e); }
+      console.log("[DOMContentLoaded] Configuración, usuarios y ensayos cargados.");
+  } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
 
-  let songs1 = [], songs2 = [], songsStar = [];
-  try { songs1 = await cargarPrimerSetlist(); } catch (e) { console.error("Fallo carga Setlist Ensayo:", e); }
-  try { songs2 = await cargarSegundoSetlist(); } catch (e) { console.error("Fallo carga Setlist Próx. Concierto:", e); }
-  try { songsStar = await cargarStarSetlist(); } catch (e) { console.error("Fallo carga Setlist Estrella:", e); }
+  // items1, items2, itemsStar contendrán la estructura procesada por cargarSetlistGenerico
+  let items1 = [], items2 = [], itemsStar = []; 
+  try { 
+    console.log("[DOMContentLoaded] Cargando primer setlist...");
+    items1 = await cargarPrimerSetlist(); 
+    console.log("[DOMContentLoaded] Primer setlist cargado:", items1 ? items1.length : 0, "bloques/items.");
+  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Ensayo:", e); }
+  
+  try { 
+    console.log("[DOMContentLoaded] Cargando segundo setlist...");
+    items2 = await cargarSegundoSetlist(); 
+    console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "bloques/items.");
+  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Próx. Concierto:", e); }
+  
+  try { 
+    console.log("[DOMContentLoaded] Cargando setlist estrella...");
+    itemsStar = await cargarStarSetlist(); 
+    console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "bloques/items.");
+  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Estrella:", e); }
 
-  document.getElementById("download-btn").onclick = () => { if (songs1.length > 0) genPDF(songs1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay canciones en Setlist Ensayo."); };
-  // --- NUEVO: Listener para PDF Básico Ensayo ---
-  document.getElementById("download-basic-btn").onclick = () => { if (songs1.length > 0) genBasicPDF(songs1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay canciones en Setlist Ensayo para PDF básico."); };
+  document.getElementById("download-btn").onclick = () => { if (items1 && items1.length > 0) genPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
+  document.getElementById("download-basic-btn").onclick = () => { if (items1 && items1.length > 0) genBasicPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
   
-  document.getElementById("download-btn-2").onclick = () => { if (songs2.length > 0) genPDF(songs2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay canciones en Setlist Próx. Concierto."); };
-  // --- NUEVO: Listener para PDF Básico Próx. Concierto ---
-  document.getElementById("download-basic-btn-2").onclick = () => { if (songs2.length > 0) genBasicPDF(songs2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay canciones en Setlist Próx. Concierto para PDF básico."); };
+  document.getElementById("download-btn-2").onclick = () => { if (items2 && items2.length > 0) genPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
+  document.getElementById("download-basic-btn-2").onclick = () => { if (items2 && items2.length > 0) genBasicPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
   
-  document.getElementById("download-btn-star").onclick = () => { if (songsStar.length > 0) genPDF(songsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay canciones en Setlist Estrella."); };
-  // --- NUEVO: Listener para PDF Básico Estrella ---
-  document.getElementById("download-basic-btn-star").onclick = () => { if (songsStar.length > 0) genBasicPDF(songsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay canciones en Setlist Estrella para PDF básico."); };
+  document.getElementById("download-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
+  document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
   
+  console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
   setTimeout(processBandHelperTable, 2000); 
+  console.log("[DOMContentLoaded] Carga de la aplicación completada.");
 });
 </script>
 </body>
