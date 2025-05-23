@@ -242,17 +242,21 @@
         text-align: center;
     }
 
-    /* Estilos para filas de pausas y cabeceras de set en tablas HTML */
     .break-row td {
         font-style: italic;
         color: #ccc; 
-        /* text-align: center;  Se define individualmente abajo si es necesario */
-        background-color: #161616; 
+        background-color: #161616;
     }
      .break-row td:first-child { 
         color: #777;
         text-align: center;
     }
+    .break-row td:nth-child(3), /* Key */
+    .break-row td:nth-child(4), /* Tempo */
+    .break-row td:nth-child(5) { /* Time */
+        text-align: center;
+    }
+
     .set-header-row td {
         font-weight: bold;
         text-align: center;
@@ -263,7 +267,6 @@
         border-top: 1px solid #444 !important; 
         border-bottom: 1px solid #444 !important;
     }
-
 
     th.calendar-col-header, td.calendar-col { 
         width: 50px; 
@@ -638,7 +641,7 @@ firebase.firestore().enablePersistence()
   .catch(err => { console.warn("Persistencia Firestore no habilitada:", err.code === 'failed-precondition' ? 'Múltiples pestañas.' : err.message); });
 
 /* ---------- 1. Utilidades ---------- */
-const parseDuration = str => { // Se mantiene por si se usa en otro lugar, pero para BandHelper usamos conversión directa.
+const parseDuration = str => { 
   if (!str) return 0;
   if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; }
   const n = parseInt(str, 10); return isNaN(n) ? 0 : n;
@@ -646,15 +649,15 @@ const parseDuration = str => { // Se mantiene por si se usa en otro lugar, pero 
 const toMMSS = s => {
     if (isNaN(s) || s === null || s === undefined) {
         console.warn("[toMMSS] Se recibió un valor no numérico o indefinido:", s, ". Devolviendo 0:00");
-        return "0:00";
+        s = 0; // Usar 0 si es NaN o indefinido para evitar errores
     }
-    const totalSeconds = Math.round(s); // Redondear a segundos enteros
+    const totalSeconds = Math.round(s); 
     return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
 };
 const toHHMM = s => {
   if (isNaN(s) || s === null || s === undefined) {
         console.warn("[toHHMM] Se recibió un valor no numérico o indefinido:", s, ". Devolviendo 0m");
-        return "0m";
+        s = 0; // Usar 0 si es NaN o indefinido
   }
   const totalSeconds = Math.round(s);
   const h = Math.floor(totalSeconds / 3600);
@@ -819,7 +822,7 @@ async function saveSetlistConfig() {
   return await withRetry(() => saveDoc("intranet", "setlists", { config: setlistConfig }));
 }
 
-// ***** INICIO FUNCIÓN cargarSetlistGenerico MODIFICADA CON LOGS DETALLADOS *****
+// ***** INICIO FUNCIÓN cargarSetlistGenerico CON LOGS DETALLADOS Y CORRECCIÓN DE DURACIÓN *****
 async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
   console.log(`[cargarSetlistGenerico] Iniciando para tbodyId: ${tbodyId}, configURL: ${configEntry.url}`);
   try {
@@ -834,22 +837,20 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     }
     
     const rawData = await response.json();
-    // Usar JSON.parse(JSON.stringify()) para loguear una copia profunda y evitar problemas con objetos proxy o getters
     console.log(`[cargarSetlistGenerico] rawData para ${tbodyId}:`, JSON.parse(JSON.stringify(rawData))); 
     
     const dataToProcess = Array.isArray(rawData) ? rawData : (rawData.items || []);
     console.log(`[cargarSetlistGenerico] dataToProcess para ${tbodyId} (antes de filtrar):`, JSON.parse(JSON.stringify(dataToProcess)));
 
-    // Filtrar solo por "song" y "set", asegurándose de que 'i' no sea null o undefined
     const items = dataToProcess.filter(
       i => i && (i.type === "song" || i.type === "set") 
     );
     console.log(`[cargarSetlistGenerico] Items para ${tbodyId} (después de filtrar por type 'song' o 'set'):`, JSON.parse(JSON.stringify(items)));
 
     const tbody = document.getElementById(tbodyId);
-    tbody.innerHTML = ""; // Limpiar tabla antes de añadir nuevas filas
+    tbody.innerHTML = "";
     let totalSecondsOverall = 0;
-    let songCount = 0; // Contador solo para canciones (para el # en la tabla)
+    let songCount = 0; 
 
     if (items.length === 0) {
         console.warn(`[cargarSetlistGenerico] No hay items ('song' o 'set') para mostrar en ${tbodyId} después de filtrar.`);
@@ -859,26 +860,37 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     items.forEach((item, index) => { 
       console.log(`[cargarSetlistGenerico] Procesando item #${index} para ${tbodyId}:`, JSON.parse(JSON.stringify(item)));
       
-      // Convertir item.duration (que se asume en minutos desde BandHelper) a segundos
-      let itemDurationMinutes = parseFloat(item.duration);
-      if (isNaN(itemDurationMinutes)) {
-          console.warn(`[cargarSetlistGenerico] Duración inválida o no numérica para item: ${item.name || item.title || 'Desconocido'}. Duración original: '${item.duration}'. Usando 0 minutos.`);
-          itemDurationMinutes = 0;
+      let rawDurationValue = parseFloat(item.duration);
+      if (isNaN(rawDurationValue)) {
+          console.warn(`[cargarSetlistGenerico] Duración inválida o no numérica para item: '${item.name || item.title || 'Desconocido'}'. Duración original: '${item.duration}'. Usando 0.`);
+          rawDurationValue = 0;
       }
-      const durationInSeconds = itemDurationMinutes * 60;
-      item.calculatedDurationSeconds = durationInSeconds; // Guardar para uso en PDFs
-      
-      console.log(`[cargarSetlistGenerico] Item: '${item.title || item.name}', Original Duration: '${item.duration}' (min), Calculated durationInSeconds: ${durationInSeconds}`);
-      const formattedTime = toMMSS(durationInSeconds); // Formatear a MM:SS
-      console.log(`[cargarSetlistGenerico] Formatted time (toMMSS): ${formattedTime}`);
 
-      totalSecondsOverall += durationInSeconds; // Sumar al total general
+      let durationInSeconds;
+      if (item.type === "song") {
+          // Para CANCIONES, asumimos que item.duration del JSON ya está en SEGUNDOS.
+          durationInSeconds = rawDurationValue; 
+          console.log(`[cargarSetlistGenerico] CANCIÓN: Duración original (asumida en segundos): ${rawDurationValue}`);
+      } else if (item.type === "set") {
+          // Para SETS (cabeceras o descansos), asumimos que item.duration del JSON está en MINUTOS.
+          durationInSeconds = rawDurationValue * 60; 
+          console.log(`[cargarSetlistGenerico] SET: Duración original (asumida en minutos): ${rawDurationValue}, convertida a segundos: ${durationInSeconds}`);
+      } else {
+          console.warn(`[cargarSetlistGenerico] Tipo de ítem desconocido: ${item.type}. Duración establecida a 0.`);
+          durationInSeconds = 0; 
+      }
+      
+      item.calculatedDurationSeconds = durationInSeconds; // Guardamos para uso en PDFs
+      
+      const formattedTime = toMMSS(durationInSeconds);
+      console.log(`[cargarSetlistGenerico] Item: '${item.title || item.name}', Formatted time (toMMSS): ${formattedTime}`);
+
+      totalSecondsOverall += durationInSeconds;
 
       if (item.type === "song") {
         songCount++;
-        item.isSong = true; // Marcar para PDF
-        // Usamos item.title (del JSON de BandHelper) o item.name como fallback.
-        const songTitle = item.title || item.name || "Canción sin título";
+        item.isSong = true; 
+        const songTitle = item.title || item.name || "Canción sin título"; 
         console.log(`[cargarSetlistGenerico] Es CANCIÓN: ${songTitle}. Insertando fila.`);
         tbody.insertAdjacentHTML("beforeend",
           `<tr>
@@ -892,19 +904,19 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
       } else if (item.type === "set") {
         const itemName = item.name || "Set sin nombre";
         console.log(`[cargarSetlistGenerico] Es SET: ${itemName}.`);
-        // Identificar si es un descanso/pausa por el nombre
-        const isBreakByName = /break|descanso|intermedio|pausa/i.test(itemName);
+        // Ajusta esta expresión regular si usas otros nombres para los descansos
+        const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);
         console.log(`[cargarSetlistGenerico] isBreakByName para '${itemName}': ${isBreakByName}`);
         
         if (isBreakByName) {
-            item.isBreak = true; // Marcar para PDF
+            item.isBreak = true; 
             console.log(`[cargarSetlistGenerico] Identificado como BREAK: ${itemName}. Insertando fila de descanso.`);
             tbody.insertAdjacentHTML("beforeend",
               `<tr class="break-row">
                 <td></td> <td style="font-style:italic;">${decodeHtmlEntities(itemName)}</td> <td style="font-style:italic; text-align:center;">-</td> <td style="font-style:italic; text-align:center;">-</td> <td style="font-style:italic; text-align:center;">${formattedTime}</td> </tr>`
             );
-        } else { // Es una cabecera de set (ej: "Set 1")
-            item.isSetHeader = true; // Marcar para PDF
+        } else { 
+            item.isSetHeader = true; 
             console.log(`[cargarSetlistGenerico] Identificado como SET HEADER: ${itemName}. Insertando fila de cabecera.`);
             tbody.insertAdjacentHTML("beforeend",
               `<tr class="set-header-row">
@@ -916,17 +928,17 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     });
     document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(totalSecondsOverall);
     console.log(`[cargarSetlistGenerico] Finalizado para ${tbodyId}. Total de items procesados: ${items.length}. Tiempo total: ${toHHMM(totalSecondsOverall)}`);
-    return items; // Devolver todos los items procesados (canciones, descansos, cabeceras)
+    return items; 
   } catch (e) {
     console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`, e);
     const tbody = document.getElementById(tbodyId);
     if(tbody) tbody.innerHTML = `<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;
     const totalTimeElem = document.getElementById(totalTimeId);
     if(totalTimeElem) totalTimeElem.textContent = "Error al calcular tiempo.";
-    return []; // Devolver array vacío en caso de error
+    return [];
   }
 }
-// ***** FIN FUNCIÓN cargarSetlistGenerico MODIFICADA *****
+// ***** FIN FUNCIÓN cargarSetlistGenerico *****
 
 
 const cargarPrimerSetlist = () => cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
@@ -934,7 +946,6 @@ const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2,
 const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella");
 
 /* ---------- 6. Usuarios ---------- */
-// ... (código de usuarios sin cambios)
 let users = [];
 let editingUserIndex = null;
 const excludedRehearsalUsers = ["Ximo", "Ginés Torres"]; 
@@ -1021,7 +1032,6 @@ function resetUserForm() {
 
 
 /* ---------- 7. Ensayos ---------- */
-// ... (código de ensayos sin cambios)
 let rehearsals = [];
 let editingRehearsalIndex = null;
 function renderRehearsals() {
@@ -1146,7 +1156,6 @@ function resetRehearsalForm() {
 
 
 /* ---------- 8. Estadísticas ---------- */
-// ... (código de estadísticas sin cambios)
 function updateMonthFilter() {
     const select = document.getElementById("stats-month-filter");
     select.innerHTML = '<option value="all">Todos los meses</option>';
@@ -1209,7 +1218,6 @@ function renderStats() {
 
 
 /* ---------- 9. PDF ---------- */
-// ... (código de carga de fuentes y background de PDF sin cambios)
 const fontDataCache = {};
 const PDF_FONT_PATHS = {
     bleedingCowboys: 'assets/Bleeding_Cowboys.ttf',
@@ -1291,7 +1299,6 @@ async function getBackgroundImageDataURL() {
     });
 }
 
-
 // ***** INICIO FUNCIÓN genPDF MODIFICADA *****
 async function genPDF(items, setlistDynamicName, rawFileNameForPdf) {
     const { jsPDF } = window.jspdf;
@@ -1337,7 +1344,7 @@ async function genPDF(items, setlistDynamicName, rawFileNameForPdf) {
     doc.setFontSize(10);
     
     const totalTimeValue = items.reduce((acc, item) => acc + (item.calculatedDurationSeconds || 0), 0);
-    const songItemsCount = items.filter(item => item.isSong).length; // Contar solo canciones
+    const songItemsCount = items.filter(item => item.isSong).length;
     const totalItemsText = `${songItemsCount} canciones / ${items.length} elementos`; 
 
     doc.text(`${totalItemsText}  |  Tiempo total: ${toHHMM(totalTimeValue)}`, pageWidth / 2, currentY, { align: "center" });
@@ -1345,7 +1352,7 @@ async function genPDF(items, setlistDynamicName, rawFileNameForPdf) {
 
     const tableFont = "helvetica"; 
     const tableHeadFont = "helvetica";
-    let pdfSongNumber = 0; // Numerador solo para canciones
+    let pdfSongNumber = 0;
 
     const tableBody = items.map((item) => {
         const secs = item.calculatedDurationSeconds || 0;
@@ -1361,7 +1368,7 @@ async function genPDF(items, setlistDynamicName, rawFileNameForPdf) {
                 formattedTime
             ];
         } else if (item.isBreak) { 
-            return [ // Fila para un descanso/pausa - 5 celdas
+            return [ 
                 { content: "»", styles: { halign: 'center', fontStyle: 'italic', textColor: [100,100,100] } },
                 { content: decodeHtmlEntities(item.name), styles: { fontStyle: 'italic', textColor: [80,80,80] } },
                 { content: "-", styles: { halign: 'center', fontStyle: 'italic', textColor: [150,150,150] } },
@@ -1369,7 +1376,7 @@ async function genPDF(items, setlistDynamicName, rawFileNameForPdf) {
                 { content: formattedTime, styles: { halign: 'center', fontStyle: 'italic', textColor: [80,80,80] } }
             ];
         } else if (item.isSetHeader) { 
-             return [ // Fila para cabecera de set - 1 celda con colspan
+             return [
                 { content: `${decodeHtmlEntities(item.name)} (${formattedTime})`, colSpan: 5, styles: { halign: 'center', fontStyle: 'bold', fillColor: [230, 230, 230], textColor: [0,0,0], fontSize: 10 } }
             ];
         }
@@ -1389,7 +1396,6 @@ async function genPDF(items, setlistDynamicName, rawFileNameForPdf) {
             font: tableFont, fontSize: 9, cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
             lineColor: [80, 80, 80], lineWidth: 0.5, textColor: [0,0,0], 
         },
-        // alternateRowStyles: {}, // Comentado para evitar interferencias con fillColor de breaks/sets
         columnStyles: {
             0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
             1: { halign: 'left', cellWidth: 'auto', fontSize: 10 }, 
@@ -1400,7 +1406,6 @@ async function genPDF(items, setlistDynamicName, rawFileNameForPdf) {
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
         pageBreak: 'auto',
         didDrawPage: function (data) {
-            // Añadir fondo a nuevas páginas si es necesario
             if (data.pageNumber > 1 && backgroundImageData) {
                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
             }
@@ -1454,17 +1459,12 @@ async function genBasicPDF(items, setlistDynamicName, rawFileNameForPdf) {
         const itemName = decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : (item.isBreak ? "Pausa" : "Set")));
         const itemDurationMMSS = toMMSS(item.calculatedDurationSeconds || 0);
         
-        if (currentY + itemLineHeight * 1.5 > pageHeight - contentMarginBottom) { // Un poco más de margen para evitar corte
+        if (currentY + itemLineHeight * 1.5 > pageHeight - contentMarginBottom) { 
             doc.addPage();
             if (backgroundImageData) {
                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
             }
             currentY = contentMarginTop; 
-            // Opcional: Re-dibujar el título del setlist en la nueva página
-            // doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
-            // doc.setFontSize(setlistNameFontSize);
-            // doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
-            // currentY += setlistNameFontSize + 30; 
         }
         
         if (item.isSong) {
@@ -1476,11 +1476,11 @@ async function genBasicPDF(items, setlistDynamicName, rawFileNameForPdf) {
             doc.setFontSize(itemTitleFontSize - 1); 
             doc.text(`${itemName} (${itemDurationMMSS})`, pageWidth / 2, currentY, { align: "center" });
         } else if (item.isSetHeader) {
-            if (i > 0 && items[i-1].isSong) currentY += itemLineHeight * 0.4; // Más espacio antes de un Set Header si viene después de canciones
+            if (i > 0 && items[i-1] && items[i-1].isSong) currentY += itemLineHeight * 0.4; 
             doc.setFont("helvetica", 'bold'); 
             doc.setFontSize(setHeaderFontSize);
             doc.text(`${itemName} (${itemDurationMMSS})`, pageWidth / 2, currentY, { align: "center" });
-            if (i < items.length -1 && items[i+1].isSong) currentY += itemLineHeight * 0.4; // Más espacio después si le sigue una canción
+            if (i < items.length -1 && items[i+1] && items[i+1].isSong) currentY += itemLineHeight * 0.4; 
         }
         currentY += itemLineHeight; 
     }
@@ -1490,7 +1490,6 @@ async function genBasicPDF(items, setlistDynamicName, rawFileNameForPdf) {
 
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
-// ... (código de BandHelper y Modal sin cambios directos en esta revisión, observar consola por errores)
 let processTableAttempts = 0;
 const MAX_PROCESS_ATTEMPTS = 20; 
 
@@ -1766,7 +1765,6 @@ document.getElementById('close-concert-details-modal').onclick = () => {
 
 
 /* ---------- 11. Menú & pantallas ---------- */
-// ... (código de Menú y Pantallas sin cambios)
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
 const PASSWORD = "Sotano2014"; 
 let isAuthenticated = false;
