@@ -251,9 +251,9 @@
         color: #777;
         text-align: center;
     }
-    .break-row td:nth-child(3), /* Key */
-    .break-row td:nth-child(4), /* Tempo */
-    .break-row td:nth-child(5) { /* Time */
+    .break-row td:nth-child(3), 
+    .break-row td:nth-child(4), 
+    .break-row td:nth-child(5) { 
         text-align: center;
     }
 
@@ -649,7 +649,7 @@ const parseDuration = str => {
 const toMMSS = s => {
     if (isNaN(s) || s === null || s === undefined) {
         console.warn("[toMMSS] Se recibió un valor no numérico o indefinido:", s, ". Devolviendo 0:00");
-        s = 0; // Usar 0 si es NaN o indefinido para evitar errores
+        s = 0;
     }
     const totalSeconds = Math.round(s); 
     return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
@@ -657,7 +657,7 @@ const toMMSS = s => {
 const toHHMM = s => {
   if (isNaN(s) || s === null || s === undefined) {
         console.warn("[toHHMM] Se recibió un valor no numérico o indefinido:", s, ". Devolviendo 0m");
-        s = 0; // Usar 0 si es NaN o indefinido
+        s = 0;
   }
   const totalSeconds = Math.round(s);
   const h = Math.floor(totalSeconds / 3600);
@@ -860,30 +860,40 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     items.forEach((item, index) => { 
       console.log(`[cargarSetlistGenerico] Procesando item #${index} para ${tbodyId}:`, JSON.parse(JSON.stringify(item)));
       
-      let rawDurationValue = parseFloat(item.duration);
-      if (isNaN(rawDurationValue)) {
-          console.warn(`[cargarSetlistGenerico] Duración inválida o no numérica para item: '${item.name || item.title || 'Desconocido'}'. Duración original: '${item.duration}'. Usando 0.`);
-          rawDurationValue = 0;
-      }
+      let rawDurationValue = parseFloat(item.duration); // Intentar parsear la duración original
+      let durationIsInvalidOrMissing = isNaN(rawDurationValue) || rawDurationValue === 0; // Considerar 0 también como "inválido" para la lógica de abajo
 
+      if (isNaN(rawDurationValue)) { // Si es NaN (undefined, null, no parseable)
+          console.warn(`[cargarSetlistGenerico] Duración inválida/no numérica para item: '${item.name || item.title || 'Desconocido'}'. Duración original: '${item.duration}'. Usando 0.`);
+          rawDurationValue = 0; // Asignar 0 para el cálculo
+          durationIsInvalidOrMissing = true; // Marcar como inválida para la lógica de los descansos
+      }
+      
       let durationInSeconds;
+      const itemName = item.name || item.title || (item.type === "song" ? "Canción sin título" : "Set sin nombre"); // Nombre del ítem para logs
+      const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName); // Identificar si es un descanso por nombre
+
       if (item.type === "song") {
-          // Para CANCIONES, asumimos que item.duration del JSON ya está en SEGUNDOS.
-          durationInSeconds = rawDurationValue; 
-          console.log(`[cargarSetlistGenerico] CANCIÓN: Duración original (asumida en segundos): ${rawDurationValue}`);
+          durationInSeconds = rawDurationValue; // Para CANCIONES, item.duration ya está en SEGUNDOS.
+          console.log(`[cargarSetlistGenerico] CANCIÓN: '${itemName}'. Duración original (asumida en segundos): ${rawDurationValue}`);
       } else if (item.type === "set") {
-          // Para SETS (cabeceras o descansos), asumimos que item.duration del JSON está en MINUTOS.
-          durationInSeconds = rawDurationValue * 60; 
-          console.log(`[cargarSetlistGenerico] SET: Duración original (asumida en minutos): ${rawDurationValue}, convertida a segundos: ${durationInSeconds}`);
+          if (isBreakByName && durationIsInvalidOrMissing) {
+              console.log(`[cargarSetlistGenerico] DESCANSО (type:set) '${itemName}' con duración original inválida/cero ('${item.duration}'). Asignando 3 minutos por defecto.`);
+              durationInSeconds = 3 * 60; // 3 minutos por defecto para descansos sin duración
+          } else {
+              // Para SETS (cabeceras o descansos con duración), item.duration está en MINUTOS.
+              durationInSeconds = rawDurationValue * 60; 
+              console.log(`[cargarSetlistGenerico] SET: '${itemName}'. Duración original (asumida en minutos): ${rawDurationValue}, convertida a segundos: ${durationInSeconds}`);
+          }
       } else {
           console.warn(`[cargarSetlistGenerico] Tipo de ítem desconocido: ${item.type}. Duración establecida a 0.`);
           durationInSeconds = 0; 
       }
       
-      item.calculatedDurationSeconds = durationInSeconds; // Guardamos para uso en PDFs
+      item.calculatedDurationSeconds = durationInSeconds;
       
       const formattedTime = toMMSS(durationInSeconds);
-      console.log(`[cargarSetlistGenerico] Item: '${item.title || item.name}', Formatted time (toMMSS): ${formattedTime}`);
+      console.log(`[cargarSetlistGenerico] Item: '${itemName}', Formatted time (toMMSS): ${formattedTime}`);
 
       totalSecondsOverall += durationInSeconds;
 
@@ -891,7 +901,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
         songCount++;
         item.isSong = true; 
         const songTitle = item.title || item.name || "Canción sin título"; 
-        console.log(`[cargarSetlistGenerico] Es CANCIÓN: ${songTitle}. Insertando fila.`);
+        // console.log(`[cargarSetlistGenerico] Es CANCIÓN: ${songTitle}. Insertando fila.`); // Ya logueado arriba
         tbody.insertAdjacentHTML("beforeend",
           `<tr>
             <td>${songCount}</td>
@@ -902,22 +912,25 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
           </tr>`
         );
       } else if (item.type === "set") {
-        const itemName = item.name || "Set sin nombre";
-        console.log(`[cargarSetlistGenerico] Es SET: ${itemName}.`);
-        // Ajusta esta expresión regular si usas otros nombres para los descansos
-        const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);
-        console.log(`[cargarSetlistGenerico] isBreakByName para '${itemName}': ${isBreakByName}`);
+        // const itemName = item.name || "Set sin nombre"; // Ya definido arriba
+        // const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName); // Ya definido arriba
+        console.log(`[cargarSetlistGenerico] Procesando SET '${itemName}', isBreakByName: ${isBreakByName}`);
         
         if (isBreakByName) {
             item.isBreak = true; 
-            console.log(`[cargarSetlistGenerico] Identificado como BREAK: ${itemName}. Insertando fila de descanso.`);
+            console.log(`[cargarSetlistGenerico] Renderizando como BREAK: ${itemName}.`);
             tbody.insertAdjacentHTML("beforeend",
               `<tr class="break-row">
-                <td></td> <td style="font-style:italic;">${decodeHtmlEntities(itemName)}</td> <td style="font-style:italic; text-align:center;">-</td> <td style="font-style:italic; text-align:center;">-</td> <td style="font-style:italic; text-align:center;">${formattedTime}</td> </tr>`
+                <td></td>
+                <td style="font-style:italic;">${decodeHtmlEntities(itemName)}</td>
+                <td style="font-style:italic; text-align:center;">-</td>
+                <td style="font-style:italic; text-align:center;">-</td>
+                <td style="font-style:italic; text-align:center;">${formattedTime}</td>
+              </tr>`
             );
         } else { 
             item.isSetHeader = true; 
-            console.log(`[cargarSetlistGenerico] Identificado como SET HEADER: ${itemName}. Insertando fila de cabecera.`);
+            console.log(`[cargarSetlistGenerico] Renderizando como SET HEADER: ${itemName}.`);
             tbody.insertAdjacentHTML("beforeend",
               `<tr class="set-header-row">
                 <td colspan="5">${decodeHtmlEntities(itemName)} (${formattedTime})</td>
@@ -939,7 +952,6 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
   }
 }
 // ***** FIN FUNCIÓN cargarSetlistGenerico *****
-
 
 const cargarPrimerSetlist = () => cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
 const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto");
@@ -1963,29 +1975,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   try { 
     console.log("[DOMContentLoaded] Cargando primer setlist...");
     items1 = await cargarPrimerSetlist(); 
-    console.log("[DOMContentLoaded] Primer setlist cargado:", items1.length, "elementos.");
+    console.log("[DOMContentLoaded] Primer setlist cargado:", items1 ? items1.length : 0, "elementos.");
   } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Ensayo:", e); }
   
   try { 
     console.log("[DOMContentLoaded] Cargando segundo setlist...");
     items2 = await cargarSegundoSetlist(); 
-    console.log("[DOMContentLoaded] Segundo setlist cargado:", items2.length, "elementos.");
+    console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "elementos.");
   } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Próx. Concierto:", e); }
   
   try { 
     console.log("[DOMContentLoaded] Cargando setlist estrella...");
     itemsStar = await cargarStarSetlist(); 
-    console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar.length, "elementos.");
+    console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "elementos.");
   } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Estrella:", e); }
 
-  document.getElementById("download-btn").onclick = () => { if (items1.length > 0) genPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
-  document.getElementById("download-basic-btn").onclick = () => { if (items1.length > 0) genBasicPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
+  document.getElementById("download-btn").onclick = () => { if (items1 && items1.length > 0) genPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
+  document.getElementById("download-basic-btn").onclick = () => { if (items1 && items1.length > 0) genBasicPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
   
-  document.getElementById("download-btn-2").onclick = () => { if (items2.length > 0) genPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
-  document.getElementById("download-basic-btn-2").onclick = () => { if (items2.length > 0) genBasicPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
+  document.getElementById("download-btn-2").onclick = () => { if (items2 && items2.length > 0) genPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
+  document.getElementById("download-basic-btn-2").onclick = () => { if (items2 && items2.length > 0) genBasicPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
   
-  document.getElementById("download-btn-star").onclick = () => { if (itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
-  document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
+  document.getElementById("download-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
+  document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
   
   console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
   setTimeout(processBandHelperTable, 2000); 
