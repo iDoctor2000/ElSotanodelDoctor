@@ -257,16 +257,18 @@
         text-align: center;
     }
 
+    /* ===== ESTILO MODIFICADO PARA CABECERAS DE SET ===== */
     .set-header-row td {
         font-weight: bold;
         text-align: center;
-        background-color: #2a2a2a; 
+        background-color: #383838; /* Un gris un poco más claro que el #2a2a2a anterior y que el thead (#222) */
         color: #0cf; 
-        padding-top: 15px; 
-        padding-bottom: 15px;
-        border-top: 1px solid #444 !important; 
-        border-bottom: 1px solid #444 !important;
+        padding-top: 12px;    /* Ajustado para igualar altura de celdas de canción */
+        padding-bottom: 12px; /* Ajustado para igualar altura de celdas de canción */
+        border-top: 1px solid #505050 !important;  /* Borde superior un poco más claro que el borde de celda normal (#333) */
+        border-bottom: 1px solid #505050 !important; /* Borde inferior */
     }
+    /* ================================================= */
 
     th.calendar-col-header, td.calendar-col { 
         width: 50px; 
@@ -648,7 +650,6 @@ const parseDuration = str => {
 };
 const toMMSS = s => {
     if (isNaN(s) || s === null || s === undefined) {
-        // console.warn("[toMMSS] Se recibió un valor no numérico o indefinido:", s, ". Devolviendo 0:00"); // Log menos verboso
         s = 0;
     }
     const totalSeconds = Math.round(s); 
@@ -656,7 +657,6 @@ const toMMSS = s => {
 };
 const toHHMM = s => {
   if (isNaN(s) || s === null || s === undefined) {
-        // console.warn("[toHHMM] Se recibió un valor no numérico o indefinido:", s, ". Devolviendo 0m"); // Log menos verboso
         s = 0;
   }
   const totalSeconds = Math.round(s);
@@ -845,7 +845,8 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     // Pre-procesar todos los ítems para calcular duraciones y tipos
     const processedItems = dataToProcess.map(item => {
       if (!item || (item.type !== "song" && item.type !== "set")) {
-        return null; // Ignorar ítems inválidos o de tipo desconocido
+        console.warn(`[cargarSetlistGenerico PRE-PROC] Ítem ignorado, tipo inválido o ítem nulo:`, item);
+        return null; 
       }
 
       let rawDurationValue = parseFloat(item.duration);
@@ -853,85 +854,80 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 
       if (isNaN(rawDurationValue)) {
           rawDurationValue = 0;
-          durationIsInvalidOrMissing = true;
+          durationIsInvalidOrMissing = true; 
       }
-
+      
       let durationInSeconds;
       const itemName = item.name || item.title || (item.type === "song" ? "Canción sin título" : "Set sin nombre");
+      // Asegúrate de que tu expresión regular coincida con los nombres de tus descansos
       const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);
 
+      // Inicializar flags
       item.isSong = false;
       item.isBreak = false;
       item.isSetHeader = false;
 
       if (item.type === "song") {
-          durationInSeconds = rawDurationValue; // Asumimos que la duración de la canción ya está en SEGUNDOS.
+          durationInSeconds = rawDurationValue; 
           item.isSong = true;
+          console.log(`[cargarSetlistGenerico PRE-PROC] CANCIÓN: '${itemName}'. Duración original (asumida en segundos): ${rawDurationValue}`);
       } else if (item.type === "set") {
-          if (isBreakByName) { // Si es un descanso reconocido por nombre
+          if (isBreakByName) { 
               item.isBreak = true;
-              if (durationIsInvalidOrMissing) { // Y no tiene duración o es 0
-                  durationInSeconds = 3 * 60; // Asignar 3 minutos por defecto
-                  console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' sin duración válida, asignando 3 minutos.`);
-              } else { // El descanso tiene una duración definida (en minutos)
-                  durationInSeconds = rawDurationValue * 60;
+              if (durationIsInvalidOrMissing) { 
+                  durationInSeconds = 3 * 60; 
+                  console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' sin duración válida ('${item.duration}'). Asignando 3 minutos (${durationInSeconds}s).`);
+              } else { 
+                  durationInSeconds = rawDurationValue * 60; // Duración del descanso en minutos del JSON
+                   console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' con duración ${rawDurationValue} min (${durationInSeconds}s).`);
               }
-          } else { // Es una cabecera de set
+          } else { 
               item.isSetHeader = true;
-              // La duración de la cabecera de set (rawDurationValue) del JSON se asume en minutos.
-              // Si es 0 o undefined del JSON, se mantendrá en 0 aquí para la cabecera en sí.
+              // Para cabeceras de set, la duración original del item.duration (en minutos) se usa para el cálculo inicial.
               // El cálculo de la suma de canciones del set se hará después.
               durationInSeconds = rawDurationValue * 60; 
+              console.log(`[cargarSetlistGenerico PRE-PROC] SET HEADER: '${itemName}'. Duración original del item (asumida en minutos): ${rawDurationValue} (${durationInSeconds}s). La duración del bloque se calculará.`);
           }
       } else {
           durationInSeconds = 0;
       }
       
       item.calculatedDurationSeconds = durationInSeconds;
-      // El nombre original del item, o el title para canciones
       item.displayName = decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : (item.isBreak ? "Pausa" : "Set")));
-      item.originalJSONDuration = item.duration; // Guardar para referencia en logs
+      item.originalJSONDuration = item.duration; 
       return item;
-    }).filter(item => item !== null); // Eliminar ítems nulos
+    }).filter(item => item !== null);
 
     console.log(`[cargarSetlistGenerico] ProcessedItems para ${tbodyId} (después de pre-procesar y filtrar nulos):`, JSON.parse(JSON.stringify(processedItems)));
 
     const tbody = document.getElementById(tbodyId);
     tbody.innerHTML = "";
-    let totalSecondsOverall = 0;
     let songCount = 0; 
     
-    // Estructura para agrupar sets y calcular sus duraciones
     const setlistStructure = [];
     let currentSet = null;
 
     processedItems.forEach(item => {
         if (item.isSetHeader) {
-            // Si hay un set anterior, calcular su duración total y añadirlo
             if (currentSet) {
-                currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + song.calculatedDurationSeconds, 0);
+                currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0);
                 setlistStructure.push(currentSet);
             }
-            // Iniciar nuevo set
-            currentSet = { ...item, songs: [], calculatedBlockDurationSeconds: 0 }; // Usar la duración parseada del item (probablemente 0)
+            currentSet = { ...item, songs: [], calculatedBlockDurationSeconds: 0 }; 
         } else if (item.isBreak) {
-            if (currentSet) { // Añadir el set actual antes del descanso
-                currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + song.calculatedDurationSeconds, 0);
+            if (currentSet) { 
+                currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0);
                 setlistStructure.push(currentSet);
-                currentSet = null; // Resetear set actual
+                currentSet = null; 
             }
-            setlistStructure.push(item); // Añadir el descanso como un ítem separado
+            setlistStructure.push(item); 
         } else if (item.isSong) {
-            if (!currentSet) { // Si una canción aparece antes de una cabecera de set (set implícito)
-                // Crear un set "implícito" o manejarlo de otra forma. Por ahora, lo añadimos a un set "General"
-                // O, más simple, si no hay currentSet, la canción va "suelta" o inicia un set anónimo.
-                // Para la estructura actual de la tabla, las canciones necesitan estar bajo un set (o uno general).
-                // Vamos a crear un set por defecto si no hay uno.
-                console.warn(`[cargarSetlistGenerico] Canción '${item.displayName}' encontrada sin un Set Header previo. Creando set implícito.`);
+            if (!currentSet) { 
+                console.warn(`[cargarSetlistGenerico] Canción '${item.displayName}' encontrada sin un Set Header previo. Creando set implícito "Set General".`);
                 currentSet = { 
                     isSetHeader: true, 
-                    displayName: "Set (Automático)", 
-                    calculatedDurationSeconds: 0, // La duración de este header es 0
+                    displayName: "Set General", // Nombre para set implícito
+                    calculatedDurationSeconds: 0, 
                     songs: [], 
                     calculatedBlockDurationSeconds: 0 
                 };
@@ -940,29 +936,27 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
         }
     });
 
-    // Añadir el último set procesado
     if (currentSet) {
-        currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + song.calculatedDurationSeconds, 0);
+        currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0);
         setlistStructure.push(currentSet);
     }
     
-    console.log(`[cargarSetlistGenerico] SetlistStructure para ${tbodyId}:`, JSON.parse(JSON.stringify(setlistStructure)));
+    console.log(`[cargarSetlistGenerico] SetlistStructure final para ${tbodyId}:`, JSON.parse(JSON.stringify(setlistStructure)));
 
-    // Generar HTML desde setlistStructure
+    let totalSecondsOverall = 0;
     setlistStructure.forEach(blockOrItem => {
-        totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds !== undefined ? blockOrItem.calculatedBlockDurationSeconds : blockOrItem.calculatedDurationSeconds);
-
         if (blockOrItem.isSetHeader) {
-            const setHeaderTime = toMMSS(blockOrItem.calculatedBlockDurationSeconds); // Usar la duración calculada del bloque
-            console.log(`[cargarSetlistGenerico] Renderizando SET HEADER: ${blockOrItem.displayName} (${setHeaderTime})`);
+            const setHeaderTime = toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0);
+            console.log(`[cargarSetlistGenerico HTML] Renderizando SET HEADER: ${blockOrItem.displayName} (${setHeaderTime})`);
             tbody.insertAdjacentHTML("beforeend",
               `<tr class="set-header-row">
                 <td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td>
               </tr>`
             );
+            totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
             blockOrItem.songs.forEach(song => {
                 songCount++;
-                const songFormattedTime = toMMSS(song.calculatedDurationSeconds);
+                const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
                 tbody.insertAdjacentHTML("beforeend",
                   `<tr>
                     <td>${songCount}</td>
@@ -974,8 +968,9 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
                 );
             });
         } else if (blockOrItem.isBreak) {
-            const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds);
-            console.log(`[cargarSetlistGenerico] Renderizando BREAK: ${blockOrItem.displayName} (${breakFormattedTime})`);
+            const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
+            console.log(`[cargarSetlistGenerico HTML] Renderizando BREAK: ${blockOrItem.displayName} (${breakFormattedTime})`);
             tbody.insertAdjacentHTML("beforeend",
               `<tr class="break-row">
                 <td></td>
@@ -985,11 +980,11 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
                 <td style="font-style:italic; text-align:center;">${breakFormattedTime}</td>
               </tr>`
             );
-        } else if (blockOrItem.isSong) {
-            // Esto no debería ocurrir si todas las canciones están bajo un set, pero como fallback:
+        } else if (blockOrItem.isSong) { // Para canciones que quedaron huérfanas (no debería pasar con el set implícito)
             songCount++;
-            const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds);
-            console.warn(`[cargarSetlistGenerico] Renderizando canción HUÉRFANA: ${blockOrItem.displayName}`);
+            const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
+            console.warn(`[cargarSetlistGenerico HTML] Renderizando canción HUÉRFANA: ${blockOrItem.displayName}`);
             tbody.insertAdjacentHTML("beforeend",
               `<tr>
                 <td>${songCount}</td>
@@ -999,26 +994,12 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
                 <td>${songFormattedTime}</td>
               </tr>`
             );
-             totalSecondsOverall += blockOrItem.calculatedDurationSeconds; // Asegurar que se suma si es huérfana
-        }
-    });
-
-    // Recalcular totalSecondsOverall basado en la suma de duraciones de bloques y descansos individuales
-    totalSecondsOverall = 0;
-    setlistStructure.forEach(blockOrItem => {
-        if (blockOrItem.isSetHeader) {
-            totalSecondsOverall += blockOrItem.calculatedBlockDurationSeconds;
-        } else if (blockOrItem.isBreak) {
-            totalSecondsOverall += blockOrItem.calculatedDurationSeconds;
-        } else if (blockOrItem.isSong) { // Canciones huérfanas (no deberían ocurrir idealmente)
-            totalSecondsOverall += blockOrItem.calculatedDurationSeconds;
         }
     });
 
     document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(totalSecondsOverall);
-    console.log(`[cargarSetlistGenerico] Finalizado para ${tbodyId}. Total de items procesados: ${processedItems.length}. Tiempo total calculado: ${toHHMM(totalSecondsOverall)}`);
+    console.log(`[cargarSetlistGenerico] Finalizado para ${tbodyId}. Tiempo total final calculado: ${toHHMM(totalSecondsOverall)}`);
     
-    // Devolver la estructura procesada y agrupada para los PDFs
     return setlistStructure; 
 
   } catch (e) {
@@ -1407,7 +1388,12 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
     try {
         backgroundImageData = await getBackgroundImageDataURL();
         doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
-    } catch (e) { /* ... manejo de error ... */ }
+    } catch (e) { 
+        console.error("No se pudo añadir la plantilla de fondo al PDF:", e);
+        doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S'); 
+        doc.setFontSize(10); doc.setTextColor(150,0,0); 
+        doc.text("Advertencia: No se pudo cargar la plantilla de fondo.", pageWidth / 2, pageHeight / 2, { align: "center" });
+    }
 
     doc.setTextColor(0, 0, 0); 
     const contentMarginTop = 120; 
@@ -1416,11 +1402,13 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
     let currentY = contentMarginTop;
 
     doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
+    if (!bleedingCowboysRegistered) doc.setFontType("bold"); 
     doc.setFontSize(28); 
     doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
     currentY += 28 + 10; 
 
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
+    if (!carnevaleeRegistered) doc.setFontType("bold"); 
     doc.setFontSize(22); 
     doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
     currentY += 22 + 5;
@@ -1436,12 +1424,12 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
             totalSongCount += blockOrItem.songs ? blockOrItem.songs.length : 0;
         } else if (blockOrItem.isBreak) {
             totalOverallSeconds += blockOrItem.calculatedDurationSeconds || 0;
-        } else if (blockOrItem.isSong) { // Canciones huérfanas
+        } else if (blockOrItem.isSong) { // Canciones huérfanas (no deberían ocurrir)
             totalOverallSeconds += blockOrItem.calculatedDurationSeconds || 0;
             totalSongCount++;
         }
     });
-    const totalItemsText = `${totalSongCount} canciones / ${setlistStructure.length} bloques/items`; 
+    const totalItemsText = `${totalSongCount} canciones`; // Mostrar solo el conteo de canciones para más claridad
     doc.text(`${totalItemsText}  |  Tiempo total: ${toHHMM(totalOverallSeconds)}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 10 + 20; 
 
@@ -1455,16 +1443,18 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
             tableBody.push([
                 { content: `${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0)})`, colSpan: 5, styles: { halign: 'center', fontStyle: 'bold', fillColor: [230, 230, 230], textColor: [0,0,0], fontSize: 10 } }
             ]);
-            blockOrItem.songs.forEach(song => {
-                pdfSongNumber++;
-                tableBody.push([
-                    pdfSongNumber, 
-                    song.displayName,
-                    decodeHtmlEntities(song.key || "-"),
-                    decodeHtmlEntities(song.tempo || "-"),
-                    toMMSS(song.calculatedDurationSeconds || 0)
-                ]);
-            });
+            if (blockOrItem.songs) {
+                blockOrItem.songs.forEach(song => {
+                    pdfSongNumber++;
+                    tableBody.push([
+                        pdfSongNumber, 
+                        song.displayName,
+                        decodeHtmlEntities(song.key || "-"),
+                        decodeHtmlEntities(song.tempo || "-"),
+                        toMMSS(song.calculatedDurationSeconds || 0)
+                    ]);
+                });
+            }
         } else if (blockOrItem.isBreak) { 
             tableBody.push([ 
                 { content: "»", styles: { halign: 'center', fontStyle: 'italic', textColor: [100,100,100] } },
@@ -1552,7 +1542,7 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
     currentY += setlistNameFontSize + 30; 
 
     setlistStructure.forEach((blockOrItem, idx) => {
-        if (currentY + itemLineHeight * 2 > pageHeight - contentMarginBottom) { 
+        if (currentY + itemLineHeight * 2.5 > pageHeight - contentMarginBottom) { // Aumentado margen para evitar cortes
             doc.addPage();
             if (backgroundImageData) {
                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
@@ -1567,16 +1557,18 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
             doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
             currentY += itemLineHeight;
             
-            blockOrItem.songs.forEach(song => {
-                if (currentY + itemLineHeight > pageHeight - contentMarginBottom) {
-                    doc.addPage(); if (backgroundImageData) doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight); currentY = contentMarginTop;
-                }
-                doc.setFont("helvetica", 'normal'); 
-                doc.setFontSize(itemTitleFontSize);
-                doc.text(song.displayName, pageWidth / 2, currentY, { align: "center" });
-                currentY += itemLineHeight;
-            });
-            if (idx < setlistStructure.length -1 && setlistStructure[idx+1].isBreak) currentY += itemLineHeight * 0.3;
+            if (blockOrItem.songs) {
+                blockOrItem.songs.forEach(song => {
+                    if (currentY + itemLineHeight > pageHeight - contentMarginBottom) {
+                        doc.addPage(); if (backgroundImageData) doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight); currentY = contentMarginTop;
+                    }
+                    doc.setFont("helvetica", 'normal'); 
+                    doc.setFontSize(itemTitleFontSize);
+                    doc.text(song.displayName, pageWidth / 2, currentY, { align: "center" });
+                    currentY += itemLineHeight;
+                });
+            }
+             if (idx < setlistStructure.length -1 && (setlistStructure[idx+1].isBreak || setlistStructure[idx+1].isSong)) currentY += itemLineHeight * 0.3;
 
 
         } else if (blockOrItem.isBreak) { 
@@ -1599,7 +1591,6 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
 
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
-// ... (sin cambios)
 let processTableAttempts = 0;
 const MAX_PROCESS_ATTEMPTS = 20; 
 
@@ -2069,26 +2060,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log("[DOMContentLoaded] Configuración, usuarios y ensayos cargados.");
   } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
 
+  // items1, items2, itemsStar contendrán la estructura procesada por cargarSetlistGenerico
   let items1 = [], items2 = [], itemsStar = []; 
   try { 
     console.log("[DOMContentLoaded] Cargando primer setlist...");
     items1 = await cargarPrimerSetlist(); 
-    console.log("[DOMContentLoaded] Primer setlist cargado:", items1 ? items1.length : 0, "elementos.");
+    console.log("[DOMContentLoaded] Primer setlist cargado:", items1 ? items1.length : 0, "bloques/items.");
   } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Ensayo:", e); }
   
   try { 
     console.log("[DOMContentLoaded] Cargando segundo setlist...");
     items2 = await cargarSegundoSetlist(); 
-    console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "elementos.");
+    console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "bloques/items.");
   } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Próx. Concierto:", e); }
   
   try { 
     console.log("[DOMContentLoaded] Cargando setlist estrella...");
     itemsStar = await cargarStarSetlist(); 
-    console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "elementos.");
+    console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "bloques/items.");
   } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Estrella:", e); }
 
-  // Las funciones genPDF y genBasicPDF ahora esperan la estructura procesada por cargarSetlistGenerico
   document.getElementById("download-btn").onclick = () => { if (items1 && items1.length > 0) genPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
   document.getElementById("download-basic-btn").onclick = () => { if (items1 && items1.length > 0) genBasicPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
   
