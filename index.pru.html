@@ -653,7 +653,7 @@
 <script>
 /* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw", 
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw", // Reemplaza con tu API Key real
   authDomain: "sotanointranet.firebaseapp.com",
   projectId: "sotanointranet",
   storageBucket: "sotanointranet.appspot.com", 
@@ -661,24 +661,37 @@ const firebaseConfig = {
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
 
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || 
-    (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { 
+// Comprobación básica de la API Key (MEJORADA)
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || 
+    (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30) || // Asume que una key real es más larga
+    firebaseConfig.apiKey.includes("placeholder")) { 
     const banner = document.getElementById('firebase-critical-error-banner');
     if (banner) banner.style.display = 'block';
-    console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");
+    console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o parece ser un placeholder.");
 }
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore(); 
+const db = firebase.firestore(); // Habilita compatibilidad con v8
+// Habilitar persistencia offline (opcional pero recomendado)
 firebase.firestore().enablePersistence()
-  .catch(err => { console.warn("Persistencia Firestore no habilitada:", err.code === 'failed-precondition' ? 'Múltiples pestañas.' : err.message); });
+  .catch(err => {
+    if (err.code == 'failed-precondition') {
+      console.warn("Persistencia Firestore no habilitada: Múltiples pestañas abiertas.");
+    } else if (err.code == 'unimplemented') {
+      console.warn("Persistencia Firestore no habilitada: Navegador no compatible.");
+    } else {
+      console.error("Error al habilitar persistencia Firestore:", err);
+    }
+  });
 
 // Variables globales temporales para pasar datos a save-concert-details
 let currentConcertFullDateTextForSave = '';
 let currentConcertTitleForSave = '';
 let currentEventOriginalLocationForSave = '';
 
+
 /* ---------- 1. Utilidades ---------- */
+// (Tu código de utilidades original)
 const parseDuration = str => { 
   if (!str) return 0;
   if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; }
@@ -686,27 +699,27 @@ const parseDuration = str => { 
 };
 const toMMSS = s => {
     if (isNaN(s) || s === null || s === undefined) {
-        s = 0;
+        s = 0; // Valor por defecto si s no es un número válido
     }
-    const totalSeconds = Math.round(s); 
+    const totalSeconds = Math.round(s); // Redondear para evitar decimales en segundos
     return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
 };
 const toHHMM = s => {
   if (isNaN(s) || s === null || s === undefined) {
-        s = 0;
+        s = 0; // Valor por defecto
   }
   const totalSeconds = Math.round(s);
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 };
-const toHours = s => {
+const toHours = s => { // Para estadísticas, mostrar con decimales
     if (isNaN(s) || s === null || s === undefined) return (0).toFixed(2);
     return (s / 3600).toFixed(2);
 };
 
 function decodeHtmlEntities(text) {
-    if (typeof text !== 'string') return text;
+    if (typeof text !== 'string') return text; // Devuelve el valor original si no es string
     const textArea = document.createElement('textarea');
     textArea.innerHTML = text;
     return textArea.value;
@@ -719,84 +732,98 @@ const calculateDuration = (startTime, endTime) => {
   const startSeconds = startH * 3600 + startM * 60;
   const endSeconds = endH * 3600 + endM * 60;
   let duration = endSeconds - startSeconds;
-  if (duration < 0) duration += 24 * 3600; 
+  if (duration < 0) duration += 24 * 3600; // Maneja cruce de medianoche (poco probable para ensayos)
   return duration;
 };
 const formatDateWithDay = dateStr => {
-  const date = new Date(dateStr + 'T00:00:00Z'); 
+  const date = new Date(dateStr + 'T00:00:00Z'); // Asegurar que se parsea como UTC para evitar problemas de zona horaria
   const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;
 };
 const getMonthYear = dateStr => {
-  const date = new Date(dateStr + 'T00:00:00Z'); 
+  const date = new Date(dateStr + 'T00:00:00Z'); // UTC para consistencia
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 };
-function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) {
-  const startDate = new Date(`${date}T${startTime}`); 
+function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) { //7200s = 2 horas
+  const startDate = new Date(`${date}T${startTime}`); // Asume hora local del navegador para el evento
   const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
+
+  // Formato UTC para ICS: YYYYMMDDTHHmmssZ
   const formatICSDate = d => {
     const pad = (num) => String(num).padStart(2, '0');
     return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
   };
+
   const startICS = formatICSDate(startDate);
   const endICS = formatICSDate(endDate);
-  const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ElSotanoDelDoctor//Intranet//ES", "BEGIN:VEVENT",
-    `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, "")}Z`, 
-    `UID:${startICS}-${sanitizeFirebaseKey(title)}@elsotanodeldoctor.com`, 
-    `DTSTART:${startICS}`, `DTEND:${endICS}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`,
-    "END:VEVENT", "END:VCALENDAR"
+
+  const icsContent = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//ElSotanoDelDoctor//Intranet//ES",
+    "BEGIN:VEVENT",
+    `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, "")}Z`, // Fecha de creación del evento ICS, en UTC
+    `UID:${startICS}-${sanitizeFirebaseKey(title)}@elsotanodeldoctor.com`, // ID único del evento
+    `DTSTART:${startICS}`,
+    `DTEND:${endICS}`,
+    `SUMMARY:${title}`,
+    `DESCRIPTION:${description}`,
+    `LOCATION:${location}`,
+    "END:VEVENT",
+    "END:VCALENDAR"
   ].join("\r\n");
+
   const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${sanitizeFirebaseKey(title)}.ics`;
+  link.download = `${sanitizeFirebaseKey(title)}.ics`; // Nombre del archivo ICS
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
-const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
+const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_'); // Reemplaza caracteres no válidos y espacios
 const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|#$.[\]]/g, '_').replace(/\s+/g, '_');
 
 
 /* ---------- 1.5. Manejo de conexión ---------- */
-// Aquí iría tu código actual para el manejo de conexión, si tienes una sección específica para ello.
-// Por ejemplo, la función updateConnectionStatus y sus listeners.
-// Asegúrate de que esté definida antes de llamarla en DOMContentLoaded.
 const connectionStatusElem = document.getElementById('connection-status');
-let online = navigator.onLine;
+let online = navigator.onLine; // Estado inicial
 
 function updateConnectionStatus() {
-    if (!connectionStatusElem) return;
+    if (!connectionStatusElem) return; // Si el elemento no existe, no hacer nada
     if (online) {
-        connectionStatusElem.style.display = 'none';
+        connectionStatusElem.style.display = 'none'; // Ocultar si hay conexión
     } else {
         connectionStatusElem.textContent = 'Sin conexión';
-        connectionStatusElem.className = 'offline';
-        connectionStatusElem.style.display = 'block';
+        connectionStatusElem.className = 'offline'; // Aplicar clase para estilo de desconectado
+        connectionStatusElem.style.display = 'block'; // Mostrar
     }
 }
+// Listeners para cambios de estado de conexión
 window.addEventListener('online', () => { online = true; updateConnectionStatus(); });
 window.addEventListener('offline', () => { online = false; updateConnectionStatus(); });
 
+// Función genérica para reintentos (útil para operaciones de red)
 async function withRetry(action, maxRetries = 3, delay = 1000) {
     for (let i = 0; i < maxRetries; i++) {
         try {
-            return await action();
+            return await action(); // Intenta la acción
         } catch (error) {
             console.warn(`Intento ${i + 1} fallido. Reintentando en ${delay / 1000}s...`, error);
-            if (i === maxRetries - 1) throw error;
+            if (i === maxRetries - 1) throw error; // Si es el último intento, lanzar el error
             await new Promise(resolve => setTimeout(resolve, delay));
-            delay *= 2; // Exponential backoff
+            delay *= 2; // Backoff exponencial
         }
     }
 }
 
 
 /* ---------- 2. Acceso Firestore ---------- */
+// (Tu código de acceso a Firestore original: loadDoc, saveDoc, loadCollection, deleteDocument)
 const loadDoc = async (collection, docId, defaultValue = null) => {
     try {
         const docRef = db.collection(collection).doc(docId);
@@ -804,7 +831,8 @@ const loadDoc = async (collection, docId, defaultValue = null) => {
         return docSnap.exists ? docSnap.data() : defaultValue;
     } catch (error) {
         console.error(`Error cargando documento ${collection}/${docId}:`, error);
-        return defaultValue; // Retorna valor por defecto en caso de error de red/permisos
+        // Considerar si se debe retornar defaultValue o relanzar el error dependiendo de la criticidad
+        return defaultValue; // Ejemplo: retornar valor por defecto en caso de error de red/permisos
     }
 };
 
@@ -843,7 +871,8 @@ const deleteDocument = async (collection, docId) => {
 };
 
 /* ---------- 3. Configuración Setlists ---------- */
-let setlistConfig = {
+// (Tu código de Configuración Setlists original: setlistConfig, loadSetlistConfig, guardar-setlist-config.onclick)
+let setlistConfig = { // Valores por defecto si Firestore no está disponible o no hay config guardada
     setlist1: { name: "Setlist Ensayo", url: "URL_POR_CONFIGURAR_1" },
     setlist2: { name: "Setlist Concierto", url: "URL_POR_CONFIGURAR_2" },
     setlistStar: { name: "Setlist Estrella", url: "URL_POR_CONFIGURAR_STAR" }
@@ -851,19 +880,19 @@ let setlistConfig = {
 
 const loadSetlistConfig = async () => {
     console.log("[loadSetlistConfig] Cargando configuración de Setlist desde Firestore...");
-    const loadedConfig = await withRetry(() => loadDoc('configuracion', 'setlists', null));
-    if (loadedConfig && loadedConfig.setlist1_url) { // Verifica una propiedad clave para asegurar que no es un placeholder
+    const loadedConfig = await withRetry(() => loadDoc('configuracion', 'setlists', null)); // Usar valor por defecto null
+    if (loadedConfig && loadedConfig.setlist1_url) { // Comprobar una propiedad clave para asegurar que no es un placeholder
         setlistConfig.setlist1.name = loadedConfig.setlist1_name || setlistConfig.setlist1.name;
         setlistConfig.setlist1.url = loadedConfig.setlist1_url;
         setlistConfig.setlist2.name = loadedConfig.setlist2_name || setlistConfig.setlist2.name;
         setlistConfig.setlist2.url = loadedConfig.setlist2_url;
         setlistConfig.setlistStar.name = loadedConfig.setlistStar_name || setlistConfig.setlistStar.name;
         setlistConfig.setlistStar.url = loadedConfig.setlistStar_url;
-        console.log("[loadSetlistConfig] Configuración de Setlist cargada:", JSON.parse(JSON.stringify(setlistConfig)));
+        console.log("[loadSetlistConfig] Configuración de Setlist cargada:", JSON.parse(JSON.stringify(setlistConfig))); // Deep copy para log
     } else {
         console.warn("[loadSetlistConfig] No se encontró configuración de Setlist en Firestore o es inválida, usando valores por defecto.");
     }
-    // Actualizar UI si es necesario, aunque la carga de setlists ya usa `setlistConfig`
+    // Actualizar la UI con los valores (cargados o por defecto)
     document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
     document.getElementById("setlist1-url").value = setlistConfig.setlist1.url;
     document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
@@ -871,7 +900,7 @@ const loadSetlistConfig = async () => {
     document.getElementById("setlistStar-name").value = setlistConfig.setlistStar.name;
     document.getElementById("setlistStar-url").value = setlistConfig.setlistStar.url;
 
-    // Actualizar nombres dinámicos en las secciones de setlist
+    // Actualizar nombres dinámicos en las secciones de setlist en la página principal
     document.getElementById('setlist1-dynamic-name').textContent = setlistConfig.setlist1.name;
     document.getElementById('second-setlist-dynamic-name').textContent = setlistConfig.setlist2.name;
     document.getElementById('star-setlist-dynamic-name').textContent = setlistConfig.setlistStar.name;
@@ -885,23 +914,24 @@ document.getElementById("guardar-setlist-config").onclick = async () => {
         setlist2_url: document.getElementById("setlist2-url").value.trim(),
         setlistStar_name: document.getElementById("setlistStar-name").value.trim(),
         setlistStar_url: document.getElementById("setlistStar-url").value.trim(),
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString() // Guardar timestamp de última actualización
     };
 
     const messageElem = document.getElementById("setlist-message");
+    // Validación simple: asegurar que las URLs no estén vacías
     if (!newConfig.setlist1_url || !newConfig.setlist2_url || !newConfig.setlistStar_url) {
         messageElem.textContent = "Error: Todas las URLs de feed son obligatorias.";
-        messageElem.className = "error-message";
+        messageElem.className = "error-message"; // Asegurar clase de error
         return;
     }
-    messageElem.textContent = "";
+    messageElem.textContent = ""; // Limpiar mensaje previo
 
     try {
         await withRetry(() => saveDoc('configuracion', 'setlists', newConfig));
         messageElem.textContent = "Configuración guardada. Recargando setlists...";
-        messageElem.className = "success-message";
-        await loadSetlistConfig(); // Recargar la configuración global
-        // Recargar los setlists en la UI (o indicar al usuario que recargue la página)
+        messageElem.className = "success-message"; // Clase de éxito
+        await loadSetlistConfig(); // Recargar la configuración global para reflejar cambios
+        // Recargar los setlists en la UI para que usen las nuevas URLs/nombres
         Promise.allSettled([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]).then(() => {
              messageElem.textContent = "Configuración guardada y setlists actualizados.";
         });
@@ -913,7 +943,7 @@ document.getElementById("guardar-setlist-config").onclick = async () => {
 };
 
 
-// ***** INICIO FUNCIÓN cargarSetlistGenerico MODIFICADA *****
+// ***** INICIO FUNCIÓN cargarSetlistGenerico *****
 async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
   console.log(`[cargarSetlistGenerico] Iniciando para tbodyId: ${tbodyId}, configURL: ${configEntry.url}`);
   try {
@@ -928,20 +958,23 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     }
     
     const rawData = await response.json();
-    console.log(`[cargarSetlistGenerico] rawData para ${tbodyId}:`, JSON.parse(JSON.stringify(rawData))); 
+    console.log(`[cargarSetlistGenerico] rawData para ${tbodyId}:`, JSON.parse(JSON.stringify(rawData))); // Log de datos crudos
     
+    // Asegurar que dataToProcess es un array, incluso si la API devuelve un objeto con `items`
     const dataToProcess = Array.isArray(rawData) ? rawData : (rawData.items || []);
     console.log(`[cargarSetlistGenerico] dataToProcess para ${tbodyId} (antes de filtrar):`, JSON.parse(JSON.stringify(dataToProcess)));
 
     const processedItems = dataToProcess.map(item => {
+      // Filtrar items que no son canciones (type: song) o sets (type: set)
       if (!item || (item.type !== "song" && item.type !== "set")) {
         console.warn(`[cargarSetlistGenerico PRE-PROC] Ítem ignorado, tipo inválido o ítem nulo:`, item);
-        return null; 
+        return null; // Marcar para filtrar después
       }
 
       let rawDurationValue = parseFloat(item.duration);
       let durationIsInvalidOrMissing = isNaN(rawDurationValue) || rawDurationValue === 0;
 
+      // Si la duración es NaN (no un número), tratarla como 0 y marcarla como inválida/ausente
       if (isNaN(rawDurationValue)) {
           rawDurationValue = 0;
           durationIsInvalidOrMissing = true; 
@@ -951,77 +984,85 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
       const itemName = item.name || item.title || (item.type === "song" ? "Canción sin título" : "Set sin nombre");
       const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);
 
+      // Banderas para identificar el tipo de ítem procesado
       item.isSong = false;
       item.isBreak = false;
       item.isSetHeader = false;
 
       if (item.type === "song") {
-          durationInSeconds = rawDurationValue; 
+          durationInSeconds = rawDurationValue; // Para canciones, la duración ya está en segundos
           item.isSong = true;
           console.log(`[cargarSetlistGenerico PRE-PROC] CANCIÓN: '${itemName}'. Duración original (asumida en segundos): ${rawDurationValue}`);
       } else if (item.type === "set") {
-          if (isBreakByName) { 
+          if (isBreakByName) { // Si el nombre del set indica un descanso
               item.isBreak = true;
-              if (durationIsInvalidOrMissing) { 
-                  durationInSeconds = 3 * 60; 
+              if (durationIsInvalidOrMissing) { // Si no tiene duración o es 0/inválida
+                  durationInSeconds = 3 * 60; // Asignar 3 minutos por defecto a los descansos sin duración
                   console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' sin duración válida ('${item.duration}'). Asignando 3 minutos (${durationInSeconds}s).`);
-              } else { 
-                  durationInSeconds = rawDurationValue * 60; 
+              } else { // Si tiene duración, asumimos que está en minutos para los sets/descansos
+                  durationInSeconds = rawDurationValue * 60; // Convertir a segundos
                    console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' con duración ${rawDurationValue} min (${durationInSeconds}s).`);
               }
-          } else { 
+          } else { // Si es un set normal (no un descanso)
               item.isSetHeader = true;
-              durationInSeconds = rawDurationValue * 60; 
+              // La duración de un Set Header en sí misma no se suma directamente al total;
+              // se calculará la suma de las canciones dentro del set.
+              // Pero si el item 'set' tiene una duración, la guardamos por si es útil (ej. 'Set 1 (45 min)')
+              durationInSeconds = rawDurationValue * 60; // Convertir a segundos si se proporciona
               console.log(`[cargarSetlistGenerico PRE-PROC] SET HEADER: '${itemName}'. Duración original del item (asumida en minutos): ${rawDurationValue} (${durationInSeconds}s). La duración del bloque se calculará.`);
           }
       } else {
+          // Esto no debería ocurrir debido al filtro inicial, pero por si acaso
           durationInSeconds = 0;
       }
       
-      item.calculatedDurationSeconds = durationInSeconds;
+      item.calculatedDurationSeconds = durationInSeconds; // Guardar duración calculada en segundos
       item.displayName = decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : (item.isBreak ? "Pausa" : "Set")));
-      item.originalJSONDuration = item.duration; 
+      item.originalJSONDuration = item.duration; // Guardar la duración original del JSON para referencia/debug
       return item;
-    }).filter(item => item !== null);
+    }).filter(item => item !== null); // Filtrar los ítems nulos (los que no eran song/set)
 
     console.log(`[cargarSetlistGenerico] ProcessedItems para ${tbodyId} (después de pre-procesar y filtrar nulos):`, JSON.parse(JSON.stringify(processedItems)));
 
     const tbody = document.getElementById(tbodyId);
-    tbody.innerHTML = "";
-    let songCount = 0; 
+    tbody.innerHTML = ""; // Limpiar tabla
+    let songCount = 0; // Contador para numerar canciones
     
+    // Estructurar los ítems en sets y canciones
     const setlistStructure = [];
     let currentSet = null;
 
     processedItems.forEach(item => {
         if (item.isSetHeader) {
-            if (currentSet) {
+            if (currentSet) { // Si ya había un set abierto, calcular su duración y añadirlo
                 currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0);
                 setlistStructure.push(currentSet);
             }
+            // Crear nuevo set
             currentSet = { ...item, songs: [], calculatedBlockDurationSeconds: 0 }; 
         } else if (item.isBreak) {
-            if (currentSet) { 
+            if (currentSet) { // Cerrar el set actual antes del descanso
                 currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0);
                 setlistStructure.push(currentSet);
-                currentSet = null; 
+                currentSet = null; // Resetear currentSet
             }
-            setlistStructure.push(item); 
+            setlistStructure.push(item); // Añadir el descanso como un ítem separado
         } else if (item.isSong) {
-            if (!currentSet) { 
+            if (!currentSet) { // Si una canción aparece sin un set previo, crear uno implícito
                 console.warn(`[cargarSetlistGenerico] Canción '${item.displayName}' encontrada sin un Set Header previo. Creando set implícito "Set General".`);
                 currentSet = { 
                     isSetHeader: true, 
                     displayName: "Set General", 
-                    calculatedDurationSeconds: 0, 
+                    calculatedDurationSeconds: 0, // Duración del "set" en sí (no de sus canciones)
                     songs: [], 
-                    calculatedBlockDurationSeconds: 0 
+                    calculatedBlockDurationSeconds: 0 // Duración total de las canciones en este set
                 };
             }
-            currentSet.songs.push(item);
+            currentSet.songs.push(item); // Añadir canción al set actual
         }
     });
 
+    // Asegurar que el último set se añade a la estructura
     if (currentSet) {
         currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0);
         setlistStructure.push(currentSet);
@@ -1029,17 +1070,18 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     
     console.log(`[cargarSetlistGenerico] SetlistStructure final para ${tbodyId}:`, JSON.parse(JSON.stringify(setlistStructure)));
 
+    // Renderizar la tabla HTML y calcular tiempo total
     let totalSecondsOverall = 0;
     setlistStructure.forEach(blockOrItem => {
         if (blockOrItem.isSetHeader) {
-            const setHeaderTime = toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0);
+            const setHeaderTime = toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0); // Duración del bloque de canciones
             console.log(`[cargarSetlistGenerico HTML] Renderizando SET HEADER: ${blockOrItem.displayName} (${setHeaderTime})`);
             tbody.insertAdjacentHTML("beforeend",
               `<tr class="set-header-row">
                 <td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td>
               </tr>`
             );
-            totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
+            totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0); // Sumar duración de las canciones del set
             blockOrItem.songs.forEach(song => {
                 songCount++;
                 const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
@@ -1055,7 +1097,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
             });
         } else if (blockOrItem.isBreak) {
             const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
-            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
+            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0); // Sumar duración del descanso
             console.log(`[cargarSetlistGenerico HTML] Renderizando BREAK: ${blockOrItem.displayName} (${breakFormattedTime})`);
             tbody.insertAdjacentHTML("beforeend",
               `<tr class="break-row">
@@ -1066,7 +1108,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
                 <td style="font-style:italic; text-align:center;">${breakFormattedTime}</td>
               </tr>`
             );
-        } else if (blockOrItem.isSong) { 
+        } else if (blockOrItem.isSong) { // Caso de canción huérfana (si ocurrió a pesar de la lógica)
             songCount++;
             const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
             totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
@@ -1086,15 +1128,15 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(totalSecondsOverall);
     console.log(`[cargarSetlistGenerico] Finalizado para ${tbodyId}. Tiempo total final calculado: ${toHHMM(totalSecondsOverall)}`);
     
-    return setlistStructure; 
+    return setlistStructure; // Devolver la estructura procesada para usar en PDF, etc.
 
   } catch (e) {
     console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`, e);
     const tbody = document.getElementById(tbodyId);
-    if(tbody) tbody.innerHTML = `<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;
+    if(tbody) tbody.innerHTML = `<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`; // Mostrar error en la tabla
     const totalTimeElem = document.getElementById(totalTimeId);
     if(totalTimeElem) totalTimeElem.textContent = "Error al calcular tiempo.";
-    return [];
+    return []; // Devolver array vacío en caso de error
   }
 }
 // ***** FIN FUNCIÓN cargarSetlistGenerico *****
@@ -1104,24 +1146,26 @@ const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2,
 const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella");
 
 /* ---------- 6. Usuarios ---------- */
-let users = [];
-let editingUserId = null;
+// (Tu código de Usuarios original: users, editingUserId, loadUsers, renderUserTable, etc.)
+let users = []; // Array para almacenar usuarios cargados
+let editingUserId = null; // Para saber si estamos editando un usuario existente
 
 async function loadUsers() {
     console.log("[loadUsers] Cargando usuarios...");
-    users = await withRetry(() => loadCollection('users', 'name'));
-    renderUserTable();
-    renderUserListScreen(); // Para la pantalla de solo visualización
+    users = await withRetry(() => loadCollection('users', 'name')); // Cargar y ordenar por nombre
+    renderUserTable(); // Actualizar tabla en pantalla de gestión
+    renderUserListScreen(); // Actualizar tabla en pantalla de visualización
     console.log("[loadUsers] Usuarios cargados:", users.length);
+    // También podrías necesitar actualizar otros lugares donde se usen los usuarios, como el modal de concierto
 }
 
-function renderUserTable() {
+function renderUserTable() { // Para la pantalla de Gestión de Usuarios
     const tbody = document.getElementById("user-table-body");
     tbody.innerHTML = ""; // Limpiar tabla antes de renderizar
     users.forEach(user => {
         const row = tbody.insertRow();
         row.insertCell().textContent = user.name;
-        row.insertCell().textContent = user.nickname || "-";
+        row.insertCell().textContent = user.nickname || "-"; // Mostrar guion si no hay apodo
         row.insertCell().textContent = user.roles ? user.roles.join(", ") : "Sin roles";
         const actionsCell = row.insertCell();
         actionsCell.innerHTML = `
@@ -1130,9 +1174,9 @@ function renderUserTable() {
         `;
     });
 }
-function renderUserListScreen() {
+function renderUserListScreen() { // Para la pantalla de "Usuarios Registrados" (solo visualización)
     const usersBody = document.getElementById('users-body');
-    if (!usersBody) return;
+    if (!usersBody) return; // Salir si el elemento no existe
     usersBody.innerHTML = ''; // Limpiar antes de añadir
     if (users.length === 0) {
         usersBody.innerHTML = '<tr><td colspan="3">No hay usuarios registrados.</td></tr>';
@@ -1153,30 +1197,32 @@ document.getElementById("add-user").onclick = async () => {
     const roles = Array.from(document.getElementById("user-role").selectedOptions).map(opt => opt.value);
     const messageElem = document.getElementById("user-message");
 
-    if (!name) {
+    if (!name) { // Validación básica
         messageElem.textContent = "El nombre es obligatorio.";
         return;
     }
-    messageElem.textContent = "";
+    messageElem.textContent = ""; // Limpiar mensaje
 
     const userData = { name, nickname, roles, lastUpdated: new Date().toISOString() };
 
     try {
-        if (editingUserId) {
+        if (editingUserId) { // Si estamos editando
             await withRetry(() => saveDoc('users', editingUserId, userData, true)); // merge true para actualizar
             messageElem.textContent = "Usuario actualizado.";
-        } else {
-            // Verificar si el usuario (por nombre o apodo) ya existe para evitar duplicados
+        } else { // Si es un nuevo usuario
+            // Opcional: Verificar si el usuario (por nombre o apodo) ya existe para evitar duplicados
             const existingUserByName = users.find(u => u.name.toLowerCase() === name.toLowerCase());
             const existingUserByNickname = nickname && users.find(u => u.nickname && u.nickname.toLowerCase() === nickname.toLowerCase());
             if (existingUserByName || existingUserByNickname) {
                  messageElem.textContent = "Error: Ya existe un usuario con ese nombre o apodo.";
+                 messageElem.className = "error-message";
                  return;
             }
             await withRetry(() => db.collection('users').add(userData)); // .add() para nuevo doc con ID auto
             messageElem.textContent = "Usuario añadido.";
         }
         messageElem.className = "success-message";
+        // Limpiar formulario y resetear estado de edición
         document.getElementById("user-name").value = "";
         document.getElementById("user-nickname").value = "";
         document.getElementById("user-role").selectedIndex = -1; // Deseleccionar roles
@@ -1191,9 +1237,10 @@ document.getElementById("add-user").onclick = async () => {
     }
 };
 
+// Manejo de eventos para botones de editar/eliminar en la tabla de usuarios
 document.getElementById("user-table-body").addEventListener("click", async (event) => {
     const target = event.target;
-    const userId = target.dataset.id;
+    const userId = target.dataset.id; // ID del usuario desde data-attribute
 
     if (target.classList.contains("delete-user")) {
         if (confirm("¿Seguro que quieres eliminar este usuario?")) {
@@ -1211,19 +1258,22 @@ document.getElementById("user-table-body").addEventListener("click", async (even
     } else if (target.classList.contains("edit-user")) {
         const user = users.find(u => u.id === userId);
         if (user) {
-            editingUserId = userId;
+            editingUserId = userId; // Guardar ID para la edición
+            // Llenar formulario con datos del usuario
             document.getElementById("user-name").value = user.name;
             document.getElementById("user-nickname").value = user.nickname || "";
+            // Seleccionar roles en el multiselect
             Array.from(document.getElementById("user-role").options).forEach(option => {
                 option.selected = user.roles && user.roles.includes(option.value);
             });
-            document.getElementById("add-user").textContent = "Guardar Cambios";
-            document.getElementById("cancel-edit-user").style.display = "inline-block";
+            document.getElementById("add-user").textContent = "Guardar Cambios"; // Cambiar texto del botón
+            document.getElementById("cancel-edit-user").style.display = "inline-block"; // Mostrar botón cancelar
             document.getElementById("user-message").textContent = ""; // Limpiar mensajes previos
             document.getElementById("user-name").focus(); // Focus en el primer campo
         }
     }
 });
+// Botón para cancelar la edición de usuario
 document.getElementById("cancel-edit-user").onclick = () => {
     editingUserId = null;
     document.getElementById("user-name").value = "";
@@ -1236,30 +1286,32 @@ document.getElementById("cancel-edit-user").onclick = () => {
 
 
 /* ---------- 7. Ensayos ---------- */
-let rehearsals = [];
-let editingRehearsalId = null;
+// (Tu código de Ensayos original: rehearsals, editingRehearsalId, loadRehearsals, etc.)
+let rehearsals = []; // Array para ensayos (próximos)
+let editingRehearsalId = null; // Para saber si estamos editando
 
 async function loadRehearsals() {
     console.log("[loadRehearsals] Cargando ensayos...");
-    // Cargar todos, luego filtrar y ordenar en JS para manejar correctamente fechas y horas
+    // Cargar todos los ensayos primero, luego filtrar y ordenar en el cliente
     const allRehearsals = await withRetry(() => loadCollection('rehearsals'));
 
     const now = new Date();
     // Filtrar para separar próximos de pasados, y ordenar próximos por fecha/hora
+    // Los ensayos se consideran "próximos" si su fecha/hora es posterior o igual a ahora.
     rehearsals = allRehearsals
         .map(r => ({ ...r, dateTime: new Date(`${r.date}T${r.startTime || '00:00'}`) })) // Crear un objeto Date para ordenar
-        .filter(r => r.dateTime >= now || r.date === now.toISOString().split('T')[0]) // Incluir ensayos de hoy
-        .sort((a, b) => a.dateTime - b.dateTime);
+        .filter(r => r.dateTime >= now || r.date === now.toISOString().split('T')[0]) // Incluir ensayos de hoy aunque la hora haya pasado (para confirmaciones tardías)
+        .sort((a, b) => a.dateTime - b.dateTime); // Ordenar por fecha/hora ascendente (los más próximos primero)
 
-    renderRehearsalTable(); // Para la pantalla de gestión
-    renderMainRehearsalTable(); // Para la sección principal
-    populatePastRehearsals(allRehearsals); // Para estadísticas
+    renderRehearsalTable(); // Actualizar tabla en pantalla de gestión
+    renderMainRehearsalTable(); // Actualizar tabla en sección principal
+    populatePastRehearsals(allRehearsals); // Llenar tabla de ensayos pasados para estadísticas
     console.log("[loadRehearsals] Ensayos (próximos) cargados:", rehearsals.length);
 }
 
-function renderRehearsalTable() { // Para la pantalla de gestión de ensayos
+function renderRehearsalTable() { // Para la pantalla de Gestión de Ensayos
     const tbody = document.getElementById("rehearsal-table-body");
-    tbody.innerHTML = "";
+    tbody.innerHTML = ""; // Limpiar
     rehearsals.forEach(rehearsal => {
         const row = tbody.insertRow();
         row.insertCell().textContent = formatDateWithDay(rehearsal.date);
@@ -1267,10 +1319,11 @@ function renderRehearsalTable() { // Para la pantalla de gestión de ensayos
         row.insertCell().textContent = rehearsal.endTime || "-";
         row.insertCell().textContent = rehearsal.location || "-";
 
+        // Resumen de asistencia
         const attendanceSummary = rehearsal.attendance ? Object.entries(rehearsal.attendance)
-            .map(([user, status]) => `${user}: ${status === 'yes' ? 'Sí' : (status === 'no' ? 'No' : '?')}`)
-            .join('<br>') : 'Nadie ha confirmado';
-        row.insertCell().innerHTML = `<small>${attendanceSummary}</small>`;
+            .map(([user, status]) => `${user}: ${status === 'yes' ? 'Sí' : (status === 'no' ? 'No' : '?')}`) // Mapear a string legible
+            .join('<br>') : 'Nadie ha confirmado'; // Si no hay objeto attendance
+        row.insertCell().innerHTML = `<small>${attendanceSummary}</small>`; // Usar innerHTML para el <br>
 
         const actionsCell = row.insertCell();
         actionsCell.innerHTML = `
@@ -1283,7 +1336,7 @@ function renderRehearsalTable() { // Para la pantalla de gestión de ensayos
 
 function renderMainRehearsalTable() { // Para la sección principal "Próximos Ensayos"
     const tbody = document.getElementById("rehearsal-main-body");
-    tbody.innerHTML = "";
+    tbody.innerHTML = ""; // Limpiar
     if (rehearsals.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5">No hay próximos ensayos programados.</td></tr>';
         return;
@@ -1297,27 +1350,27 @@ function renderMainRehearsalTable() { // Para la sección principal "Próximos E
 
         // Celda para botón de calendario ICS
         const calCell = row.insertCell();
-        calCell.classList.add("calendar-col");
+        calCell.classList.add("calendar-col"); // Para estilos específicos
         const calButton = document.createElement('button');
         calButton.className = 'calendar-btn';
         calButton.title = 'Añadir a mi calendario';
-        calButton.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';
+        calButton.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>'; // Icono SVG
         calButton.onclick = () => generateICS(
-            `Ensayo: El Sótano del Doctor`,
+            `Ensayo: El Sótano del Doctor`, // Título del evento
             rehearsal.date,
             rehearsal.startTime || '20:00', // Hora por defecto si no está
-            rehearsal.location || 'Local de Ensayo',
-            `Ensayo de la banda. Lugar: ${rehearsal.location || 'Por confirmar'}. Duración estimada: ${toHHMM(calculateDuration(rehearsal.startTime, rehearsal.endTime)) || '2 horas'}`,
-            calculateDuration(rehearsal.startTime, rehearsal.endTime) || 7200 // 2 horas por defecto
+            rehearsal.location || 'Local de Ensayo', // Lugar
+            `Ensayo de la banda. Lugar: ${rehearsal.location || 'Por confirmar'}. Duración estimada: ${toHHMM(calculateDuration(rehearsal.startTime, rehearsal.endTime)) || '2 horas'}`, // Descripción
+            calculateDuration(rehearsal.startTime, rehearsal.endTime) || 7200 // Duración en segundos, 2h por defecto
         );
         calCell.appendChild(calButton);
 
         // Celda para confirmación de asistencia
         const attendanceCell = row.insertCell();
-        attendanceCell.classList.add("attendance-form");
+        attendanceCell.classList.add("attendance-form"); // Para estilos del formulario
         const select = document.createElement("select");
-        select.dataset.rehearsalId = rehearsal.id;
-        ["confirm", "yes", "no"].forEach(val => {
+        select.dataset.rehearsalId = rehearsal.id; // Guardar ID del ensayo en el select
+        ["confirm", "yes", "no"].forEach(val => { // Opciones del select
             const option = document.createElement("option");
             option.value = val;
             option.textContent = val === "confirm" ? "¿Asistes?" : (val === "yes" ? "Sí" : "No");
@@ -1327,27 +1380,27 @@ function renderMainRehearsalTable() { // Para la sección principal "Próximos E
 
         const attendanceSummaryDiv = document.createElement('div');
         attendanceSummaryDiv.className = 'attendance-summary';
-        attendanceSummaryDiv.id = `summary-${rehearsal.id}`;
+        attendanceSummaryDiv.id = `summary-${rehearsal.id}`; // ID único para actualizar el resumen
         updateAttendanceSummary(rehearsal.id, rehearsal.attendance); // Actualizar con datos cargados
         attendanceCell.appendChild(attendanceSummaryDiv);
 
-        // Cargar la asistencia del usuario (simulado, necesitaría un ID de usuario actual)
-        // Por ahora, dejaremos que el usuario seleccione. El guardado manejará la lógica.
+        // Nota: La carga de la asistencia del usuario actual se manejaría idealmente con autenticación.
+        // Por ahora, el usuario selecciona y luego se le pide apodo al guardar.
     });
 }
 
 function updateAttendanceSummary(rehearsalId, attendanceData) {
     const summaryDiv = document.getElementById(`summary-${rehearsalId}`);
-    if (!summaryDiv) return;
-    summaryDiv.innerHTML = ''; // Limpiar
-    if (attendanceData && users.length > 0) {
+    if (!summaryDiv) return; // Si el div no existe, salir
+    summaryDiv.innerHTML = ''; // Limpiar resumen anterior
+    if (attendanceData && users.length > 0) { // Solo si hay datos de asistencia y usuarios cargados
         users.forEach(user => {
-            // Excluir ciertos usuarios de la lista de asistencia pública si es necesario
-            const excludedForSummary = ["Ximo", "Ginés Torres"]; // Ejemplo
+            // Ejemplo: Excluir ciertos usuarios de la lista de asistencia pública
+            const excludedForSummary = ["Ximo", "Ginés Torres"]; 
             if (excludedForSummary.includes(user.name)) return;
 
-            const status = attendanceData[user.nickname || user.name];
-            if (status) {
+            const status = attendanceData[user.nickname || user.name]; // Buscar por apodo (o nombre si no hay apodo)
+            if (status) { // Si el usuario tiene un estado de asistencia registrado
                 const span = document.createElement('span');
                 span.textContent = `${user.nickname || user.name}: ${status === 'yes' ? '✔️' : '❌'}`;
                 span.className = status === 'yes' ? 'attending-yes' : 'attending-no';
@@ -1365,25 +1418,29 @@ document.getElementById("add-rehearsal").onclick = async () => {
     const location = document.getElementById("rehearsal-location").value.trim();
     const messageElem = document.getElementById("rehearsal-message");
 
-    if (!date || !startTime || !endTime) {
+    if (!date || !startTime || !endTime) { // Validaciones básicas
         messageElem.textContent = "Fecha, hora de inicio y hora de fin son obligatorias.";
         return;
     }
     messageElem.textContent = "";
 
+    // Objeto attendance se inicializa vacío para nuevos ensayos
     const rehearsalData = { date, startTime, endTime, location, attendance: {}, lastUpdated: new Date().toISOString() };
 
     try {
-        if (editingRehearsalId) {
+        if (editingRehearsalId) { // Si estamos editando
+            // Al editar, es importante mantener las asistencias existentes si no se modifican explícitamente.
+            // Cargamos el ensayo existente para fusionar los datos de asistencia.
             const existingRehearsal = await loadDoc('rehearsals', editingRehearsalId);
-            rehearsalData.attendance = existingRehearsal.attendance || {}; // Mantener asistencias existentes al editar
+            rehearsalData.attendance = existingRehearsal.attendance || {}; // Mantener asistencias
             await withRetry(() => saveDoc('rehearsals', editingRehearsalId, rehearsalData, true));
             messageElem.textContent = "Ensayo actualizado.";
-        } else {
+        } else { // Nuevo ensayo
             await withRetry(() => db.collection('rehearsals').add(rehearsalData));
             messageElem.textContent = "Ensayo añadido.";
         }
         messageElem.className = "success-message";
+        // Limpiar formulario y resetear estado
         document.getElementById("rehearsal-date").value = "";
         document.getElementById("rehearsal-start-time").value = "";
         document.getElementById("rehearsal-end-time").value = "";
@@ -1391,7 +1448,7 @@ document.getElementById("add-rehearsal").onclick = async () => {
         editingRehearsalId = null;
         document.getElementById("cancel-edit-rehearsal").style.display = "none";
         document.getElementById("add-rehearsal").textContent = "Añadir Ensayo";
-        await loadRehearsals(); // Recargar y renderizar
+        await loadRehearsals(); // Recargar y renderizar tablas
     } catch (e) {
         messageElem.textContent = `Error: ${e.message}`;
         messageElem.className = "error-message";
@@ -1399,16 +1456,17 @@ document.getElementById("add-rehearsal").onclick = async () => {
     }
 };
 
+// Manejo de eventos para botones en tabla de gestión de ensayos
 document.getElementById("rehearsal-table-body").addEventListener("click", async (event) => {
     const target = event.target;
     const rehearsalId = target.dataset.id;
-    const messageElem = document.getElementById("rehearsal-message");
+    const messageElem = document.getElementById("rehearsal-message"); // Para mostrar mensajes de estado
 
     if (target.classList.contains("delete-rehearsal")) {
         if (confirm("¿Seguro que quieres eliminar este ensayo?")) {
             try {
                 await withRetry(() => deleteDocument('rehearsals', rehearsalId));
-                await loadRehearsals();
+                await loadRehearsals(); // Recargar
                 messageElem.textContent = "Ensayo eliminado.";
                 messageElem.className = "success-message";
             } catch (e) {
@@ -1427,7 +1485,7 @@ document.getElementById("rehearsal-table-body").addEventListener("click", async 
             document.getElementById("rehearsal-location").value = rehearsal.location;
             document.getElementById("add-rehearsal").textContent = "Guardar Cambios";
             document.getElementById("cancel-edit-rehearsal").style.display = "inline-block";
-            messageElem.textContent = "";
+            messageElem.textContent = ""; // Limpiar mensajes
             document.getElementById("rehearsal-date").focus();
         }
     } else if (target.classList.contains("clear-attendance")) {
@@ -1436,7 +1494,7 @@ document.getElementById("rehearsal-table-body").addEventListener("click", async 
                 const rehearsalData = await loadDoc('rehearsals', rehearsalId);
                 if (rehearsalData) {
                     rehearsalData.attendance = {}; // Limpiar objeto de asistencia
-                    await saveDoc('rehearsals', rehearsalId, rehearsalData, true);
+                    await saveDoc('rehearsals', rehearsalId, rehearsalData, true); // Guardar con merge
                     await loadRehearsals(); // Recargar para reflejar cambios
                     messageElem.textContent = "Asistencias limpiadas para el ensayo.";
                     messageElem.className = "success-message";
@@ -1449,7 +1507,7 @@ document.getElementById("rehearsal-table-body").addEventListener("click", async 
         }
     }
 });
-
+// Botón para cancelar edición de ensayo
 document.getElementById("cancel-edit-rehearsal").onclick = () => {
     editingRehearsalId = null;
     document.getElementById("rehearsal-date").value = "";
@@ -1461,115 +1519,124 @@ document.getElementById("cancel-edit-rehearsal").onclick = () => {
     document.getElementById("rehearsal-message").textContent = "";
 };
 
-// Manejar confirmación de asistencia desde la tabla principal
+// Manejar confirmación de asistencia desde la tabla principal "Próximos Ensayos"
 document.getElementById("rehearsal-main-body").addEventListener("change", async (event) => {
-    if (event.target.tagName === "SELECT") {
+    if (event.target.tagName === "SELECT") { // Si el cambio ocurre en un <select>
         const rehearsalId = event.target.dataset.rehearsalId;
-        const attendanceValue = event.target.value;
-        // Necesitaríamos una forma de identificar al usuario actual.
-        // Por ahora, asumimos un usuario "currentUserNickname" o pedimos al usuario que se identifique.
-        // Esto es una simplificación. En una app real, tendrías autenticación.
-        const currentUserNickname = prompt("Confirma tu apodo para registrar asistencia:", "");
-        if (!currentUserNickname || attendanceValue === "confirm") {
-             event.target.value = "confirm"; // Resetear si no hay apodo o si es la opción por defecto
-            return;
+        const attendanceValue = event.target.value; // 'yes' o 'no'
+        
+        // Identificación del usuario (simplificada, requiere mejora para producción)
+        // En una app real, se usaría Firebase Auth para obtener el usuario actual.
+        const currentUserNickname = prompt("Confirma tu apodo para registrar asistencia:", ""); 
+        if (!currentUserNickname || attendanceValue === "confirm") { // Si no se ingresa apodo o se deja en "¿Asistes?"
+             event.target.value = "confirm"; // Resetear el select
+            return; // No hacer nada
         }
 
         try {
             const rehearsalDoc = await withRetry(() => db.collection('rehearsals').doc(rehearsalId).get());
             if (rehearsalDoc.exists) {
                 const rehearsalData = rehearsalDoc.data();
-                if (!rehearsalData.attendance) {
+                if (!rehearsalData.attendance) { // Asegurar que el objeto attendance existe
                     rehearsalData.attendance = {};
                 }
-                rehearsalData.attendance[currentUserNickname] = attendanceValue; // 'yes' or 'no'
-                rehearsalData.lastUpdated = new Date().toISOString();
+                rehearsalData.attendance[currentUserNickname] = attendanceValue; // Guardar 'yes' o 'no'
+                rehearsalData.lastUpdated = new Date().toISOString(); // Actualizar timestamp
 
                 await withRetry(() => db.collection('rehearsals').doc(rehearsalId).set(rehearsalData, { merge: true }));
                 console.log(`Asistencia de ${currentUserNickname} para ensayo ${rehearsalId} guardada como ${attendanceValue}.`);
-                // Actualizar UI localmente o recargar `loadRehearsals`
+                
+                // Actualizar UI localmente para reflejar el cambio inmediatamente
                 updateAttendanceSummary(rehearsalId, rehearsalData.attendance);
-                 // Actualizar la lista global de ensayos también para reflejar el cambio si se renderiza de nuevo.
+                // Actualizar la lista global de ensayos para que otras partes de la UI estén consistentes si se recargan
                 const idx = rehearsals.findIndex(r => r.id === rehearsalId);
                 if (idx > -1) rehearsals[idx].attendance = rehearsalData.attendance;
-
             }
         } catch (e) {
             console.error("Error guardando asistencia:", e);
             alert(`Error al guardar asistencia: ${e.message}`);
-            event.target.value = "confirm"; // Resetear en caso de error
+            event.target.value = "confirm"; // Resetear select en caso de error
         }
     }
 });
 
 
 /* ---------- 8. Estadísticas ---------- */
+// (Tu código de Estadísticas original: statsMonthFilter, populateMonthFilter, etc.)
 const statsMonthFilter = document.getElementById('stats-month-filter');
 
 function populateMonthFilter(allRehearsalsData) {
     const months = new Set();
     allRehearsalsData.forEach(r => {
-        if (r.date) months.add(getMonthYear(r.date));
+        if (r.date) months.add(getMonthYear(r.date)); // Usar getMonthYear para formato "Mes Año"
     });
-    statsMonthFilter.innerHTML = '<option value="all">Todos los meses</option>'; // Reset
-    [...months].sort((a,b) => new Date(b.split(" ")[1], getMonthIndex(b.split(" ")[0])) - new Date(a.split(" ")[1], getMonthIndex(a.split(" ")[0])) ) // Ordenar meses recientes primero
-               .forEach(month => {
+    statsMonthFilter.innerHTML = '<option value="all">Todos los meses</option>'; // Resetear y añadir opción por defecto
+    // Ordenar meses: recientes primero. Necesitamos parsear "Mes Año" a Date.
+    const getMonthIndex = (monthName) => ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].indexOf(monthName);
+    [...months].sort((a,b) => {
+        const [monthA, yearA] = a.split(" ");
+        const [monthB, yearB] = b.split(" ");
+        return new Date(yearB, getMonthIndex(monthB)) - new Date(yearA, getMonthIndex(monthA));
+    }).forEach(month => {
         const option = document.createElement('option');
-        option.value = month;
+        option.value = month; // "Mes Año"
         option.textContent = month;
         statsMonthFilter.appendChild(option);
     });
 }
-const getMonthIndex = (monthName) => ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].indexOf(monthName);
-
 
 async function calculateAndDisplayStats() {
-    const allRehearsalsData = await withRetry(() => loadCollection('rehearsals'));
-    populateMonthFilter(allRehearsalsData);
-    filterAndDisplayStats(allRehearsalsData); // Mostrar todos los datos inicialmente
+    const allRehearsalsData = await withRetry(() => loadCollection('rehearsals')); // Cargar todos los ensayos
+    populateMonthFilter(allRehearsalsData); // Llenar el filtro de meses
+    filterAndDisplayStats(allRehearsalsData); // Mostrar estadísticas para "Todos los meses" inicialmente
 
-    statsMonthFilter.onchange = () => filterAndDisplayStats(allRehearsalsData);
+    statsMonthFilter.onchange = () => filterAndDisplayStats(allRehearsalsData); // Recalcular al cambiar filtro
 }
 
 function filterAndDisplayStats(allRehearsalsData) {
-    const selectedMonth = statsMonthFilter.value;
+    const selectedMonth = statsMonthFilter.value; // "Mes Año" o "all"
     const filteredRehearsals = selectedMonth === "all"
-        ? allRehearsalsData
-        : allRehearsalsData.filter(r => r.date && getMonthYear(r.date) === selectedMonth);
+        ? allRehearsalsData // Si "todos", usar todos los datos
+        : allRehearsalsData.filter(r => r.date && getMonthYear(r.date) === selectedMonth); // Filtrar por mes/año
 
-    // 1. Tiempo ensayado por mes
+    // 1. Tiempo ensayado por mes (si el filtro es "all", agrupar por mes)
     const timePerMonth = {};
-    filteredRehearsals.forEach(r => {
-        if (!r.date || !r.startTime || !r.endTime) return;
-        const month = getMonthYear(r.date);
-        const duration = calculateDuration(r.startTime, r.endTime);
+    const rehearsalsForTimePerMonth = selectedMonth === "all" ? allRehearsalsData : filteredRehearsals;
+    rehearsalsForTimePerMonth.forEach(r => {
+        if (!r.date || !r.startTime || !r.endTime) return; // Saltar si faltan datos
+        const month = getMonthYear(r.date); // Agrupar por "Mes Año"
+        const duration = calculateDuration(r.startTime, r.endTime); // Duración en segundos
         timePerMonth[month] = (timePerMonth[month] || 0) + duration;
     });
     const timePerMonthBody = document.getElementById('time-per-month-body');
-    timePerMonthBody.innerHTML = '';
-    Object.entries(timePerMonth).sort((a,b) => new Date(b[0].split(" ")[1], getMonthIndex(b[0].split(" ")[0])) - new Date(a[0].split(" ")[1], getMonthIndex(a[0].split(" ")[0])) )
-                               .forEach(([month, totalSeconds]) => {
+    timePerMonthBody.innerHTML = ''; // Limpiar
+    // Ordenar por fecha (mes/año) descendente para la tabla de tiempo por mes
+    Object.entries(timePerMonth).sort((a,b) => {
+        const [monthA, yearA] = a[0].split(" ");
+        const [monthB, yearB] = b[0].split(" ");
+        return new Date(yearB, getMonthIndex(monthB)) - new Date(yearA, getMonthIndex(monthA));
+    }).forEach(([month, totalSeconds]) => {
         const row = timePerMonthBody.insertRow();
         row.insertCell().textContent = month;
-        row.insertCell().textContent = toHours(totalSeconds);
+        row.insertCell().textContent = toHours(totalSeconds); // Convertir a formato de horas
     });
 
-    // 2. Tiempo ensayado por usuario
+    // 2. Tiempo ensayado por usuario (basado en `filteredRehearsals`)
     const timePerUser = {};
     if (users.length > 0) {
-        users.forEach(user => { timePerUser[user.nickname || user.name] = 0; }); // Inicializar todos los usuarios
+        users.forEach(user => { timePerUser[user.nickname || user.name] = 0; }); // Inicializar todos los usuarios a 0
         filteredRehearsals.forEach(r => {
-            if (!r.startTime || !r.endTime || !r.attendance) return;
+            if (!r.startTime || !r.endTime || !r.attendance) return; // Saltar si faltan datos
             const duration = calculateDuration(r.startTime, r.endTime);
             Object.entries(r.attendance).forEach(([userNickname, status]) => {
-                if (status === 'yes' && timePerUser.hasOwnProperty(userNickname)) {
+                if (status === 'yes' && timePerUser.hasOwnProperty(userNickname)) { // Si asistió "yes" y el usuario existe en la lista
                     timePerUser[userNickname] += duration;
                 }
             });
         });
     }
     const timePerUserBody = document.getElementById('time-per-user-body');
-    timePerUserBody.innerHTML = '';
+    timePerUserBody.innerHTML = ''; // Limpiar
     Object.entries(timePerUser).sort((a,b) => b[1] - a[1]) // Ordenar por tiempo descendente
                                .forEach(([userNickname, totalSeconds]) => {
         const row = timePerUserBody.insertRow();
@@ -1577,53 +1644,67 @@ function filterAndDisplayStats(allRehearsalsData) {
         row.insertCell().textContent = toHours(totalSeconds);
     });
 
-    populatePastRehearsals(filteredRehearsals, true); // Re-populate past rehearsals based on filter
+    // Re-poblar tabla de ensayos pasados usando los `filteredRehearsals`
+    // Esta función ya ordena por fecha descendente internamente
+    populatePastRehearsals(filteredRehearsals, true); 
 }
 
 
-function populatePastRehearsals(allRehearsalsData, isFiltered = false) {
+function populatePastRehearsals(rehearsalsDataToDisplay, isAlreadyFiltered = false) {
     const pastRehearsalsBody = document.getElementById('past-rehearsals-body');
-    pastRehearsalsBody.innerHTML = '';
+    pastRehearsalsBody.innerHTML = ''; // Limpiar
     const now = new Date();
 
-    const rehearsalsToDisplay = isFiltered // Si ya está filtrado por mes, usar esos datos
-        ? allRehearsalsData.map(r => ({ ...r, dateTime: new Date(`${r.date}T${r.startTime || '00:00'}`) }))
-                           .sort((a, b) => b.dateTime - a.dateTime) // Ordenar siempre por fecha descendente
-        : allRehearsalsData.map(r => ({ ...r, dateTime: new Date(`${r.date}T${r.startTime || '00:00'}`) }))
-                           .filter(r => r.dateTime < now) // Si no, filtrar pasados y ordenar
-                           .sort((a, b) => b.dateTime - a.dateTime);
+    let sortedRehearsals;
+    if (isAlreadyFiltered) {
+        // Si los datos ya están filtrados (ej. por mes desde filterAndDisplayStats), solo ordenar
+        sortedRehearsals = rehearsalsDataToDisplay
+            .map(r => ({ ...r, dateTime: new Date(`${r.date}T${r.startTime || '00:00'}`) }))
+            .sort((a, b) => b.dateTime - a.dateTime); // Ordenar por fecha descendente (más recientes primero)
+    } else {
+        // Si no están filtrados, filtrar los que son anteriores a "ahora" y luego ordenar
+        sortedRehearsals = rehearsalsDataToDisplay
+            .map(r => ({ ...r, dateTime: new Date(`${r.date}T${r.startTime || '00:00'}`) }))
+            .filter(r => r.dateTime < now) // Solo ensayos estrictamente pasados
+            .sort((a, b) => b.dateTime - a.dateTime);
+    }
 
 
-    if (rehearsalsToDisplay.length === 0) {
+    if (sortedRehearsals.length === 0) {
         pastRehearsalsBody.innerHTML = '<tr><td colspan="4">No hay ensayos pasados para mostrar.</td></tr>';
         return;
     }
 
-    rehearsalsToDisplay.forEach(rehearsal => {
+    sortedRehearsals.forEach(rehearsal => {
         const row = pastRehearsalsBody.insertRow();
         row.insertCell().textContent = formatDateWithDay(rehearsal.date);
         const timeDisplay = rehearsal.startTime && rehearsal.endTime ? `${rehearsal.startTime} - ${rehearsal.endTime}` : (rehearsal.startTime || "N/A");
         row.insertCell().textContent = timeDisplay;
         row.insertCell().textContent = rehearsal.location || "N/A";
+        // Mostrar quiénes asistieron (status 'yes')
         const attendanceSummary = rehearsal.attendance ? Object.entries(rehearsal.attendance)
-            .filter(([_, status]) => status === 'yes')
+            .filter(([_, status]) => status === 'yes') // Solo los que dijeron 'yes'
             .map(([userNickname, __]) => userNickname)
-            .join(', ') || 'Nadie asistió' : 'N/A';
+            .join(', ') || 'Nadie asistió' : 'N/A'; // Si no hay 'yes' o no hay datos de asistencia
         row.insertCell().innerHTML = `<small>${attendanceSummary}</small>`;
     });
 }
 
 /* ---------- 9. PDF ---------- */
-const PDF_FONT_PATHS = { // Asume que estas fuentes están en la carpeta 'assets/fonts/'
-    bleedingCowboys: 'assets/fonts/Bleeding_Cowboys.ttf',
-    carnevalee: 'assets/fonts/Carnevalee_Freakshow.ttf',
+// (Tu código de PDF original: PDF_FONT_PATHS, genPDF, genBasicPDF, etc.)
+// Rutas a las fuentes (asumiendo que están en la carpeta 'assets/fonts/')
+const PDF_FONT_PATHS = { 
+    bleedingCowboys: 'assets/fonts/Bleeding_Cowboys.ttf', // Reemplaza si el nombre del archivo es diferente
+    carnevalee: 'assets/fonts/Carnevalee_Freakshow.ttf', // Reemplaza si el nombre del archivo es diferente
 };
+// Nombres que se usarán para registrar las fuentes en jsPDF
 const PDF_FONT_NAMES = {
-    bleedingCowboys: 'BleedingCowboys', // Nombre que registrarás en jsPDF
+    bleedingCowboys: 'BleedingCowboys', 
     carnevalee: 'CarnevaleeFreakshow',
 };
 const PDF_BACKGROUND_IMAGE_PATH = 'assets/plantilla_setlist_ESD.png'; // Ruta a tu imagen de fondo
 
+// Función para cargar una fuente como Base64
 async function getFontAsBase64(fontPath) {
     try {
         const response = await fetch(fontPath);
@@ -1631,124 +1712,137 @@ async function getFontAsBase64(fontPath) {
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result.split(',')[1]); // Solo la parte Base64
+            reader.onloadend = () => resolve(reader.result.split(',')[1]); // Obtener solo la parte Base64
             reader.onerror = reject;
             reader.readAsDataURL(blob);
         });
     } catch (error) {
         console.error(`Error cargando fuente ${fontPath}:`, error);
-        return null;
+        return null; // Devolver null si falla la carga
     }
 }
 
+// Registrar fuente en el documento jsPDF si aún no está registrada
 async function registerFontWithDoc(doc, fontPath, fontFileName, fontNameInDoc) {
-    if (doc.getFontList && doc.getFontList()[fontNameInDoc]) { // Comprobar si la fuente ya está registrada
-        console.log(`Fuente ${fontNameInDoc} ya registrada.`);
-        return true;
+    // Comprobar si la fuente ya está en la lista de fuentes del documento
+    if (doc.getFontList && doc.getFontList()[fontNameInDoc]) { 
+        console.log(`Fuente ${fontNameInDoc} ya registrada en jsPDF.`);
+        return true; // Ya registrada
     }
     try {
         const fontBase64 = await getFontAsBase64(fontPath);
         if (fontBase64) {
-            doc.addFileToVFS(fontFileName, fontBase64);
-            doc.addFont(fontFileName, fontNameInDoc, 'normal');
-            console.log(`Fuente ${fontNameInDoc} registrada correctamente.`);
+            doc.addFileToVFS(fontFileName, fontBase64); // Añadir archivo virtual
+            doc.addFont(fontFileName, fontNameInDoc, 'normal'); // Registrar la fuente
+            console.log(`Fuente ${fontNameInDoc} registrada correctamente en jsPDF.`);
             return true;
         }
     } catch (e) {
-        console.error(`Error al registrar la fuente ${fontNameInDoc}:`, e);
+        console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`, e);
     }
-    return false;
+    return false; // Fallo al registrar
 }
 
+// Cargar imagen de fondo como Data URL
 async function getBackgroundImageDataURL() {
     try {
         const response = await fetch(PDF_BACKGROUND_IMAGE_PATH);
-        if (!response.ok) throw new Error('Network response was not ok for background image.');
+        if (!response.ok) throw new Error('Respuesta de red no fue OK para imagen de fondo.');
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
+            reader.onloadend = () => resolve(reader.result); // Devuelve el Data URL completo
             reader.onerror = reject;
             reader.readAsDataURL(blob);
         });
     } catch (error) {
         console.error("Error cargando imagen de fondo para PDF:", error);
-        return null;
+        return null; // Devolver null si falla
     }
 }
 
-// ***** INICIO FUNCIÓN genPDF MODIFICADA *****
-async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) { // Recibe setlistStructure
+// ***** INICIO FUNCIÓN genPDF (COMPLEX) *****
+async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    const cleanFileName = sanitizeForPdfFilename(rawFileNameForPdf) || "setlist";
+    const cleanFileName = sanitizeForPdfFilename(rawFileNameForPdf) || "setlist"; // Nombre de archivo limpio
 
+    // Registrar fuentes personalizadas
     let bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
     let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
     
+    // Cargar y añadir imagen de fondo
     let backgroundImageData = null;
     try {
         backgroundImageData = await getBackgroundImageDataURL();
-        doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+        if (backgroundImageData) { // Solo añadir si se cargó correctamente
+            doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+        } else { throw new Error("backgroundImageData es null"); }
     } catch (e) { 
         console.error("No se pudo añadir la plantilla de fondo al PDF:", e);
+        // Dibujar un borde simple como fallback si la imagen de fondo falla
         doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S'); 
-        doc.setFontSize(10); doc.setTextColor(150,0,0); 
+        doc.setFontSize(10); doc.setTextColor(150,0,0); // Color rojo para advertencia
         doc.text("Advertencia: No se pudo cargar la plantilla de fondo.", pageWidth / 2, pageHeight / 2, { align: "center" });
     }
 
-    doc.setTextColor(0, 0, 0); 
-    const contentMarginTop = 120; 
-    const contentMarginSides = 60; 
-    const contentMarginBottom = 100; 
-    let currentY = contentMarginTop;
+    doc.setTextColor(0, 0, 0); // Resetear color de texto a negro por si acaso
+    const contentMarginTop = 120; // Margen superior para contenido
+    const contentMarginSides = 60; // Margen lateral
+    const contentMarginBottom = 100; // Margen inferior
+    let currentY = contentMarginTop; // Posición Y actual para dibujar
 
+    // Título "SETLIST"
     doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
-    if (!bleedingCowboysRegistered) doc.setFontType("bold"); 
+    if (!bleedingCowboysRegistered) doc.setFontType("bold"); // Fallback si la fuente no cargó
     doc.setFontSize(28); 
     doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
-    currentY += 28 + 10; 
+    currentY += 28 + 10; // Incrementar Y
 
+    // Nombre dinámico del Setlist
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
-    if (!carnevaleeRegistered) doc.setFontType("bold"); 
+    if (!carnevaleeRegistered) doc.setFontType("bold"); // Fallback
     doc.setFontSize(22); 
     doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
     currentY += 22 + 5;
 
-    doc.setFont("times", "italic"); 
+    // Información de total de canciones y tiempo
+    doc.setFont("times", "italic"); // Fuente estándar para esta info
     doc.setFontSize(10);
     
     let totalOverallSeconds = 0;
     let totalSongCount = 0;
+    // Calcular totales iterando sobre la estructura del setlist procesada
     setlistStructure.forEach(blockOrItem => {
         if (blockOrItem.isSetHeader) {
             totalOverallSeconds += blockOrItem.calculatedBlockDurationSeconds || 0;
             totalSongCount += blockOrItem.songs ? blockOrItem.songs.length : 0;
         } else if (blockOrItem.isBreak) {
             totalOverallSeconds += blockOrItem.calculatedDurationSeconds || 0;
-        } else if (blockOrItem.isSong) { // Canciones huérfanas
+        } else if (blockOrItem.isSong) { // Canciones huérfanas (si las hubiera)
             totalOverallSeconds += blockOrItem.calculatedDurationSeconds || 0;
             totalSongCount++;
         }
     });
     const totalItemsText = `${totalSongCount} canciones`; 
     doc.text(`${totalItemsText}  |  Tiempo total: ${toHHMM(totalOverallSeconds)}`, pageWidth / 2, currentY, { align: "center" });
-    currentY += 10 + 20; 
+    currentY += 10 + 20; // Espacio antes de la tabla
 
-    const tableFont = "helvetica"; 
-    const tableHeadFont = "helvetica";
-    let pdfSongNumber = 0;
-    const tableBody = [];
+    // Preparar datos para la tabla (jsPDF-AutoTable)
+    const tableFont = "helvetica"; // Fuente para el cuerpo de la tabla
+    const tableHeadFont = "helvetica"; // Fuente para la cabecera
+    let pdfSongNumber = 0; // Numeración de canciones en el PDF
+    const tableBody = []; // Array para las filas de la tabla
 
     setlistStructure.forEach(blockOrItem => {
-        if (blockOrItem.isSetHeader) {
-            tableBody.push([
+        if (blockOrItem.isSetHeader) { // Si es un encabezado de set
+            tableBody.push([ // Añadir fila de encabezado de set
                 { content: `${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0)})`, colSpan: 5, styles: { halign: 'center', fontStyle: 'bold', fillColor: [230, 230, 230], textColor: [0,0,0], fontSize: 10 } }
             ]);
-            if (blockOrItem.songs) {
+            if (blockOrItem.songs) { // Añadir canciones dentro del set
                 blockOrItem.songs.forEach(song => {
                     pdfSongNumber++;
                     tableBody.push([
@@ -1760,15 +1854,15 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
                     ]);
                 });
             }
-        } else if (blockOrItem.isBreak) { 
-            tableBody.push([ 
-                { content: "»", styles: { halign: 'center', fontStyle: 'italic', textColor: [100,100,100] } },
+        } else if (blockOrItem.isBreak) { // Si es un descanso
+            tableBody.push([ // Añadir fila de descanso con estilo itálico
+                { content: "»", styles: { halign: 'center', fontStyle: 'italic', textColor: [100,100,100] } }, // Símbolo para descanso
                 { content: blockOrItem.displayName, styles: { fontStyle: 'italic', textColor: [80,80,80] } },
                 { content: "-", styles: { halign: 'center', fontStyle: 'italic', textColor: [150,150,150] } },
                 { content: "-", styles: { halign: 'center', fontStyle: 'italic', textColor: [150,150,150] } },
                 { content: toMMSS(blockOrItem.calculatedDurationSeconds || 0), styles: { halign: 'center', fontStyle: 'italic', textColor: [80,80,80] } }
             ]);
-        } else if (blockOrItem.isSong) { 
+        } else if (blockOrItem.isSong) { // Si es una canción huérfana
              pdfSongNumber++;
              tableBody.push([
                 pdfSongNumber, 
@@ -1780,41 +1874,42 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
         }
     });
 
+    // Dibujar la tabla
     doc.autoTable({
-        startY: currentY,
-        head: [["#", "Título", "Key", "Tempo", "Time"]], 
-        body: tableBody,
-        theme: 'grid', 
+        startY: currentY, // Posición Y donde empieza la tabla
+        head: [["#", "Título", "Key", "Tempo", "Time"]], // Cabeceras de la tabla
+        body: tableBody, // Cuerpo de la tabla
+        theme: 'grid', // Estilo de la tabla
         headStyles: { 
             fillColor: [200, 200, 200], textColor: [0, 0, 0], font: tableHeadFont, 
             fontStyle: 'bold', halign: 'center', fontSize: 10 
         },
-        styles: { 
+        styles: { // Estilos generales para celdas
             font: tableFont, fontSize: 9, cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
             lineColor: [80, 80, 80], lineWidth: 0.5, textColor: [0,0,0], 
         },
-        columnStyles: {
-            0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
-            1: { halign: 'left', cellWidth: 'auto', fontSize: 10 }, 
-            2: { halign: 'center', cellWidth: 50, fontSize: 9 },   
-            3: { halign: 'center', cellWidth: 50, fontSize: 9 },   
-            4: { halign: 'center', cellWidth: 50, fontSize: 9 }    
+        columnStyles: { // Estilos por columna
+            0: { halign: 'center', cellWidth: 25, fontSize: 9 }, // #
+            1: { halign: 'left', cellWidth: 'auto', fontSize: 10 }, // Título
+            2: { halign: 'center', cellWidth: 50, fontSize: 9 },   // Key
+            3: { halign: 'center', cellWidth: 50, fontSize: 9 },   // Tempo
+            4: { halign: 'center', cellWidth: 50, fontSize: 9 }    // Time
         },
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
-        pageBreak: 'auto',
-        didDrawPage: function (data) {
-            if (data.pageNumber > 1 && backgroundImageData) {
-                doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+        pageBreak: 'auto', // Permitir que la tabla se divida en varias páginas
+        didDrawPage: function (data) { // Función que se ejecuta después de dibujar cada página
+            if (data.pageNumber > 1 && backgroundImageData) { // Si no es la primera página y hay imagen de fondo
+                doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight); // Redibujar fondo
             }
         }
     });
-    doc.save(`${cleanFileName}.pdf`); 
+    doc.save(`${cleanFileName}.pdf`); // Guardar el PDF
 }
-// ***** FIN FUNCIÓN genPDF MODIFICADA *****
+// ***** FIN FUNCIÓN genPDF (COMPLEX) *****
 
 
-// ***** INICIO FUNCIÓN genBasicPDF MODIFICADA *****
-async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) { // Recibe setlistStructure
+// ***** INICIO FUNCIÓN genBasicPDF *****
+async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -1827,8 +1922,10 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
     let backgroundImageData = null;
     try {
         backgroundImageData = await getBackgroundImageDataURL();
-        doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
-    } catch (e) { /* ... manejo de error ... */ console.error("Error cargando BG para PDF Básico:", e); }
+        if (backgroundImageData) {
+            doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+        } else { throw new Error("backgroundImageData es null para PDF básico");}
+    } catch (e) { console.error("No se pudo añadir fondo a PDF Básico:", e); }
 
     doc.setTextColor(0, 0, 0); 
     const contentMarginTop = 120; 
@@ -1839,32 +1936,35 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
     const setlistNameFontSize = 22;
     const itemTitleFontSize = 14;   
     const setHeaderFontSize = 16; 
-    const itemLineHeight = itemTitleFontSize * 1.6; 
+    const itemLineHeight = itemTitleFontSize * 1.6; // Espaciado entre líneas
 
+    // Nombre del Setlist
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
     doc.setFontSize(setlistNameFontSize);
     doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
-    currentY += setlistNameFontSize + 30; 
+    currentY += setlistNameFontSize + 30; // Espacio después del nombre
 
+    // Iterar sobre la estructura del setlist
     setlistStructure.forEach((blockOrItem, idx) => {
-        if (currentY + itemLineHeight * 2.5 > pageHeight - contentMarginBottom) { 
+        // Control de salto de página
+        if (currentY + itemLineHeight * 2.5 > pageHeight - contentMarginBottom) { // Estimación de espacio necesario
             doc.addPage();
-            if (backgroundImageData) {
+            if (backgroundImageData) { // Redibujar fondo en nueva página
                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
             }
-            currentY = contentMarginTop; 
+            currentY = contentMarginTop; // Resetear Y a margen superior
         }
         
-        if (blockOrItem.isSetHeader) {
-            if (idx > 0) currentY += itemLineHeight * 0.3; 
+        if (blockOrItem.isSetHeader) { // Si es un encabezado de set
+            if (idx > 0) currentY += itemLineHeight * 0.3; // Pequeño espacio antes si no es el primer ítem
             doc.setFont("helvetica", 'bold'); 
             doc.setFontSize(setHeaderFontSize);
             doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
-            currentY += itemLineHeight;
+            currentY += itemLineHeight; // Incrementar Y
             
-            if (blockOrItem.songs) {
+            if (blockOrItem.songs) { // Listar canciones del set
                 blockOrItem.songs.forEach(song => {
-                    if (currentY + itemLineHeight > pageHeight - contentMarginBottom) {
+                    if (currentY + itemLineHeight > pageHeight - contentMarginBottom) { // Salto de página si es necesario
                         doc.addPage(); if (backgroundImageData) doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight); currentY = contentMarginTop;
                     }
                     doc.setFont("helvetica", 'normal'); 
@@ -1873,31 +1973,33 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
                     currentY += itemLineHeight;
                 });
             }
+            // Añadir espacio extra si el siguiente ítem es un descanso o una canción huérfana
              if (idx < setlistStructure.length -1 && (setlistStructure[idx+1].isBreak || (setlistStructure[idx+1].isSong && !setlistStructure[idx+1].isSetHeader) ) ) currentY += itemLineHeight * 0.3;
 
 
-        } else if (blockOrItem.isBreak) { 
-            if (idx > 0) currentY += itemLineHeight * 0.2;
+        } else if (blockOrItem.isBreak) { // Si es un descanso
+            if (idx > 0) currentY += itemLineHeight * 0.2; // Espacio antes
             doc.setFont("helvetica", 'italic'); 
-            doc.setFontSize(itemTitleFontSize - 1); 
+            doc.setFontSize(itemTitleFontSize - 1); // Un poco más pequeño
             doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
             currentY += itemLineHeight;
-             if (idx < setlistStructure.length -1) currentY += itemLineHeight * 0.2;
-        } else if (blockOrItem.isSong) { // Canciones huérfanas
+             if (idx < setlistStructure.length -1) currentY += itemLineHeight * 0.2; // Espacio después si no es el último
+        } else if (blockOrItem.isSong) { // Si es una canción huérfana
             doc.setFont("helvetica", 'normal'); 
             doc.setFontSize(itemTitleFontSize);
             doc.text(blockOrItem.displayName, pageWidth / 2, currentY, { align: "center" });
             currentY += itemLineHeight;
         }
     });
-    doc.save(`${cleanFileName}_Basico.pdf`);
+    doc.save(`${cleanFileName}_Basico.pdf`); // Guardar PDF básico
 }
-// ***** FIN FUNCIÓN genBasicPDF MODIFICADA *****
+// ***** FIN FUNCIÓN genBasicPDF *****
 
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
+// (Tu código de BandHelper y Detalles Concierto original)
 let processTableAttempts = 0;
-const MAX_PROCESS_ATTEMPTS = 20; 
+const MAX_PROCESS_ATTEMPTS = 20; // Intentar hasta 20 veces (aprox 10-15 segundos con backoff)
 
 function processBandHelperTable() {
   const container = document.getElementById('bandhelper-concerts-container');
@@ -1906,17 +2008,18 @@ function processBandHelperTable() {
       return;
   }
 
-  const table = container.querySelector("table"); 
+  const table = container.querySelector("table"); // Buscar la tabla generada por el widget
   const loadingMessage = document.getElementById("bandhelper-loading-message");
 
-  if (!table) {
+  if (!table) { // Si la tabla aún no existe
     processTableAttempts++;
     if (processTableAttempts < MAX_PROCESS_ATTEMPTS) {
       console.log("processBandHelperTable: Tabla no encontrada, reintentando...");
-      setTimeout(processBandHelperTable, 500 + (processTableAttempts * 100)); // Incrementa el tiempo de espera
-    } else {
+      // Incrementar el tiempo de espera en cada reintento
+      setTimeout(processBandHelperTable, 500 + (processTableAttempts * 100)); 
+    } else { // Máximo de intentos alcanzado
       console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de", MAX_PROCESS_ATTEMPTS, "intentos.");
-      if(loadingMessage) {
+      if(loadingMessage) { // Mostrar mensaje de error si existe
           loadingMessage.textContent = "No se pudieron mostrar los conciertos (tabla no generada por BandHelper).";
           loadingMessage.style.display = "block"; 
       }
@@ -1924,36 +2027,38 @@ function processBandHelperTable() {
     return;
   }
 
+  // Si la tabla se encontró
   console.log("processBandHelperTable: Tabla de BandHelper encontrada. Procesando...");
-  if(loadingMessage) loadingMessage.style.display = "none"; 
+  if(loadingMessage) loadingMessage.style.display = "none"; // Ocultar mensaje de "cargando"
 
-  if (table.dataset.processed === "true") { 
+  if (table.dataset.processed === "true") { // Evitar procesar la tabla múltiples veces
     console.log("processBandHelperTable: Tabla ya procesada.");
     return; 
   }
-  table.dataset.processed = "true";
+  table.dataset.processed = "true"; // Marcar como procesada
 
+  // Reconstruir cabecera de la tabla
   let headerRow = table.querySelector("thead tr"); 
   const desiredHeaders = ["Fecha/Hora", "Evento", "Lugar", "Cal", "Info"]; 
 
-  if (!table.tHead) { 
+  if (!table.tHead) { // Asegurar que existe thead
     console.log("processBandHelperTable: Creando tHead.");
     table.createTHead();
   }
-  headerRow = table.tHead.rows[0] || table.tHead.insertRow(0); 
-  headerRow.innerHTML = ''; 
+  headerRow = table.tHead.rows[0] || table.tHead.insertRow(0); // Obtener o crear fila de cabecera
+  headerRow.innerHTML = ''; // Limpiar cabecera existente
   desiredHeaders.forEach(text => {
       const th = document.createElement('th');
       th.textContent = text;
-      if (text === "Cal") th.classList.add("calendar-col-header");
-      if (text === "Info") th.classList.add("details-col-header");
+      if (text === "Cal") th.classList.add("calendar-col-header"); // Estilos para columna Calendario
+      if (text === "Info") th.classList.add("details-col-header"); // Estilos para columna Info
       headerRow.appendChild(th);
   });
   
+  // Procesar filas de datos
   const dataRowsSource = table.querySelector("tbody") ? Array.from(table.querySelectorAll("tbody tr")) : []; 
-  if (dataRowsSource.length === 0) {
+  if (dataRowsSource.length === 0) { // Si no hay conciertos listados por BandHelper
     console.log("processBandHelperTable: No hay filas de datos en la tabla de BandHelper.");
-    // Podrías añadir un mensaje en la tabla indicando que no hay conciertos, si BandHelper no lo hace.
     const tbody = table.querySelector("tbody") || table.createTBody();
     if (tbody.rows.length === 0) { // Solo si está realmente vacío
         const emptyRow = tbody.insertRow();
@@ -1961,67 +2066,79 @@ function processBandHelperTable() {
         cell.colSpan = desiredHeaders.length;
         cell.textContent = "No hay conciertos próximos según BandHelper.";
         cell.style.textAlign = "center";
-        cell.style.padding = "20px";
+        cell.style.padding = "20px"; // Un poco de espacio para el mensaje
     }
-    return;
+    return; // No hay más que procesar
   }
   
   dataRowsSource.forEach((row) => {
-    const originalCells = Array.from(row.cells); 
-    row.innerHTML = ''; 
+    const originalCells = Array.from(row.cells); // Celdas originales del widget
+    row.innerHTML = ''; // Limpiar fila para reconstruirla
 
+    // Extraer datos (ajustar índices si la estructura del widget cambia)
     const dateCellFullText = originalCells[0]?.textContent.trim() || "";
     const eventTitleFromCell = originalCells[1]?.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
+    // El lugar puede estar en la celda 2 o 3 dependiendo de la configuración del widget
     const locationText = originalCells[3]?.textContent.trim().split('\n')[0].trim() || originalCells[2]?.textContent.trim().split('\n')[0].trim() || "";
 
+    // Añadir celdas reconstruidas
     row.insertCell().textContent = dateCellFullText;    
     row.insertCell().textContent = eventTitleFromCell; 
     row.insertCell().textContent = locationText;        
 
+    // Celda para botón de Calendario
     const calendarDisplayCell = row.insertCell();
     calendarDisplayCell.className = "calendar-col"; 
-    calendarDisplayCell.style.textAlign = "center";
+    calendarDisplayCell.style.textAlign = "center"; // Centrar botón
 
+    // Celda para botón de Detalles
     const detailDisplayCell = row.insertCell();
-    detailDisplayCell.className = "details-col-header"; 
-    detailDisplayCell.style.textAlign = "center";
+    detailDisplayCell.className = "details-col-header"; // Usar misma clase para consistencia de ancho
+    detailDisplayCell.style.textAlign = "center"; // Centrar botón
 
-    const dateForId = dateCellFullText.split(',')[0].trim(); 
+    // Crear ID único para el concierto (para guardar detalles en Firestore)
+    const dateForId = dateCellFullText.split(',')[0].trim(); // Usar solo la parte de la fecha para el ID
     const concertId = sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
     
+    // Botón de Detalles
     const detailsBtn = document.createElement("button");
     detailsBtn.className = "details-btn";
-    detailsBtn.innerHTML = "➡️"; 
+    detailsBtn.innerHTML = "➡️"; // Icono simple
     detailsBtn.title = "Ver/Editar Detalles del Concierto";
     detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellFullText, eventTitleFromCell, locationText); 
     detailDisplayCell.appendChild(detailsBtn);
 
-    let icsDate = new Date().toISOString().split('T')[0]; 
-    let startTimeForICS = "20:00"; 
-    let durationSecondsForICS = 2 * 3600; 
+    // Preparar datos para el archivo ICS
+    let icsDate = new Date().toISOString().split('T')[0]; // Fecha en formato YYYY-MM-DD
+    let startTimeForICS = "20:00"; // Hora de inicio por defecto
+    let durationSecondsForICS = 2 * 3600; // Duración por defecto (2 horas)
 
-    const dateMatch = dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/); 
+    // Parsear fecha del texto de la celda
+    const dateMatch = dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/); // DD/MM/YY
     if (dateMatch) {
         let year = parseInt(dateMatch[3], 10);
-        year += (year < 70 ? 2000 : 1900); 
-        icsDate = `${year}-${dateMatch[2].padStart(2,'0')}-${dateMatch[1].padStart(2,'0')}`; 
+        year += (year < 70 ? 2000 : 1900); // Convertir YY a YYYY
+        icsDate = `${year}-${dateMatch[2].padStart(2,'0')}-${dateMatch[1].padStart(2,'0')}`; // Formato YYYY-MM-DD
     }
 
+    // Parsear hora del texto de la celda
+    // Buscar un rango HH:MM a HH:MM o una sola hora HH:MM
     const timeRangeMatch = dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/); 
-    const singleTimeMatch = dateCellFullText.match(/,\s*(\d{1,2}:\d{2}(?!\s*a\s*\d{1,2}:\d{2}))/); // Asegura que no es parte de un rango
+    // Regex para una sola hora, asegurándose de que no es parte de un rango.
+    const singleTimeMatch = dateCellFullText.match(/,\s*(\d{1,2}:\d{2}(?!\s*a\s*\d{1,2}:\d{2}))/); 
 
-
-    if (timeRangeMatch) {
-        startTimeForICS = timeRangeMatch[1].padStart(5,'0');
+    if (timeRangeMatch) { // Si es un rango de tiempo
+        startTimeForICS = timeRangeMatch[1].padStart(5,'0'); // Asegurar HH:MM
         durationSecondsForICS = calculateDuration(timeRangeMatch[1], timeRangeMatch[2]);
-        if (durationSecondsForICS <= 0) durationSecondsForICS = 2 * 3600; 
-    } else if (singleTimeMatch) {
-        startTimeForICS = singleTimeMatch[1].padStart(5,'0');
+        if (durationSecondsForICS <= 0) durationSecondsForICS = 2 * 3600; // Duración por defecto si el cálculo falla
+    } else if (singleTimeMatch) { // Si es una sola hora
+        startTimeForICS = singleTimeMatch[1].padStart(5,'0'); // Asegurar HH:MM
     }
     
-    const locationForICS = locationText || eventTitleFromCell; 
+    const locationForICS = locationText || eventTitleFromCell; // Usar lugar o título del evento
     const descriptionForICS = `Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;
 
+    // Botón de Calendario (ICS)
     const calendarBtn = document.createElement('button');
     calendarBtn.className = 'calendar-btn'; calendarBtn.title = 'Añadir a mi calendario';
     calendarBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';
@@ -2039,26 +2156,28 @@ function processBandHelperTable() {
 }
 
 const concertDetailModal = document.getElementById('concert-details-modal');
-const concertDetailMessage = document.getElementById('concert-detail-message');
+const concertDetailMessage = document.getElementById('concert-detail-message'); // Para mensajes en el modal
 
+// Función para abrir el modal de detalles del concierto
 async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
     console.log("[openConcertDetailModal] Abriendo para concertId:", concertId, "concertFullDateText:", concertFullDateText, "concertTitle:", concertTitle);
-    concertDetailMessage.textContent = ""; 
-    concertDetailMessage.className = "success-message"; 
+    concertDetailMessage.textContent = ""; // Limpiar mensajes previos del modal
+    concertDetailMessage.className = "success-message"; // Resetear clase de mensaje
     document.body.style.overflow = 'hidden'; // Evitar scroll del body cuando el modal está abierto
 
+    // Guardar datos originales para usarlos al guardar, si es necesario
     currentConcertFullDateTextForSave = concertFullDateText;
     currentConcertTitleForSave = concertTitle;
     currentEventOriginalLocationForSave = concertLocationOriginal;
 
-    document.getElementById('concert-detail-id').value = concertId;
+    document.getElementById('concert-detail-id').value = concertId; // Guardar ID en campo oculto
     const concertTitleDisplay = document.getElementById('concert-detail-title-display');
-    if (concertTitleDisplay) {
-        const datePartOnly = concertFullDateText.split(',')[0].trim(); 
+    if (concertTitleDisplay) { // Mostrar título y fecha en el modal
+        const datePartOnly = concertFullDateText.split(',')[0].trim(); // Extraer solo la fecha
         concertTitleDisplay.innerHTML = `${decodeHtmlEntities(concertTitle || "Título no disponible")} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`; 
     }
     
-    // Resetear campos del modal
+    // Resetear campos del modal a sus valores por defecto
     document.getElementById('concert-detail-location').value = '';
     document.getElementById('concert-detail-soundsetup').value = ''; 
     document.getElementById('concert-detail-instrumentssetup').value = ''; 
@@ -2067,37 +2186,38 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     document.getElementById('concert-detail-notes').value = '';
     document.getElementById('concert-detail-gmaps-link').value = '';
     const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
-    openGmapsBtn.style.display = 'none';
-    openGmapsBtn.onclick = null; 
+    openGmapsBtn.style.display = 'none'; // Ocultar botón de abrir mapa por defecto
+    openGmapsBtn.onclick = null; // Limpiar handler previo
     
+    // Llenar lista de músicos para confirmar asistencia
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
-    musiciansListDiv.innerHTML = 'Cargando músicos...';
+    musiciansListDiv.innerHTML = 'Cargando músicos...'; // Mensaje mientras se carga
 
     const excludedMusicians = ["Ximo", "Ginés Torres"]; // Nombres a excluir de la lista de asistencia
 
-    if (users && users.length > 0) {
+    if (users && users.length > 0) { // Si la lista de usuarios está cargada
         musiciansListDiv.innerHTML = ''; // Limpiar antes de añadir
-        users.filter(user => !excludedMusicians.includes(user.name)) 
+        users.filter(user => !excludedMusicians.includes(user.name)) // Excluir músicos específicos
             .forEach(user => {
                 const userDiv = document.createElement('div');
-                const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`; 
+                const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`; // ID único para el checkbox
                 userDiv.innerHTML = `
                     <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}">
-                    <label for="${checkboxId}">${user.name} (${user.nickname || 'N/A'})</label>
-                `;
+                    <label for="${checkboxId}">${user.name} (${user.nickname || 'N/A'})</label> 
+                `; // Usar apodo o nombre si no hay apodo
                 musiciansListDiv.appendChild(userDiv);
         });
-        if (musiciansListDiv.children.length === 0) { 
+        if (musiciansListDiv.children.length === 0) { // Si después de filtrar no quedan músicos
             musiciansListDiv.innerHTML = 'No hay otros músicos para listar.';
         }
-    } else { 
+    } else { // Si la lista de usuarios no está cargada
         musiciansListDiv.innerHTML = 'No hay músicos registrados para listar.';
     }
 
-    try {
-        const details = await withRetry(() => loadDoc('concert_details', concertId, {})); // Cargar datos existentes
+    try { // Cargar detalles del concierto desde Firestore
+        const details = await withRetry(() => loadDoc('concert_details', concertId, {})); // Usar objeto vacío como default
         
-        if (details && Object.keys(details).length > 0) { 
+        if (details && Object.keys(details).length > 0) { // Si hay detalles guardados
             document.getElementById('concert-detail-location').value = details.locationDetails || '';
             document.getElementById('concert-detail-soundsetup').value = details.soundSetupTime || ''; 
             document.getElementById('concert-detail-instrumentssetup').value = details.instrumentsSetupTime || ''; 
@@ -2107,16 +2227,17 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             
             const gmapsLink = details.googleMapsLink || '';
             document.getElementById('concert-detail-gmaps-link').value = gmapsLink;
-            if (gmapsLink) {
+            if (gmapsLink) { // Si hay enlace de gmaps, mostrar botón
                 openGmapsBtn.style.display = 'inline-block';
                 openGmapsBtn.onclick = () => { 
                     const currentLink = document.getElementById('concert-detail-gmaps-link').value.trim();
-                    if(currentLink) window.open(currentLink, '_blank'); 
+                    if(currentLink) window.open(currentLink, '_blank'); // Abrir en nueva pestaña
                 };
             } else {
                 openGmapsBtn.style.display = 'none';
             }
             
+            // Marcar checkboxes de asistentes
             if (details.attendees && Array.isArray(details.attendees)) {
                 details.attendees.forEach(attendeeName => {
                     const checkbox = musiciansListDiv.querySelector(`input[value="${attendeeName}"]`); 
@@ -2125,28 +2246,30 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
                     }
                 });
             }
-        } else { // Si no hay detalles guardados, ocultar el botón de gmaps
+        } else { // Si no hay detalles guardados, asegurar que el botón de gmaps está oculto
              openGmapsBtn.style.display = 'none';
         }
-    } catch (error) { 
+    } catch (error) { // Error al cargar detalles
         console.error("Error al intentar cargar detalles del concierto desde Firestore:", error);
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}.`;
-        openGmapsBtn.style.display = 'none'; 
+        openGmapsBtn.style.display = 'none'; // Ocultar por si acaso
     }
 
-    concertDetailModal.classList.add('show'); 
+    concertDetailModal.classList.add('show'); // Mostrar el modal
 }
 
+// Guardar detalles del concierto
 document.getElementById('save-concert-details').onclick = async () => {
     const concertId = document.getElementById('concert-detail-id').value;
     const concertDetailMessage = document.getElementById('concert-detail-message'); 
-    if (!concertId) { 
+    if (!concertId) { // No debería ocurrir si el modal se abre correctamente
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = "Error: ID de concierto no encontrado. No se puede guardar."; 
         return; 
     }
 
+    // Recoger asistentes seleccionados
     const selectedAttendees = [];
     document.querySelectorAll('#musicians-attendance-list input[type="checkbox"]:checked').forEach(checkbox => { 
         selectedAttendees.push(checkbox.value); 
@@ -2154,14 +2277,15 @@ document.getElementById('save-concert-details').onclick = async () => {
 
     const gmapsLinkValue = document.getElementById('concert-detail-gmaps-link').value.trim();
 
+    // Parsear fecha del concierto para guardarla en formato YYYY-MM-DD (útil para recordatorios/queries)
     let concertDateYYYYMMDD = null;
-    if (currentConcertFullDateTextForSave) {
+    if (currentConcertFullDateTextForSave) { // Usar la fecha original del evento
         const dateMatchConcert = currentConcertFullDateTextForSave.match(/(\d{2})\/(\d{2})\/(\d{2})/); 
         if (dateMatchConcert) {
             let year = parseInt(dateMatchConcert[3], 10);
             year += (year < 70 ? 2000 : 1900); 
-            const month = dateMatchConcert[2].padStart(2, '0');
-            const day = dateMatchConcert[1].padStart(2, '0');
+            const month = dateMatchConcert[2].padStart(2, '0'); // MM
+            const day = dateMatchConcert[1].padStart(2, '0');   // DD
             concertDateYYYYMMDD = `${year}-${month}-${day}`;
             console.log("Fecha del concierto para Firestore (YYYY-MM-DD):", concertDateYYYYMMDD);
         } else {
@@ -2171,13 +2295,14 @@ document.getElementById('save-concert-details').onclick = async () => {
         console.warn("currentConcertFullDateTextForSave está vacío, no se puede determinar concertDate.");
     }
     
+    // Título del evento para guardar (usar título o lugar si el título es genérico)
     let eventTitleForSave = decodeHtmlEntities(currentConcertTitleForSave || "").trim();
     if (!eventTitleForSave || eventTitleForSave.toLowerCase() === "evento sin título") {
         eventTitleForSave = decodeHtmlEntities(currentEventOriginalLocationForSave || "Evento sin título detallado");
     }
     console.log("Título del evento para Firestore:", eventTitleForSave);
 
-    const concertData = {
+    const concertData = { // Datos a guardar
         locationDetails: document.getElementById('concert-detail-location').value.trim(),
         soundSetupTime: document.getElementById('concert-detail-soundsetup').value, 
         instrumentsSetupTime: document.getElementById('concert-detail-instrumentssetup').value, 
@@ -2186,7 +2311,7 @@ document.getElementById('save-concert-details').onclick = async () => {
         generalNotes: document.getElementById('concert-detail-notes').value.trim(),
         attendees: selectedAttendees, 
         googleMapsLink: gmapsLinkValue, 
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(), // Timestamp de última actualización
         concertDate: concertDateYYYYMMDD, // Guardar la fecha parseada
         eventTitle: eventTitleForSave    // Guardar el título parseado
     };
@@ -2198,6 +2323,7 @@ document.getElementById('save-concert-details').onclick = async () => {
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente (incluyendo fecha y título para recordatorios).";
 
+        // Actualizar visibilidad del botón de Gmaps
         const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
         if (gmapsLinkValue) {
             openGmapsBtn.style.display = 'inline-block';
@@ -2215,68 +2341,77 @@ document.getElementById('save-concert-details').onclick = async () => {
     }
 };
 
+// Cerrar modal de detalles
 document.getElementById('close-concert-details-modal').onclick = () => {
     if (concertDetailModal) concertDetailModal.classList.remove('show');
     document.body.style.overflow = ''; // Restaurar scroll del body
-    // No llama a closeAll() para no cerrar el sidebar si estuviera abierto
+    // No llama a closeAll() aquí para no cerrar el sidebar si estuviera abierto accidentalmente
 };
 
 
 /* ---------- 11. Menú & pantallas ---------- */
+// (Tu código de Menú & pantallas original)
 const hamburgerBtn = document.getElementById("hamburger-btn");
 const sidebarMenu = document.getElementById("sidebar-menu");
 const overlay = document.getElementById("overlay");
 const configMenuLink = document.getElementById("menu-config");
 const configSubmenu = document.getElementById("config-submenu");
 
+// Referencias a las diferentes "pantallas" de configuración
 const screens = {
     setlistConfig: document.getElementById("setlist-config-screen"),
     userMgmt: document.getElementById("user-mgmt-screen"),
     rehearsal: document.getElementById("rehearsal-screen"),
     stats: document.getElementById("stats-screen"),
-    userList: document.getElementById("user-list-screen")
+    userList: document.getElementById("user-list-screen") // Pantalla de solo visualización de usuarios
 };
 
+// Función para cerrar todas las pantallas de configuración y restaurar scroll
 function closeAllScreens() {
     Object.values(screens).forEach(screen => { if(screen) screen.style.display = "none"; });
     document.body.style.overflow = ''; // Restaurar scroll del body
 }
-function closeAll() { // Cierra sidebar, overlay y todas las pantallas de config
+// Función para cerrar todo: sidebar, overlay y todas las pantallas
+function closeAll() { 
     if (sidebarMenu) sidebarMenu.classList.remove("show");
     if (overlay) overlay.classList.remove("show");
-    if (configSubmenu) configSubmenu.style.display = "none";
-    closeAllScreens();
+    if (configSubmenu) configSubmenu.style.display = "none"; // Ocultar submenú de config
+    closeAllScreens(); // Cerrar todas las pantallas de config
 }
 
+// Abrir/cerrar menú lateral
 hamburgerBtn.onclick = () => {
     sidebarMenu.classList.toggle("show");
-    overlay.classList.toggle("show");
+    overlay.classList.toggle("show"); // Mostrar/ocultar overlay con el menú
 };
+// Cerrar todo al hacer clic en el overlay
 overlay.onclick = closeAll;
+// Cerrar menú con el botón "Cerrar Menú"
 document.getElementById("menu-cerrar").onclick = (e) => { e.preventDefault(); closeAll(); };
 
+// Desplegar/ocultar submenú de Configuración
 configMenuLink.onclick = (e) => {
     e.preventDefault();
     configSubmenu.style.display = configSubmenu.style.display === "none" ? "block" : "none";
 };
 
-// Navegación y apertura de pantallas
-document.getElementById("menu-setlist-config").onclick = (e) => { e.preventDefault(); closeAllScreens(); screens.setlistConfig.style.display = "block"; document.body.style.overflow = 'hidden'; };
+// Navegación desde el submenú a las pantallas de configuración
+document.getElementById("menu-setlist-config").onclick = (e) => { e.preventDefault(); closeAllScreens(); screens.setlistConfig.style.display = "block"; document.body.style.overflow = 'hidden'; /* Evitar scroll del body */ };
 document.getElementById("menu-user-mgmt").onclick = (e) => { e.preventDefault(); closeAllScreens(); screens.userMgmt.style.display = "block"; document.body.style.overflow = 'hidden';};
 document.getElementById("menu-rehearsal").onclick = (e) => { e.preventDefault(); closeAllScreens(); screens.rehearsal.style.display = "block"; document.body.style.overflow = 'hidden';};
-document.getElementById("menu-stats").onclick = async (e) => {
-    e.preventDefault(); closeAll(); closeAllScreens();
+document.getElementById("menu-stats").onclick = async (e) => { // Estadísticas es asíncrona por la carga de datos
+    e.preventDefault(); closeAll(); closeAllScreens(); // Cerrar menú y otras pantallas
     screens.stats.style.display = "block"; document.body.style.overflow = 'hidden';
-    await calculateAndDisplayStats(); // Cargar/recalcular estadísticas al abrir
+    await calculateAndDisplayStats(); // Cargar/recalcular estadísticas al abrir la pantalla
 };
-document.getElementById("menu-user-list-display").onclick = (e) => {
+document.getElementById("menu-user-list-display").onclick = (e) => { // Pantalla de visualización de usuarios
     e.preventDefault(); closeAll(); closeAllScreens();
     screens.userList.style.display = "block"; document.body.style.overflow = 'hidden';
-    // renderUserListScreen(); // Ya se llama en loadUsers, pero podría forzarse aquí si es necesario
+    // renderUserListScreen(); // Esta función ya se llama en loadUsers, pero podría forzarse aquí si se quiere asegurar la última data
 };
 
 
-// Botones de cierre para cada pantalla de configuración
+// Botones de cierre para cada pantalla de configuración individual
 document.getElementById("close-setlist-config").onclick = closeAllScreens;
 document.getElementById("close-user-mgmt").onclick = closeAllScreens;
 document.getElementById("close-rehearsal").onclick = closeAllScreens;
@@ -2285,13 +2420,14 @@ document.getElementById("close-user-list-screen").onclick = closeAllScreens;
 
 
 // Cerrar sidebar y overlay al hacer clic en un enlace de ancla del menú principal
+// (excepto los que abren submenús o pantallas de config)
 document.querySelectorAll('.sidebar a[href^="#"]:not(#menu-config):not(#menu-stats):not(#menu-user-list-display):not(#menu-cerrar)').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
-        // No prevenir default para que el ancla funcione, solo cerrar el menú
+        // No prevenir default para que el ancla funcione, solo cerrar el menú si está abierto
         if (sidebarMenu.classList.contains("show")) {
-            closeAll();
+            closeAll(); // Cierra sidebar, overlay y cualquier pantalla de config
         }
-        // Smooth scroll
+        // Smooth scroll para anclas (opcional, pero mejora la UX)
         const targetId = this.getAttribute('href');
         const targetElement = document.querySelector(targetId);
         if (targetElement) {
@@ -2307,8 +2443,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DOMContentLoaded] Iniciando carga de la aplicación.");
   const splashScreen = document.getElementById('splash-screen');
 
-  // MODIFICACIÓN: Ocultar el splash screen después de 1 segundo
-  // Se inicia el temporizador aquí para que corra independientemente de la carga de datos.
+  // --- MODIFICACIÓN PARA SPLASH SCREEN ---
+  // Ocultar el splash screen después de 1 segundo, independientemente de otras cargas.
   if (splashScreen) {
     console.log("[DOMContentLoaded] Programando desaparición de splash screen en 1 segundo.");
     setTimeout(() => {
@@ -2316,22 +2452,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       splashScreen.classList.add('hidden');
     }, 1000); // 1000 milisegundos = 1 segundo
   }
+  // --- FIN DE MODIFICACIÓN PARA SPLASH SCREEN ---
 
   updateConnectionStatus(); // Actualizar estado de conexión inicial
   try {
     console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
-    // Cargar usuarios primero ya que otras funciones pueden depender de `users`
-    await loadUsers();
+    // Cargar usuarios primero si otras funciones dependen de la lista `users`
+    await loadUsers(); 
     await Promise.all([loadSetlistConfig(), loadRehearsals()]);
     console.log("[DOMContentLoaded] Configuración, usuarios y ensayos cargados.");
   } catch (e) {
     console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e);
   }
 
-  let items1 = [], items2 = [], itemsStar = [];
+  let items1 = [], items2 = [], itemsStar = []; // Variables para almacenar los datos de los setlists procesados
   try {
     console.log("[DOMContentLoaded] Cargando todos los setlists...");
-    const results = await Promise.allSettled([
+    const results = await Promise.allSettled([ // Usar allSettled para que un error en un setlist no bloquee los otros
       cargarPrimerSetlist(),
       cargarSegundoSetlist(),
       cargarStarSetlist()
@@ -2346,24 +2483,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "bloques/items.");
     console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "bloques/items.");
 
-  } catch (e) {
+  } catch (e) { // Este catch podría no ser necesario si allSettled maneja los errores individuales
     console.error("[DOMContentLoaded] Error general durante la carga de setlists:", e);
   }
 
+  // Asignar handlers a los botones de descarga de PDF después de que los setlists hayan intentado cargarse
   document.getElementById("download-btn").onclick = () => { if (items1 && items1.length > 0) genPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
   document.getElementById("download-basic-btn").onclick = () => { if (items1 && items1.length > 0) genBasicPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
+  
   document.getElementById("download-btn-2").onclick = () => { if (items2 && items2.length > 0) genPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
   document.getElementById("download-basic-btn-2").onclick = () => { if (items2 && items2.length > 0) genBasicPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
+  
   document.getElementById("download-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
   document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
   
   console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
-  // Dar un pequeño respiro para que el DOM se estabilice y el widget de BandHelper se cargue
-  setTimeout(processBandHelperTable, 500); 
+  // Dar un pequeño respiro para que el DOM se estabilice y el widget de BandHelper (script externo) se cargue
+  setTimeout(processBandHelperTable, 500); // Aumentar ligeramente el timeout si es necesario
   
   console.log("[DOMContentLoaded] Carga principal de datos y configuración de UI completada.");
 
-  // La lógica original para ocultar el splash screen que estaba aquí al final ha sido movida al inicio.
+  // La lógica original para ocultar el splash screen (que estaba aquí al final con 200ms) ha sido movida al inicio y ajustada a 1000ms.
 });
 </script>
 </body>
