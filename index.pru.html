@@ -41,8 +41,8 @@
       z-index: 200000; /* Asegura que esté por encima de todo */
       opacity: 1;
       visibility: visible;
-      /* Animación de salida para el contenedor del splash screen */
-      transition: opacity 0.4s cubic-bezier(0.77, 0, 0.175, 1), transform 0.4s cubic-bezier(0.6, -0.28, 0.735, 0.045), visibility 0.4s linear;
+      /* Animación de salida MÁS LENTA para el contenedor del splash screen */
+      transition: opacity 0.8s ease-out, transform 0.8s ease-out, visibility 0.8s linear; /* Duración aumentada a 0.8s */
       transform: scale(1);
     }
 
@@ -65,7 +65,7 @@
     /* Clase para activar la animación de salida */
     #splash-screen.hidden {
       opacity: 0;
-      transform: scale(0.9); /* Efecto de encogimiento y desvanecimiento al salir */
+      transform: scale(0.95); /* Efecto de encogimiento y desvanecimiento al salir */
       visibility: hidden;
       pointer-events: none; /* Importante para no interferir después de ocultarse */
     }
@@ -2102,8 +2102,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // --- Splash Screen Logic START ---
   const splashScreen = document.getElementById('splash-screen');
   if (splashScreen) {
-    const visibleDuration = 500; // Mostrar durante 0.5 segundos
-    const exitAnimationDuration = 400; // Debe coincidir con la duración de la transición CSS (0.4s = 400ms)
+    const visibleDuration = 1000; // Mostrar durante 1 segundo
+    const exitAnimationDuration = 800; // Duración de la animación de salida (0.8s = 800ms)
 
     // Ocultar el splash screen después de visibleDuration
     setTimeout(() => {
