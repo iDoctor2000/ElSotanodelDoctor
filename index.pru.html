@@ -96,20 +96,22 @@
         width:auto;
     }
 
+    /* NUEVO: Contenedor para botones derechos de la cabecera */
     .header-controls-right { 
         display: flex;
         align-items: center;
     }
 
+    /* NUEVO: Estilo para el botón de audio en la cabecera */
     .header-audio-control { 
         background: none;
         border: 1px solid #0cf; 
         color: #0cf;            
         border-radius: 4px;
         padding: 5px;          
-        margin-right: 15px;    
+        margin-right: 15px; /* Espacio entre el botón de audio y la hamburguesa */   
         cursor: pointer;
-        display: flex; /* JS lo cambia de 'none' a 'flex' cuando está listo */
+        display: none; /* Se mostrará con JS cuando esté listo */
         align-items: center;
         justify-content: center;
         width: 37px; 
@@ -124,20 +126,22 @@
         width: 20px; 
         height: 20px;
     }
+    /* FIN NUEVO CSS */
 
     .hamburger{
         cursor:pointer;
         border:1px solid #0cf;
         border-radius:4px;
         padding:5px;
+        /* z-index: 1001; Quitamos z-index si está dentro de un flex container bien gestionado */
         display: flex; 
         flex-direction: column;
-        justify-content: space-around;
+        justify-content: space-around; /* Ajustado para mejor distribución de las líneas */
         width: 37px; 
         height: 37px; 
-        box-sizing: border-box;
+        box-sizing: border-box; /* Importante para que el padding no aumente el tamaño total */
     }
-    .hamburger div{width:25px;height:3px;background:#0cf;margin:0 auto;} 
+    .hamburger div{width:25px;height:3px;background:#0cf;margin:0 auto;} /* Centrar las líneas */
     
     .sidebar{
         position:fixed;
@@ -177,10 +181,7 @@
     }
     #overlay.show{display:block; opacity: 1;}
     
-    main {
-        padding-top: 75px;  
-    }
-
+    main { padding-top: 75px; }
     .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 10px; }
     .modal-backdrop.show { display: flex; }
     .modal-content { background: #1a1a1a; color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; }
@@ -202,7 +203,6 @@
     .modal-field-group { display: flex; gap: 15px; flex-wrap: wrap; }
     .modal-field-group > div { flex: 1; min-width: 200px; }
     .modal-field-group input[type="time"] { text-align: left; }
-
     .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000; z-index:10001; overflow-y:auto; padding: 20px; padding-top: calc(60px + 20px); }
     .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px;}  
     .config-screen h3{color:#0cf;margin:20px 0 10px}
@@ -272,11 +272,25 @@
       header { height: 55px; padding: 8px 15px; }  
       .logo img.logo-main{ width: 110px; }
       .logo-intranet{height:35px}
-      .hamburger div{width:20px}
-      .header-audio-control { margin-right: 10px; width: 35px; height: 35px; }
-      .header-audio-control svg { width: 18px; height: 18px; }
-      .hamburger { width: 35px; height: 35px; }
+      
+      .header-controls-right { /* Asegurar que los controles se mantengan juntos */
+        /* No se necesita nada especial aquí si el flex padre del header se encarga */
+      }
+      .header-audio-control { 
+        margin-right: 10px; /* Espacio reducido para móviles */
+        width: 35px; /* Tamaño ajustado para móviles */
+        height: 35px;
+      }
+      .header-audio-control svg {
+        width: 18px; /* Icono más pequeño */
+        height: 18px;
+      }
+      .hamburger {
+        width: 35px; /* Igualar tamaño */
+        height: 35px;
+      }
       .hamburger div{width:20px;}
+
       .sidebar{ width:260px; padding-top: calc(55px + 15px); }
       main { padding-top: 65px; }
       .config-screen { padding-top: calc(55px + 15px); }
@@ -350,6 +364,7 @@
   <div id="stats-screen" class="config-screen"> </div>
   <div id="user-list-screen" class="config-screen"> </div>
 
+
   <main>
     <section id="setlists">
       <h2>Setlist Próximo Ensayo</h2>
@@ -391,17 +406,23 @@
   <footer>© Año 2025 -iDoctor & El Sótano del Doctor- All Rights Reserved.</footer>
 
   <audio id="site-audio">
-    <source src="" type="audio/mpeg">
-    Tu navegador no soporta el elemento de audio.
+    <source src="" type="audio/mpeg"> Tu navegador no soporta el elemento de audio.
   </audio>
 
 <script>
 /* ---------- 0. Firebase ---------- */
-const firebaseConfig = { /* ... tu config ... */ };
+const firebaseConfig = {
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",  
+  authDomain: "sotanointranet.firebaseapp.com",
+  projectId: "sotanointranet",
+  storageBucket: "sotanointranet.appspot.com",  
+  messagingSenderId: "756955233128",
+  appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
+};
 if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { const banner = document.getElementById('firebase-critical-error-banner'); if (banner) banner.style.display = 'block'; console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");}
 firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => { console.warn("Persistencia Firestore no habilitada:", err.code === 'failed-precondition' ? 'Múltiples pestañas.' : err.message); });
 
-/* ---------- 1. Utilidades ---------- */
+/* ---------- 1. Utilidades (sin cambios) ---------- */
 const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
 const toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
 const toHHMM = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;};
@@ -410,18 +431,18 @@ function decodeHtmlEntities(text) { if (typeof text !== 'string') return text; c
 const calculateDuration = (startTime, endTime) => { if (!startTime || !endTime) return 0; const [startH, startM] = startTime.split(":").map(Number); const [endH, endM] = endTime.split(":").map(Number); const startSeconds = startH * 3600 + startM * 60; const endSeconds = endH * 3600 + endM * 60; let duration = endSeconds - startSeconds; if (duration < 0) duration += 24 * 3600; return duration;};
 const formatDateWithDay = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]; const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;};
 const getMonthYear = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;};
-function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) { /* ... (sin cambios) ... */ }
+function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) { const startDate = new Date(`${date}T${startTime}`); const endDate = new Date(startDate.getTime() + durationSeconds * 1000); const formatICSDate = d => { const pad = (num) => String(num).padStart(2, '0'); return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`; }; const startICS = formatICSDate(startDate); const endICS = formatICSDate(endDate); const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ElSotanoDelDoctor//Intranet//ES", "BEGIN:VEVENT", `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, "")}Z`, `UID:${startICS}-${sanitizeFirebaseKey(title)}@elsotanodeldoctor.com`, `DTSTART:${startICS}`, `DTEND:${endICS}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n"); const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${sanitizeFirebaseKey(title)}.ics`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); }
 const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
 const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|#$.[\]]/g, '_').replace(/\s+/g, '_');
 
-/* ---------- 1.5. Manejo de conexión ---------- */
-const connectionStatus = document.getElementById("connection-status"); let isOnline = navigator.onLine; function updateConnectionStatus() { /* ... (sin cambios) ... */ } window.addEventListener("online", updateConnectionStatus); window.addEventListener("offline", updateConnectionStatus); async function withRetry(fn, maxRetries = 3, delay = 2000) { /* ... (sin cambios) ... */ }
+/* ---------- 1.5. Manejo de conexión (sin cambios) ---------- */
+const connectionStatus = document.getElementById("connection-status"); let isOnline = navigator.onLine; function updateConnectionStatus() { isOnline = navigator.onLine; if (!isOnline) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión: Mostrando datos en caché"; connectionStatus.style.display = "block"; } else { connectionStatus.style.display = "none"; } } window.addEventListener("online", updateConnectionStatus); window.addEventListener("offline", updateConnectionStatus); async function withRetry(fn, maxRetries = 3, delay = 2000) { for (let i = 0; i < maxRetries; i++) { try { if (!navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión. Operación podría fallar o usar caché."; connectionStatus.style.display = "block"; } return await fn(); } catch (e) { console.error(`Intento ${i+1} fallido:`, e); if (i === maxRetries - 1 || !navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Error: Operación fallida. " + e.message; connectionStatus.style.display = "block"; throw e; } connectionStatus.className = "retrying"; connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`; connectionStatus.style.display = "block"; await new Promise(resolve => setTimeout(resolve, delay)); } } }
 
-/* ---------- 2. Acceso Firestore ---------- */
+/* ---------- 2. Acceso Firestore (sin cambios) ---------- */
 async function loadDoc(collection, docId, fallback) { try { const snap = await db.collection(collection).doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); return fallback; } }
 async function saveDoc(collection, docId, data, merge = false) { try { console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge); await db.collection(collection).doc(docId).set(data, { merge: merge }); console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`); return true; } catch (e) { console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); throw e; } }
 
-/* ---------- 3. Configuración Setlists ---------- */
+/* ---------- 3. Configuración Setlists (sin cambios) ---------- */
 let setlistConfig = {setlist1:{name:"Setlist Predeterminado Ensayo",url:"URL_POR_CONFIGURAR_1"},setlist2:{name:"Setlist Predeterminado Próximo Concierto",url:"URL_POR_CONFIGURAR_2"},setlistStar:{name:"Setlist Predeterminado Concierto Estrella",url:"URL_POR_CONFIGURAR_STAR"}};
 function updateDynamicSetlistTitles(){document.getElementById("setlist1-dynamic-name").textContent=setlistConfig.setlist1.name;document.getElementById("second-setlist-dynamic-name").textContent=setlistConfig.setlist2.name;document.getElementById("star-setlist-dynamic-name").textContent=setlistConfig.setlistStar.name}
 async function loadSetlistConfig(){try{const data=await withRetry(()=>loadDoc("intranet","setlists",{config:setlistConfig}));setlistConfig={setlist1:data.config?.setlist1||setlistConfig.setlist1,setlist2:data.config?.setlist2||setlistConfig.setlist2,setlistStar:data.config?.setlistStar||setlistConfig.setlistStar};updateDynamicSetlistTitles()}catch(e){console.error("Error al cargar la configuración de setlists:",e);updateDynamicSetlistTitles()}}
@@ -443,88 +464,21 @@ let totalSecondsOverall=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.
 document.getElementById(totalTimeId).textContent="Tiempo total del set: "+toHHMM(totalSecondsOverall);return setlistStructure}catch(e){console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`,e);const tbody=document.getElementById(tbodyId);if(tbody)tbody.innerHTML=`<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;const totalTimeElem=document.getElementById(totalTimeId);if(totalTimeElem)totalTimeElem.textContent="Error al calcular tiempo.";return[]}}
 const cargarPrimerSetlist=()=>cargarSetlistGenerico(setlistConfig.setlist1,"setlist-body","total-time","Error cargando Setlist Próximo Ensayo");const cargarSegundoSetlist=()=>cargarSetlistGenerico(setlistConfig.setlist2,"second-body","total-time-2","Error cargando Setlist Próximo Concierto");const cargarStarSetlist=()=>cargarSetlistGenerico(setlistConfig.setlistStar,"star-setlist-body","total-time-star","Error cargando Setlist Concierto Estrella");
 
-/* ---------- 6. Usuarios ---------- */
-// (Las funciones de Usuarios como renderUsers, loadUsers, saveUsers, resetUserForm permanecen sin cambios)
-let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
-function renderUsers() { /* ... (código original) ... */ }
-async function loadUsers() { /* ... (código original) ... */ }
-async function saveUsers() { /* ... (código original) ... */ }
-function resetUserForm() { /* ... (código original) ... */ }
-
-/* ---------- 7. Ensayos ---------- */
-// (Las funciones de Ensayos como renderRehearsals, loadRehearsals, saveRehearsals, resetRehearsalForm permanecen sin cambios)
-let rehearsals = []; let editingRehearsalIndex = null;
-function renderRehearsals() { /* ... (código original) ... */ }
-async function loadRehearsals() { /* ... (código original) ... */ }
-async function saveRehearsals() { /* ... (código original) ... */ }
-function resetRehearsalForm() { /* ... (código original) ... */ }
-
-/* ---------- 8. Estadísticas ---------- */
-// (Las funciones de Estadísticas como updateMonthFilter, getMonthIndex, renderStats permanecen sin cambios)
-function updateMonthFilter() { /* ... (código original) ... */ }
-function getMonthIndex(monthName) { /* ... (código original) ... */ }
-function renderStats() { /* ... (código original) ... */ }
-
-/* ---------- 9. PDF ---------- */
-// (Las funciones de PDF como loadFontAsBase64, registerFontWithDoc, getBackgroundImageDataURL, genPDF, genBasicPDF, genPersonalPDF permanecen sin cambios)
-const fontDataCache = {}; const PDF_FONT_PATHS = { /* ... */ }; const PDF_FONT_NAMES = { /* ... */ }; const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png';
-async function loadFontAsBase64(fontPath) { /* ... (código original) ... */ }
-async function registerFontWithDoc(doc, fontPath, fontVFSAlias, fontNameInDoc) { /* ... (código original) ... */ }
-async function getBackgroundImageDataURL() { /* ... (código original) ... */ }
-async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) { /* ... (código original) ... */ }
-async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) { /* ... (código original) ... */ }
-async function genPersonalPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf, songTitleFontSizeParam) { /* ... (código original) ... */ }
-
-
-/* ---------- 10. BandHelper & Detalles Concierto ---------- */
-let processTableAttempts = 0; const MAX_PROCESS_ATTEMPTS = 20;  
-function processBandHelperTable() { /* ... (código original) ... */ }
-const concertDetailModal = document.getElementById('concert-details-modal'); const concertDetailMessage = document.getElementById('concert-detail-message');
-async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) { /* ... (código original) ... */ }
-document.getElementById('save-concert-details').onclick = async () => { /* ... (código original) ... */ };
-document.getElementById('close-concert-details-modal').onclick = () => { closeAll(); };
-
-/* ---------- 11. Menú & pantallas ---------- */
-const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
-function closeAll() { /* ... (código original) ... */ }
-// (Resto de la lógica del menú y pantallas sin cambios)
-document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
-document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
-const setupMenuLink = (menuId, targetId) => { /* ... (código original) ... */ };
-setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals");
-setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist");
-setupMenuLink("menu-concerts-section", "calendario");
-document.getElementById("menu-config").onclick = e => { /* ... (código original) ... */ };
-const openConfigScreen = (screenId) => { /* ... (código original) ... */ }
-document.getElementById("menu-setlist-config").onclick = e => { /* ... (código original) ... */ };
-document.getElementById("close-setlist-config").onclick = () => { /* ... (código original) ... */ };
-document.getElementById("guardar-setlist-config").onclick = async () => { /* ... (código original) ... */ };
-document.getElementById("menu-user-mgmt").onclick = e => { /* ... (código original) ... */ };
-document.getElementById("close-user-mgmt").onclick = () => { /* ... (código original) ... */ };
-document.getElementById("add-user").onclick = async () => { /* ... (código original) ... */ };
-document.getElementById("cancel-edit-user").onclick = () => { /* ... (código original) ... */ };
-document.getElementById("menu-rehearsal").onclick = e => { /* ... (código original) ... */ };
-document.getElementById("close-rehearsal").onclick = () => { /* ... (código original) ... */ };
-document.getElementById("add-rehearsal").onclick = async () => { /* ... (código original) ... */ };
-document.getElementById("cancel-edit-rehearsal").onclick = () => { /* ... (código original) ... */ };
-document.getElementById("menu-stats").onclick = e => { /* ... (código original) ... */ };
-document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
-document.getElementById("stats-month-filter").addEventListener("change", renderStats);
-document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); openConfigScreen("user-list-screen"); };
-document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
-
+/* ---------- (Bloques 6, 7, 8, 9, 10, 11 permanecen igual que tu código funcional) ---------- */
+/* Aquí irían tus funciones de Usuarios, Ensayos, Estadísticas, PDF, BandHelper, Menú & Pantallas */
+/* ... (Mantén tu código funcional para estas secciones) ... */
 
 /* ---------- 12. Carga inicial & Lógica Audio Global y Splash ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
   
   // --- Lógica de Audio Global START ---
   const siteAudioElement = document.getElementById('site-audio');
-  const siteAudioControlButton = document.getElementById('site-audio-control-button'); // Cambiado de splash-mute-button
-  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3'];
-  let currentSiteSongIndex = -1;
+  const siteAudioControlButton = document.getElementById('site-audio-control-button'); 
+  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; // Tus canciones
+  let currentSiteSongIndex = -1; 
   let siteAudioFadeInterval = null;
-  const SITE_AUDIO_FADE_DURATION = 500; 
-  const SITE_AUDIO_TARGET_VOLUME = 0.8;
+  const SITE_AUDIO_FADE_DURATION = 500; // 0.5 segundos para fade in/out
+  const SITE_AUDIO_TARGET_VOLUME = 0.8; // Volumen máximo deseado (0.0 a 1.0)
 
   function stopSiteAudioFade() {
     if (siteAudioFadeInterval) {
@@ -535,25 +489,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function fadeInSiteAudio(audio, duration, targetVolume) {
     stopSiteAudioFade();
-    if (!audio) return;
-    if (audio.muted) {
+    if (!audio) return; 
+    if (audio.muted) { 
       audio.volume = 0; 
+      // Intenta reproducir, el navegador podría bloquearlo si no hay interacción previa,
+      // pero al estar silenciado es más probable que lo permita "en segundo plano".
       audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio (muted):", e));
       return;
     }
-    audio.volume = 0;
+    audio.volume = 0; // Comienza desde volumen 0 para el efecto de fundido
     audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio:", e));
     
-    let step = targetVolume / (duration / 50);
+    let step = targetVolume / (duration / 50); 
     let currentVolume = 0;
     siteAudioFadeInterval = setInterval(() => {
       currentVolume += step;
       if (currentVolume >= targetVolume) {
         audio.volume = targetVolume;
         stopSiteAudioFade();
-      } else if (audio) { // Chequeo extra por si el audio se destruye/cambia
+      } else if (audio) { 
         audio.volume = currentVolume;
-      } else { // Si el audio ya no existe, limpiar intervalo
+      } else { 
         stopSiteAudioFade();
       }
     }, 50);
@@ -562,17 +518,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   function fadeOutSiteAudio(audio, duration, callback) {
     stopSiteAudioFade();
     if (!audio) { if (callback) callback(); return; }
-    if (audio.paused || audio.volume < 0.01) {
+
+    if (audio.paused || audio.volume < 0.01) { 
       if (!audio.paused) audio.pause();
-      audio.volume = 0;
+      audio.volume = 0; 
       if (callback) callback();
       return;
     }
+    
     let currentVolume = audio.volume;
     let step = currentVolume / (duration / 50);
     siteAudioFadeInterval = setInterval(() => {
       currentVolume -= step;
-      if (currentVolume <= 0.01) {
+      if (currentVolume <= 0.01) { 
         if (audio) {
             audio.volume = 0;
             audio.pause();
@@ -594,14 +552,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     audioElement.load();
 
     const playWhenReady = () => {
-      if (audioElement) { // Verificar si audioElement aún existe
+      if (audioElement) { 
         fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME);
         audioElement.removeEventListener('canplaythrough', playWhenReady);
         audioElement.removeEventListener('loadeddata', playWhenReady);
       }
     };
-    audioElement.addEventListener('canplaythrough', playWhenReady);
-    audioElement.addEventListener('loadeddata', playWhenReady);
+    // Asegurarse de que los listeners anteriores se eliminan si se llama múltiples veces a playNextSiteSong antes de que 'canplaythrough' se dispare
+    audioElement.removeEventListener('canplaythrough', playWhenReady); 
+    audioElement.removeEventListener('loadeddata', playWhenReady);
+    audioElement.addEventListener('canplaythrough', playWhenReady, { once: true }); // Usar once para que se ejecute solo una vez por carga
+    audioElement.addEventListener('loadeddata', playWhenReady, { once: true }); // Fallback
   }
 
   if (siteAudioElement && siteAudioControlButton) {
@@ -624,11 +585,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     siteAudioElement.muted = true; 
     siteAudioElement.loop = false; 
     updateSiteAudioMuteButton();
-    siteAudioControlButton.style.display = 'flex'; // Hacer visible el botón en la cabecera
+    siteAudioControlButton.style.display = 'flex'; // Mostrar el botón de audio en la cabecera
 
+    // Cargar la primera canción aleatoria
     currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length);
     siteAudioElement.src = siteAudioSongs[currentSiteSongIndex];
     siteAudioElement.load(); 
+    // No se llama a play() aquí; se esperará a la interacción del usuario (clic en el botón de desmutear)
+    // o se podría iniciar en el splash si se deseara un play() silenciado inicial.
 
     siteAudioElement.addEventListener('ended', () => {
       fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => {
@@ -642,31 +606,42 @@ document.addEventListener("DOMContentLoaded", async () => {
       siteAudioElement.muted = !siteAudioElement.muted;
       updateSiteAudioMuteButton();
 
-      if (!siteAudioElement.muted) { 
+      if (!siteAudioElement.muted) { // Si se acaba de ACTIVAR el sonido
           if (siteAudioElement.paused || wasMuted) { 
-              if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused){
-                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
-              } else { 
-                  siteAudioElement.volume = 0; 
-                  fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); 
-              }
+              // Si estaba pausado (ej. primera vez o después de un error o fin de canción), 
+              // O si simplemente estaba muteado y ahora se desmutea.
+              // Asegurar que el volumen sea 0 antes de iniciar el fade-in si previamente estaba muteado
+              // para que el fade-in sea desde 0.
+              if(wasMuted) siteAudioElement.volume = 0; 
+              fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); 
           }
-      } else { 
+          // Si ya estaba reproduciéndose con volumen (y se hizo clic en el botón por error), 
+          // el estado de mute se invierte y listo. No es necesario llamar a fadeIn de nuevo si ya sonaba.
+      } else { // Si se acaba de SILENCIAR
         stopSiteAudioFade(); 
+        // El audio seguirá "reproduciéndose" pero en silencio si no estaba pausado.
+        // No es necesario ajustar el volumen aquí, la propiedad 'muted' se encarga.
       }
     });
   }
   // --- Lógica de Audio Global END ---
 
+
   // --- Splash Screen Visual Logic START ---
   const splashScreen = document.getElementById('splash-screen');
   if (splashScreen) {
+    // Opcional: si quieres que el splash intente "preparar" el audio (aunque ya se hace en la lógica global)
+    if (siteAudioElement && siteAudioElement.paused && siteAudioElement.muted) {
+       // console.log("Intentando play silenciado desde splash");
+       // siteAudioElement.play().catch(e => console.warn("Splash: Play (muted) falló inicialmente:", e));
+    }
+
     const visibleDuration = 1000; 
     const exitAnimationDuration = 800; 
 
     setTimeout(() => {
       splashScreen.classList.add('hidden');
-      // La música NO se detiene aquí, es persistente.
+      // La música NO se detiene aquí, es persistente y se controla con el botón de la cabecera.
       setTimeout(() => {
         if (splashScreen.parentNode) {
            splashScreen.style.display = 'none';
