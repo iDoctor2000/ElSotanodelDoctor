@@ -69,6 +69,35 @@
       visibility: hidden;
       pointer-events: none; /* Importante para no interferir después de ocultarse */
     }
+
+    .splash-audio-control {
+      position: absolute;
+      bottom: 25px; /* Ajusta posición */
+      right: 25px;  /* Ajusta posición */
+      background-color: rgba(20, 20, 20, 0.5); /* Fondo ligeramente visible */
+      border: 1px solid rgba(255, 255, 255, 0.2); /* Borde sutil */
+      color: white;
+      width: 48px;  /* Un poco más grande para mejor clic */
+      height: 48px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      z-index: 200001; 
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .splash-audio-control:hover {
+      background-color: rgba(40, 40, 40, 0.7);
+      transform: scale(1.05); /* Ligero zoom al pasar el ratón */
+    }
+
+    .splash-audio-control svg {
+      width: 24px; 
+      height: 24px;
+    }
     /* ---------- End Splash Screen ---------- */
 
     header{
@@ -428,6 +457,18 @@
 <body>
   <div id="splash-screen">
     <img src="assets/Logo Sobre negro1.png" alt="Cargando El Sótano del Doctor...">
+    <audio id="splash-audio">
+      <source src="" type="audio/mpeg">
+      Tu navegador no soporta el elemento de audio.
+    </audio>
+    <button id="splash-mute-button" class="splash-audio-control" title="Activar sonido">
+      <svg class="icon-muted" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/>
+      </svg>
+      <svg class="icon-unmuted" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="display:none;">
+        <path d="M12.4 4.42a1.19 1.19 0 00-1.75 1.05v13.1a1.19 1.19 0 001.75 1.05l4.91-3.3H19a1 1 0 001-1.07V9.72a1 1 0 00-1-1.07h-1.66zm6.1 2.51a6.73 6.73 0 010 10.14M16 9.48a3.23 3.23 0 010 5M4 9.72v4.56a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.65H5a1 1 0 00-1 1.07z"/>
+      </svg>
+    </button>
   </div>
   <div id="firebase-critical-error-banner" style="display:none;">
     ERROR CRÍTICO: La configuración de Firebase no es válida o es un placeholder. La aplicación puede no funcionar correctamente. Contacta al administrador.
@@ -592,7 +633,7 @@
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
-        <button class="download-btn" id="download-personal-btn">Pdf Personal</button>
+        <button class="download-btn" id="download-personal-btn">PDF Personal</button>
       </div>
       <p id="total-time"></p>
     </section>
@@ -633,7 +674,7 @@
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-2">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
-        <button class="download-btn" id="download-personal-btn-2">Pdf Personal</button>
+        <button class="download-btn" id="download-personal-btn-2">PDF Personal</button>
       </div>
       <p id="total-time-2"></p>
     </section>
@@ -658,7 +699,7 @@
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-star">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
-        <button class="download-btn" id="download-personal-btn-star">Pdf Personal</button>
+        <button class="download-btn" id="download-personal-btn-star">PDF Personal</button>
       </div>
       <p id="total-time-star"></p>
     </section>
@@ -1611,7 +1652,7 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
             doc.setFont("helvetica", 'bold');  
             doc.setFontSize(setHeaderFontSize);
             doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
-            currentY += setHeaderFontSize * 1.6; 
+            currentY += setHeaderFontSize * 1.6; // Ajustar altura de línea para cabecera de set
             
             if (blockOrItem.songs) {
                 blockOrItem.songs.forEach(song => {
@@ -1630,9 +1671,9 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
         } else if (blockOrItem.isBreak) {  
             if (idx > 0) currentY += itemLineHeight * 0.2;
             doc.setFont("helvetica", 'italic');  
-            doc.setFontSize(itemTitleFontSize - 1 > 8 ? itemTitleFontSize -1 : 8); 
+            doc.setFontSize(itemTitleFontSize - 1 > 8 ? itemTitleFontSize -1 : 8); // Tamaño de letra para descansos
             doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
-            currentY += (itemTitleFontSize - 1 > 8 ? itemTitleFontSize -1 : 8) * 1.6;
+            currentY += (itemTitleFontSize - 1 > 8 ? itemTitleFontSize -1 : 8) * 1.6; // Altura de línea para descansos
              if (idx < setlistStructure.length -1) currentY += itemLineHeight * 0.2;
         } else if (blockOrItem.isSong) { // Canciones huérfanas
             doc.setFont("helvetica", 'normal');  
@@ -2205,17 +2246,161 @@ document.getElementById("close-user-list-screen").onclick = () => {
 document.addEventListener("DOMContentLoaded", async () => {
   // --- Splash Screen Logic START ---
   const splashScreen = document.getElementById('splash-screen');
+  const splashAudio = document.getElementById('splash-audio'); 
+  const muteButton = document.getElementById('splash-mute-button'); 
+
+  const splashSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; // TUS CANCIONES
+  let currentSplashSongIndex = -1; // Se inicializará correctamente abajo
+  let audioFadeInterval = null;
+  const FADE_DURATION = 500; 
+  const TARGET_AUDIO_VOLUME = 0.8; 
+
+  function stopAudioFade() {
+    if (audioFadeInterval) {
+      clearInterval(audioFadeInterval);
+      audioFadeInterval = null;
+    }
+  }
+
+  function fadeInAudio(audio, duration, targetVolume) {
+    stopAudioFade();
+    if (audio.muted) { 
+      audio.volume = 0; 
+      audio.play().catch(e => console.warn("Error al reproducir en fadeIn (muted):", e));
+      return;
+    }
+    audio.volume = 0;
+    audio.play().catch(e => console.warn("Error al reproducir en fadeIn:", e));
+    
+    let step = targetVolume / (duration / 50); 
+    let currentVolume = 0;
+    audioFadeInterval = setInterval(() => {
+      currentVolume += step;
+      if (currentVolume >= targetVolume) {
+        audio.volume = targetVolume;
+        stopAudioFade();
+      } else {
+        audio.volume = currentVolume;
+      }
+    }, 50);
+  }
+
+  function fadeOutAudio(audio, duration, callback) {
+    stopAudioFade();
+    if (audio.paused || audio.volume === 0) {
+      if (!audio.paused) audio.pause();
+      if (callback) callback();
+      return;
+    }
+    
+    let currentVolume = audio.volume;
+    let step = currentVolume / (duration / 50);
+    audioFadeInterval = setInterval(() => {
+      currentVolume -= step;
+      if (currentVolume <= 0.01) { 
+        audio.volume = 0;
+        audio.pause();
+        stopAudioFade();
+        if (callback) callback();
+      } else {
+        audio.volume = currentVolume;
+      }
+    }, 50);
+  }
+
+  function playNextSplashSong(audioElement) {
+    if (splashSongs.length === 0) return;
+    currentSplashSongIndex = (currentSplashSongIndex + 1) % splashSongs.length;
+    audioElement.src = splashSongs[currentSplashSongIndex];
+    audioElement.load();
+
+    const playWhenReady = () => {
+      fadeInAudio(audioElement, FADE_DURATION, audioElement.muted ? 0 : TARGET_AUDIO_VOLUME);
+      audioElement.removeEventListener('canplaythrough', playWhenReady);
+      audioElement.removeEventListener('loadeddata', playWhenReady);
+    };
+
+    audioElement.addEventListener('canplaythrough', playWhenReady);
+    audioElement.addEventListener('loadeddata', playWhenReady);
+  }
+
   if (splashScreen) {
-    const visibleDuration = 1000; // Mostrar durante 1 segundo
-    const exitAnimationDuration = 800; // Duración de la animación de salida (0.8s = 800ms)
+    if (splashAudio && muteButton) {
+      const iconMuted = muteButton.querySelector('.icon-muted');
+      const iconUnmuted = muteButton.querySelector('.icon-unmuted');
 
-    // Ocultar el splash screen después de visibleDuration
+      const updateMuteButtonVisuals = () => {
+        if (splashAudio.muted) {
+          if (iconMuted) iconMuted.style.display = 'inline';
+          if (iconUnmuted) iconUnmuted.style.display = 'none';
+          muteButton.title = "Activar sonido";
+        } else {
+          if (iconMuted) iconMuted.style.display = 'none';
+          if (iconUnmuted) iconUnmuted.style.display = 'inline';
+          muteButton.title = "Desactivar sonido";
+        }
+      };
+
+      splashAudio.muted = true; 
+      splashAudio.loop = false; 
+      updateMuteButtonVisuals(); 
+
+      currentSplashSongIndex = Math.floor(Math.random() * splashSongs.length);
+      splashAudio.src = splashSongs[currentSplashSongIndex];
+      splashAudio.load();
+      
+      const initialPlayWhenReady = () => {
+        splashAudio.play().catch(e => console.warn("Error en play inicial:", e));
+        if (!splashAudio.muted) { // Solo aplica fade si no está muteado inicialmente (aunque empieza muteado)
+            fadeInAudio(splashAudio, FADE_DURATION, TARGET_AUDIO_VOLUME);
+        }
+        splashAudio.removeEventListener('canplaythrough', initialPlayWhenReady);
+        splashAudio.removeEventListener('loadeddata', initialPlayWhenReady);
+      };
+      splashAudio.addEventListener('canplaythrough', initialPlayWhenReady);
+      splashAudio.addEventListener('loadeddata', initialPlayWhenReady);
+
+      splashAudio.addEventListener('ended', () => {
+        fadeOutAudio(splashAudio, FADE_DURATION, () => {
+          playNextSplashSong(splashAudio);
+        });
+      });
+
+      muteButton.addEventListener('click', () => {
+        const previouslyMuted = splashAudio.muted;
+        splashAudio.muted = !splashAudio.muted;
+        updateMuteButtonVisuals();
+
+        if (!splashAudio.muted) { 
+            if (previouslyMuted) { 
+                fadeInAudio(splashAudio, FADE_DURATION, TARGET_AUDIO_VOLUME);
+            }
+            if (splashAudio.paused) { 
+                splashAudio.play().catch(e => console.warn("Error al reproducir tras desmutear:", e));
+            }
+        } else { 
+          stopAudioFade(); 
+        }
+      });
+
+    } else if (muteButton) {
+        muteButton.style.display = 'none';
+    }
+
+    const visibleDuration = 1000; 
+    const exitAnimationDuration = 800; 
+
     setTimeout(() => {
-      splashScreen.classList.add('hidden'); // Añade la clase para iniciar la animación de salida
+      splashScreen.classList.add('hidden');
+      
+      if (splashAudio) {
+        fadeOutAudio(splashAudio, Math.min(FADE_DURATION, exitAnimationDuration - 100), () => {
+            console.log("Audio del splash detenido y fundido.");
+        });
+      }
 
-      // Establecer display: none después de que termine la animación de salida
       setTimeout(() => {
-        if (splashScreen.parentNode) { // Buena práctica verificar si aún existe
+        if (splashScreen.parentNode) {
            splashScreen.style.display = 'none';
         }
       }, exitAnimationDuration);
@@ -2231,7 +2416,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log("[DOMContentLoaded] Configuración, usuarios y ensayos cargados.");
   } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
 
-  // items1, items2, itemsStar contendrán la estructura procesada por cargarSetlistGenerico
   let items1 = [], items2 = [], itemsStar = [];  
   try {  
     console.log("[DOMContentLoaded] Cargando primer setlist...");
@@ -2266,7 +2450,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
           if (fontSizeInput) {
               const fontSize = parseInt(fontSizeInput, 10);
-              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) { // Validación básica
+              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) { 
                   genPersonalPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name, fontSize);
               } else {
                   alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
