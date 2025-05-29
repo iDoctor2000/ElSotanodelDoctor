@@ -96,13 +96,11 @@
         width:auto;
     }
 
-    /* Contenedor para botones derechos de la cabecera */
     .header-controls-right { 
         display: flex;
         align-items: center;
     }
 
-    /* Estilo para el botón de audio en la cabecera */
     .header-audio-control { 
         background: none;
         border: 1px solid #0cf; 
@@ -111,7 +109,7 @@
         padding: 5px;          
         margin-right: 15px;    
         cursor: pointer;
-        display: none; /* Se mostrará con JS cuando esté listo */
+        display: none; 
         align-items: center;
         justify-content: center;
         width: 37px; 
@@ -540,7 +538,9 @@ processedItems.forEach(item=>{if(item.isSetHeader){if(currentSet){currentSet.cal
 currentSet={...item,songs:[],calculatedBlockDurationSeconds:0}}else if(item.isBreak){if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet);currentSet=null}
 setlistStructure.push(item)}else if(item.isSong){if(!currentSet){console.warn(`[cargarSetlistGenerico] Canción '${item.displayName}' encontrada sin un Set Header previo. Creando set implícito "Set General".`);currentSet={isSetHeader:true,displayName:"Set General",calculatedDurationSeconds:0,songs:[],calculatedBlockDurationSeconds:0}}
 currentSet.songs.push(item)}});if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet)}
-console.log(`[cargarSetlistGenerico] SetlistStructure final para ${tbodyId}:`,JSON.parse(JSON.stringify(setlistStructure)));let totalSecondsOverall=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){const setHeaderTime=toMMSS(blockOrItem.calculatedBlockDurationSeconds||0);console.log(`[cargarSetlistGenerico HTML] Renderizando SET HEADER: ${blockOrItem.displayName} (${setHeaderTime})`);tbody.insertAdjacentHTML("beforeend",`<tr class="set-header-row"><td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);totalSecondsOverall+=(blockOrItem.calculatedBlockDurationSeconds||0);blockOrItem.songs.forEach(song=>{songCount++;const songFormattedTime=toMMSS(song.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${song.displayName}</td><td>${decodeHtmlEntities(song.key||"-")}</td><td>${decodeHtmlEntities(song.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)})}else if(blockOrItem.isBreak){const breakFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);console.log(`[cargarSetlistGenerico HTML] Renderizando BREAK: ${blockOrItem.displayName} (${breakFormattedTime})`);tbody.insertAdjacentHTML("beforeend",`<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)}else if(blockOrItem.isSong){songCount++;const songFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);console.warn(`[cargarSetlistGenerico HTML] Renderizando canción HUÉRFANA: ${blockOrItem.displayName}`);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td><td>${decodeHtmlEntities(blockOrItem.key||"-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)}});
+console.log(`[cargarSetlistGenerico] SetlistStructure final para ${tbodyId}:`,JSON.parse(JSON.stringify(setlistStructure)));let totalSecondsOverall=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){
+const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0); /* MODIFICADO AQUÍ */
+console.log(`[cargarSetlistGenerico HTML] Renderizando SET HEADER: ${blockOrItem.displayName} (${setHeaderTime})`);tbody.insertAdjacentHTML("beforeend",`<tr class="set-header-row"><td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);totalSecondsOverall+=(blockOrItem.calculatedBlockDurationSeconds||0);blockOrItem.songs.forEach(song=>{songCount++;const songFormattedTime=toMMSS(song.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${song.displayName}</td><td>${decodeHtmlEntities(song.key||"-")}</td><td>${decodeHtmlEntities(song.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)})}else if(blockOrItem.isBreak){const breakFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);console.log(`[cargarSetlistGenerico HTML] Renderizando BREAK: ${blockOrItem.displayName} (${breakFormattedTime})`);tbody.insertAdjacentHTML("beforeend",`<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)}else if(blockOrItem.isSong){songCount++;const songFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);console.warn(`[cargarSetlistGenerico HTML] Renderizando canción HUÉRFANA: ${blockOrItem.displayName}`);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td><td>${decodeHtmlEntities(blockOrItem.key||"-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)}});
 document.getElementById(totalTimeId).textContent="Tiempo total del set: "+toHHMM(totalSecondsOverall);console.log(`[cargarSetlistGenerico] Finalizado para ${tbodyId}. Tiempo total final calculado: ${toHHMM(totalSecondsOverall)}`);return setlistStructure}catch(e){console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`,e);const tbody=document.getElementById(tbodyId);if(tbody)tbody.innerHTML=`<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;const totalTimeElem=document.getElementById(totalTimeId);if(totalTimeElem)totalTimeElem.textContent="Error al calcular tiempo.";return[]}}
 const cargarPrimerSetlist = () => cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
 const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto");
@@ -591,7 +591,7 @@ document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); clos
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 document.getElementById("menu-config").onclick = e => { e.preventDefault();const submenu=document.getElementById("config-submenu");if(!isAuthenticated){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true;submenu.style.display=submenu.style.display==="block"?"none":"block"}else{alert("Contraseña incorrecta.");return}}else{submenu.style.display=submenu.style.display==="block"?"none":"block"}};
-const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; // Corregido: return true dentro del if
+const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; 
 document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
 document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; document.getElementById("setlist-message").textContent = ""; };
 document.getElementById("guardar-setlist-config").onclick = async () => { const msg=document.getElementById("setlist-message");msg.textContent="";const n1=document.getElementById("setlist1-name").value.trim(),u1=document.getElementById("setlist1-url").value.trim();const n2=document.getElementById("setlist2-name").value.trim(),raw2=document.getElementById("setlist2-url").value.trim();const nStar=document.getElementById("setlistStar-name").value.trim(),uStar=document.getElementById("setlistStar-url").value.trim();if(!n1||!u1||!n2||!raw2||!nStar||!uStar){msg.className="error-message";msg.textContent="Completa todos los campos.";return} try{setlistConfig.setlist1={name:n1,url:u1};setlistConfig.setlist2={name:n2,url:raw2.startsWith("http")?raw2:`https://www.bandhelper.com/feed/set_list/${raw2}`};setlistConfig.setlistStar={name:nStar,url:uStar};await saveSetlistConfig();await Promise.all([cargarPrimerSetlist(),cargarSegundoSetlist(),cargarStarSetlist()]);document.getElementById("setlist-config-screen").style.display="none"}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
@@ -615,11 +615,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   // --- Lógica de Audio Global START ---
   const siteAudioElement = document.getElementById('site-audio');
   const siteAudioControlButton = document.getElementById('site-audio-control-button'); 
-  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; // Asegúrate que estas rutas son correctas
-  let currentSiteSongIndex = -1; 
+  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3'];
+  let currentSiteSongIndex = -1;
   let siteAudioFadeInterval = null;
   const SITE_AUDIO_FADE_DURATION = 500; 
-  const SITE_AUDIO_TARGET_VOLUME = 0.8; 
+  const SITE_AUDIO_TARGET_VOLUME = 0.8;
 
   function stopSiteAudioFade() {
     if (siteAudioFadeInterval) {
@@ -637,7 +637,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     audio.volume = 0;
-    audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio:", e));
+    // Solo llama a play si está pausado, para no interrumpir si ya está sonando (ej. tras desmutear)
+    if (audio.paused) {
+        audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio:", e));
+    }
     
     let step = targetVolume / (duration / 50);
     let currentVolume = 0;
@@ -691,13 +694,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     audioElement.load();
 
     const eventName = 'canplaythrough';
-    let playWhenReadyHandler = () => { // Renombrar para claridad
+    // Usar una variable para el handler para poder removerlo correctamente
+    const playWhenReadyHandler = () => {
       if (audioElement) { 
         fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME);
-        audioElement.removeEventListener(eventName, playWhenReadyHandler);
       }
     };
-    audioElement.removeEventListener(eventName, playWhenReadyHandler); // Limpiar anterior si existiera
+    // Limpiar listeners anteriores para este evento específico antes de añadir uno nuevo
+    audioElement.removeEventListener(eventName, playWhenReadyHandler); 
     audioElement.addEventListener(eventName, playWhenReadyHandler, { once: true });
   }
 
@@ -739,16 +743,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       siteAudioElement.muted = !siteAudioElement.muted;
       updateSiteAudioMuteButton();
 
-      if (!siteAudioElement.muted) { 
+      if (!siteAudioElement.muted) { // Si se acaba de ACTIVAR el sonido
           if (siteAudioElement.paused || wasMuted) { 
-              if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused){
-                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
-              } else { 
+              // Si estaba pausado (ej. primera vez o después de un error o fin de canción), 
+              // O si simplemente estaba muteado y ahora se desmutea.
+              if (wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused) {
+                  // Ya estaba "sonando" pero silenciado, y tenía volumen.
+                  // El navegador debería restaurar el volumen. Si queremos fade-in igual:
+                  fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
+              } else { // Estaba pausado o es la primera interacción de desmuteo
                   siteAudioElement.volume = 0; 
                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); 
               }
           }
-      } else { 
+      } else { // Si se acaba de SILENCIAR
         stopSiteAudioFade(); 
       }
     });
@@ -764,7 +772,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     setTimeout(() => {
       splashScreen.classList.add('hidden');
-      // La música NO se detiene aquí, es persistente.
+      // La música NO se detiene aquí.
       setTimeout(() => {
         if (splashScreen.parentNode) {
            splashScreen.style.display = 'none';
