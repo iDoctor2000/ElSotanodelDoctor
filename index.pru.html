@@ -34,7 +34,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background-color: #000000; /* Fondo negro */
+      background-color: #000000; 
       display: flex;
       justify-content: center;
       align-items: center;
@@ -162,6 +162,17 @@
     .sidebar a{display:block;color:#fff;text-decoration:none;margin:12px 0;padding:10px 5px;border-bottom:1px solid #333; font-size: 1em;}
     .sidebar a:last-of-type { border-bottom: none; }
     .sidebar a:hover{color:#0cf}
+
+    /* Estilo específico para "Setlist Próximo Concierto" */
+    .sidebar a#menu-second-setlist-section {
+        font-weight: bold;
+        color: #0cf !important; /* Usamos !important para asegurar que sobreescriba el color base si es necesario */
+    }
+    /* Opcional: Si quieres un hover diferente para este enlace específico */
+    /* .sidebar a#menu-second-setlist-section:hover { */
+    /* color: #09b !important; /* Un azul un poco más oscuro o diferente */
+    /* } */
+
     .sidebar .submenu { margin-left: 15px; margin-top: 10px; }
     .sidebar .submenu a { padding: 8px 0; font-size: 0.9em; border-top: 1px solid #2a2a2a; border-bottom: none; margin: 5px 0;}
     .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; }  
@@ -527,21 +538,21 @@ async function loadSetlistConfig(){try{const data=await withRetry(()=>loadDoc("i
 async function saveSetlistConfig(){updateDynamicSetlistTitles();return await withRetry(()=>saveDoc("intranet","setlists",{config:setlistConfig}))}
 async function cargarSetlistGenerico(configEntry,tbodyId,totalTimeId,defaultErrorMessage){try{if(!configEntry.url||configEntry.url.startsWith("URL_POR_CONFIGURAR")){console.warn(`[cargarSetlistGenerico] URL no configurada o es placeholder para ${tbodyId}`);throw new Error("URL no configurada.")}
 const response=await fetch(configEntry.url);if(!response.ok){console.error(`[cargarSetlistGenerico] Error en la respuesta de la API para ${tbodyId}. Status: ${response.status}, URL: ${configEntry.url}`);throw new Error(`Error en la respuesta de la API (${response.status}): ${response.statusText}`)}
-const rawData=await response.json(); console.log(`[cargarSetlistGenerico] rawData para ${tbodyId}:`, JSON.parse(JSON.stringify(rawData))); const dataToProcess=Array.isArray(rawData)?rawData:rawData.items||[]; console.log(`[cargarSetlistGenerico] dataToProcess para ${tbodyId} (antes de filtrar):`, JSON.parse(JSON.stringify(dataToProcess)));
-const processedItems=dataToProcess.map(item=>{if(!item||item.type!=="song"&&item.type!=="set"){console.warn(`[cargarSetlistGenerico PRE-PROC] Ítem ignorado, tipo inválido o ítem nulo:`,item);return null}
+const rawData=await response.json(); const dataToProcess=Array.isArray(rawData)?rawData:rawData.items||[];
+const processedItems=dataToProcess.map(item=>{if(!item||item.type!=="song"&&item.type!=="set"){return null}
 let rawDurationValue=parseFloat(item.duration);let durationIsInvalidOrMissing=isNaN(rawDurationValue)||rawDurationValue===0;if(isNaN(rawDurationValue)){rawDurationValue=0;durationIsInvalidOrMissing=true}
 let durationInSeconds;const itemName=item.name||item.title||(item.type==="song"?"Canción sin título":"Set sin nombre");const isBreakByName=/break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);item.isSong=false;item.isBreak=false;item.isSetHeader=false;
-if(item.type==="song"){durationInSeconds=rawDurationValue;item.isSong=true;console.log(`[cargarSetlistGenerico PRE-PROC] CANCIÓN: '${itemName}'. Duración original (asumida en segundos): ${rawDurationValue}`)}else if(item.type==="set"){if(isBreakByName){item.isBreak=true;if(durationIsInvalidOrMissing){durationInSeconds=3*60;console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' sin duración válida ('${item.duration}'). Asignando 3 minutos (${durationInSeconds}s).`)}else{durationInSeconds=rawDurationValue*60;console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' con duración ${rawDurationValue} min (${durationInSeconds}s).`)}}else{item.isSetHeader=true;durationInSeconds=rawDurationValue*60;console.log(`[cargarSetlistGenerico PRE-PROC] SET HEADER: '${itemName}'. Duración original del item (asumida en minutos): ${rawDurationValue} (${durationInSeconds}s). La duración del bloque se calculará.`)}}else{durationInSeconds=0}
+if(item.type==="song"){durationInSeconds=rawDurationValue;item.isSong=true;}else if(item.type==="set"){if(isBreakByName){item.isBreak=true;if(durationIsInvalidOrMissing){durationInSeconds=3*60}else{durationInSeconds=rawDurationValue*60}}else{item.isSetHeader=true;durationInSeconds=rawDurationValue*60}}else{durationInSeconds=0}
 item.calculatedDurationSeconds=durationInSeconds;item.displayName=decodeHtmlEntities(item.title||item.name||(item.isSong?"Canción sin título":item.isBreak?"Pausa":"Set"));item.originalJSONDuration=item.duration;return item}).filter(item=>item!==null);
-console.log(`[cargarSetlistGenerico] ProcessedItems para ${tbodyId} (después de pre-procesar y filtrar nulos):`,JSON.parse(JSON.stringify(processedItems)));const tbody=document.getElementById(tbodyId);tbody.innerHTML="";let songCount=0;const setlistStructure=[];let currentSet=null;
+const tbody=document.getElementById(tbodyId);tbody.innerHTML="";let songCount=0;const setlistStructure=[];let currentSet=null;
 processedItems.forEach(item=>{if(item.isSetHeader){if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet)}
 currentSet={...item,songs:[],calculatedBlockDurationSeconds:0}}else if(item.isBreak){if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet);currentSet=null}
-setlistStructure.push(item)}else if(item.isSong){if(!currentSet){console.warn(`[cargarSetlistGenerico] Canción '${item.displayName}' encontrada sin un Set Header previo. Creando set implícito "Set General".`);currentSet={isSetHeader:true,displayName:"Set General",calculatedDurationSeconds:0,songs:[],calculatedBlockDurationSeconds:0}}
+setlistStructure.push(item)}else if(item.isSong){if(!currentSet){currentSet={isSetHeader:true,displayName:"Set General",calculatedDurationSeconds:0,songs:[],calculatedBlockDurationSeconds:0}}
 currentSet.songs.push(item)}});if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet)}
-console.log(`[cargarSetlistGenerico] SetlistStructure final para ${tbodyId}:`,JSON.parse(JSON.stringify(setlistStructure)));let totalSecondsOverall=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){
-const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0); /* MODIFICADO AQUÍ */
-console.log(`[cargarSetlistGenerico HTML] Renderizando SET HEADER: ${blockOrItem.displayName} (${setHeaderTime})`);tbody.insertAdjacentHTML("beforeend",`<tr class="set-header-row"><td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);totalSecondsOverall+=(blockOrItem.calculatedBlockDurationSeconds||0);blockOrItem.songs.forEach(song=>{songCount++;const songFormattedTime=toMMSS(song.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${song.displayName}</td><td>${decodeHtmlEntities(song.key||"-")}</td><td>${decodeHtmlEntities(song.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)})}else if(blockOrItem.isBreak){const breakFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);console.log(`[cargarSetlistGenerico HTML] Renderizando BREAK: ${blockOrItem.displayName} (${breakFormattedTime})`);tbody.insertAdjacentHTML("beforeend",`<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)}else if(blockOrItem.isSong){songCount++;const songFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);console.warn(`[cargarSetlistGenerico HTML] Renderizando canción HUÉRFANA: ${blockOrItem.displayName}`);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td><td>${decodeHtmlEntities(blockOrItem.key||"-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)}});
-document.getElementById(totalTimeId).textContent="Tiempo total del set: "+toHHMM(totalSecondsOverall);console.log(`[cargarSetlistGenerico] Finalizado para ${tbodyId}. Tiempo total final calculado: ${toHHMM(totalSecondsOverall)}`);return setlistStructure}catch(e){console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`,e);const tbody=document.getElementById(tbodyId);if(tbody)tbody.innerHTML=`<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;const totalTimeElem=document.getElementById(totalTimeId);if(totalTimeElem)totalTimeElem.textContent="Error al calcular tiempo.";return[]}}
+let totalSecondsOverall=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){
+const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0); /* CAMBIO AQUÍ para HH:MM */
+tbody.insertAdjacentHTML("beforeend",`<tr class="set-header-row"><td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);totalSecondsOverall+=(blockOrItem.calculatedBlockDurationSeconds||0);blockOrItem.songs.forEach(song=>{songCount++;const songFormattedTime=toMMSS(song.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${song.displayName}</td><td>${decodeHtmlEntities(song.key||"-")}</td><td>${decodeHtmlEntities(song.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)})}else if(blockOrItem.isBreak){const breakFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)}else if(blockOrItem.isSong){songCount++;const songFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td><td>${decodeHtmlEntities(blockOrItem.key||"-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)}});
+document.getElementById(totalTimeId).textContent="Tiempo total del set: "+toHHMM(totalSecondsOverall);return setlistStructure}catch(e){console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`,e);const tbody=document.getElementById(tbodyId);if(tbody)tbody.innerHTML=`<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;const totalTimeElem=document.getElementById(totalTimeId);if(totalTimeElem)totalTimeElem.textContent="Error al calcular tiempo.";return[]}}
 const cargarPrimerSetlist = () => cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
 const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto");
 const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella");
@@ -615,11 +626,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   // --- Lógica de Audio Global START ---
   const siteAudioElement = document.getElementById('site-audio');
   const siteAudioControlButton = document.getElementById('site-audio-control-button'); 
-  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3'];
-  let currentSiteSongIndex = -1;
+  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; // TUS CANCIONES
+  let currentSiteSongIndex = -1; 
   let siteAudioFadeInterval = null;
   const SITE_AUDIO_FADE_DURATION = 500; 
-  const SITE_AUDIO_TARGET_VOLUME = 0.8;
+  const SITE_AUDIO_TARGET_VOLUME = 0.8; 
 
   function stopSiteAudioFade() {
     if (siteAudioFadeInterval) {
@@ -637,8 +648,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     audio.volume = 0;
-    // Solo llama a play si está pausado, para no interrumpir si ya está sonando (ej. tras desmutear)
-    if (audio.paused) {
+    if (audio.paused) { // Solo llama a play si está pausado
         audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio:", e));
     }
     
@@ -694,14 +704,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     audioElement.load();
 
     const eventName = 'canplaythrough';
-    // Usar una variable para el handler para poder removerlo correctamente
+    
+    // Eliminamos cualquier listener previo para 'canplaythrough' para evitar duplicados
+    // Es un poco más complejo asegurar que se elimina el handler correcto si se define anónimamente.
+    // Por ello, es mejor definir el handler fuera y referenciarlo.
     const playWhenReadyHandler = () => {
       if (audioElement) { 
         fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME);
+        // Ya no es necesario removerlo si se usa { once: true }
       }
     };
-    // Limpiar listeners anteriores para este evento específico antes de añadir uno nuevo
-    audioElement.removeEventListener(eventName, playWhenReadyHandler); 
+    // Limpiar listeners anteriores explícitamente si no se usa once, o confiar en once.
+    // Para mayor seguridad, si se llama múltiples veces antes de que 'canplaythrough' se dispare:
+    // audioElement.removeEventListener(eventName, audioElement._playWhenReadyHandler); // Si guardamos la referencia
     audioElement.addEventListener(eventName, playWhenReadyHandler, { once: true });
   }
 
@@ -743,20 +758,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       siteAudioElement.muted = !siteAudioElement.muted;
       updateSiteAudioMuteButton();
 
-      if (!siteAudioElement.muted) { // Si se acaba de ACTIVAR el sonido
+      if (!siteAudioElement.muted) { 
           if (siteAudioElement.paused || wasMuted) { 
-              // Si estaba pausado (ej. primera vez o después de un error o fin de canción), 
-              // O si simplemente estaba muteado y ahora se desmutea.
-              if (wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused) {
-                  // Ya estaba "sonando" pero silenciado, y tenía volumen.
-                  // El navegador debería restaurar el volumen. Si queremos fade-in igual:
-                  fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
-              } else { // Estaba pausado o es la primera interacción de desmuteo
+              if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused){
+                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
+              } else { 
                   siteAudioElement.volume = 0; 
                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); 
               }
           }
-      } else { // Si se acaba de SILENCIAR
+      } else { 
         stopSiteAudioFade(); 
       }
     });
