@@ -344,12 +344,9 @@
     <div class="modal-content">
         <h3>Detalles del Concierto</h3>
         <h4 id="concert-detail-title-display"></h4>  
-        
         <input type="hidden" id="concert-detail-id">
-        
         <label for="concert-detail-location">Detalles adicionales de la ubicación:</label>
         <textarea id="concert-detail-location"></textarea>
-
         <label for="concert-detail-gmaps-link">Enlace de Google Maps (Lugar Evento):</label>
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
             <input type="url" id="concert-detail-gmaps-link" placeholder="https://maps.app.goo.gl/example" style="flex-grow: 1; margin-bottom: 0;">
@@ -363,14 +360,10 @@
             <div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div>
             <div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div>
         </div>
-        
         <label for="concert-detail-notes">Notas generales:</label>
         <textarea id="concert-detail-notes"></textarea>
-
         <h4>Músicos Asistentes al Concierto</h4>
-        <div id="musicians-attendance-list">
-        </div>
-        
+        <div id="musicians-attendance-list"></div>
         <button id="save-concert-details">Guardar Detalles</button>
         <button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button>
         <p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p>
@@ -443,8 +436,7 @@
                     <th>Roles</th>
                 </tr>
             </thead>
-            <tbody id="users-body">  
-            </tbody>
+            <tbody id="users-body"></tbody>
         </table>
     </div>
   </div>
@@ -537,19 +529,19 @@ async function loadSetlistConfig(){try{const data=await withRetry(()=>loadDoc("i
 async function saveSetlistConfig(){updateDynamicSetlistTitles();return await withRetry(()=>saveDoc("intranet","setlists",{config:setlistConfig}))}
 async function cargarSetlistGenerico(configEntry,tbodyId,totalTimeId,defaultErrorMessage){try{if(!configEntry.url||configEntry.url.startsWith("URL_POR_CONFIGURAR")){console.warn(`[cargarSetlistGenerico] URL no configurada o es placeholder para ${tbodyId}`);throw new Error("URL no configurada.")}
 const response=await fetch(configEntry.url);if(!response.ok){console.error(`[cargarSetlistGenerico] Error en la respuesta de la API para ${tbodyId}. Status: ${response.status}, URL: ${configEntry.url}`);throw new Error(`Error en la respuesta de la API (${response.status}): ${response.statusText}`)}
-const rawData=await response.json();const dataToProcess=Array.isArray(rawData)?rawData:rawData.items||[];
+const rawData=await response.json(); console.log(`[cargarSetlistGenerico] rawData para ${tbodyId}:`, JSON.parse(JSON.stringify(rawData))); const dataToProcess=Array.isArray(rawData)?rawData:rawData.items||[]; console.log(`[cargarSetlistGenerico] dataToProcess para ${tbodyId} (antes de filtrar):`, JSON.parse(JSON.stringify(dataToProcess)));
 const processedItems=dataToProcess.map(item=>{if(!item||item.type!=="song"&&item.type!=="set"){console.warn(`[cargarSetlistGenerico PRE-PROC] Ítem ignorado, tipo inválido o ítem nulo:`,item);return null}
 let rawDurationValue=parseFloat(item.duration);let durationIsInvalidOrMissing=isNaN(rawDurationValue)||rawDurationValue===0;if(isNaN(rawDurationValue)){rawDurationValue=0;durationIsInvalidOrMissing=true}
 let durationInSeconds;const itemName=item.name||item.title||(item.type==="song"?"Canción sin título":"Set sin nombre");const isBreakByName=/break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);item.isSong=false;item.isBreak=false;item.isSetHeader=false;
 if(item.type==="song"){durationInSeconds=rawDurationValue;item.isSong=true;console.log(`[cargarSetlistGenerico PRE-PROC] CANCIÓN: '${itemName}'. Duración original (asumida en segundos): ${rawDurationValue}`)}else if(item.type==="set"){if(isBreakByName){item.isBreak=true;if(durationIsInvalidOrMissing){durationInSeconds=3*60;console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' sin duración válida ('${item.duration}'). Asignando 3 minutos (${durationInSeconds}s).`)}else{durationInSeconds=rawDurationValue*60;console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' con duración ${rawDurationValue} min (${durationInSeconds}s).`)}}else{item.isSetHeader=true;durationInSeconds=rawDurationValue*60;console.log(`[cargarSetlistGenerico PRE-PROC] SET HEADER: '${itemName}'. Duración original del item (asumida en minutos): ${rawDurationValue} (${durationInSeconds}s). La duración del bloque se calculará.`)}}else{durationInSeconds=0}
 item.calculatedDurationSeconds=durationInSeconds;item.displayName=decodeHtmlEntities(item.title||item.name||(item.isSong?"Canción sin título":item.isBreak?"Pausa":"Set"));item.originalJSONDuration=item.duration;return item}).filter(item=>item!==null);
-const tbody=document.getElementById(tbodyId);tbody.innerHTML="";let songCount=0;const setlistStructure=[];let currentSet=null;
+console.log(`[cargarSetlistGenerico] ProcessedItems para ${tbodyId} (después de pre-procesar y filtrar nulos):`,JSON.parse(JSON.stringify(processedItems)));const tbody=document.getElementById(tbodyId);tbody.innerHTML="";let songCount=0;const setlistStructure=[];let currentSet=null;
 processedItems.forEach(item=>{if(item.isSetHeader){if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet)}
 currentSet={...item,songs:[],calculatedBlockDurationSeconds:0}}else if(item.isBreak){if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet);currentSet=null}
 setlistStructure.push(item)}else if(item.isSong){if(!currentSet){console.warn(`[cargarSetlistGenerico] Canción '${item.displayName}' encontrada sin un Set Header previo. Creando set implícito "Set General".`);currentSet={isSetHeader:true,displayName:"Set General",calculatedDurationSeconds:0,songs:[],calculatedBlockDurationSeconds:0}}
 currentSet.songs.push(item)}});if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet)}
-let totalSecondsOverall=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){const setHeaderTime=toMMSS(blockOrItem.calculatedBlockDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr class="set-header-row"><td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);totalSecondsOverall+=(blockOrItem.calculatedBlockDurationSeconds||0);blockOrItem.songs.forEach(song=>{songCount++;const songFormattedTime=toMMSS(song.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${song.displayName}</td><td>${decodeHtmlEntities(song.key||"-")}</td><td>${decodeHtmlEntities(song.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)})}else if(blockOrItem.isBreak){const breakFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)}else if(blockOrItem.isSong){songCount++;const songFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td><td>${decodeHtmlEntities(blockOrItem.key||"-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)}});
-document.getElementById(totalTimeId).textContent="Tiempo total del set: "+toHHMM(totalSecondsOverall);return setlistStructure}catch(e){console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`,e);const tbody=document.getElementById(tbodyId);if(tbody)tbody.innerHTML=`<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;const totalTimeElem=document.getElementById(totalTimeId);if(totalTimeElem)totalTimeElem.textContent="Error al calcular tiempo.";return[]}}
+console.log(`[cargarSetlistGenerico] SetlistStructure final para ${tbodyId}:`,JSON.parse(JSON.stringify(setlistStructure)));let totalSecondsOverall=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){const setHeaderTime=toMMSS(blockOrItem.calculatedBlockDurationSeconds||0);console.log(`[cargarSetlistGenerico HTML] Renderizando SET HEADER: ${blockOrItem.displayName} (${setHeaderTime})`);tbody.insertAdjacentHTML("beforeend",`<tr class="set-header-row"><td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);totalSecondsOverall+=(blockOrItem.calculatedBlockDurationSeconds||0);blockOrItem.songs.forEach(song=>{songCount++;const songFormattedTime=toMMSS(song.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${song.displayName}</td><td>${decodeHtmlEntities(song.key||"-")}</td><td>${decodeHtmlEntities(song.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)})}else if(blockOrItem.isBreak){const breakFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);console.log(`[cargarSetlistGenerico HTML] Renderizando BREAK: ${blockOrItem.displayName} (${breakFormattedTime})`);tbody.insertAdjacentHTML("beforeend",`<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)}else if(blockOrItem.isSong){songCount++;const songFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);console.warn(`[cargarSetlistGenerico HTML] Renderizando canción HUÉRFANA: ${blockOrItem.displayName}`);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td><td>${decodeHtmlEntities(blockOrItem.key||"-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)}});
+document.getElementById(totalTimeId).textContent="Tiempo total del set: "+toHHMM(totalSecondsOverall);console.log(`[cargarSetlistGenerico] Finalizado para ${tbodyId}. Tiempo total final calculado: ${toHHMM(totalSecondsOverall)}`);return setlistStructure}catch(e){console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`,e);const tbody=document.getElementById(tbodyId);if(tbody)tbody.innerHTML=`<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;const totalTimeElem=document.getElementById(totalTimeId);if(totalTimeElem)totalTimeElem.textContent="Error al calcular tiempo.";return[]}}
 const cargarPrimerSetlist = () => cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
 const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto");
 const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella");
@@ -599,7 +591,7 @@ document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); clos
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 document.getElementById("menu-config").onclick = e => { e.preventDefault();const submenu=document.getElementById("config-submenu");if(!isAuthenticated){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true;submenu.style.display=submenu.style.display==="block"?"none":"block"}else{alert("Contraseña incorrecta.");return}}else{submenu.style.display=submenu.style.display==="block"?"none":"block"}};
-const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return false};
+const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; // Corregido: return true dentro del if
 document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
 document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; document.getElementById("setlist-message").textContent = ""; };
 document.getElementById("guardar-setlist-config").onclick = async () => { const msg=document.getElementById("setlist-message");msg.textContent="";const n1=document.getElementById("setlist1-name").value.trim(),u1=document.getElementById("setlist1-url").value.trim();const n2=document.getElementById("setlist2-name").value.trim(),raw2=document.getElementById("setlist2-url").value.trim();const nStar=document.getElementById("setlistStar-name").value.trim(),uStar=document.getElementById("setlistStar-url").value.trim();if(!n1||!u1||!n2||!raw2||!nStar||!uStar){msg.className="error-message";msg.textContent="Completa todos los campos.";return} try{setlistConfig.setlist1={name:n1,url:u1};setlistConfig.setlist2={name:n2,url:raw2.startsWith("http")?raw2:`https://www.bandhelper.com/feed/set_list/${raw2}`};setlistConfig.setlistStar={name:nStar,url:uStar};await saveSetlistConfig();await Promise.all([cargarPrimerSetlist(),cargarSegundoSetlist(),cargarStarSetlist()]);document.getElementById("setlist-config-screen").style.display="none"}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
@@ -623,11 +615,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   // --- Lógica de Audio Global START ---
   const siteAudioElement = document.getElementById('site-audio');
   const siteAudioControlButton = document.getElementById('site-audio-control-button'); 
-  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3'];
-  let currentSiteSongIndex = -1;
+  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; // Asegúrate que estas rutas son correctas
+  let currentSiteSongIndex = -1; 
   let siteAudioFadeInterval = null;
   const SITE_AUDIO_FADE_DURATION = 500; 
-  const SITE_AUDIO_TARGET_VOLUME = 0.8;
+  const SITE_AUDIO_TARGET_VOLUME = 0.8; 
 
   function stopSiteAudioFade() {
     if (siteAudioFadeInterval) {
@@ -652,7 +644,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     siteAudioFadeInterval = setInterval(() => {
       currentVolume += step;
       if (currentVolume >= targetVolume) {
-        if(audio) audio.volume = targetVolume; // Chequeo por si el audio se destruye/cambia
+        if(audio) audio.volume = targetVolume; 
         stopSiteAudioFade();
       } else if (audio) { 
         audio.volume = currentVolume;
@@ -698,16 +690,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     audioElement.src = siteAudioSongs[currentSiteSongIndex];
     audioElement.load();
 
-    const eventName = 'canplaythrough'; // o 'loadeddata' como fallback
-
-    const playWhenReady = () => {
+    const eventName = 'canplaythrough';
+    let playWhenReadyHandler = () => { // Renombrar para claridad
       if (audioElement) { 
         fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME);
-        audioElement.removeEventListener(eventName, playWhenReady);
+        audioElement.removeEventListener(eventName, playWhenReadyHandler);
       }
     };
-    audioElement.removeEventListener(eventName, playWhenReady); // Limpiar listener anterior por si acaso
-    audioElement.addEventListener(eventName, playWhenReady, { once: true });
+    audioElement.removeEventListener(eventName, playWhenReadyHandler); // Limpiar anterior si existiera
+    audioElement.addEventListener(eventName, playWhenReadyHandler, { once: true });
   }
 
   if (siteAudioElement && siteAudioControlButton) {
@@ -735,7 +726,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length);
     siteAudioElement.src = siteAudioSongs[currentSiteSongIndex];
     siteAudioElement.load(); 
-    // No se llama a play() aquí; se esperará a la interacción del usuario.
     
     siteAudioElement.addEventListener('ended', () => {
       fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => {
@@ -749,18 +739,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       siteAudioElement.muted = !siteAudioElement.muted;
       updateSiteAudioMuteButton();
 
-      if (!siteAudioElement.muted) { // Si se acaba de ACTIVAR el sonido
+      if (!siteAudioElement.muted) { 
           if (siteAudioElement.paused || wasMuted) { 
               if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused){
-                   // Ya estaba "sonando" pero silenciado, y tenía volumen. Solo desmutear es suficiente.
-                   // El navegador debería restaurar el volumen. Si queremos fade-in igual:
                    fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
-              } else { // Estaba pausado (ej. primera vez) o el volumen era 0
+              } else { 
                   siteAudioElement.volume = 0; 
                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); 
               }
           }
-      } else { // Si se acaba de SILENCIAR
+      } else { 
         stopSiteAudioFade(); 
       }
     });
