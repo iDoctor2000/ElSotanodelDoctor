@@ -589,8 +589,11 @@
           <tbody id="setlist-body"></tbody>
         </table>
       </div>
-      <div style="text-align: center;"> <button class="download-btn" id="download-btn">Pdf Complex</button>
-        <button class="download-btn" id="download-basic-btn">Pdf Simple</button> </div>
+      <div style="text-align: center;">
+        <button class="download-btn" id="download-btn">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
+        <button class="download-btn" id="download-personal-btn">PDF Personal</button>
+      </div>
       <p id="total-time"></p>
     </section>
 
@@ -627,8 +630,11 @@
           <tbody id="second-body"></tbody>
         </table>
       </div>
-      <div style="text-align: center;"> <button class="download-btn" id="download-btn-2">Pdf Complex</button>
-        <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button> </div>
+      <div style="text-align: center;">
+        <button class="download-btn" id="download-btn-2">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
+        <button class="download-btn" id="download-personal-btn-2">PDF Personal</button>
+      </div>
       <p id="total-time-2"></p>
     </section>
     
@@ -649,8 +655,11 @@
           <tbody id="star-setlist-body"></tbody>
         </table>
       </div>
-      <div style="text-align: center;"> <button class="download-btn" id="download-btn-star">Pdf Complex</button>
-        <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button> </div>
+      <div style="text-align: center;">
+        <button class="download-btn" id="download-btn-star">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
+        <button class="download-btn" id="download-personal-btn-star">PDF Personal</button>
+      </div>
       <p id="total-time-star"></p>
     </section>
 
@@ -1602,7 +1611,7 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
             doc.setFont("helvetica", 'bold');  
             doc.setFontSize(setHeaderFontSize);
             doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
-            currentY += itemLineHeight;
+            currentY += setHeaderFontSize * 1.6; 
             
             if (blockOrItem.songs) {
                 blockOrItem.songs.forEach(song => {
@@ -1621,9 +1630,9 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
         } else if (blockOrItem.isBreak) {  
             if (idx > 0) currentY += itemLineHeight * 0.2;
             doc.setFont("helvetica", 'italic');  
-            doc.setFontSize(itemTitleFontSize - 1);  
+            doc.setFontSize(itemTitleFontSize - 1 > 8 ? itemTitleFontSize -1 : 8); 
             doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
-            currentY += itemLineHeight;
+            currentY += (itemTitleFontSize - 1 > 8 ? itemTitleFontSize -1 : 8) * 1.6;
              if (idx < setlistStructure.length -1) currentY += itemLineHeight * 0.2;
         } else if (blockOrItem.isSong) { // Canciones huérfanas
             doc.setFont("helvetica", 'normal');  
@@ -1635,6 +1644,101 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
     doc.save(`${cleanFileName}_Basico.pdf`);
 }
 // ***** FIN FUNCIÓN genBasicPDF MODIFICADA *****
+
+// ***** INICIO FUNCIÓN genPersonalPDF *****
+async function genPersonalPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf, songTitleFontSizeParam) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    
+    const songTitleFontSize = parseInt(songTitleFontSizeParam, 10) || 14; // Tamaño por defecto si no es válido
+
+    const cleanFileName = sanitizeForPdfFilename(rawFileNameForPdf) || "setlist";
+
+    let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
+
+    let backgroundImageData = null;
+    try {
+        backgroundImageData = await getBackgroundImageDataURL();
+        doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+    } catch (e) { 
+        console.error("No se pudo añadir la plantilla de fondo al PDF Personal:", e);
+        // Dibujar un recuadro simple si falla la imagen de fondo
+        doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');
+    }
+
+    doc.setTextColor(0, 0, 0);  
+    const contentMarginTop = 120;  
+    const contentMarginSides = 60;
+    const contentMarginBottom = 100;
+    let currentY = contentMarginTop;
+    
+    const setlistNameFontSize = 22; // Tamaño para el nombre del setlist
+    const setHeaderFontSize = 16;  // Tamaño para las cabeceras de los sets (ej: "Set 1")
+    const breakTextFontSize = Math.max(8, songTitleFontSize - 2); // Para los descansos, un poco más pequeño
+
+    // Altura de línea dinámica basada en el tamaño de fuente del título de la canción
+    const songTitleLineHeight = songTitleFontSize * 1.5; // Ajusta el multiplicador (1.5 o 1.6) según veas necesario
+    const setHeaderLineHeight = setHeaderFontSize * 1.5;
+    const breakTextLineHeight = breakTextFontSize * 1.5;
+
+
+    doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
+    doc.setFontSize(setlistNameFontSize);
+    doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
+    currentY += setlistNameFontSize + 30;  
+
+    setlistStructure.forEach((blockOrItem, idx) => {
+        // Lógica de salto de página (puede necesitar ajustes finos)
+        let estimatedBlockHeight = songTitleLineHeight; // Altura por defecto para una canción
+        if (blockOrItem.isSetHeader) estimatedBlockHeight = setHeaderLineHeight + (blockOrItem.songs ? blockOrItem.songs.length * songTitleLineHeight : 0);
+        else if (blockOrItem.isBreak) estimatedBlockHeight = breakTextLineHeight;
+
+        if (currentY + estimatedBlockHeight > pageHeight - contentMarginBottom && idx > 0) { 
+            doc.addPage();
+            if (backgroundImageData) {
+                doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+            }
+            currentY = contentMarginTop;
+        }
+        
+        if (blockOrItem.isSetHeader) {
+            if (idx > 0) currentY += songTitleLineHeight * 0.3; // Espacio antes de la cabecera del set
+            doc.setFont("helvetica", 'bold');  
+            doc.setFontSize(setHeaderFontSize);
+            doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
+            currentY += setHeaderLineHeight; 
+            
+            if (blockOrItem.songs) {
+                blockOrItem.songs.forEach(song => {
+                    if (currentY + songTitleLineHeight > pageHeight - contentMarginBottom) {
+                        doc.addPage(); if (backgroundImageData) doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight); currentY = contentMarginTop;
+                    }
+                    doc.setFont("helvetica", 'normal');  
+                    doc.setFontSize(songTitleFontSize); // APLICA TAMAÑO ELEGIDO
+                    doc.text(song.displayName, pageWidth / 2, currentY, { align: "center" });
+                    currentY += songTitleLineHeight; // Usa altura de línea dinámica
+                });
+            }
+            if (idx < setlistStructure.length -1 && (setlistStructure[idx+1].isBreak || setlistStructure[idx+1].isSong)) currentY += songTitleLineHeight * 0.3; // Espacio después
+        } else if (blockOrItem.isBreak) {  
+            if (idx > 0) currentY += songTitleLineHeight * 0.2;
+            doc.setFont("helvetica", 'italic');  
+            doc.setFontSize(breakTextFontSize); 
+            doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
+            currentY += breakTextLineHeight;
+            if (idx < setlistStructure.length -1) currentY += songTitleLineHeight * 0.2;
+        } else if (blockOrItem.isSong) { // Canciones huérfanas (si las hubiera)
+            doc.setFont("helvetica", 'normal');  
+            doc.setFontSize(songTitleFontSize); // APLICA TAMAÑO ELEGIDO
+            doc.text(blockOrItem.displayName, pageWidth / 2, currentY, { align: "center" });
+            currentY += songTitleLineHeight; // Usa altura de línea dinámica
+        }
+    });
+    doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`); // Nombre de archivo incluye tamaño
+}
+// ***** FIN FUNCIÓN genPersonalPDF *****
 
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
@@ -2156,6 +2260,55 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("download-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
   document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
   
+  // --- NUEVOS MANEJADORES PARA PDF PERSONAL ---
+  document.getElementById("download-personal-btn").onclick = () => {
+      if (items1 && items1.length > 0) {
+          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+          if (fontSizeInput) {
+              const fontSize = parseInt(fontSizeInput, 10);
+              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) { // Validación básica
+                  genPersonalPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name, fontSize);
+              } else {
+                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
+              }
+          }
+      } else {
+          alert("No hay elementos en Setlist Ensayo para generar un PDF personal.");
+      }
+  };
+
+  document.getElementById("download-personal-btn-2").onclick = () => {
+      if (items2 && items2.length > 0) {
+          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+          if (fontSizeInput) {
+              const fontSize = parseInt(fontSizeInput, 10);
+              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
+                  genPersonalPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name, fontSize);
+              } else {
+                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
+              }
+          }
+      } else {
+          alert("No hay elementos en Setlist Próximo Concierto para generar un PDF personal.");
+      }
+  };
+
+  document.getElementById("download-personal-btn-star").onclick = () => {
+      if (itemsStar && itemsStar.length > 0) {
+          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+          if (fontSizeInput) {
+              const fontSize = parseInt(fontSizeInput, 10);
+              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
+                  genPersonalPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name, fontSize);
+              } else {
+                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
+              }
+          }
+      } else {
+          alert("No hay elementos en Setlist Estrella para generar un PDF personal.");
+      }
+  };
+
   console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
   setTimeout(processBandHelperTable, 2000);  
   console.log("[DOMContentLoaded] Carga de la aplicación completada.");
