@@ -27,31 +27,75 @@
     *,*::before,*::after{box-sizing:border-box}
     html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
     
+    /* ---------- Splash Screen ---------- */
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #000000; /* Fondo negro */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 200000; /* Asegura que esté por encima de todo */
+      opacity: 1;
+      visibility: visible;
+      /* Animación de salida MÁS LENTA para el contenedor del splash screen */
+      transition: opacity 0.8s ease-out, transform 0.8s ease-out, visibility 0.8s linear; /* Duración aumentada a 0.8s */
+      transform: scale(1);
+    }
+
+    #splash-screen img {
+      max-width: 60%; /* Ajusta según necesites */
+      max-height: 60%; /* Ajusta según necesites */
+      opacity: 0;
+      transform: scale(0.85) translateY(15px); /* Inicia un poco más pequeño y abajo */
+      /* Animación de entrada para la imagen */
+      animation: splash-image-entry 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes splash-image-entry {
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0); /* Termina en tamaño normal y posición original */
+      }
+    }
+
+    /* Clase para activar la animación de salida */
+    #splash-screen.hidden {
+      opacity: 0;
+      transform: scale(0.95); /* Efecto de encogimiento y desvanecimiento al salir */
+      visibility: hidden;
+      pointer-events: none; /* Importante para no interferir después de ocultarse */
+    }
+    /* ---------- End Splash Screen ---------- */
+
     header{
         background:#111;
-        padding:10px 20px; 
+        padding:10px 20px;  
         display:flex;
         align-items:center;
         justify-content:space-between;
-        position:fixed; 
+        position:fixed;  
         top:0;
         left:0;
         width:100%;
-        z-index:1000; 
-        border-bottom: 1px solid #222; 
-        height: 60px; 
+        z-index:1000;  
+        border-bottom: 1px solid #222;  
+        height: 60px;  
     }
     .logo img.logo-main{
-        width: 135px; 
+        width: 135px;  
         height:auto;
-        vertical-align: middle; 
+        vertical-align: middle;  
     }
     .logo-intranet{
         position:absolute;
         left:50%;
-        top:50%; 
+        top:50%;  
         transform:translate(-50%,-50%);
-        height:45px; 
+        height:45px;  
         width:auto;
     }
     .hamburger{
@@ -59,28 +103,28 @@
         border:1px solid #0cf;
         border-radius:4px;
         padding:5px;
-        z-index: 1001; 
+        z-index: 1001;  
     }
     .hamburger div{width:25px;height:3px;background:#0cf;margin:4px 0}
     
     .sidebar{
         position:fixed;
-        top:0; 
+        top:0;  
         left:0;
-        width:280px; 
-        height:100vh; 
-        background:#1a1a1a; 
+        width:280px;  
+        height:100vh;  
+        background:#1a1a1a;  
         border-right:1px solid #222;
         padding: 20px;
-        padding-top: calc(60px + 20px); 
-        box-shadow:3px 0 15px rgba(0,200,200,.15); 
-        transform:translateX(-100%); 
+        padding-top: calc(60px + 20px);  
+        box-shadow:3px 0 15px rgba(0,200,200,.15);  
+        transform:translateX(-100%);  
         transition:transform .3s ease-in-out;
-        z-index:9999; 
+        z-index:9999;  
         overflow-y: auto;
     }
     .sidebar.show{
-        transform:translateX(0); 
+        transform:translateX(0);  
     }
     .sidebar h2{color:#0cf;margin:0 0 20px 0;}
     .sidebar a{display:block;color:#fff;text-decoration:none;margin:12px 0;padding:10px 5px;border-bottom:1px solid #333; font-size: 1em;}
@@ -88,13 +132,13 @@
     .sidebar a:hover{color:#0cf}
     .sidebar .submenu { margin-left: 15px; margin-top: 10px; }
     .sidebar .submenu a { padding: 8px 0; font-size: 0.9em; border-top: 1px solid #2a2a2a; border-bottom: none; margin: 5px 0;}
-    .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; } 
+    .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; }  
     .sidebar a#menu-config:hover { color: #fff2a7; }
     
     #overlay{
         position:fixed;top:0;left:0;width:100%;height:100%;
-        background:rgba(0,0,0,.75); 
-        z-index:5000; 
+        background:rgba(0,0,0,.75);  
+        z-index:5000;  
         display:none;
         opacity: 0;
         transition: opacity .3s ease-in-out;
@@ -102,11 +146,11 @@
     #overlay.show{display:block; opacity: 1;}
     
     main {
-        padding-top: 75px; 
+        padding-top: 75px;  
     }
 
     .modal-backdrop {
-        display: none; 
+        display: none;  
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 10px;
     }
@@ -116,18 +160,18 @@
         box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 100%; max-width: 600px;
         max-height: 90vh; overflow-y: auto; position: relative;
     }
-    .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 5px; } 
+    .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 5px; }  
     .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
     #concert-detail-title-display {
-        color: #fff; 
-        font-size: 1em; 
-        font-weight: normal; 
-        margin-top: 0px; 
-        margin-bottom: 20px; 
-        text-align: left; 
-        border-bottom: 1px solid #333; 
-        padding-bottom: 10px; 
-        padding-left: 0px; 
+        color: #fff;  
+        font-size: 1em;  
+        font-weight: normal;  
+        margin-top: 0px;  
+        margin-bottom: 20px;  
+        text-align: left;  
+        border-bottom: 1px solid #333;  
+        padding-bottom: 10px;  
+        padding-left: 0px;  
     }
      #concert-detail-title-display .concert-date {
         font-style: italic;
@@ -136,7 +180,7 @@
     }
     .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
     .modal-content input[type="text"],
-    .modal-content input[type="url"], 
+    .modal-content input[type="url"],  
     .modal-content input[type="time"],
     .modal-content textarea {
         width: 100%; padding: 10px; background: #222; color: #fff;
@@ -151,21 +195,21 @@
     .modal-content .modal-close-btn { background: #444; color: #fff; }
     .modal-content .modal-close-btn:hover { background: #555; }
     
-    #musicians-attendance-list { 
+    #musicians-attendance-list {  
         border: 1px solid #333; padding: 10px; margin-bottom:15px;
     }
-    #musicians-attendance-list div { 
-        margin-bottom: 8px; 
-        display: flex; 
+    #musicians-attendance-list div {  
+        margin-bottom: 8px;  
+        display: flex;  
         align-items: center;
     }
-    #musicians-attendance-list label { 
-        color: #fff; margin-left: 8px; font-weight: normal; 
-        cursor: pointer; 
+    #musicians-attendance-list label {  
+        color: #fff; margin-left: 8px; font-weight: normal;  
+        cursor: pointer;  
     }
-    #musicians-attendance-list input[type="checkbox"] { 
-        vertical-align: middle; 
-        width: 18px; 
+    #musicians-attendance-list input[type="checkbox"] {  
+        vertical-align: middle;  
+        width: 18px;  
         height: 18px;
         cursor: pointer;
     }
@@ -175,12 +219,12 @@
     .modal-field-group input[type="time"] { text-align: left; }
 
     .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;
-        z-index:10001; 
+        z-index:10001;  
         overflow-y:auto;
-        padding: 20px; 
-        padding-top: calc(60px + 20px); 
+        padding: 20px;  
+        padding-top: calc(60px + 20px);  
     }
-    .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px;} 
+    .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px;}  
     .config-screen h3{color:#0cf;margin:20px 0 10px}
     .config-screen label{display:block;margin:10px 0 5px}
     .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff;
@@ -190,15 +234,15 @@
     .config-screen button:hover{background:#09b}
     .config-screen .close-btn{
         position:absolute;
-        top:15px; 
+        top:15px;  
         right:20px;
         font-size:1.2em;background:none;border:1px solid #0cf;
         color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer;
-        z-index: 10002; 
+        z-index: 10002;  
     }
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { 
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario {  
         background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px
     }
     #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 {
@@ -218,9 +262,9 @@
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
     
-    #setlists table th:nth-child(3), 
-    #setlists table th:nth-child(4), 
-    #setlists table th:nth-child(5), 
+    #setlists table th:nth-child(3),  
+    #setlists table th:nth-child(4),  
+    #setlists table th:nth-child(5),  
     #second-setlist table th:nth-child(3),
     #second-setlist table th:nth-child(4),
     #second-setlist table th:nth-child(5),
@@ -230,9 +274,9 @@
         text-align: center;
     }
 
-    #setlists table td:nth-child(3), 
-    #setlists table td:nth-child(4), 
-    #setlists table td:nth-child(5), 
+    #setlists table td:nth-child(3),  
+    #setlists table td:nth-child(4),  
+    #setlists table td:nth-child(5),  
     #second-setlist table td:nth-child(3),
     #second-setlist table td:nth-child(4),
     #second-setlist table td:nth-child(5),
@@ -244,16 +288,16 @@
 
     .break-row td {
         font-style: italic;
-        color: #ccc; 
+        color: #ccc;  
         background-color: #161616;
     }
-     .break-row td:first-child { 
+     .break-row td:first-child {  
         color: #777;
         text-align: center;
     }
-    .break-row td:nth-child(3), 
-    .break-row td:nth-child(4), 
-    .break-row td:nth-child(5) { 
+    .break-row td:nth-child(3),  
+    .break-row td:nth-child(4),  
+    .break-row td:nth-child(5) {  
         text-align: center;
     }
 
@@ -262,7 +306,7 @@
         font-weight: bold;
         text-align: center;
         background-color: #383838; /* Un gris un poco más claro que el #2a2a2a anterior y que el thead (#222) */
-        color: #0cf; 
+        color: #0cf;  
         padding-top: 12px;    /* Ajustado para igualar altura de celdas de canción */
         padding-bottom: 12px; /* Ajustado para igualar altura de celdas de canción */
         border-top: 1px solid #505050 !important;  /* Borde superior un poco más claro que el borde de celda normal (#333) */
@@ -270,13 +314,13 @@
     }
     /* ================================================= */
 
-    th.calendar-col-header, td.calendar-col { 
-        width: 50px; 
+    th.calendar-col-header, td.calendar-col {  
+        width: 50px;  
         text-align: center;
         padding-left: 5px;
         padding-right: 5px;
     }
-    th.details-col-header { 
+    th.details-col-header {  
         width: 50px;
         text-align: center;
         padding-left: 5px;
@@ -315,9 +359,9 @@
     .attending-no { color: #f00; }
     .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; }
     #connection-status {
-        position: fixed; 
-        top: calc(60px + 5px); 
-        right: 10px; 
+        position: fixed;  
+        top: calc(60px + 5px);  
+        right: 10px;  
         background: rgba(0, 0, 0, 0.8); color: #fff;
         padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none;
     }
@@ -333,55 +377,58 @@
     
     #firebase-critical-error-banner {
         background-color: red; color: white; padding: 15px; text-align: center;
-        position: fixed; 
-        top: 0; 
+        position: fixed;  
+        top: 0;  
         left: 0; width: 100%; z-index: 100001; font-weight: bold;
     }
 
     @media(max-width:768px){
-      header { height: 55px; padding: 8px 15px; } 
+      header { height: 55px; padding: 8px 15px; }  
       .logo img.logo-main{
-          width: 110px; 
+          width: 110px;  
       }
       .logo-intranet{height:35px}
       .hamburger div{width:20px}
 
       .sidebar{
-          width:260px; 
-          padding-top: calc(55px + 15px); 
+          width:260px;  
+          padding-top: calc(55px + 15px);  
       }
       main {
-          padding-top: 65px; 
+          padding-top: 65px;  
       }
       .config-screen {
-          padding-top: calc(55px + 15px); 
+          padding-top: calc(55px + 15px);  
       }
       .config-screen .close-btn{
-          top:10px; 
+          top:10px;  
           right:15px;
       }
-      #connection-status { 
-          top: calc(55px + 5px); 
-          right: 5px; font-size: 0.8em; 
+      #connection-status {  
+          top: calc(55px + 5px);  
+          right: 5px; font-size: 0.8em;  
       }
 
       .attendance-form { flex-direction: column; align-items: flex-start; }
       .attendance-form select { width: 100%; }
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
       
-      .table-wrapper { overflow-x: hidden; } 
+      .table-wrapper { overflow-x: hidden; }  
       table { width: 100%; min-width: unset; font-size: 0.85em; }
       th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
-      th.calendar-col-header, td.calendar-col, th.details-col-header { width: 40px; padding: 8px 2px;} 
+      th.calendar-col-header, td.calendar-col, th.details-col-header { width: 40px; padding: 8px 2px;}  
       #second-setlist .table-wrapper table, #star-setlist .table-wrapper table { min-width: unset; }
       .stats-table table { font-size: 0.85em; }
-      .modal-content { width: 95%; padding: 15px; } 
-      .modal-field-group { flex-direction: column; } 
+      .modal-content { width: 95%; padding: 15px; }  
+      .modal-field-group { flex-direction: column; }  
     }
   </style>
 </head>
 
 <body>
+  <div id="splash-screen">
+    <img src="assets/Logo Sobre negro1.png" alt="Cargando El Sótano del Doctor...">
+  </div>
   <div id="firebase-critical-error-banner" style="display:none;">
     ERROR CRÍTICO: La configuración de Firebase no es válida o es un placeholder. La aplicación puede no funcionar correctamente. Contacta al administrador.
   </div>
@@ -404,7 +451,7 @@
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#" id="menu-stats">Estadísticas</a>
-    <a href="#" id="menu-user-list-display">Usuarios Registrados</a> 
+    <a href="#" id="menu-user-list-display">Usuarios Registrados</a>  
     <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
       <a href="#" id="menu-setlist-config">Configurar Setlists</a>
@@ -417,7 +464,7 @@
   <div id="concert-details-modal" class="modal-backdrop">
     <div class="modal-content">
         <h3>Detalles del Concierto</h3>
-        <h4 id="concert-detail-title-display"></h4> 
+        <h4 id="concert-detail-title-display"></h4>  
         
         <input type="hidden" id="concert-detail-id">
         
@@ -508,7 +555,7 @@
   <div id="user-list-screen" class="config-screen">
     <button class="close-btn" id="close-user-list-screen">Cerrar</button>
     <h2>Usuarios Registrados</h2>
-    <div class="table-wrapper" style="padding: 0 10px;"> 
+    <div class="table-wrapper" style="padding: 0 10px;">  
         <table>
             <thead>
                 <tr>
@@ -517,7 +564,7 @@
                     <th>Roles</th>
                 </tr>
             </thead>
-            <tbody id="users-body"> 
+            <tbody id="users-body">  
             </tbody>
         </table>
     </div>
@@ -542,8 +589,11 @@
           <tbody id="setlist-body"></tbody>
         </table>
       </div>
-      <div style="text-align: center;"> <button class="download-btn" id="download-btn">Pdf Complex</button>
-        <button class="download-btn" id="download-basic-btn">Pdf Simple</button> </div>
+      <div style="text-align: center;">
+        <button class="download-btn" id="download-btn">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
+        <button class="download-btn" id="download-personal-btn">Pdf Personal</button>
+      </div>
       <p id="total-time"></p>
     </section>
 
@@ -555,7 +605,7 @@
                 <th>Fecha</th>
                 <th>Hora</th>
                 <th>Lugar</th>
-                <th class="calendar-col-header">Cal</th> 
+                <th class="calendar-col-header">Cal</th>  
                 <th>Confirmar Asistencia</th>
             </tr>
         </thead>
@@ -580,8 +630,11 @@
           <tbody id="second-body"></tbody>
         </table>
       </div>
-      <div style="text-align: center;"> <button class="download-btn" id="download-btn-2">Pdf Complex</button>
-        <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button> </div>
+      <div style="text-align: center;">
+        <button class="download-btn" id="download-btn-2">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
+        <button class="download-btn" id="download-personal-btn-2">Pdf Personal</button>
+      </div>
       <p id="total-time-2"></p>
     </section>
     
@@ -602,8 +655,11 @@
           <tbody id="star-setlist-body"></tbody>
         </table>
       </div>
-      <div style="text-align: center;"> <button class="download-btn" id="download-btn-star">Pdf Complex</button>
-        <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button> </div>
+      <div style="text-align: center;">
+        <button class="download-btn" id="download-btn-star">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
+        <button class="download-btn" id="download-personal-btn-star">Pdf Personal</button>
+      </div>
       <p id="total-time-star"></p>
     </section>
 
@@ -622,28 +678,28 @@
 <script>
 /* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw", 
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",  
   authDomain: "sotanointranet.firebaseapp.com",
   projectId: "sotanointranet",
-  storageBucket: "sotanointranet.appspot.com", 
+  storageBucket: "sotanointranet.appspot.com",  
   messagingSenderId: "756955233128",
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
 
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || 
-    (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { 
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" ||  
+    (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) {  
     const banner = document.getElementById('firebase-critical-error-banner');
     if (banner) banner.style.display = 'block';
     console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");
 }
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore(); 
+const db = firebase.firestore();  
 firebase.firestore().enablePersistence()
   .catch(err => { console.warn("Persistencia Firestore no habilitada:", err.code === 'failed-precondition' ? 'Múltiples pestañas.' : err.message); });
 
 /* ---------- 1. Utilidades ---------- */
-const parseDuration = str => { 
+const parseDuration = str => {  
   if (!str) return 0;
   if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; }
   const n = parseInt(str, 10); return isNaN(n) ? 0 : n;
@@ -652,7 +708,7 @@ const toMMSS = s => {
     if (isNaN(s) || s === null || s === undefined) {
         s = 0;
     }
-    const totalSeconds = Math.round(s); 
+    const totalSeconds = Math.round(s);  
     return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
 };
 const toHHMM = s => {
@@ -683,22 +739,22 @@ const calculateDuration = (startTime, endTime) => {
   const startSeconds = startH * 3600 + startM * 60;
   const endSeconds = endH * 3600 + endM * 60;
   let duration = endSeconds - startSeconds;
-  if (duration < 0) duration += 24 * 3600; 
+  if (duration < 0) duration += 24 * 3600;  
   return duration;
 };
 const formatDateWithDay = dateStr => {
-  const date = new Date(dateStr + 'T00:00:00Z'); 
+  const date = new Date(dateStr + 'T00:00:00Z');  
   const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;
 };
 const getMonthYear = dateStr => {
-  const date = new Date(dateStr + 'T00:00:00Z'); 
+  const date = new Date(dateStr + 'T00:00:00Z');  
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 };
 function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) {
-  const startDate = new Date(`${date}T${startTime}`); 
+  const startDate = new Date(`${date}T${startTime}`);  
   const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
   const formatICSDate = d => {
     const pad = (num) => String(num).padStart(2, '0');
@@ -707,8 +763,8 @@ function generateICS(title, date, startTime, location, description = "", duratio
   const startICS = formatICSDate(startDate);
   const endICS = formatICSDate(endDate);
   const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ElSotanoDelDoctor//Intranet//ES", "BEGIN:VEVENT",
-    `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, "")}Z`, 
-    `UID:${startICS}-${sanitizeFirebaseKey(title)}@elsotanodeldoctor.com`, 
+    `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, "")}Z`,  
+    `UID:${startICS}-${sanitizeFirebaseKey(title)}@elsotanodeldoctor.com`,  
     `DTSTART:${startICS}`, `DTEND:${endICS}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`,
     "END:VEVENT", "END:VCALENDAR"
   ].join("\r\n");
@@ -773,19 +829,19 @@ async function loadDoc(collection, docId, fallback) {
     const snap = await db.collection(collection).doc(docId).get();
     return snap.exists ? snap.data() : fallback;
   } catch (e) {
-    console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); 
-    return fallback; 
+    console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e);  
+    return fallback;  
   }
 }
 async function saveDoc(collection, docId, data, merge = false) {
   try {
     console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge);
-    await db.collection(collection).doc(docId).set(data, { merge: merge }); 
+    await db.collection(collection).doc(docId).set(data, { merge: merge });  
     console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`);
     return true;
   } catch (e) {
-    console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); 
-    throw e; 
+    console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e);  
+    throw e;  
   }
 }
 
@@ -813,12 +869,12 @@ async function loadSetlistConfig() {
     updateDynamicSetlistTitles();
   } catch (e) {
     console.error("Error al cargar la configuración de setlists:", e);
-    updateDynamicSetlistTitles(); 
+    updateDynamicSetlistTitles();  
   }
 }
 
 async function saveSetlistConfig() {
-  updateDynamicSetlistTitles(); 
+  updateDynamicSetlistTitles();  
   return await withRetry(() => saveDoc("intranet", "setlists", { config: setlistConfig }));
 }
 
@@ -837,7 +893,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     }
     
     const rawData = await response.json();
-    console.log(`[cargarSetlistGenerico] rawData para ${tbodyId}:`, JSON.parse(JSON.stringify(rawData))); 
+    console.log(`[cargarSetlistGenerico] rawData para ${tbodyId}:`, JSON.parse(JSON.stringify(rawData)));  
     
     const dataToProcess = Array.isArray(rawData) ? rawData : (rawData.items || []);
     console.log(`[cargarSetlistGenerico] dataToProcess para ${tbodyId} (antes de filtrar):`, JSON.parse(JSON.stringify(dataToProcess)));
@@ -846,7 +902,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     const processedItems = dataToProcess.map(item => {
       if (!item || (item.type !== "song" && item.type !== "set")) {
         console.warn(`[cargarSetlistGenerico PRE-PROC] Ítem ignorado, tipo inválido o ítem nulo:`, item);
-        return null; 
+        return null;  
       }
 
       let rawDurationValue = parseFloat(item.duration);
@@ -854,7 +910,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 
       if (isNaN(rawDurationValue)) {
           rawDurationValue = 0;
-          durationIsInvalidOrMissing = true; 
+          durationIsInvalidOrMissing = true;  
       }
       
       let durationInSeconds;
@@ -868,24 +924,24 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
       item.isSetHeader = false;
 
       if (item.type === "song") {
-          durationInSeconds = rawDurationValue; 
+          durationInSeconds = rawDurationValue;  
           item.isSong = true;
           console.log(`[cargarSetlistGenerico PRE-PROC] CANCIÓN: '${itemName}'. Duración original (asumida en segundos): ${rawDurationValue}`);
       } else if (item.type === "set") {
-          if (isBreakByName) { 
+          if (isBreakByName) {  
               item.isBreak = true;
-              if (durationIsInvalidOrMissing) { 
-                  durationInSeconds = 3 * 60; 
+              if (durationIsInvalidOrMissing) {  
+                  durationInSeconds = 3 * 60;  
                   console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' sin duración válida ('${item.duration}'). Asignando 3 minutos (${durationInSeconds}s).`);
-              } else { 
+              } else {  
                   durationInSeconds = rawDurationValue * 60; // Duración del descanso en minutos del JSON
                    console.log(`[cargarSetlistGenerico PRE-PROC] DESCANSО '${itemName}' con duración ${rawDurationValue} min (${durationInSeconds}s).`);
               }
-          } else { 
+          } else {  
               item.isSetHeader = true;
               // Para cabeceras de set, la duración original del item.duration (en minutos) se usa para el cálculo inicial.
               // El cálculo de la suma de canciones del set se hará después.
-              durationInSeconds = rawDurationValue * 60; 
+              durationInSeconds = rawDurationValue * 60;  
               console.log(`[cargarSetlistGenerico PRE-PROC] SET HEADER: '${itemName}'. Duración original del item (asumida en minutos): ${rawDurationValue} (${durationInSeconds}s). La duración del bloque se calculará.`);
           }
       } else {
@@ -894,7 +950,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
       
       item.calculatedDurationSeconds = durationInSeconds;
       item.displayName = decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : (item.isBreak ? "Pausa" : "Set")));
-      item.originalJSONDuration = item.duration; 
+      item.originalJSONDuration = item.duration;  
       return item;
     }).filter(item => item !== null);
 
@@ -902,7 +958,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 
     const tbody = document.getElementById(tbodyId);
     tbody.innerHTML = "";
-    let songCount = 0; 
+    let songCount = 0;  
     
     const setlistStructure = [];
     let currentSet = null;
@@ -913,23 +969,23 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
                 currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0);
                 setlistStructure.push(currentSet);
             }
-            currentSet = { ...item, songs: [], calculatedBlockDurationSeconds: 0 }; 
+            currentSet = { ...item, songs: [], calculatedBlockDurationSeconds: 0 };  
         } else if (item.isBreak) {
-            if (currentSet) { 
+            if (currentSet) {  
                 currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0);
                 setlistStructure.push(currentSet);
-                currentSet = null; 
+                currentSet = null;  
             }
-            setlistStructure.push(item); 
+            setlistStructure.push(item);  
         } else if (item.isSong) {
-            if (!currentSet) { 
+            if (!currentSet) {  
                 console.warn(`[cargarSetlistGenerico] Canción '${item.displayName}' encontrada sin un Set Header previo. Creando set implícito "Set General".`);
-                currentSet = { 
-                    isSetHeader: true, 
+                currentSet = {  
+                    isSetHeader: true,  
                     displayName: "Set General", // Nombre para set implícito
-                    calculatedDurationSeconds: 0, 
-                    songs: [], 
-                    calculatedBlockDurationSeconds: 0 
+                    calculatedDurationSeconds: 0,  
+                    songs: [],  
+                    calculatedBlockDurationSeconds: 0  
                 };
             }
             currentSet.songs.push(item);
@@ -1000,7 +1056,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     document.getElementById(totalTimeId).textContent = "Tiempo total del set: " + toHHMM(totalSecondsOverall);
     console.log(`[cargarSetlistGenerico] Finalizado para ${tbodyId}. Tiempo total final calculado: ${toHHMM(totalSecondsOverall)}`);
     
-    return setlistStructure; 
+    return setlistStructure;  
 
   } catch (e) {
     console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`, e);
@@ -1020,11 +1076,11 @@ const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar,
 /* ---------- 6. Usuarios ---------- */
 let users = [];
 let editingUserIndex = null;
-const excludedRehearsalUsers = ["Ximo", "Ginés Torres"]; 
+const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
 
 function renderUsers() {
-    const tbodyMgmt = document.getElementById("user-table-body"); 
-    const tbodyDisplay = document.getElementById("users-body");   
+    const tbodyMgmt = document.getElementById("user-table-body");  
+    const tbodyDisplay = document.getElementById("users-body");    
 
     if (tbodyMgmt) tbodyMgmt.innerHTML = "";
     if (tbodyDisplay) tbodyDisplay.innerHTML = "";
@@ -1058,9 +1114,9 @@ function renderUsers() {
             if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)) {
                 rehearsals.forEach(r => { if (Array.isArray(r.attendance)) { r.attendance = r.attendance.filter(a => a.name !== userToDelete.name); } });
                 users.splice(userIndex, 1);
-                await saveUsers(); 
-                await saveRehearsals(); 
-                renderStats(); 
+                await saveUsers();  
+                await saveRehearsals();  
+                renderStats();  
             }
         });
         tbodyMgmt.querySelectorAll(".edit-user").forEach(btn => btn.onclick = () => {
@@ -1086,9 +1142,9 @@ async function loadUsers() {
 async function saveUsers() {
     try {
         await withRetry(() => saveDoc("intranet", "users", { users }));
-        renderUsers(); 
-        renderRehearsals(); 
-        renderStats(); 
+        renderUsers();  
+        renderRehearsals();  
+        renderStats();  
         return true;
     } catch (e) { console.error("Error al guardar usuarios:", e); throw e; }
 }
@@ -1115,7 +1171,7 @@ function renderRehearsals() {
     if (!Array.isArray(rehearsals) || rehearsals.length === 0) {
         const emptyMsgConfig = '<tr><td colspan="6">No hay ensayos programados.</td></tr>';
         tbodyConfig.innerHTML = emptyMsgConfig;
-        const emptyMsgMain = '<tr><td colspan="5">No hay próximos ensayos.</td></tr>'; 
+        const emptyMsgMain = '<tr><td colspan="5">No hay próximos ensayos.</td></tr>';  
         tbodyMain.innerHTML = emptyMsgMain;
         return;
     }
@@ -1126,15 +1182,15 @@ function renderRehearsals() {
         : `<option value="" disabled>No hay usuarios disponibles</option>`;
 
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());  
 
     rehearsals.forEach((r, i) => {
         if (r.time && (!r.startTime || !r.endTime)) {
             r.startTime = r.time;
             const [hours, minutes] = r.time.split(":").map(Number);
-            const endHours = (hours + 2) % 24; 
+            const endHours = (hours + 2) % 24;  
             r.endTime = `${String(endHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-            delete r.time; 
+            delete r.time;  
         }
 
         const formattedDate = formatDateWithDay(r.date);
@@ -1145,8 +1201,8 @@ function renderRehearsals() {
         const summary = `<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
         tbodyConfig.insertAdjacentHTML("beforeend", `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
         
-        const rehearsalDate = new Date(r.date + 'T00:00:00Z'); 
-        if (rehearsalDate >= today) { 
+        const rehearsalDate = new Date(r.date + 'T00:00:00Z');  
+        if (rehearsalDate >= today) {  
             const calendarCell = `<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
             tbodyMain.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`);
         }
@@ -1165,7 +1221,7 @@ function renderRehearsals() {
         if (confirm("¿Estás seguro de que deseas eliminar este ensayo?")) {
             rehearsals.splice(parseInt(btn.dataset.i, 10), 1);
             await saveRehearsals();
-            renderStats(); 
+            renderStats();  
         }
     });
     tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn => btn.onclick = async () => {
@@ -1175,7 +1231,7 @@ function renderRehearsals() {
             rehearsal.attendance = [];
             await saveRehearsals();
             document.getElementById("rehearsal-message").textContent = "Asistencias eliminadas.";
-            renderStats(); 
+            renderStats();  
         }
     });
     tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => {
@@ -1195,8 +1251,8 @@ function renderRehearsals() {
             else rehearsal.attendance.push({ name, attending });
             try {
                 await saveRehearsals();
-                userSelect.value = ""; responseSelect.value = ""; 
-                renderStats(); 
+                userSelect.value = ""; responseSelect.value = "";  
+                renderStats();  
             } catch (e) { alert("Error al guardar asistencia: " + e.message); }
         };
     });
@@ -1212,7 +1268,7 @@ async function saveRehearsals() {
     try {
         await withRetry(() => saveDoc("intranet", "rehearsals", { rehearsals }));
         renderRehearsals();
-        renderStats(); 
+        renderStats();  
         return true;
     } catch (e) { console.error("Error al guardar ensayos:", e); throw e; }
 }
@@ -1232,7 +1288,7 @@ function updateMonthFilter() {
     const select = document.getElementById("stats-month-filter");
     select.innerHTML = '<option value="all">Todos los meses</option>';
     const now = new Date();
-    const pastRehearsals = rehearsals.filter(r => new Date(r.date + 'T00:00:00Z') < now); 
+    const pastRehearsals = rehearsals.filter(r => new Date(r.date + 'T00:00:00Z') < now);  
     const months = new Set(pastRehearsals.map(r => getMonthYear(r.date)));
     Array.from(months).sort((a,b) => new Date(b.split(" ")[1], getMonthIndex(b.split(" ")[0])) - new Date(a.split(" ")[1], getMonthIndex(a.split(" ")[0])) ).forEach(month => {
         select.insertAdjacentHTML("beforeend", `<option value="${month}">${month}</option>`);
@@ -1245,7 +1301,7 @@ function getMonthIndex(monthName) {
 function renderStats() {
     const now = new Date();
     const selectedMonth = document.getElementById("stats-month-filter")?.value || "all";
-    let filteredRehearsals = rehearsals.filter(r => new Date(r.date + 'T00:00:00Z') < now); 
+    let filteredRehearsals = rehearsals.filter(r => new Date(r.date + 'T00:00:00Z') < now);  
     if (selectedMonth !== "all") {
         filteredRehearsals = filteredRehearsals.filter(r => getMonthYear(r.date) === selectedMonth);
     }
@@ -1322,8 +1378,8 @@ async function loadFontAsBase64(fontPath) {
         });
     } catch (error) {
         console.error(`Error crítico cargando la fuente ${fontPath}:`, error);
-        fontDataCache[fontPath] = null; 
-        return null; 
+        fontDataCache[fontPath] = null;  
+        return null;  
     }
 }
 
@@ -1331,17 +1387,17 @@ async function registerFontWithDoc(doc, fontPath, fontVFSAlias, fontNameInDoc) {
     const fontBase64 = await loadFontAsBase64(fontPath);
     if (fontBase64) {
         try {
-            doc.addFileToVFS(fontVFSAlias, fontBase64); 
-            doc.addFont(fontVFSAlias, fontNameInDoc, 'normal'); 
+            doc.addFileToVFS(fontVFSAlias, fontBase64);  
+            doc.addFont(fontVFSAlias, fontNameInDoc, 'normal');  
             console.log(`Fuente ${fontNameInDoc} registrada en jsPDF desde ${fontPath}.`);
-            return true; 
+            return true;  
         } catch (fontError) {
             console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`, fontError);
         }
     } else {
         console.warn(`No se pudo cargar la fuente ${fontPath} para registrarla.`);
     }
-    return false; 
+    return false;  
 }
 
 async function getBackgroundImageDataURL() {
@@ -1364,7 +1420,7 @@ async function getBackgroundImageDataURL() {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
                 resolve(canvas.toDataURL('image/png'));
-            } else if (img.src) { 
+            } else if (img.src) {  
                 reject(new Error("Imagen de plantilla en caché pero inválida."));
             }
         }
@@ -1388,32 +1444,32 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
     try {
         backgroundImageData = await getBackgroundImageDataURL();
         doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
-    } catch (e) { 
+    } catch (e) {  
         console.error("No se pudo añadir la plantilla de fondo al PDF:", e);
-        doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S'); 
-        doc.setFontSize(10); doc.setTextColor(150,0,0); 
+        doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');  
+        doc.setFontSize(10); doc.setTextColor(150,0,0);  
         doc.text("Advertencia: No se pudo cargar la plantilla de fondo.", pageWidth / 2, pageHeight / 2, { align: "center" });
     }
 
-    doc.setTextColor(0, 0, 0); 
-    const contentMarginTop = 120; 
-    const contentMarginSides = 60; 
-    const contentMarginBottom = 100; 
+    doc.setTextColor(0, 0, 0);  
+    const contentMarginTop = 120;  
+    const contentMarginSides = 60;  
+    const contentMarginBottom = 100;  
     let currentY = contentMarginTop;
 
     doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
-    if (!bleedingCowboysRegistered) doc.setFontType("bold"); 
-    doc.setFontSize(28); 
+    if (!bleedingCowboysRegistered) doc.setFontType("bold");  
+    doc.setFontSize(28);  
     doc.text("SETLIST", pageWidth / 2, currentY, { align: "center" });
-    currentY += 28 + 10; 
+    currentY += 28 + 10;  
 
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
-    if (!carnevaleeRegistered) doc.setFontType("bold"); 
-    doc.setFontSize(22); 
+    if (!carnevaleeRegistered) doc.setFontType("bold");  
+    doc.setFontSize(22);  
     doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
     currentY += 22 + 5;
 
-    doc.setFont("times", "italic"); 
+    doc.setFont("times", "italic");  
     doc.setFontSize(10);
     
     let totalOverallSeconds = 0;
@@ -1431,9 +1487,9 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
     });
     const totalItemsText = `${totalSongCount} canciones`; // Mostrar solo el conteo de canciones para más claridad
     doc.text(`${totalItemsText}  |  Tiempo total: ${toHHMM(totalOverallSeconds)}`, pageWidth / 2, currentY, { align: "center" });
-    currentY += 10 + 20; 
+    currentY += 10 + 20;  
 
-    const tableFont = "helvetica"; 
+    const tableFont = "helvetica";  
     const tableHeadFont = "helvetica";
     let pdfSongNumber = 0;
     const tableBody = [];
@@ -1447,7 +1503,7 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
                 blockOrItem.songs.forEach(song => {
                     pdfSongNumber++;
                     tableBody.push([
-                        pdfSongNumber, 
+                        pdfSongNumber,  
                         song.displayName,
                         decodeHtmlEntities(song.key || "-"),
                         decodeHtmlEntities(song.tempo || "-"),
@@ -1455,8 +1511,8 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
                     ]);
                 });
             }
-        } else if (blockOrItem.isBreak) { 
-            tableBody.push([ 
+        } else if (blockOrItem.isBreak) {  
+            tableBody.push([  
                 { content: "»", styles: { halign: 'center', fontStyle: 'italic', textColor: [100,100,100] } },
                 { content: blockOrItem.displayName, styles: { fontStyle: 'italic', textColor: [80,80,80] } },
                 { content: "-", styles: { halign: 'center', fontStyle: 'italic', textColor: [150,150,150] } },
@@ -1464,9 +1520,9 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
                 { content: toMMSS(blockOrItem.calculatedDurationSeconds || 0), styles: { halign: 'center', fontStyle: 'italic', textColor: [80,80,80] } }
             ]);
         } else if (blockOrItem.isSong) { // Canciones huérfanas
-             pdfSongNumber++;
-             tableBody.push([
-                pdfSongNumber, 
+           pdfSongNumber++;
+           tableBody.push([
+                pdfSongNumber,  
                 blockOrItem.displayName,
                 decodeHtmlEntities(blockOrItem.key || "-"),
                 decodeHtmlEntities(blockOrItem.tempo || "-"),
@@ -1477,22 +1533,22 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
 
     doc.autoTable({
         startY: currentY,
-        head: [["#", "Título", "Key", "Tempo", "Time"]], 
+        head: [["#", "Título", "Key", "Tempo", "Time"]],  
         body: tableBody,
-        theme: 'grid', 
-        headStyles: { 
-            fillColor: [200, 200, 200], textColor: [0, 0, 0], font: tableHeadFont, 
-            fontStyle: 'bold', halign: 'center', fontSize: 10 
+        theme: 'grid',  
+        headStyles: {  
+            fillColor: [200, 200, 200], textColor: [0, 0, 0], font: tableHeadFont,  
+            fontStyle: 'bold', halign: 'center', fontSize: 10  
         },
-        styles: { 
+        styles: {  
             font: tableFont, fontSize: 9, cellPadding: {top: 4, right: 5, bottom: 4, left: 5},
-            lineColor: [80, 80, 80], lineWidth: 0.5, textColor: [0,0,0], 
+            lineColor: [80, 80, 80], lineWidth: 0.5, textColor: [0,0,0],  
         },
         columnStyles: {
-            0: { halign: 'center', cellWidth: 25, fontSize: 9 }, 
-            1: { halign: 'left', cellWidth: 'auto', fontSize: 10 }, 
-            2: { halign: 'center', cellWidth: 50, fontSize: 9 },   
-            3: { halign: 'center', cellWidth: 50, fontSize: 9 },   
+            0: { halign: 'center', cellWidth: 25, fontSize: 9 },  
+            1: { halign: 'left', cellWidth: 'auto', fontSize: 10 },  
+            2: { halign: 'center', cellWidth: 50, fontSize: 9 },    
+            3: { halign: 'center', cellWidth: 50, fontSize: 9 },    
             4: { halign: 'center', cellWidth: 50, fontSize: 9 }    
         },
         margin: { top: contentMarginTop, right: contentMarginSides, bottom: contentMarginBottom, left: contentMarginSides },
@@ -1503,7 +1559,7 @@ async function genPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf) {
             }
         }
     });
-    doc.save(`${cleanFileName}.pdf`); 
+    doc.save(`${cleanFileName}.pdf`);  
 }
 // ***** FIN FUNCIÓN genPDF MODIFICADA *****
 
@@ -1525,21 +1581,21 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
         doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
     } catch (e) { /* ... manejo de error ... */ }
 
-    doc.setTextColor(0, 0, 0); 
-    const contentMarginTop = 120; 
+    doc.setTextColor(0, 0, 0);  
+    const contentMarginTop = 120;  
     const contentMarginSides = 60;
     const contentMarginBottom = 100;
     let currentY = contentMarginTop;
     
     const setlistNameFontSize = 22;
-    const itemTitleFontSize = 14;   
-    const setHeaderFontSize = 16; 
-    const itemLineHeight = itemTitleFontSize * 1.6; 
+    const itemTitleFontSize = 14;    
+    const setHeaderFontSize = 16;  
+    const itemLineHeight = itemTitleFontSize * 1.6;  
 
     doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
     doc.setFontSize(setlistNameFontSize);
     doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
-    currentY += setlistNameFontSize + 30; 
+    currentY += setlistNameFontSize + 30;  
 
     setlistStructure.forEach((blockOrItem, idx) => {
         if (currentY + itemLineHeight * 2.5 > pageHeight - contentMarginBottom) { // Aumentado margen para evitar cortes
@@ -1547,22 +1603,22 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
             if (backgroundImageData) {
                 doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
             }
-            currentY = contentMarginTop; 
+            currentY = contentMarginTop;  
         }
         
         if (blockOrItem.isSetHeader) {
-            if (idx > 0) currentY += itemLineHeight * 0.3; 
-            doc.setFont("helvetica", 'bold'); 
+            if (idx > 0) currentY += itemLineHeight * 0.3;  
+            doc.setFont("helvetica", 'bold');  
             doc.setFontSize(setHeaderFontSize);
             doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
-            currentY += itemLineHeight;
+            currentY += setHeaderFontSize * 1.6; 
             
             if (blockOrItem.songs) {
                 blockOrItem.songs.forEach(song => {
                     if (currentY + itemLineHeight > pageHeight - contentMarginBottom) {
                         doc.addPage(); if (backgroundImageData) doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight); currentY = contentMarginTop;
                     }
-                    doc.setFont("helvetica", 'normal'); 
+                    doc.setFont("helvetica", 'normal');  
                     doc.setFontSize(itemTitleFontSize);
                     doc.text(song.displayName, pageWidth / 2, currentY, { align: "center" });
                     currentY += itemLineHeight;
@@ -1571,15 +1627,15 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
              if (idx < setlistStructure.length -1 && (setlistStructure[idx+1].isBreak || setlistStructure[idx+1].isSong)) currentY += itemLineHeight * 0.3;
 
 
-        } else if (blockOrItem.isBreak) { 
+        } else if (blockOrItem.isBreak) {  
             if (idx > 0) currentY += itemLineHeight * 0.2;
-            doc.setFont("helvetica", 'italic'); 
-            doc.setFontSize(itemTitleFontSize - 1); 
+            doc.setFont("helvetica", 'italic');  
+            doc.setFontSize(itemTitleFontSize - 1 > 8 ? itemTitleFontSize -1 : 8); 
             doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
-            currentY += itemLineHeight;
+            currentY += (itemTitleFontSize - 1 > 8 ? itemTitleFontSize -1 : 8) * 1.6;
              if (idx < setlistStructure.length -1) currentY += itemLineHeight * 0.2;
         } else if (blockOrItem.isSong) { // Canciones huérfanas
-            doc.setFont("helvetica", 'normal'); 
+            doc.setFont("helvetica", 'normal');  
             doc.setFontSize(itemTitleFontSize);
             doc.text(blockOrItem.displayName, pageWidth / 2, currentY, { align: "center" });
             currentY += itemLineHeight;
@@ -1589,10 +1645,105 @@ async function genBasicPDF(setlistStructure, setlistDynamicName, rawFileNameForP
 }
 // ***** FIN FUNCIÓN genBasicPDF MODIFICADA *****
 
+// ***** INICIO FUNCIÓN genPersonalPDF *****
+async function genPersonalPDF(setlistStructure, setlistDynamicName, rawFileNameForPdf, songTitleFontSizeParam) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    
+    const songTitleFontSize = parseInt(songTitleFontSizeParam, 10) || 14; // Tamaño por defecto si no es válido
+
+    const cleanFileName = sanitizeForPdfFilename(rawFileNameForPdf) || "setlist";
+
+    let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
+
+    let backgroundImageData = null;
+    try {
+        backgroundImageData = await getBackgroundImageDataURL();
+        doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+    } catch (e) { 
+        console.error("No se pudo añadir la plantilla de fondo al PDF Personal:", e);
+        // Dibujar un recuadro simple si falla la imagen de fondo
+        doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');
+    }
+
+    doc.setTextColor(0, 0, 0);  
+    const contentMarginTop = 120;  
+    const contentMarginSides = 60;
+    const contentMarginBottom = 100;
+    let currentY = contentMarginTop;
+    
+    const setlistNameFontSize = 22; // Tamaño para el nombre del setlist
+    const setHeaderFontSize = 16;  // Tamaño para las cabeceras de los sets (ej: "Set 1")
+    const breakTextFontSize = Math.max(8, songTitleFontSize - 2); // Para los descansos, un poco más pequeño
+
+    // Altura de línea dinámica basada en el tamaño de fuente del título de la canción
+    const songTitleLineHeight = songTitleFontSize * 1.5; // Ajusta el multiplicador (1.5 o 1.6) según veas necesario
+    const setHeaderLineHeight = setHeaderFontSize * 1.5;
+    const breakTextLineHeight = breakTextFontSize * 1.5;
+
+
+    doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
+    doc.setFontSize(setlistNameFontSize);
+    doc.text(decodeHtmlEntities(setlistDynamicName), pageWidth / 2, currentY, { align: "center" });
+    currentY += setlistNameFontSize + 30;  
+
+    setlistStructure.forEach((blockOrItem, idx) => {
+        // Lógica de salto de página (puede necesitar ajustes finos)
+        let estimatedBlockHeight = songTitleLineHeight; // Altura por defecto para una canción
+        if (blockOrItem.isSetHeader) estimatedBlockHeight = setHeaderLineHeight + (blockOrItem.songs ? blockOrItem.songs.length * songTitleLineHeight : 0);
+        else if (blockOrItem.isBreak) estimatedBlockHeight = breakTextLineHeight;
+
+        if (currentY + estimatedBlockHeight > pageHeight - contentMarginBottom && idx > 0) { 
+            doc.addPage();
+            if (backgroundImageData) {
+                doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
+            }
+            currentY = contentMarginTop;
+        }
+        
+        if (blockOrItem.isSetHeader) {
+            if (idx > 0) currentY += songTitleLineHeight * 0.3; // Espacio antes de la cabecera del set
+            doc.setFont("helvetica", 'bold');  
+            doc.setFontSize(setHeaderFontSize);
+            doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
+            currentY += setHeaderLineHeight; 
+            
+            if (blockOrItem.songs) {
+                blockOrItem.songs.forEach(song => {
+                    if (currentY + songTitleLineHeight > pageHeight - contentMarginBottom) {
+                        doc.addPage(); if (backgroundImageData) doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight); currentY = contentMarginTop;
+                    }
+                    doc.setFont("helvetica", 'normal');  
+                    doc.setFontSize(songTitleFontSize); // APLICA TAMAÑO ELEGIDO
+                    doc.text(song.displayName, pageWidth / 2, currentY, { align: "center" });
+                    currentY += songTitleLineHeight; // Usa altura de línea dinámica
+                });
+            }
+            if (idx < setlistStructure.length -1 && (setlistStructure[idx+1].isBreak || setlistStructure[idx+1].isSong)) currentY += songTitleLineHeight * 0.3; // Espacio después
+        } else if (blockOrItem.isBreak) {  
+            if (idx > 0) currentY += songTitleLineHeight * 0.2;
+            doc.setFont("helvetica", 'italic');  
+            doc.setFontSize(breakTextFontSize); 
+            doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds || 0)})`, pageWidth / 2, currentY, { align: "center" });
+            currentY += breakTextLineHeight;
+            if (idx < setlistStructure.length -1) currentY += songTitleLineHeight * 0.2;
+        } else if (blockOrItem.isSong) { // Canciones huérfanas (si las hubiera)
+            doc.setFont("helvetica", 'normal');  
+            doc.setFontSize(songTitleFontSize); // APLICA TAMAÑO ELEGIDO
+            doc.text(blockOrItem.displayName, pageWidth / 2, currentY, { align: "center" });
+            currentY += songTitleLineHeight; // Usa altura de línea dinámica
+        }
+    });
+    doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`); // Nombre de archivo incluye tamaño
+}
+// ***** FIN FUNCIÓN genPersonalPDF *****
+
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
 let processTableAttempts = 0;
-const MAX_PROCESS_ATTEMPTS = 20; 
+const MAX_PROCESS_ATTEMPTS = 20;  
 
 function processBandHelperTable() {
   const container = document.getElementById('bandhelper-concerts-container');
@@ -1601,38 +1752,38 @@ function processBandHelperTable() {
       return;
   }
 
-  const table = container.querySelector("table"); 
+  const table = container.querySelector("table");  
   const loadingMessage = document.getElementById("bandhelper-loading-message");
 
   if (!table) {
     processTableAttempts++;
     if (processTableAttempts < MAX_PROCESS_ATTEMPTS) {
-      setTimeout(processBandHelperTable, 500); 
+      setTimeout(processBandHelperTable, 500);  
     } else {
       console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de", MAX_PROCESS_ATTEMPTS, "intentos.");
       if(loadingMessage) {
           loadingMessage.textContent = "No se pudieron mostrar los conciertos (tabla no generada por BandHelper).";
-          loadingMessage.style.display = "block"; 
+          loadingMessage.style.display = "block";  
       }
     }
     return;
   }
 
-  if(loadingMessage) loadingMessage.style.display = "none"; 
+  if(loadingMessage) loadingMessage.style.display = "none";  
 
-  if (table.dataset.processed === "true") { 
-      return; 
+  if (table.dataset.processed === "true") {  
+      return;  
   }
   table.dataset.processed = "true";
 
-  let headerRow = table.querySelector("thead tr"); 
-  const desiredHeaders = ["Fecha/Hora", "Evento", "Lugar", "Cal", "Info"]; 
+  let headerRow = table.querySelector("thead tr");  
+  const desiredHeaders = ["Fecha/Hora", "Evento", "Lugar", "Cal", "Info"];  
 
-  if (!table.tHead) { 
+  if (!table.tHead) {  
       table.createTHead();
   }
-  headerRow = table.tHead.rows[0] || table.tHead.insertRow(0); 
-  headerRow.innerHTML = ''; 
+  headerRow = table.tHead.rows[0] || table.tHead.insertRow(0);  
+  headerRow.innerHTML = '';  
   desiredHeaders.forEach(text => {
       const th = document.createElement('th');
       th.textContent = text;
@@ -1641,61 +1792,61 @@ function processBandHelperTable() {
       headerRow.appendChild(th);
   });
   
-  const dataRowsSource = table.querySelector("tbody") ? Array.from(table.querySelectorAll("tbody tr")) : []; 
+  const dataRowsSource = table.querySelector("tbody") ? Array.from(table.querySelectorAll("tbody tr")) : [];  
   
   dataRowsSource.forEach((row) => {
-    const originalCells = Array.from(row.cells); 
-    row.innerHTML = ''; 
+    const originalCells = Array.from(row.cells);  
+    row.innerHTML = '';  
 
     const dateCellFullText = originalCells[0]?.textContent.trim() || "";
     const eventTitleFromCell = originalCells[1]?.textContent.trim().split('\n')[0].trim() || "Evento Sin Título";
     const locationText = originalCells[3]?.textContent.trim().split('\n')[0].trim() || originalCells[2]?.textContent.trim().split('\n')[0].trim() || "";
 
     row.insertCell().textContent = dateCellFullText;    
-    row.insertCell().textContent = eventTitleFromCell; 
+    row.insertCell().textContent = eventTitleFromCell;  
     row.insertCell().textContent = locationText;        
 
     const calendarDisplayCell = row.insertCell();
-    calendarDisplayCell.className = "calendar-col"; 
+    calendarDisplayCell.className = "calendar-col";  
     calendarDisplayCell.style.textAlign = "center";
 
     const detailDisplayCell = row.insertCell();
-    detailDisplayCell.className = "details-col-header"; 
+    detailDisplayCell.className = "details-col-header";  
     detailDisplayCell.style.textAlign = "center";
 
-    const dateForId = dateCellFullText.split(',')[0].trim(); 
+    const dateForId = dateCellFullText.split(',')[0].trim();  
     const concertId = sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
     
     const detailsBtn = document.createElement("button");
     detailsBtn.className = "details-btn";
-    detailsBtn.innerHTML = "➡️"; 
+    detailsBtn.innerHTML = "➡️";  
     detailsBtn.title = "Ver/Editar Detalles del Concierto";
-    detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellFullText, eventTitleFromCell, locationText); 
+    detailsBtn.onclick = () => openConcertDetailModal(concertId, dateCellFullText, eventTitleFromCell, locationText);  
     detailDisplayCell.appendChild(detailsBtn);
 
-    let icsDate = new Date().toISOString().split('T')[0]; 
-    let startTimeForICS = "20:00"; 
-    let durationSecondsForICS = 2 * 3600; 
+    let icsDate = new Date().toISOString().split('T')[0];  
+    let startTimeForICS = "20:00";  
+    let durationSecondsForICS = 2 * 3600;  
 
-    const dateMatch = dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/); 
+    const dateMatch = dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/);  
     if (dateMatch) {
         let year = parseInt(dateMatch[3], 10);
-        year += (year < 70 ? 2000 : 1900); 
-        icsDate = `${year}-${dateMatch[2]}-${dateMatch[1]}`; 
+        year += (year < 70 ? 2000 : 1900);  
+        icsDate = `${year}-${dateMatch[2]}-${dateMatch[1]}`;  
     }
 
-    const timeRangeMatch = dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/); 
-    const singleTimeMatch = dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/); 
+    const timeRangeMatch = dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/);  
+    const singleTimeMatch = dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/);  
 
     if (timeRangeMatch) {
         startTimeForICS = timeRangeMatch[1];
         durationSecondsForICS = calculateDuration(timeRangeMatch[1], timeRangeMatch[2]);
-        if (durationSecondsForICS <= 0) durationSecondsForICS = 2 * 3600; 
+        if (durationSecondsForICS <= 0) durationSecondsForICS = 2 * 3600;  
     } else if (singleTimeMatch) {
         startTimeForICS = singleTimeMatch[1];
     }
     
-    const locationForICS = locationText || eventTitleFromCell; 
+    const locationForICS = locationText || eventTitleFromCell;  
     const descriptionForICS = `Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;
 
     const calendarBtn = document.createElement('button');
@@ -1717,21 +1868,21 @@ const concertDetailModal = document.getElementById('concert-details-modal');
 const concertDetailMessage = document.getElementById('concert-detail-message');
 
 async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
-    concertDetailMessage.textContent = ""; 
-    concertDetailMessage.className = "success-message"; 
+    concertDetailMessage.textContent = "";  
+    concertDetailMessage.className = "success-message";  
 
     document.body.style.overflow = 'hidden';
 
     document.getElementById('concert-detail-id').value = concertId;
     const concertTitleDisplay = document.getElementById('concert-detail-title-display');
     if (concertTitleDisplay) {
-        const datePartOnly = concertFullDateText.split(',')[0].trim(); 
-        concertTitleDisplay.innerHTML = `${decodeHtmlEntities(concertTitle) || "Título no disponible"} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`; 
+        const datePartOnly = concertFullDateText.split(',')[0].trim();  
+        concertTitleDisplay.innerHTML = `${decodeHtmlEntities(concertTitle) || "Título no disponible"} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`;  
     }
     
     document.getElementById('concert-detail-location').value = '';
-    document.getElementById('concert-detail-soundsetup').value = ''; 
-    document.getElementById('concert-detail-instrumentssetup').value = ''; 
+    document.getElementById('concert-detail-soundsetup').value = '';  
+    document.getElementById('concert-detail-instrumentssetup').value = '';  
     document.getElementById('concert-detail-soundcheck').value = '';
     document.getElementById('concert-detail-showtime').value = '';
     document.getElementById('concert-detail-notes').value = '';
@@ -1739,39 +1890,39 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     document.getElementById('concert-detail-gmaps-link').value = '';
     const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
     openGmapsBtn.style.display = 'none';
-    openGmapsBtn.onclick = null; 
+    openGmapsBtn.onclick = null;  
     
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando músicos...';
 
-    const excludedMusicians = ["Ximo", "Ginés Torres"]; 
+    const excludedMusicians = ["Ximo", "Ginés Torres"];  
 
     if (users && users.length > 0) {
-        musiciansListDiv.innerHTML = ''; 
-        users.filter(user => !excludedMusicians.includes(user.name)) 
+        musiciansListDiv.innerHTML = '';  
+        users.filter(user => !excludedMusicians.includes(user.name))  
             .forEach(user => {
                 const userDiv = document.createElement('div');
-                const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`; 
+                const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`;  
                 userDiv.innerHTML = `
                     <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}">
                     <label for="${checkboxId}">${user.name} (${user.nickname})</label>
                 `;
                 musiciansListDiv.appendChild(userDiv);
         });
-        if (musiciansListDiv.children.length === 0) { 
+        if (musiciansListDiv.children.length === 0) {  
             musiciansListDiv.innerHTML = 'No hay otros músicos para listar.';
         }
-    } else { 
+    } else {  
         musiciansListDiv.innerHTML = 'No hay músicos registrados para listar.';
     }
 
     try {
-        const details = await withRetry(() => loadDoc('concert_details', concertId, {})); 
+        const details = await withRetry(() => loadDoc('concert_details', concertId, {}));  
         
-        if (details && Object.keys(details).length > 0) { 
+        if (details && Object.keys(details).length > 0) {  
             document.getElementById('concert-detail-location').value = details.locationDetails || '';
-            document.getElementById('concert-detail-soundsetup').value = details.soundSetupTime || ''; 
-            document.getElementById('concert-detail-instrumentssetup').value = details.instrumentsSetupTime || ''; 
+            document.getElementById('concert-detail-soundsetup').value = details.soundSetupTime || '';  
+            document.getElementById('concert-detail-instrumentssetup').value = details.instrumentsSetupTime || '';  
             document.getElementById('concert-detail-soundcheck').value = details.soundcheckTime || '';
             document.getElementById('concert-detail-showtime').value = details.showTime || '';
             document.getElementById('concert-detail-notes').value = details.generalNotes || '';
@@ -1780,9 +1931,9 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             document.getElementById('concert-detail-gmaps-link').value = gmapsLink;
             if (gmapsLink) {
                 openGmapsBtn.style.display = 'inline-block';
-                openGmapsBtn.onclick = () => { 
+                openGmapsBtn.onclick = () => {  
                     const currentLink = document.getElementById('concert-detail-gmaps-link').value.trim();
-                    if(currentLink) window.open(currentLink, '_blank'); 
+                    if(currentLink) window.open(currentLink, '_blank');  
                 };
             } else {
                 openGmapsBtn.style.display = 'none';
@@ -1790,62 +1941,62 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             
             if (details.attendees && Array.isArray(details.attendees)) {
                 details.attendees.forEach(attendeeName => {
-                    const checkbox = musiciansListDiv.querySelector(`input[value="${attendeeName}"]`); 
+                    const checkbox = musiciansListDiv.querySelector(`input[value="${attendeeName}"]`);  
                     if (checkbox) {
                         checkbox.checked = true;
                     }
                 });
             }
-        } else { 
+        } else {  
              openGmapsBtn.style.display = 'none';
         }
-    } catch (error) { 
+    } catch (error) {  
         console.error("Error al intentar cargar detalles del concierto desde Firestore:", error);
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}.`;
-        openGmapsBtn.style.display = 'none'; 
+        openGmapsBtn.style.display = 'none';  
     }
 
-    concertDetailModal.classList.add('show'); 
+    concertDetailModal.classList.add('show');  
 }
 
 document.getElementById('save-concert-details').onclick = async () => {
     const concertId = document.getElementById('concert-detail-id').value;
-    const concertDetailMessage = document.getElementById('concert-detail-message'); 
-    if (!concertId) { 
+    const concertDetailMessage = document.getElementById('concert-detail-message');  
+    if (!concertId) {  
         concertDetailMessage.className = "error-message";
-        concertDetailMessage.textContent = "Error: ID de concierto no encontrado. No se puede guardar."; 
-        return; 
+        concertDetailMessage.textContent = "Error: ID de concierto no encontrado. No se puede guardar.";  
+        return;  
     }
 
     const selectedAttendees = [];
-    document.querySelectorAll('#musicians-attendance-list input[type="checkbox"]:checked').forEach(checkbox => { 
-        selectedAttendees.push(checkbox.value); 
+    document.querySelectorAll('#musicians-attendance-list input[type="checkbox"]:checked').forEach(checkbox => {  
+        selectedAttendees.push(checkbox.value);  
     });
 
     const gmapsLinkValue = document.getElementById('concert-detail-gmaps-link').value.trim();
 
     const concertData = {
         locationDetails: document.getElementById('concert-detail-location').value.trim(),
-        soundSetupTime: document.getElementById('concert-detail-soundsetup').value, 
-        instrumentsSetupTime: document.getElementById('concert-detail-instrumentssetup').value, 
+        soundSetupTime: document.getElementById('concert-detail-soundsetup').value,  
+        instrumentsSetupTime: document.getElementById('concert-detail-instrumentssetup').value,  
         soundcheckTime: document.getElementById('concert-detail-soundcheck').value,
         showTime: document.getElementById('concert-detail-showtime').value,
         generalNotes: document.getElementById('concert-detail-notes').value.trim(),
-        attendees: selectedAttendees, 
-        googleMapsLink: gmapsLinkValue, 
-        lastUpdated: new Date().toISOString() 
+        attendees: selectedAttendees,  
+        googleMapsLink: gmapsLinkValue,  
+        lastUpdated: new Date().toISOString()  
     };
 
     try {
-        await withRetry(() => saveDoc('concert_details', concertId, concertData, true)); 
+        await withRetry(() => saveDoc('concert_details', concertId, concertData, true));  
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente.";
 
         const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
         if (gmapsLinkValue) {
             openGmapsBtn.style.display = 'inline-block';
-            openGmapsBtn.onclick = () => { 
+            openGmapsBtn.onclick = () => {  
                 const currentLink = document.getElementById('concert-detail-gmaps-link').value.trim();
                 if(currentLink) window.open(currentLink, '_blank');
             };
@@ -1861,16 +2012,16 @@ document.getElementById('save-concert-details').onclick = async () => {
 };
 
 document.getElementById('close-concert-details-modal').onclick = () => {
-    closeAll(); 
+    closeAll();  
 };
 
 
 /* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
-const PASSWORD = "Sotano2014"; 
+const PASSWORD = "Sotano2014";  
 let isAuthenticated = false;
 
-function closeAll() { 
+function closeAll() {  
     document.querySelectorAll(".config-screen").forEach(s => {
         s.style.display = "none";
     });
@@ -1884,7 +2035,7 @@ function closeAll() {
     if (typeof resetUserForm === "function") resetUserForm();
     if (typeof resetRehearsalForm === "function") resetRehearsalForm();
     document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message").forEach(el => el.textContent = "");
-    document.body.style.overflow = ''; 
+    document.body.style.overflow = '';  
 }
 
 document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
@@ -1896,12 +2047,12 @@ const setupMenuLink = (menuId, targetId) => {
     if (link) {
         link.onclick = e => {
             e.preventDefault();
-            closeAll(); 
+            closeAll();  
             const targetElement = document.getElementById(targetId);
-            if (targetElement) { 
+            if (targetElement) {  
                 const headerOffset = document.querySelector('header').offsetHeight || 60;
                 const elementPosition = targetElement.getBoundingClientRect().top;
-                const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; 
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10;  
 
                 window.scrollTo({
                         top: offsetPosition,
@@ -1925,34 +2076,34 @@ document.getElementById("menu-config").onclick = e => {
         const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
         if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
             isAuthenticated = true;
-            submenu.style.display = submenu.style.display === "block" ? "none" : "block"; 
+            submenu.style.display = submenu.style.display === "block" ? "none" : "block";  
         } else { alert("Contraseña incorrecta."); return; }
-    } else { 
-        submenu.style.display = submenu.style.display === "block" ? "none" : "block"; 
+    } else {  
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block";  
     }
 };
 
 const openConfigScreen = (screenId) => {
-    if (!isAuthenticated && screenId !== 'user-list-screen' && screenId !== 'stats-screen') { 
+    if (!isAuthenticated && screenId !== 'user-list-screen' && screenId !== 'stats-screen') {  
         const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
         if (password && password.toLowerCase() === PASSWORD.toLowerCase()) { isAuthenticated = true; }
         else { alert("Contraseña incorrecta."); return false; }
     }
     if (isAuthenticated || screenId === 'user-list-screen' || screenId === 'stats-screen') {
-        closeAll(); 
+        closeAll();  
         const screen = document.getElementById(screenId);
         if (screen) {
-            screen.style.display = "block"; 
-            if (screenId === 'user-list-screen') { 
-                renderUsers(); 
+            screen.style.display = "block";  
+            if (screenId === 'user-list-screen') {  
+                renderUsers();  
             }
-            screen.scrollTop = 0; 
+            screen.scrollTop = 0;  
         } else {
              console.error(`Pantalla ${screenId} no encontrada.`);
         }
         return true;
     }
-    return false; 
+    return false;  
 }
 
 document.getElementById("menu-setlist-config").onclick = e => {
@@ -1983,7 +2134,7 @@ document.getElementById("guardar-setlist-config").onclick = async () => {
         setlistConfig.setlistStar={name:nStar, url:uStar};
         await saveSetlistConfig();
         await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
-        document.getElementById("setlist-config-screen").style.display="none"; 
+        document.getElementById("setlist-config-screen").style.display="none";  
     } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message; }
 };
 
@@ -2006,7 +2157,7 @@ document.getElementById("add-user").onclick = async () => {
             msg.textContent="Usuario actualizado.";
         } else { users.push({name,nickname,roles}); msg.textContent="Usuario añadido."; }
         await saveUsers();
-        msg.className="success-message"; 
+        msg.className="success-message";  
         resetUserForm();
     } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message; }
 };
@@ -2024,14 +2175,14 @@ document.getElementById("add-rehearsal").onclick = async () => {
     if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return;}
     if(calculateDuration(startTime,endTime)<=0){msg.className="error-message";msg.textContent="Hora fin posterior a inicio.";return;}
     try{
-        const newData={date,startTime,endTime,location:loc,attendance:[]}; 
+        const newData={date,startTime,endTime,location:loc,attendance:[]};  
         if(editingRehearsalIndex!==null){
-            newData.attendance=rehearsals[editingRehearsalIndex].attendance||[]; 
+            newData.attendance=rehearsals[editingRehearsalIndex].attendance||[];  
             rehearsals[editingRehearsalIndex]=newData;
             msg.textContent="Ensayo actualizado.";
         } else { rehearsals.push(newData); msg.textContent="Ensayo añadido."; }
         await saveRehearsals();
-        msg.className="success-message"; 
+        msg.className="success-message";  
         resetRehearsalForm();
     } catch(e){ msg.className="error-message"; msg.textContent="Error al guardar: "+e.message;}
 };
@@ -2041,9 +2192,9 @@ document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(op
 document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
 document.getElementById("stats-month-filter").addEventListener("change", renderStats);
 
-document.getElementById("menu-user-list-display").onclick = e => { 
-    e.preventDefault(); 
-    openConfigScreen("user-list-screen"); 
+document.getElementById("menu-user-list-display").onclick = e => {  
+    e.preventDefault();  
+    openConfigScreen("user-list-screen");  
 };
 document.getElementById("close-user-list-screen").onclick = () => {
     document.getElementById("user-list-screen").style.display = "none";
@@ -2052,6 +2203,26 @@ document.getElementById("close-user-list-screen").onclick = () => {
 
 /* ---------- 12. Carga inicial ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
+  // --- Splash Screen Logic START ---
+  const splashScreen = document.getElementById('splash-screen');
+  if (splashScreen) {
+    const visibleDuration = 1000; // Mostrar durante 1 segundo
+    const exitAnimationDuration = 800; // Duración de la animación de salida (0.8s = 800ms)
+
+    // Ocultar el splash screen después de visibleDuration
+    setTimeout(() => {
+      splashScreen.classList.add('hidden'); // Añade la clase para iniciar la animación de salida
+
+      // Establecer display: none después de que termine la animación de salida
+      setTimeout(() => {
+        if (splashScreen.parentNode) { // Buena práctica verificar si aún existe
+           splashScreen.style.display = 'none';
+        }
+      }, exitAnimationDuration);
+    }, visibleDuration);
+  }
+  // --- Splash Screen Logic END ---
+
   console.log("[DOMContentLoaded] Iniciando carga de la aplicación.");
   updateConnectionStatus();
   try {
@@ -2061,22 +2232,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
 
   // items1, items2, itemsStar contendrán la estructura procesada por cargarSetlistGenerico
-  let items1 = [], items2 = [], itemsStar = []; 
-  try { 
+  let items1 = [], items2 = [], itemsStar = [];  
+  try {  
     console.log("[DOMContentLoaded] Cargando primer setlist...");
-    items1 = await cargarPrimerSetlist(); 
+    items1 = await cargarPrimerSetlist();  
     console.log("[DOMContentLoaded] Primer setlist cargado:", items1 ? items1.length : 0, "bloques/items.");
   } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Ensayo:", e); }
   
-  try { 
+  try {  
     console.log("[DOMContentLoaded] Cargando segundo setlist...");
-    items2 = await cargarSegundoSetlist(); 
+    items2 = await cargarSegundoSetlist();  
     console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "bloques/items.");
   } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Próx. Concierto:", e); }
   
-  try { 
+  try {  
     console.log("[DOMContentLoaded] Cargando setlist estrella...");
-    itemsStar = await cargarStarSetlist(); 
+    itemsStar = await cargarStarSetlist();  
     console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "bloques/items.");
   } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Estrella:", e); }
 
@@ -2089,8 +2260,57 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("download-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
   document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
   
+  // --- NUEVOS MANEJADORES PARA PDF PERSONAL ---
+  document.getElementById("download-personal-btn").onclick = () => {
+      if (items1 && items1.length > 0) {
+          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+          if (fontSizeInput) {
+              const fontSize = parseInt(fontSizeInput, 10);
+              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) { // Validación básica
+                  genPersonalPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name, fontSize);
+              } else {
+                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
+              }
+          }
+      } else {
+          alert("No hay elementos en Setlist Ensayo para generar un PDF personal.");
+      }
+  };
+
+  document.getElementById("download-personal-btn-2").onclick = () => {
+      if (items2 && items2.length > 0) {
+          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+          if (fontSizeInput) {
+              const fontSize = parseInt(fontSizeInput, 10);
+              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
+                  genPersonalPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name, fontSize);
+              } else {
+                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
+              }
+          }
+      } else {
+          alert("No hay elementos en Setlist Próximo Concierto para generar un PDF personal.");
+      }
+  };
+
+  document.getElementById("download-personal-btn-star").onclick = () => {
+      if (itemsStar && itemsStar.length > 0) {
+          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+          if (fontSizeInput) {
+              const fontSize = parseInt(fontSizeInput, 10);
+              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
+                  genPersonalPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name, fontSize);
+              } else {
+                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
+              }
+          }
+      } else {
+          alert("No hay elementos en Setlist Estrella para generar un PDF personal.");
+      }
+  };
+
   console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
-  setTimeout(processBandHelperTable, 2000); 
+  setTimeout(processBandHelperTable, 2000);  
   console.log("[DOMContentLoaded] Carga de la aplicación completada.");
 });
 </script>
