@@ -41,7 +41,7 @@
       z-index: 200000; 
       opacity: 1;
       visibility: visible;
-      transition: opacity 0.8s ease-out, transform 0.8s ease-out, visibility 0.8s linear; 
+      transition: opacity 0.8s ease-out, transform 0.8s ease-out, visibility 0s linear 0.8s; 
       transform: scale(1);
     }
 
@@ -378,13 +378,13 @@
     <h2>Configuración de Setlists</h2>
     <h3>Setlist Próximo Ensayo</h3>
     <label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025">
-    <label>ID/URL feed</label><input id="setlist1-url" placeholder="URL">
+    <label>ID/URL feed</label><input id="setlist1-url" placeholder="URL (vacío para ocultar)">
     <h3>Setlist Próximo Concierto</h3>
     <label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad">
-    <label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa">
+    <label>ID/URL feed</label><input id="setlist2-url" placeholder="URL (vacío para ocultar)">
     <h3>Setlist Concierto Estrella</h3>
     <label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025">
-    <label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL">
+    <label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL (vacío para ocultar)">
     <button id="guardar-setlist-config">Guardar Configuración</button>
     <p id="setlist-message" class="error-message"></p>
   </div>
@@ -490,7 +490,7 @@
   </audio>
 
 <script>
-// El script completo va aquí
+// El script completo y formateado va aquí.
 </script>
 </body>
 </html>
