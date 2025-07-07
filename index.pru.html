@@ -275,6 +275,86 @@
     .stats-filter label { color: #0cf; }
     .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
     #firebase-critical-error-banner { background-color: red; color: white; padding: 15px; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 100001; font-weight: bold; }
+    
+    /* ---------- Estilos Tablón de Anuncios ---------- */
+    #announcements-section {
+      background: #111;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, .1);
+      margin-bottom: 40px;
+    }
+    #announcements-section h2 {
+      text-align: center;
+      color: #0cf;
+      margin-bottom: 20px;
+    }
+    #announcements-section .form-container {
+      max-width: 800px;
+      margin: 0 auto 30px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      border: 1px solid #222;
+      border-radius: 8px;
+    }
+    #add-announcement-form textarea, #add-announcement-form input {
+      width: 100%;
+      padding: 10px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #333;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    #add-announcement-form .form-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    #add-announcement-form input {
+      flex-grow: 1;
+      margin-bottom: 0;
+    }
+    #add-announcement-form button {
+      padding: 10px 15px;
+      background: #0cf;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    #add-announcement-form button:hover {
+      background: #09b;
+    }
+    #announcements-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .announcement-item {
+      background: #1c1c1c;
+      border-left: 4px solid #0cf;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    .announcement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 0.9em;
+      color: #aaa;
+    }
+    .announcement-author {
+      font-weight: bold;
+      color: #0cf;
+    }
+    .announcement-body {
+      white-space: pre-wrap; /* Para respetar saltos de línea y espacios */
+      color: #eee;
+      line-height: 1.6;
+    }
 
     @media(max-width:768px){
       header { height: 55px; padding: 8px 15px; }  
@@ -463,7 +543,26 @@
       </div>
       <p id="total-time"></p>
     </section>
+    
     <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
+
+    <section id="announcements-section">
+      <h2>Tablón de Anuncios</h2>
+      <div class="form-container">
+        <h4>Añadir un nuevo anuncio</h4>
+        <form id="add-announcement-form">
+          <textarea id="announcement-text" placeholder="Escribe tu mensaje aquí..." required rows="3"></textarea>
+          <div class="form-row">
+            <input type="text" id="announcement-author" placeholder="Tu nombre o apodo" required>
+            <button type="submit" id="add-announcement-btn">Publicar Anuncio</button>
+          </div>
+        </form>
+        <p id="announcement-message" class="success-message"></p>
+      </div>
+      <div id="announcements-list">
+        </div>
+    </section>
+
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
@@ -475,6 +574,7 @@
       </div>
       <p id="total-time-2"></p>
     </section>
+    
     <section id="star-setlist">
       <h2>Setlist Concierto Estrella</h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
@@ -486,6 +586,7 @@
       </div>
       <p id="total-time-star"></p>
     </section>
+    
     <section id="calendario"> <h2>Próximos Conciertos</h2> <div id="bandhelper-concerts-container"> <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script> <p id="bandhelper-loading-message" style="display:none;">Procesando conciertos...</p> </div> </section>
   </main>
 
@@ -621,6 +722,20 @@ function generateICS(title, date, startTime, location, description = "", duratio
 
 const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
 const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|#$.[\]]/g, '_').replace(/\s+/g, '_');
+
+// Convierte un timestamp de Firestore a un string legible
+const formatTimestamp = (timestamp) => {
+  if (!timestamp || !timestamp.toDate) return 'Fecha desconocida';
+  const date = timestamp.toDate();
+  return date.toLocaleString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 
 /* ---------- 1.5. Manejo de conexión ---------- */
 const connectionStatus = document.getElementById("connection-status"); 
@@ -913,6 +1028,99 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 const cargarPrimerSetlist = () => cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
 const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto");
 const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella");
+
+/* ---------- 5. Tablón de Anuncios ---------- */
+let announcements = [];
+
+// Renderiza la lista de anuncios en el HTML
+function renderAnnouncements() {
+  const listContainer = document.getElementById('announcements-list');
+  if (!listContainer) return;
+
+  // Ordenar por fecha, del más nuevo al más viejo
+  announcements.sort((a, b) => b.timestamp.seconds - a.timestamp.seconds);
+
+  if (announcements.length === 0) {
+    listContainer.innerHTML = '<p style="text-align:center; color:#888;">No hay anuncios todavía. ¡Sé el primero en publicar!</p>';
+    return;
+  }
+
+  listContainer.innerHTML = announcements.map(ann => `
+    <div class="announcement-item">
+      <div class="announcement-header">
+        <span class="announcement-author">${decodeHtmlEntities(ann.author)}</span>
+        <span class="announcement-date">${formatTimestamp(ann.timestamp)}</span>
+      </div>
+      <p class="announcement-body">${decodeHtmlEntities(ann.text)}</p>
+    </div>
+  `).join('');
+}
+
+// Carga los anuncios desde Firestore
+async function loadAnnouncements() {
+  try {
+    const snapshot = await db.collection('announcements').get();
+    announcements = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderAnnouncements();
+  } catch (e) {
+    console.error("Error al cargar los anuncios:", e);
+    const listContainer = document.getElementById('announcements-list');
+    if(listContainer) listContainer.innerHTML = '<p class="error-message">No se pudieron cargar los anuncios.</p>';
+  }
+}
+
+// Event listener para el formulario de añadir anuncio
+document.getElementById('add-announcement-form').addEventListener('submit', async (e) => {
+  e.preventDefault(); // Evita que la página se recargue
+
+  const textInput = document.getElementById('announcement-text');
+  const authorInput = document.getElementById('announcement-author');
+  const addButton = document.getElementById('add-announcement-btn');
+  const messageEl = document.getElementById('announcement-message');
+
+  const text = textInput.value.trim();
+  const author = authorInput.value.trim();
+
+  if (!text || !author) {
+    messageEl.className = "error-message";
+    messageEl.textContent = "El mensaje y el autor no pueden estar vacíos.";
+    return;
+  }
+
+  // Feedback visual
+  addButton.disabled = true;
+  addButton.textContent = 'Publicando...';
+  messageEl.textContent = "";
+
+  try {
+    const newAnnouncement = {
+      text: text,
+      author: author,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp() // Fecha y hora del servidor
+    };
+    await db.collection('announcements').add(newAnnouncement);
+
+    // Limpiar formulario y mostrar éxito
+    textInput.value = '';
+    messageEl.className = "success-message";
+    messageEl.textContent = "¡Anuncio publicado con éxito!";
+
+    // Recargar la lista de anuncios para mostrar el nuevo
+    await loadAnnouncements();
+
+  } catch (error) {
+    console.error("Error al publicar el anuncio:", error);
+    messageEl.className = "error-message";
+    messageEl.textContent = "Error al publicar: " + error.message;
+  } finally {
+    // Reactivar el botón
+    addButton.disabled = false;
+    addButton.textContent = 'Publicar Anuncio';
+    
+    // Ocultar mensaje después de unos segundos
+    setTimeout(() => { messageEl.textContent = ""; }, 3000);
+  }
+});
 
 /* ---------- 6. Usuarios ---------- */
 let users = []; 
@@ -2384,9 +2592,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateConnectionStatus();
    
   try {
-      console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
-      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
-      console.log("[DOMContentLoaded] Configuración, usuarios y ensayos cargados.");
+      console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios, ensayos y anuncios...");
+      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), loadAnnouncements()]);
+      console.log("[DOMContentLoaded] Configuración, usuarios, ensayos y anuncios cargados.");
   } catch (e) { 
     console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); 
   }
