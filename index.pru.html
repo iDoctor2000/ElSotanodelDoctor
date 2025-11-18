@@ -960,6 +960,77 @@ precachePdfAssets();
   
   console.log("[DOMContentLoaded] Carga de la aplicación completada.");
 });
+
+/* ========== CALENDARIO DE ENSAYOS 2025 ========== */
+let calendar = null;
+
+function initRehearsalsCalendar() {
+  const calEl = document.getElementById('rehearsals-calendar');
+  if (!calEl || calendar) return;
+
+  calendar = new FullCalendar.Calendar(calEl, {
+    initialView: 'dayGridMonth',
+    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' },
+    locale: 'es',
+    height: 'auto',
+    eventClick: function(info) {
+      const r = info.event.extendedProps.rehearsalData;
+      editingRehearsalIndex = rehearsals.findIndex(x => x.date === r.date && x.startTime === r.startTime);
+      document.getElementById('rehearsal-date').value = r.date;
+      document.getElementById('rehearsal-start-time').value = r.startTime;
+      document.getElementById('rehearsal-end-time').value = r.endTime;
+      document.getElementById('rehearsal-location').value = r.location;
+      document.getElementById('add-rehearsal').textContent = "Guardar Cambios";
+      document.getElementById('cancel-edit-rehearsal').style.display = "inline-block";
+      openConfigScreen('rehearsal-screen');
+    },
+    eventContent: function(arg) {
+      return { html: `<div style="padding:4px;font-size:0.9em"><b>${arg.timeText}</b><br>${arg.event.title}<br><i>${arg.event.extendedProps.location}</i></div>` };
+    }
+  });
+  calendar.render();
+}
+
+window.refreshRehearsalsDisplay = function() {
+  if (!calendar) return;
+  calendar.getEvents().forEach(ev => ev.remove());
+  rehearsals.forEach(r => {
+    calendar.addEvent({
+      title: 'Ensayo',
+      start: r.date + 'T' + r.startTime,
+      end: r.date + 'T' + r.endTime,
+      backgroundColor: '#ff6600',
+      borderColor: '#ff4400',
+      textColor: 'white',
+      extendedProps: { location: r.location, rehearsalData: r }
+    });
+  });
+  if (typeof renderRehearsalsTable === 'function') renderRehearsalsTable();
+};
+
+// Iniciar calendario y refrescar al cargar
+document.addEventListener('DOMContentLoaded', () => {
+  initRehearsalsCalendar();
+  // Refrescar cuando se carguen los ensayos (después de loadRehearsals)
+  setTimeout(() => refreshRehearsalsDisplay(), 2000); // espera a que rehearsals esté cargado
+});
+
+// Botón + abre el formulario
+document.getElementById('floating-add-rehearsal')?.addEventListener('click', () => {
+  resetRehearsalForm();
+  document.getElementById('add-rehearsal').textContent = "Añadir Ensayo";
+  document.getElementById('cancel-edit-rehearsal').style.display = "none";
+  openConfigScreen('rehearsal-screen');
+});
+
+// Refrescar calendario cada vez que se guarde un ensayo
+const oldSaveRehearsals = saveRehearsals;
+window.saveRehearsals = async function() {
+  await oldSaveRehearsals();
+  refreshRehearsalsDisplay();
+};
+
+  
 </script>
 </body>
 </html>
