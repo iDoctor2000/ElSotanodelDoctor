@@ -6,7 +6,10 @@
   .table-wrapper table{min-width:600px}
   .table-wrapper thead th{position:sticky;top:0;background:#222;z-index:10}
 </style>
-  
+
+  <!-- CALENDARIO BONITO PARA ENSAYOS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   
   <head>
   <meta charset="UTF-8" />
@@ -32,6 +35,28 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
+
+    /* Botón flotante + más bonito en móviles */
+#floating-add-rehearsal {
+  transition: all 0.3s ease;
+}
+#floating-add-rehearsal:hover {
+  transform: scale(1.15);
+  box-shadow: 0 8px 25px rgba(0,255,255,0.6) !important;
+}
+#floating-add-rehearsal:active {
+  transform: scale(0.95);
+}
+
+@media(max-width:768px){
+  #floating-add-rehearsal {
+    width:56px;
+    height:56px;
+    font-size:30px;
+    bottom:20px;
+    right:20px;
+  }
+}
     *,*::before,*::after{box-sizing:border-box}
     html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
     
@@ -603,12 +628,32 @@ async function saveUsers() { try { await withRetry(() => saveDoc("intranet", "us
 function resetUserForm() { document.getElementById("user-name").value = ""; document.getElementById("user-nickname").value = ""; const roleSelect = document.getElementById("user-role"); Array.from(roleSelect.options).forEach(option => option.selected = false); document.getElementById("add-user").textContent = "Añadir Usuario"; document.getElementById("cancel-edit-user").style.display = "none"; editingUserIndex = null; }
 
 /* ---------- 7. Ensayos ---------- */
-let rehearsals = []; let editingRehearsalIndex = null;
-function renderRehearsals() { const tbodyConfig=document.getElementById("rehearsal-table-body");const tbodyMain=document.getElementById("rehearsal-main-body");if(!tbodyConfig||!tbodyMain){console.error("Tablas de ensayos no encontradas en el DOM.");return} rehearsals.sort((a,b)=>new Date(a.date+'T'+(a.startTime||'00:00'))-new Date(b.date+'T'+(b.startTime||'00:00')));tbodyConfig.innerHTML=tbodyMain.innerHTML="";if(!Array.isArray(rehearsals)||rehearsals.length===0){const emptyMsgConfig='<tr><td colspan="6">No hay ensayos programados.</td></tr>';tbodyConfig.innerHTML=emptyMsgConfig;const emptyMsgMain='<tr><td colspan="5">No hay próximos ensayos.</td></tr>';tbodyMain.innerHTML=emptyMsgMain;return} const availableUsersForRehearsal=users.filter(user=>!excludedRehearsalUsers.includes(user.name));const userOptions=availableUsersForRehearsal.length>0?availableUsersForRehearsal.map(user=>`<option value="${user.name}">${user.nickname||user.name}</option>`).join(""):`<option value="" disabled>No hay usuarios disponibles</option>`;const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()); rehearsals.forEach((r,i)=>{if(r.time&&(!r.startTime||!r.endTime)){r.startTime=r.time;const[hours,minutes]=r.time.split(":").map(Number);const endHours=(hours+2)%24;r.endTime=`${String(endHours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}`;delete r.time} const formattedDate=formatDateWithDay(r.date);const durationSeconds=calculateDuration(r.startTime,r.endTime);const durationText=toHHMM(durationSeconds);const attendance=Array.isArray(r.attendance)?r.attendance:[];const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); const rehearsalDate=new Date(r.date+'T00:00:00Z');if(rehearsalDate>=today){const calendarCell=`<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;tbodyMain.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`)}}); tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block"}); tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn=>btn.onclick=async()=>{if(confirm("¿Estás seguro de que deseas eliminar este ensayo?")){rehearsals.splice(parseInt(btn.dataset.i,10),1);await saveRehearsals();renderStats()}}); tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn=>btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[index];if(confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)){rehearsal.attendance=[];await saveRehearsals();document.getElementById("rehearsal-message").textContent="Asistencias eliminadas.";renderStats()}}); tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn=>{btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const userSelect=document.querySelector(`.attendance-user[data-i="${index}"]`);const responseSelect=document.querySelector(`.attendance-response[data-i="${index}"]`);const name=userSelect.value;const attending=responseSelect.value;if(!name||!attending){alert("Selecciona nombre y respuesta.");return} const rehearsal=rehearsals[index];const confirmMsg=`${name}, ¿${attending==="Sí"?"ASISTIRÁS":"NO ASISTIRÁS"} al ensayo del ${formatDateWithDay(rehearsal.date)}?`;if(!confirm(confirmMsg))return;if(!Array.isArray(rehearsal.attendance))rehearsal.attendance=[];const existingResponse=rehearsal.attendance.find(a=>a.name===name);if(existingResponse)existingResponse.attending=attending;else rehearsal.attendance.push({name,attending});try{await saveRehearsals();userSelect.value="";responseSelect.value="";renderStats()}catch(e){alert("Error al guardar asistencia: "+e.message)}}})}
-async function loadRehearsals() { try { const data = await withRetry(() => loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); } catch (e) { console.error("Error al cargar ensayos:", e); } }
-async function saveRehearsals() { try { await withRetry(() => saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar ensayos:", e); throw e; } }
-function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; }
+<section id="rehearsals">
+  <h2>Próximos Ensayos</h2>
 
+  <!-- Calendario grande -->
+  <div id="rehearsals-calendar" style="background:#111; padding:20px; border-radius:10px; margin-bottom:30px; box-shadow:0 0 20px rgba(0,255,255,.1);"></div>
+
+  <!-- Lista clásica (opcional, para quien le guste más) -->
+  <div class="table-wrapper">
+    <table id="rehearsal-main-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Lugar</th>
+          <th class="calendar-col-header">Cal</th>
+          <th>Confirmar Asistencia</th>
+        </tr>
+      </thead>
+      <tbody id="rehearsal-main-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Botón flotante + Nuevo ensayo -->
+  <button id="floating-add-rehearsal" style="position:fixed; bottom:30px; right:30px; width:60px; height:60px; border-radius:50%; background:#0cf; color:#000; border:none; font-size:30px; box-shadow:0 4px 15px rgba(0,255,255,0.4); z-index:1000; cursor:pointer;">+</button>
+</section>
+  
 /* ---------- 8. Estadísticas ---------- */
 function updateMonthFilter() { const select=document.getElementById("stats-month-filter");select.innerHTML='<option value="all">Todos los meses</option>';const now=new Date();const pastRehearsals=rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);const months=new Set(pastRehearsals.map(r=>getMonthYear(r.date)));Array.from(months).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{select.insertAdjacentHTML("beforeend",`<option value="${month}">${month}</option>`)})}
 function getMonthIndex(monthName) { const months=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];return months.indexOf(monthName)}
@@ -936,6 +981,131 @@ precachePdfAssets();
   
   console.log("[DOMContentLoaded] Carga de la aplicación completada.");
 });
+/* ========== CALENDARIO DE ENSAYOS (nuevo 2025) ========== */
+document.addEventListener('DOMContentLoaded', function() {
+  const calendarEl = document.getElementById('rehearsals-calendar');
+  let calendar;
+
+  // Iniciar el calendario
+  calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: window.innerWidth < 768 ? 'dayGridDay' : 'dayGridMonth',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,listWeek'
+    },
+    locale: 'es',
+    height: 'auto',
+    events: [], // se rellenará después
+    eventClick: function(info) {
+      // Abrir el modal de edición con los datos del ensayo
+      const r = info.event.extendedProps.rehearsalData;
+      editingRehearsalIndex = rehearsals.findIndex(x => x.date === r.date && x.startTime === r.startTime);
+      document.getElementById('rehearsal-date').value = r.date;
+      document.getElementById('rehearsal-start-time').value = r.startTime;
+      document.getElementById('rehearsal-end-time').value = r.endTime;
+      document.getElementById('rehearsal-location').value = r.location;
+      document.getElementById('add-rehearsal').textContent = "Guardar Cambios";
+      document.getElementById('cancel-edit-rehearsal').style.display = "inline-block";
+      openConfigScreen('rehearsal-screen');
+    },
+    eventContent: function(arg) {
+      return {
+        html: `
+          <div style="padding:4px; font-size:0.9em; white-space:normal;">
+            <b>${arg.timeText}</b><br>
+            ${arg.event.title}<br>
+            <i>${arg.event.extendedProps.location}</i>
+          </div>`
+      };
+    }
+  });
+  calendar.render();
+
+  // Función para refrescar calendario + tabla
+
+  // Función para refrescar calendario + tabla (AHORA CON COLORES SEGÚN ASISTENCIA)
+  window.refreshRehearsalsDisplay = function() {
+    // Vaciar eventos actuales
+    calendar.getEvents().forEach(ev => ev.remove());
+
+    // Añadir los nuevos con colores según asistencia
+    rehearsals.forEach(r => {
+      // Calcular cuántos han dicho que sí
+      const attendance = r.attendance || [];
+      const yesCount = attendance.filter(a => a.attending === true).length;
+      const totalMusicians = users.length;
+
+      let backgroundColor = '#666666'; // gris por defecto (nadie ha contestado aún)
+      if (yesCount === totalMusicians && totalMusicians > 0) {
+        backgroundColor = '#00aa00'; // verde fuerte → todos vienen
+      } else if (yesCount >= totalMusicians * 0.7) {
+        backgroundColor = '#aadd00'; // verde lima → la mayoría viene
+      } else if (yesCount >= totalMusicians * 0.4) {
+        backgroundColor = '#ffaa00'; // naranja → mitad o menos
+      } else if (yesCount > 0) {
+        backgroundColor = '#ff6600'; // naranja-rojo → pocos vienen
+      } else if (attendance.length > 0) {
+        backgroundColor = '#cc0000'; // rojo → todos han dicho que NO
+      }
+
+      const titleText = yesCount > 0 ? `Ensayo (${yesCount}/${totalMusicians} ✅)` : 'Ensayo';
+
+      calendar.addEvent({
+        title: titleText,
+        start: `${r.date}T${r.startTime}`,
+        end: `${r.date}T${r.endTime}`,
+        backgroundColor: backgroundColor,
+        borderColor: backgroundColor,
+        textColor: 'white',
+        extendedProps: { location: r.location, rehearsalData: r }
+      });
+    });
+
+    // Actualizar también la tabla antigua
+    renderRehearsalsTable();
+  };
+  
+    // Vaciar eventos actuales
+    calendar.getEvents().forEach(ev => ev.remove());
+
+    // Añadir los nuevos
+    rehearsals.forEach(r => {
+      calendar.addEvent({
+        title: 'Ensayo',
+        start: `${r.date}T${r.startTime}`,
+        end: `${r.date}T${r.endTime}`,
+        backgroundColor: '#ff6600',
+        borderColor: '#ff4400',
+        textColor: 'white',
+        extendedProps: { location: r.location, rehearsalData: r }
+      });
+    });
+
+    // También actualizamos la tabla antigua (por si alguien la usa)
+    renderRehearsalsTable();
+  };
+
+  // Botón flotante +
+  document.getElementById('floating-add-rehearsal').addEventListener('click', () => {
+    resetRehearsalForm();
+    document.getElementById('add-rehearsal').textContent = "Añadir Ensayo";
+    openConfigScreen('rehearsal-screen');
+  });
+
+  // Cada vez que se guarde/borre un ensayo, actualizamos el calendario
+  const originalSaveRehearsals = saveRehearsals;
+  window.saveRehearsals = async function() {
+    await originalSaveRehearsals();
+    refreshRehearsalsDisplay();
+  };
+
+  // Al cargar la página por primera vez
+  refreshRehearsalsDisplay();
+});
+
+
+  
 </script>
 </body>
 </html>
