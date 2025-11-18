@@ -544,7 +544,39 @@ let setlistConfig = {setlist1:{name:"Setlist Predeterminado Ensayo",url:"URL_POR
 function updateDynamicSetlistTitles(){document.getElementById("setlist1-dynamic-name").textContent=setlistConfig.setlist1.name;document.getElementById("second-setlist-dynamic-name").textContent=setlistConfig.setlist2.name;document.getElementById("star-setlist-dynamic-name").textContent=setlistConfig.setlistStar.name}
 async function loadSetlistConfig(){try{const data=await withRetry(()=>loadDoc("intranet","setlists",{config:setlistConfig}));setlistConfig={setlist1:data.config?.setlist1||setlistConfig.setlist1,setlist2:data.config?.setlist2||setlistConfig.setlist2,setlistStar:data.config?.setlistStar||setlistConfig.setlistStar};updateDynamicSetlistTitles()}catch(e){console.error("Error al cargar la configuración de setlists:",e);updateDynamicSetlistTitles()}}
 async function saveSetlistConfig(){updateDynamicSetlistTitles();return await withRetry(()=>saveDoc("intranet","setlists",{config:setlistConfig}))}
-async function cargarSetlistGenerico(configEntry,tbodyId,totalTimeId,defaultErrorMessage){try{if(!configEntry.url||configEntry.url.startsWith("URL_POR_CONFIGURAR")){console.warn(`[cargarSetlistGenerico] URL no configurada o es placeholder para ${tbodyId}`);throw new Error("URL no configurada.")}
+// ==== NUEVO CÓDIGO 2025 ====
+const worker = new Worker('setlistWorker.js');
+
+async function cargarSetlistConWorker(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
+  const tbody = document.getElementById(tbodyId);
+  const totalElem = document.getElementById(totalTimeId);
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando setlist...</td></tr>';
+  totalElem.textContent = '';
+
+  worker.postMessage({ configEntry, tbodyId, totalTimeId, defaultErrorMessage });
+
+  return new Promise(resolve => {
+    const handler = (e) => {
+      if (e.data.tbodyId !== tbodyId) return;
+      worker.removeEventListener('message', handler);
+      if (e.data.success) {
+        tbody.innerHTML = e.data.html;
+        totalElem.textContent = e.data.totalTimeText;
+        resolve(true);
+      } else {
+        tbody.innerHTML = `<tr><td colspan="5">${e.data.error || defaultErrorMessage}</td></tr>`;
+        resolve(false);
+      }
+    };
+    worker.addEventListener('message', handler);
+  });
+}
+
+// Funciones rápidas
+const cargarPrimerSetlist   = () => cargarSetlistConWorker(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
+const cargarSegundoSetlist  = () => cargarSetlistConWorker(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto");
+const cargarStarSetlist     = () => cargarSetlistConWorker(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella");
+// ==== FIN NUEVO CÓDIGO ====
 const response=await fetch(configEntry.url);if(!response.ok){console.error(`[cargarSetlistGenerico] Error en la respuesta de la API para ${tbodyId}. Status: ${response.status}, URL: ${configEntry.url}`);throw new Error(`Error en la respuesta de la API (${response.status}): ${response.statusText}`)}
 const rawData=await response.json(); const dataToProcess=Array.isArray(rawData)?rawData:rawData.items||[];
 const processedItems=dataToProcess.map(item=>{if(!item||item.type!=="song"&&item.type!=="set"){return null}
@@ -561,9 +593,7 @@ let totalSecondsOverall=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.
 const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0); /* CAMBIO AQUÍ para HH:MM */
 tbody.insertAdjacentHTML("beforeend",`<tr class="set-header-row"><td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);totalSecondsOverall+=(blockOrItem.calculatedBlockDurationSeconds||0);blockOrItem.songs.forEach(song=>{songCount++;const songFormattedTime=toMMSS(song.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${song.displayName}</td><td>${decodeHtmlEntities(song.key||"-")}</td><td>${decodeHtmlEntities(song.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)})}else if(blockOrItem.isBreak){const breakFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)}else if(blockOrItem.isSong){songCount++;const songFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td><td>${decodeHtmlEntities(blockOrItem.key||"-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)}});
 document.getElementById(totalTimeId).textContent="Tiempo total del set: "+toHHMM(totalSecondsOverall);return setlistStructure}catch(e){console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`,e);const tbody=document.getElementById(tbodyId);if(tbody)tbody.innerHTML=`<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;const totalTimeElem=document.getElementById(totalTimeId);if(totalTimeElem)totalTimeElem.textContent="Error al calcular tiempo.";return[]}}
-const cargarPrimerSetlist = () => cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
-const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto");
-const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella");
+*************************************************************************************************************************************************************************************
 
 /* ---------- 6. Usuarios ---------- */
 let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
@@ -884,7 +914,26 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
-  setTimeout(processBandHelperTable, 2000);  
+
+  // Observador moderno para BandHelper (sin timeouts)
+new MutationObserver((mutations, obs) => {
+  const table = document.querySelector('#bandhelper-concerts-container table');
+  if (table) { obs.disconnect(); processBandHelperTable(); }
+}).observe(document.getElementById('bandhelper-concerts-container'), { childList: true, subtree: true });
+
+// Precarga fuentes y fondo PDF (solo una vez)
+let pdfAssetsReady = false;
+async function precachePdfAssets() {
+  if (pdfAssetsReady) return;
+  await Promise.all([
+    loadFontAsBase64('assets/Bleeding_Cowboys.ttf'),
+    loadFontAsBase64('assets/Carnevalee_Freakshow.ttf'),
+    getBackgroundImageDataURL().catch(() => console.warn("Fondo PDF no disponible"))
+  ]);
+  pdfAssetsReady = true;
+}
+precachePdfAssets();
+  
   console.log("[DOMContentLoaded] Carga de la aplicación completada.");
 });
 </script>
