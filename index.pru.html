@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
+<!-- Mejoras 2025: worker + tablas móviles + caché PDF -->
+<style>
+  .table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;margin-bottom:20px}
+  .table-wrapper table{min-width:600px}
+  .table-wrapper thead th{position:sticky;top:0;background:#222;z-index:10}
+</style>
+  
+  
+  <head>
   <meta charset="UTF-8" />
   <title>El Sótano del Doctor – Intranet</title>
 
@@ -12,6 +20,10 @@
   <meta property="og:image"        content="assets/logo_negro copia.jpg">
   <meta property="og:type"         content="website">
   <meta property="og:url"          content="https://tusitioweb.com">
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="El Sótano del Doctor – Intranet">
+  <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
+  <meta name="twitter:image"       content="assets/logo_negro copia.jpg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -23,108 +35,304 @@
     *,*::before,*::after{box-sizing:border-box}
     html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
     
-    /* Splash Screen */
-    #splash-screen{position:fixed;top:0;left:0;width:100vw;height:100vh;background-color:#000;display:flex;justify-content:center;align-items:center;z-index:200000;opacity:1;visibility:visible;transition:opacity .8s ease-out,transform .8s ease-out,visibility .8s linear;transform:scale(1)}
-    #splash-screen img{max-width:60%;max-height:60%;opacity:0;transform:scale(.85) translateY(15px);animation:splash-image-entry .45s cubic-bezier(.175,.885,.32,1.275) forwards}
-    @keyframes splash-image-entry{to{opacity:1;transform:scale(1) translateY(0)}}
-    #splash-screen.hidden{opacity:0;transform:scale(.95);visibility:hidden;pointer-events:none}
-    
-    /* Header & Navigation */
-    header{background:#111;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;position:fixed;top:0;left:0;width:100%;z-index:1000;border-bottom:1px solid #222;height:60px}
-    .logo img.logo-main{width:135px;height:auto;vertical-align:middle}
-    .logo-intranet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:45px;width:auto}
-    .header-controls-right{display:flex;align-items:center}
-    .header-audio-control{background:0 0;border:1px solid #0cf;color:#0cf;border-radius:4px;padding:5px;margin-right:15px;cursor:pointer;display:none;align-items:center;justify-content:center;width:37px;height:37px;transition:background-color .2s ease,transform .2s ease}
-    .header-audio-control:hover{background:#333;transform:scale(1.05)}
-    .header-audio-control svg{width:20px;height:20px}
-    .hamburger{cursor:pointer;border:1px solid #0cf;border-radius:4px;padding:5px;display:flex;flex-direction:column;justify-content:space-around;width:37px;height:37px;box-sizing:border-box}
-    .hamburger div{width:25px;height:3px;background:#0cf;margin:0 auto}
-    .sidebar{position:fixed;top:0;left:0;width:280px;height:100vh;background:#1a1a1a;border-right:1px solid #222;padding:20px;padding-top:calc(60px + 20px);box-shadow:3px 0 15px rgba(0,200,200,.15);transform:translateX(-100%);transition:transform .3s ease-in-out;z-index:9999;overflow-y:auto}
-    .sidebar.show{transform:translateX(0)}
-    .sidebar h2{color:#0cf;margin:0 0 20px}
-    .sidebar a{display:block;color:#fff;text-decoration:none;margin:12px 0;padding:10px 5px;border-bottom:1px solid #333;font-size:1em}
-    .sidebar a:last-of-type{border-bottom:none}
-    .sidebar a:hover{color:#0cf}
-    .sidebar a#menu-second-setlist-section{font-weight:700;color:#0cf!important}
-    .sidebar .submenu{margin-left:15px;margin-top:10px}
-    .sidebar .submenu a{padding:8px 0;font-size:.9em;border-top:1px solid #2a2a2a;border-bottom:none;margin:5px 0}
-    .sidebar a#menu-config{color:#ffd700;font-weight:700;margin-top:15px}
-    .sidebar a#menu-config:hover{color:#fff2a7}
-    .setlist-section-hidden{display:none!important}
-    #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);z-index:5000;display:none;opacity:0;transition:opacity .3s ease-in-out}
-    #overlay.show{display:block;opacity:1}
-    
-    /* General Layout & Modals */
-    main{padding-top:75px}
-    .modal-backdrop{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:10000;justify-content:center;align-items:center;padding:10px}
-    .modal-backdrop.show{display:flex}
-    .modal-content{background:#1a1a1a;color:#fff;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.2);width:100%;max-width:600px;max-height:90vh;overflow-y:auto;position:relative}
-    .modal-content h3{color:#0cf;margin-top:0;margin-bottom:5px}
-    .modal-content h4{color:#0cf;margin-top:15px;margin-bottom:10px}
-    .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:10001;overflow-y:auto;padding:20px;padding-top:calc(60px + 20px)}
-    .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px}
-    .config-screen .close-btn{position:absolute;top:15px;right:20px;font-size:1.2em;background:0 0;border:1px solid #0cf;color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer;z-index:10002}
-    .config-screen .close-btn:hover{background:#333}
-    
-    /* Sections & Tables */
-    main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists,#star-setlist,#rehearsals,#second-setlist,#calendario,#announcements-section{background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px}
-    #setlists h2,#star-setlist h2,#rehearsals h2,#second-setlist h2,#calendario h2,#announcements-section h2{text-align:center;color:#0cf;margin-bottom:20px}
-    .table-wrapper{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;justify-content:center}
-    table{width:100%;max-width:100%;border-collapse:collapse;margin-top:20px;color:#fff;font-size:.95em;margin-left:auto;margin-right:auto}
-    thead{background:#222;color:#0cf}
-    th,td{padding:12px;border:1px solid #333;text-align:left;white-space:normal;word-wrap:break-word}
-    
-    /* Announcement Board */
-    #announcements-section .form-container{max-width:800px;margin:0 auto 30px;padding:20px;background:#1a1a1a;border:1px solid #222;border-radius:8px}
-    #add-announcement-form textarea,#add-announcement-form input{width:100%;padding:10px;background:#222;color:#fff;border:1px solid #333;border-radius:5px;margin-bottom:10px}
-    #add-announcement-form .form-row{display:flex;gap:10px;align-items:center}
-    #add-announcement-form input{flex-grow:1;margin-bottom:0}
-    #add-announcement-form button{padding:10px 15px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer;flex-shrink:0}
-    #add-announcement-form button:hover{background:#09b}
-    #announcements-list{display:flex;flex-direction:column;gap:15px}
-    .announcement-item{background:#1c1c1c;border-left:4px solid #0cf;padding:15px;border-radius:5px;display:flex;justify-content:space-between;gap:15px}
-    .announcement-content{flex-grow:1}
-    .announcement-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:.9em;color:#aaa}
-    .announcement-author{font-weight:700;color:#0cf}
-    .announcement-body{white-space:pre-wrap;color:#eee;line-height:1.6}
-    .announcement-actions{flex-shrink:0;display:flex;flex-direction:column;gap:8px}
-    .announcement-actions button{background:#333;color:#fff;border:1px solid #555;padding:5px 10px;cursor:pointer;border-radius:4px;font-size:.85em}
-    .announcement-actions button:hover{background:#0cf;color:#000;border-color:#0cf}
-    .announcement-item textarea,.announcement-item input{width:100%;background:#333;color:#fff;border:1px solid #0cf;border-radius:4px;padding:8px;margin-bottom:10px}
-    .announcement-item .edit-actions button{margin-right:5px}
+    /* ---------- Splash Screen ---------- */
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #000000; 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 200000; 
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.8s ease-out, transform 0.8s ease-out, visibility 0.8s linear; 
+      transform: scale(1);
+    }
 
-    /* General Helpers & Status */
-    .success-message{color:#0cf;margin-top:10px;text-align:center}
-    .error-message{color:#f00;margin-top:10px;text-align:center}
-    #connection-status{position:fixed;top:calc(60px + 5px);right:10px;background:rgba(0,0,0,.8);color:#fff;padding:5px 10px;border-radius:5px;font-size:.9em;z-index:10000;display:none}
-    #connection-status.offline{background:#f00}
-    #connection-status.retrying{background:#ff9800}
-    #firebase-critical-error-banner{background-color:red;color:#fff;padding:15px;text-align:center;position:fixed;top:0;left:0;width:100%;z-index:100001;font-weight:700}
+    #splash-screen img {
+      max-width: 60%; 
+      max-height: 60%; 
+      opacity: 0;
+      transform: scale(0.85) translateY(15px); 
+      animation: splash-image-entry 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes splash-image-entry {
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0); 
+      }
+    }
+
+    #splash-screen.hidden {
+      opacity: 0;
+      transform: scale(0.95); 
+      visibility: hidden;
+      pointer-events: none; 
+    }
+    /* ---------- End Splash Screen ---------- */
+
+    header{
+        background:#111;
+        padding:10px 20px;  
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        position:fixed;  
+        top:0;
+        left:0;
+        width:100%;
+        z-index:1000;  
+        border-bottom: 1px solid #222;  
+        height: 60px;  
+    }
+    .logo img.logo-main{
+        width: 135px;  
+        height:auto;
+        vertical-align: middle;  
+    }
+    .logo-intranet{
+        position:absolute;
+        left:50%;
+        top:50%;  
+        transform:translate(-50%,-50%);
+        height:45px;  
+        width:auto;
+    }
+
+    .header-controls-right { 
+        display: flex;
+        align-items: center;
+    }
+
+    .header-audio-control { 
+        background: none;
+        border: 1px solid #0cf; 
+        color: #0cf;            
+        border-radius: 4px;
+        padding: 5px;          
+        margin-right: 15px;    
+        cursor: pointer;
+        display: none; 
+        align-items: center;
+        justify-content: center;
+        width: 37px; 
+        height: 37px; 
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    .header-audio-control:hover {
+        background: #333; 
+        transform: scale(1.05);
+    }
+    .header-audio-control svg {
+        width: 20px; 
+        height: 20px;
+    }
+
+    .hamburger{
+        cursor:pointer;
+        border:1px solid #0cf;
+        border-radius:4px;
+        padding:5px;
+        display: flex; 
+        flex-direction: column;
+        justify-content: space-around; 
+        width: 37px; 
+        height: 37px; 
+        box-sizing: border-box;
+    }
+    .hamburger div{width:25px;height:3px;background:#0cf;margin:0 auto;} 
     
-    @media (max-width:768px){
-        .announcement-item{flex-direction:column}
-        header{height:55px;padding:8px 15px}
-        .logo img.logo-main{width:110px}
-        .logo-intranet{height:35px}
-        main{padding-top:65px}
-        table{font-size:.85em}
+    .sidebar{
+        position:fixed;
+        top:0;  
+        left:0;
+        width:280px;  
+        height:100vh;  
+        background:#1a1a1a;  
+        border-right:1px solid #222;
+        padding: 20px;
+        padding-top: calc(60px + 20px);  
+        box-shadow:3px 0 15px rgba(0,200,200,.15);  
+        transform:translateX(-100%);  
+        transition:transform .3s ease-in-out;
+        z-index:9999;  
+        overflow-y: auto;
+    }
+    .sidebar.show{
+        transform:translateX(0);  
+    }
+    .sidebar h2{color:#0cf;margin:0 0 20px 0;}
+    .sidebar a{display:block;color:#fff;text-decoration:none;margin:12px 0;padding:10px 5px;border-bottom:1px solid #333; font-size: 1em;}
+    .sidebar a:last-of-type { border-bottom: none; }
+    .sidebar a:hover{color:#0cf}
+
+    /* Estilo específico para "Setlist Próximo Concierto" */
+    .sidebar a#menu-second-setlist-section {
+        font-weight: bold;
+        color: #0cf !important; /* Usamos !important para asegurar que sobreescriba el color base si es necesario */
+    }
+    /* Opcional: Si quieres un hover diferente para este enlace específico */
+    /* .sidebar a#menu-second-setlist-section:hover { */
+    /* color: #09b !important; /* Un azul un poco más oscuro o diferente */
+    /* } */
+
+    .sidebar .submenu { margin-left: 15px; margin-top: 10px; }
+    .sidebar .submenu a { padding: 8px 0; font-size: 0.9em; border-top: 1px solid #2a2a2a; border-bottom: none; margin: 5px 0;}
+    .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; }  
+    .sidebar a#menu-config:hover { color: #fff2a7; }
+    
+    #overlay{
+        position:fixed;top:0;left:0;width:100%;height:100%;
+        background:rgba(0,0,0,.75);  
+        z-index:5000;  
+        display:none;
+        opacity: 0;
+        transition: opacity .3s ease-in-out;
+    }
+    #overlay.show{display:block; opacity: 1;}
+    
+    main { padding-top: 75px; }
+    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 10px; }
+    .modal-backdrop.show { display: flex; }
+    .modal-content { background: #1a1a1a; color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; }
+    .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 5px; }  
+    .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
+    #concert-detail-title-display { color: #fff; font-size: 1em; font-weight: normal; margin-top: 0px; margin-bottom: 20px; text-align: left; border-bottom: 1px solid #333; padding-bottom: 10px; padding-left: 0px; }
+    #concert-detail-title-display .concert-date { font-style: italic; font-size: 0.9em; margin-left: 8px; }
+    .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
+    .modal-content input[type="text"], .modal-content input[type="url"], .modal-content input[type="time"], .modal-content textarea { width: 100%; padding: 10px; background: #222; color: #fff; border: 1px solid #333; border-radius: 5px; margin-bottom: 15px; }
+    .modal-content textarea { min-height: 80px; resize: vertical; }
+    .modal-content button { padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px; margin-top: 10px; }
+    .modal-content button:hover { background: #09b; }
+    .modal-content .modal-close-btn { background: #444; color: #fff; }
+    .modal-content .modal-close-btn:hover { background: #555; }
+    #musicians-attendance-list { border: 1px solid #333; padding: 10px; margin-bottom:15px; }
+    #musicians-attendance-list div { margin-bottom: 8px; display: flex; align-items: center; }
+    #musicians-attendance-list label { color: #fff; margin-left: 8px; font-weight: normal; cursor: pointer; }
+    #musicians-attendance-list input[type="checkbox"] { vertical-align: middle; width: 18px; height: 18px; cursor: pointer; }
+    .modal-field-group { display: flex; gap: 15px; flex-wrap: wrap; }
+    .modal-field-group > div { flex: 1; min-width: 200px; }
+    .modal-field-group input[type="time"] { text-align: left; }
+    .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000; z-index:10001; overflow-y:auto; padding: 20px; padding-top: calc(60px + 20px); }
+    .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px;}  
+    .config-screen h3{color:#0cf;margin:20px 0 10px}
+    .config-screen label{display:block;margin:10px 0 5px}
+    .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff; border:1px solid #333;border-radius:5px}
+    .config-screen select[multiple] { height: 150px; }
+    .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
+    .config-screen button:hover{background:#09b}
+    .config-screen .close-btn{ position:absolute; top:15px; right:20px; font-size:1.2em;background:none;border:1px solid #0cf; color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer; z-index: 10002; }
+    .config-screen .close-btn:hover{background:#333}
+    main section{max-width:1200px;margin:0 auto;padding:20px}
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px }
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 { text-align:center;color:#0cf;margin-bottom:5px }
+    .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
+    .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
+    table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
+    thead{background:#222;color:#0cf}
+    th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
+    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5) { text-align: center; }
+    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5) { text-align: center; }
+    .break-row td { font-style: italic; color: #ccc; background-color: #161616; }
+    .break-row td:first-child { color: #777; text-align: center; }
+    .break-row td:nth-child(3), .break-row td:nth-child(4), .break-row td:nth-child(5) { text-align: center; }
+    .set-header-row td { font-weight: bold; text-align: center; background-color: #383838; color: #0cf; padding-top: 12px; padding-bottom: 12px; border-top: 1px solid #505050 !important; border-bottom: 1px solid #505050 !important; }
+    th.calendar-col-header, td.calendar-col { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
+    th.details-col-header { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
+    tr:nth-child(even):not(.set-header-row):not(.break-row){background:#1a1a1a}
+    .download-btn{display:inline-block;margin:20px 5px 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
+    .download-btn:hover{background:#09b}
+    #total-time, #total-time-star, #total-time-2{color:#0cf;margin-top:10px;text-align:center}
+    footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
+    .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 0; vertical-align: middle; }
+    .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
+    .calendar-btn:hover svg { fill: #09b; }
+    .details-btn { font-size: 1.5em; color: #0cf; }
+    .details-btn:hover { color: #09b; }
+    .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .edit-user, .edit-rehearsal { background: #0cf; color: #000; }
+    .clear-attendance { background: #ff9800; }
+    .delete-user:hover, .delete-rehearsal:hover { background: #d00; }
+    .edit-user:hover, .edit-rehearsal:hover { background: #09b; }
+    .clear-attendance:hover { background: #e68900; }
+    #cancel-edit-user, #cancel-edit-rehearsal { background: #666; color: #fff; }
+    #cancel-edit-user:hover, #cancel-edit-rehearsal:hover { background: #555; }
+    .attendance-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .attendance-form select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; }
+    .attendance-form button { padding: 5px 10px; background: #0cf; color: #000; border: none; border-radius: 4px; cursor: pointer; }
+    .attendance-form button:hover { background: #09b; }
+    .attendance-summary { margin-top: 10px; font-size: 0.9em; }
+    .attendance-summary span { display: block; }
+    .attending-yes { color: #0cf; }
+    .attending-no { color: #f00; }
+    .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; }
+    #connection-status { position: fixed; top: calc(60px + 5px); right: 10px; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none; }
+    #connection-status.offline { background: #f00; }
+    #connection-status.retrying { background: #ff9800; }
+    .success-message { color: #0cf; margin-top: 10px; text-align: center; }
+    .error-message { color: #f00; margin-top: 10px; text-align: center; }
+    .stats-table { margin-bottom: 40px; }
+    .stats-table h3 { color: #0cf; margin: 20px 0 10px; text-align: center; }
+    .stats-filter { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .stats-filter label { color: #0cf; }
+    .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
+    #firebase-critical-error-banner { background-color: red; color: white; padding: 15px; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 100001; font-weight: bold; }
+
+    @media(max-width:768px){
+      header { height: 55px; padding: 8px 15px; }  
+      .logo img.logo-main{ width: 110px; }
+      .logo-intranet{height:35px}
+      .header-audio-control { margin-right: 10px; width: 35px; height: 35px; }
+      .header-audio-control svg { width: 18px; height: 18px; }
+      .hamburger { width: 35px; height: 35px; }
+      .hamburger div{width:20px;}
+      .sidebar{ width:260px; padding-top: calc(55px + 15px); }
+      main { padding-top: 65px; }
+      .config-screen { padding-top: calc(55px + 15px); }
+      .config-screen .close-btn{ top:10px; right:15px; }
+      #connection-status { top: calc(55px + 5px); right: 5px; font-size: 0.8em; }
+      .attendance-form { flex-direction: column; align-items: flex-start; }
+      .attendance-form select { width: 100%; }
+      .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
+      .table-wrapper { overflow-x: hidden; }  
+      table { width: 100%; min-width: unset; font-size: 0.85em; }
+      th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
+      th.calendar-col-header, td.calendar-col, th.details-col-header { width: 40px; padding: 8px 2px;}  
+      #second-setlist .table-wrapper table, #star-setlist .table-wrapper table { min-width: unset; }
+      .stats-table table { font-size: 0.85em; }
+      .modal-content { width: 95%; padding: 15px; }  
+      .modal-field-group { flex-direction: column; }  
     }
   </style>
 </head>
 
 <body>
-  <div id="splash-screen"><img src="assets/Logo Sobre negro1.png" alt="Cargando El Sótano del Doctor..."></div>
-  <div id="firebase-critical-error-banner" style="display:none;">ERROR CRÍTICO: La configuración de Firebase no es válida.</div>
+  <div id="splash-screen">
+    <img src="assets/Logo Sobre negro1.png" alt="Cargando El Sótano del Doctor...">
+  </div>
+  <div id="firebase-critical-error-banner" style="display:none;">
+    ERROR CRÍTICO: La configuración de Firebase no es válida o es un placeholder. La aplicación puede no funcionar correctamente. Contacta al administrador.
+  </div>
   <div id="connection-status"></div>
 
   <header>
-    <div class="logo"><img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main"></div>
+    <div class="logo">
+      <img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main">
+    </div>
     <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
     <div class="header-controls-right">
-        <button id="site-audio-control-button" class="header-audio-control" title="Activar sonido" style="display: none;">
-            <svg class="icon-muted" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/></svg>
-            <svg class="icon-unmuted" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M12.4 4.42a1.19 1.19 0 00-1.75 1.05v13.1a1.19 1.19 0 001.75 1.05l4.91-3.3H19a1 1 0 001-1.07V9.72a1 1 0 00-1-1.07h-1.66zm6.1 2.51a6.73 6.73 0 010 10.14M16 9.48a3.23 3.23 0 010 5M4 9.72v4.56a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.65H5a1 1 0 00-1 1.07z"/></svg>
+        <button id="site-audio-control-button" class="header-audio-control" title="Activar sonido" style="display: none;"> 
+            <svg class="icon-muted" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/>
+            </svg>
+            <svg class="icon-unmuted" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+                <path d="M12.4 4.42a1.19 1.19 0 00-1.75 1.05v13.1a1.19 1.19 0 001.75 1.05l4.91-3.3H19a1 1 0 001-1.07V9.72a1 1 0 00-1-1.07h-1.66zm6.1 2.51a6.73 6.73 0 010 10.14M16 9.48a3.23 3.23 0 010 5M4 9.72v4.56a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.65H5a1 1 0 00-1 1.07z"/>
+            </svg>
         </button>
         <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
     </div>
@@ -139,15 +347,116 @@
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#" id="menu-stats">Estadísticas</a>
-    <a href="#" id="menu-user-list-display">Usuarios Registrados</a>
+    <a href="#" id="menu-user-list-display">Usuarios Registrados</a>  
     <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
-        <a href="#" id="menu-setlist-config">Configurar Setlists</a>
-        <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
-        <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
+      <a href="#" id="menu-setlist-config">Configurar Setlists</a>
+      <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
+      <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
+
+  <div id="concert-details-modal" class="modal-backdrop">
+    <div class="modal-content">
+        <h3>Detalles del Concierto</h3>
+        <h4 id="concert-detail-title-display"></h4>  
+        <input type="hidden" id="concert-detail-id">
+        <label for="concert-detail-location">Detalles adicionales de la ubicación:</label>
+        <textarea id="concert-detail-location"></textarea>
+        <label for="concert-detail-gmaps-link">Enlace de Google Maps (Lugar Evento):</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+            <input type="url" id="concert-detail-gmaps-link" placeholder="https://maps.app.goo.gl/example" style="flex-grow: 1; margin-bottom: 0;">
+            <button id="open-gmaps-link-btn" style="display:none; padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; line-height: 1.5;">Abrir Mapa</button>
+        </div>
+        <div class="modal-field-group">
+            <div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div>
+            <div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div>
+        </div>
+        <div class="modal-field-group">
+            <div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div>
+            <div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div>
+        </div>
+        <label for="concert-detail-notes">Notas generales:</label>
+        <textarea id="concert-detail-notes"></textarea>
+        <h4>Músicos Asistentes al Concierto</h4>
+        <div id="musicians-attendance-list"></div>
+        <button id="save-concert-details">Guardar Detalles</button>
+        <button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button>
+        <p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p>
+    </div>
+  </div>
+
+  <div id="setlist-config-screen" class="config-screen">
+    <button class="close-btn" id="close-setlist-config">Cerrar</button>
+    <h2>Configuración de Setlists</h2>
+    <h3>Setlist Próximo Ensayo</h3>
+    <label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025">
+    <label>ID/URL feed</label><input id="setlist1-url" placeholder="URL">
+    <h3>Setlist Próximo Concierto</h3>
+    <label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad">
+    <label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa">
+    <h3>Setlist Concierto Estrella</h3>
+    <label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025">
+    <label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL">
+    <button id="guardar-setlist-config">Guardar Configuración</button>
+    <p id="setlist-message" class="error-message"></p>
+  </div>
+
+  <div id="user-mgmt-screen" class="config-screen">
+    <button class="close-btn" id="close-user-mgmt">Cerrar</button>
+    <h2>Gestión de Usuarios</h2>
+    <label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label>
+    <select id="user-role" multiple>
+      <option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option>
+      <option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option>
+      <option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option>
+      <option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option>
+      <option value="Montador">Montador</option><option value="Coros">Coros</option>
+    </select>
+    <button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button>
+    <p id="user-message" class="error-message"></p>
+    <table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table>
+  </div>
+
+  <div id="rehearsal-screen" class="config-screen">
+    <button class="close-btn" id="close-rehearsal">Cerrar</button>
+    <h2>Asignación de Ensayos</h2>
+    <label>Fecha</label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time">
+    <label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1">
+    <button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button>
+    <p id="rehearsal-message" class="error-message"></p>
+    <table id="rehearsal-table">
+      <thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead>
+      <tbody id="rehearsal-table-body"></tbody>
+    </table>
+  </div>
+
+  <div id="stats-screen" class="config-screen">
+    <button class="close-btn" id="close-stats">Cerrar</button>
+    <h2>Estadísticas</h2>
+    <div class="stats-filter"><label>Filtrar por mes:</label><select id="stats-month-filter"><option value="all">Todos los meses</option></select></div>
+    <div class="stats-table"><h3>Tiempo Ensayado por Mes</h3><table id="time-per-month-table"><thead><tr><th>Mes</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-month-body"></tbody></table></div>
+    <div class="stats-table"><h3>Tiempo Ensayado por Usuario</h3><table id="time-per-user-table"><thead><tr><th>Usuario</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-user-body"></tbody></table></div>
+    <div class="stats-table"><h3>Ensayos Pasados</h3><div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Asistencias</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div></div>
+  </div>
+
+  <div id="user-list-screen" class="config-screen">
+    <button class="close-btn" id="close-user-list-screen">Cerrar</button>
+    <h2>Usuarios Registrados</h2>
+    <div class="table-wrapper" style="padding: 0 10px;">  
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apodo</th>
+                    <th>Roles</th>
+                </tr>
+            </thead>
+            <tbody id="users-body"></tbody>
+        </table>
+    </div>
+  </div>
 
   <main>
     <section id="setlists">
@@ -161,25 +470,7 @@
       </div>
       <p id="total-time"></p>
     </section>
-    
     <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
-
-    <section id="announcements-section">
-      <h2>Tablón de Anuncios</h2>
-      <div class="form-container">
-        <h4>Añadir un nuevo anuncio</h4>
-        <form id="add-announcement-form">
-          <textarea id="announcement-text" placeholder="Escribe tu mensaje aquí..." required rows="3"></textarea>
-          <div class="form-row">
-            <input type="text" id="announcement-author" placeholder="Tu nombre o apodo" required>
-            <button type="submit" id="add-announcement-btn">Publicar Anuncio</button>
-          </div>
-        </form>
-        <p id="announcement-message" class="success-message"></p>
-      </div>
-      <div id="announcements-list"></div>
-    </section>
-
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
@@ -191,7 +482,6 @@
       </div>
       <p id="total-time-2"></p>
     </section>
-    
     <section id="star-setlist">
       <h2>Setlist Concierto Estrella</h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
@@ -203,23 +493,18 @@
       </div>
       <p id="total-time-star"></p>
     </section>
-    
     <section id="calendario"> <h2>Próximos Conciertos</h2> <div id="bandhelper-concerts-container"> <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script> <p id="bandhelper-loading-message" style="display:none;">Procesando conciertos...</p> </div> </section>
   </main>
 
-  <footer>© 2025 - iDoctor & El Sótano del Doctor - All Rights Reserved.</footer>
+  <footer>© Año 2025 -iDoctor & El Sótano del Doctor- All Rights Reserved.</footer>
 
-  <audio id="site-audio"><source src="" type="audio/mpeg"></audio>
-
-  <div id="concert-details-modal" class="modal-backdrop"> </div>
-  <div id="setlist-config-screen" class="config-screen"> </div>
-  <div id="user-mgmt-screen" class="config-screen"> </div>
-  <div id="rehearsal-screen" class="config-screen"> </div>
-  <div id="stats-screen" class="config-screen"> </div>
-  <div id="user-list-screen" class="config-screen"> </div>
+  <audio id="site-audio">
+    <source src="" type="audio/mpeg">
+    Tu navegador no soporta el elemento de audio.
+  </audio>
 
 <script>
-// ---------- 0. Firebase Initialization ----------
+/* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",  
   authDomain: "sotanointranet.firebaseapp.com",
@@ -228,173 +513,380 @@ const firebaseConfig = {
   messagingSenderId: "756955233128",
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("placeholder")) { 
-    document.getElementById('firebase-critical-error-banner').style.display = 'block'; 
-}
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-firebase.firestore().enablePersistence().catch(err => { console.warn("Firestore Persistence Error:", err.message); });
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { const banner = document.getElementById('firebase-critical-error-banner'); if (banner) banner.style.display = 'block'; console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");}
+firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => { console.warn("Persistencia Firestore no habilitada:", err.code === 'failed-precondition' ? 'Múltiples pestañas.' : err.message); });
 
-// ---------- 1. Utilities ----------
-const toMMSS = s => { if (isNaN(s) || s === null) s = 0; return `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`; };
-const toHHMM = s => { if (isNaN(s) || s === null) s = 0; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`; };
-function decodeHtmlEntities(text) { const ta = document.createElement('textarea'); ta.innerHTML = text; return ta.value; }
-const calculateDuration = (start, end) => { if (!start || !end) return 0; const s = new Date(`1970-01-01T${start}Z`), e = new Date(`1970-01-01T${end}Z`); let d = (e - s) / 1000; if (d < 0) d += 86400; return d; };
-const formatDateWithDay = dateStr => { const d = new Date(dateStr + 'T00:00:00Z'); return d.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }); };
-const formatTimestamp = ts => ts ? ts.toDate().toLocaleString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Fecha desconocida';
-const sanitizeFirebaseKey = str => str.replace(/[.#$[\]/:\s,]/g, '_');
+/* ---------- 1. Utilidades ---------- */
+const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
+const toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
+const toHHMM = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;};
+const toHours = s => { if (isNaN(s) || s === null || s === undefined) return (0).toFixed(2); return (s / 3600).toFixed(2);};
+function decodeHtmlEntities(text) { if (typeof text !== 'string') return text; const textArea = document.createElement('textarea'); textArea.innerHTML = text; return textArea.value;}
+const calculateDuration = (startTime, endTime) => { if (!startTime || !endTime) return 0; const [startH, startM] = startTime.split(":").map(Number); const [endH, endM] = endTime.split(":").map(Number); const startSeconds = startH * 3600 + startM * 60; const endSeconds = endH * 3600 + endM * 60; let duration = endSeconds - startSeconds; if (duration < 0) duration += 24 * 3600; return duration;};
+const formatDateWithDay = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]; const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;};
+const getMonthYear = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;};
+function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) { const startDate = new Date(`${date}T${startTime}`); const endDate = new Date(startDate.getTime() + durationSeconds * 1000); const formatICSDate = d => { const pad = (num) => String(num).padStart(2, '0'); return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`; }; const startICS = formatICSDate(startDate); const endICS = formatICSDate(endDate); const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ElSotanoDelDoctor//Intranet//ES", "BEGIN:VEVENT", `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, "")}Z`, `UID:${startICS}-${sanitizeFirebaseKey(title)}@elsotanodeldoctor.com`, `DTSTART:${startICS}`, `DTEND:${endICS}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n"); const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${sanitizeFirebaseKey(title)}.ics`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); }
+const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
+const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|#$.[\]]/g, '_').replace(/\s+/g, '_');
 
-// ---------- 1.5. Firestore & Connectivity ----------
-async function withRetry(fn, retries = 3) { for (let i = 0; i < retries; i++) { try { return await fn(); } catch (e) { if (i === retries - 1) throw e; } } }
-async function loadDoc(coll, id, fb) { try { const d = await db.collection(coll).doc(id).get(); return d.exists ? d.data() : fb; } catch (e) { return fb; } }
-async function saveDoc(coll, id, data, merge = false) { try { await db.collection(coll).doc(id).set(data, { merge }); return true; } catch (e) { throw e; } }
-window.addEventListener("online", () => document.getElementById("connection-status").style.display = "none");
-window.addEventListener("offline", () => { const cs = document.getElementById("connection-status"); cs.className = "offline"; cs.textContent = "Sin conexión"; cs.style.display = "block"; });
+/* ---------- 1.5. Manejo de conexión ---------- */
+const connectionStatus = document.getElementById("connection-status"); let isOnline = navigator.onLine; 
+function updateConnectionStatus() { isOnline = navigator.onLine; if (!isOnline) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión: Mostrando datos en caché"; connectionStatus.style.display = "block"; } else { connectionStatus.style.display = "none"; } } 
+window.addEventListener("online", updateConnectionStatus); window.addEventListener("offline", updateConnectionStatus); 
+async function withRetry(fn, maxRetries = 3, delay = 2000) { for (let i = 0; i < maxRetries; i++) { try { if (!navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión. Operación podría fallar o usar caché."; connectionStatus.style.display = "block"; } return await fn(); } catch (e) { console.error(`Intento ${i+1} fallido:`, e); if (i === maxRetries - 1 || !navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Error: Operación fallida. " + e.message; connectionStatus.style.display = "block"; throw e; } connectionStatus.className = "retrying"; connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`; connectionStatus.style.display = "block"; await new Promise(resolve => setTimeout(resolve, delay)); } } }
 
-// ---------- 3. Setlist Configuration & Loading ----------
-let setlistConfig = { setlist1: { name: "", url: "" }, setlist2: { name: "", url: "" }, setlistStar: { name: "", url: "" } };
-function shouldShowSetlist(cfg) { return cfg.name && cfg.url && !cfg.url.startsWith("URL_POR_CONFIGURAR"); }
-// ... (Toda la lógica de carga y renderizado de setlists)
+/* ---------- 2. Acceso Firestore ---------- */
+async function loadDoc(collection, docId, fallback) { try { const snap = await db.collection(collection).doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); return fallback; } }
+async function saveDoc(collection, docId, data, merge = false) { try { console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge); await db.collection(collection).doc(docId).set(data, { merge: merge }); console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`); return true; } catch (e) { console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); throw e; } }
 
-// ---------- 5. Announcements Board ----------
-let announcements = [];
+/* ---------- 3. Configuración Setlists ---------- */
+let setlistConfig = {setlist1:{name:"Setlist Predeterminado Ensayo",url:"URL_POR_CONFIGURAR_1"},setlist2:{name:"Setlist Predeterminado Próximo Concierto",url:"URL_POR_CONFIGURAR_2"},setlistStar:{name:"Setlist Predeterminado Concierto Estrella",url:"URL_POR_CONFIGURAR_STAR"}};
+function updateDynamicSetlistTitles(){document.getElementById("setlist1-dynamic-name").textContent=setlistConfig.setlist1.name;document.getElementById("second-setlist-dynamic-name").textContent=setlistConfig.setlist2.name;document.getElementById("star-setlist-dynamic-name").textContent=setlistConfig.setlistStar.name}
+async function loadSetlistConfig(){try{const data=await withRetry(()=>loadDoc("intranet","setlists",{config:setlistConfig}));setlistConfig={setlist1:data.config?.setlist1||setlistConfig.setlist1,setlist2:data.config?.setlist2||setlistConfig.setlist2,setlistStar:data.config?.setlistStar||setlistConfig.setlistStar};updateDynamicSetlistTitles()}catch(e){console.error("Error al cargar la configuración de setlists:",e);updateDynamicSetlistTitles()}}
+async function saveSetlistConfig(){updateDynamicSetlistTitles();return await withRetry(()=>saveDoc("intranet","setlists",{config:setlistConfig}))}
+async function cargarSetlistGenerico(configEntry,tbodyId,totalTimeId,defaultErrorMessage){try{if(!configEntry.url||configEntry.url.startsWith("URL_POR_CONFIGURAR")){console.warn(`[cargarSetlistGenerico] URL no configurada o es placeholder para ${tbodyId}`);throw new Error("URL no configurada.")}
+const response=await fetch(configEntry.url);if(!response.ok){console.error(`[cargarSetlistGenerico] Error en la respuesta de la API para ${tbodyId}. Status: ${response.status}, URL: ${configEntry.url}`);throw new Error(`Error en la respuesta de la API (${response.status}): ${response.statusText}`)}
+const rawData=await response.json(); const dataToProcess=Array.isArray(rawData)?rawData:rawData.items||[];
+const processedItems=dataToProcess.map(item=>{if(!item||item.type!=="song"&&item.type!=="set"){return null}
+let rawDurationValue=parseFloat(item.duration);let durationIsInvalidOrMissing=isNaN(rawDurationValue)||rawDurationValue===0;if(isNaN(rawDurationValue)){rawDurationValue=0;durationIsInvalidOrMissing=true}
+let durationInSeconds;const itemName=item.name||item.title||(item.type==="song"?"Canción sin título":"Set sin nombre");const isBreakByName=/break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);item.isSong=false;item.isBreak=false;item.isSetHeader=false;
+if(item.type==="song"){durationInSeconds=rawDurationValue;item.isSong=true;}else if(item.type==="set"){if(isBreakByName){item.isBreak=true;if(durationIsInvalidOrMissing){durationInSeconds=3*60}else{durationInSeconds=rawDurationValue*60}}else{item.isSetHeader=true;durationInSeconds=rawDurationValue*60}}else{durationInSeconds=0}
+item.calculatedDurationSeconds=durationInSeconds;item.displayName=decodeHtmlEntities(item.title||item.name||(item.isSong?"Canción sin título":item.isBreak?"Pausa":"Set"));item.originalJSONDuration=item.duration;return item}).filter(item=>item!==null);
+const tbody=document.getElementById(tbodyId);tbody.innerHTML="";let songCount=0;const setlistStructure=[];let currentSet=null;
+processedItems.forEach(item=>{if(item.isSetHeader){if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet)}
+currentSet={...item,songs:[],calculatedBlockDurationSeconds:0}}else if(item.isBreak){if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet);currentSet=null}
+setlistStructure.push(item)}else if(item.isSong){if(!currentSet){currentSet={isSetHeader:true,displayName:"Set General",calculatedDurationSeconds:0,songs:[],calculatedBlockDurationSeconds:0}}
+currentSet.songs.push(item)}});if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet)}
+let totalSecondsOverall=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){
+const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0); /* CAMBIO AQUÍ para HH:MM */
+tbody.insertAdjacentHTML("beforeend",`<tr class="set-header-row"><td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);totalSecondsOverall+=(blockOrItem.calculatedBlockDurationSeconds||0);blockOrItem.songs.forEach(song=>{songCount++;const songFormattedTime=toMMSS(song.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${song.displayName}</td><td>${decodeHtmlEntities(song.key||"-")}</td><td>${decodeHtmlEntities(song.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)})}else if(blockOrItem.isBreak){const breakFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)}else if(blockOrItem.isSong){songCount++;const songFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td><td>${decodeHtmlEntities(blockOrItem.key||"-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)}});
+document.getElementById(totalTimeId).textContent="Tiempo total del set: "+toHHMM(totalSecondsOverall);return setlistStructure}catch(e){console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`,e);const tbody=document.getElementById(tbodyId);if(tbody)tbody.innerHTML=`<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;const totalTimeElem=document.getElementById(totalTimeId);if(totalTimeElem)totalTimeElem.textContent="Error al calcular tiempo.";return[]}}
+const cargarPrimerSetlist = () => cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo");
+const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto");
+const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella");
 
-function showEditForm(announcementId) {
-    const announcement = announcements.find(a => a.id === announcementId);
-    if (!announcement) return;
-    const itemDiv = document.getElementById(`announcement-${announcementId}`);
-    if (!itemDiv) return;
+/* ---------- 6. Usuarios ---------- */
+let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
+function renderUsers() { const tbodyMgmt=document.getElementById("user-table-body");const tbodyDisplay=document.getElementById("users-body");if(tbodyMgmt)tbodyMgmt.innerHTML="";if(tbodyDisplay)tbodyDisplay.innerHTML="";if(!Array.isArray(users)||users.length===0){const emptyMsgMgmt='<tr><td colspan="4">No hay usuarios registrados.</td></tr>';const emptyMsgDisplay='<tr><td colspan="3">No hay usuarios registrados.</td></tr>';if(tbodyMgmt)tbodyMgmt.innerHTML=emptyMsgMgmt;if(tbodyDisplay)tbodyDisplay.innerHTML=emptyMsgDisplay;return} users.forEach((u,i)=>{if(!u||typeof u!=='object'||!u.name||!u.nickname||!Array.isArray(u.roles)){console.warn(`Usuario inválido en la posición ${i}:`,u);return} const rolesDisplay=u.roles.join(", ");if(tbodyMgmt){tbodyMgmt.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`)} if(tbodyDisplay){tbodyDisplay.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`)}});if(tbodyMgmt){tbodyMgmt.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{const userIndex=parseInt(btn.dataset.i,10);const userToDelete=users[userIndex];if(confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)){rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance=r.attendance.filter(a=>a.name!==userToDelete.name)}});users.splice(userIndex,1);await saveUsers();await saveRehearsals();renderStats()}});tbodyMgmt.querySelectorAll(".edit-user").forEach(btn=>btn.onclick=()=>{editingUserIndex=parseInt(btn.dataset.i,10);const user=users[editingUserIndex];document.getElementById("user-name").value=user.name;document.getElementById("user-nickname").value=user.nickname;const roleSelect=document.getElementById("user-role");Array.from(roleSelect.options).forEach(option=>{option.selected=user.roles.includes(option.value)});document.getElementById("add-user").textContent="Guardar Cambios";document.getElementById("cancel-edit-user").style.display="inline-block"})}}
+async function loadUsers() { try { const data = await withRetry(() => loadDoc("intranet", "users", { users: [] })); users = Array.isArray(data.users) ? data.users : []; users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles)); renderUsers(); } catch (e) { console.error("Error al cargar usuarios:", e); } }
+async function saveUsers() { try { await withRetry(() => saveDoc("intranet", "users", { users })); renderUsers(); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar usuarios:", e); throw e; } }
+function resetUserForm() { document.getElementById("user-name").value = ""; document.getElementById("user-nickname").value = ""; const roleSelect = document.getElementById("user-role"); Array.from(roleSelect.options).forEach(option => option.selected = false); document.getElementById("add-user").textContent = "Añadir Usuario"; document.getElementById("cancel-edit-user").style.display = "none"; editingUserIndex = null; }
 
-    itemDiv.innerHTML = `
-        <div class="announcement-content">
-            <textarea id="edit-text-${announcementId}" rows="3">${decodeHtmlEntities(announcement.text)}</textarea>
-            <input type="text" id="edit-author-${announcementId}" value="${decodeHtmlEntities(announcement.author)}" placeholder="Autor">
-            <div class="edit-actions">
-                <button class="save-edit-btn" data-id="${announcementId}">Guardar</button>
-                <button class="cancel-edit-btn">Cancelar</button>
-            </div>
-        </div>`;
+/* ---------- 7. Ensayos ---------- */
+let rehearsals = []; let editingRehearsalIndex = null;
+function renderRehearsals() { const tbodyConfig=document.getElementById("rehearsal-table-body");const tbodyMain=document.getElementById("rehearsal-main-body");if(!tbodyConfig||!tbodyMain){console.error("Tablas de ensayos no encontradas en el DOM.");return} rehearsals.sort((a,b)=>new Date(a.date+'T'+(a.startTime||'00:00'))-new Date(b.date+'T'+(b.startTime||'00:00')));tbodyConfig.innerHTML=tbodyMain.innerHTML="";if(!Array.isArray(rehearsals)||rehearsals.length===0){const emptyMsgConfig='<tr><td colspan="6">No hay ensayos programados.</td></tr>';tbodyConfig.innerHTML=emptyMsgConfig;const emptyMsgMain='<tr><td colspan="5">No hay próximos ensayos.</td></tr>';tbodyMain.innerHTML=emptyMsgMain;return} const availableUsersForRehearsal=users.filter(user=>!excludedRehearsalUsers.includes(user.name));const userOptions=availableUsersForRehearsal.length>0?availableUsersForRehearsal.map(user=>`<option value="${user.name}">${user.nickname||user.name}</option>`).join(""):`<option value="" disabled>No hay usuarios disponibles</option>`;const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()); rehearsals.forEach((r,i)=>{if(r.time&&(!r.startTime||!r.endTime)){r.startTime=r.time;const[hours,minutes]=r.time.split(":").map(Number);const endHours=(hours+2)%24;r.endTime=`${String(endHours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}`;delete r.time} const formattedDate=formatDateWithDay(r.date);const durationSeconds=calculateDuration(r.startTime,r.endTime);const durationText=toHHMM(durationSeconds);const attendance=Array.isArray(r.attendance)?r.attendance:[];const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); const rehearsalDate=new Date(r.date+'T00:00:00Z');if(rehearsalDate>=today){const calendarCell=`<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;tbodyMain.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`)}}); tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block"}); tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn=>btn.onclick=async()=>{if(confirm("¿Estás seguro de que deseas eliminar este ensayo?")){rehearsals.splice(parseInt(btn.dataset.i,10),1);await saveRehearsals();renderStats()}}); tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn=>btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[index];if(confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)){rehearsal.attendance=[];await saveRehearsals();document.getElementById("rehearsal-message").textContent="Asistencias eliminadas.";renderStats()}}); tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn=>{btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const userSelect=document.querySelector(`.attendance-user[data-i="${index}"]`);const responseSelect=document.querySelector(`.attendance-response[data-i="${index}"]`);const name=userSelect.value;const attending=responseSelect.value;if(!name||!attending){alert("Selecciona nombre y respuesta.");return} const rehearsal=rehearsals[index];const confirmMsg=`${name}, ¿${attending==="Sí"?"ASISTIRÁS":"NO ASISTIRÁS"} al ensayo del ${formatDateWithDay(rehearsal.date)}?`;if(!confirm(confirmMsg))return;if(!Array.isArray(rehearsal.attendance))rehearsal.attendance=[];const existingResponse=rehearsal.attendance.find(a=>a.name===name);if(existingResponse)existingResponse.attending=attending;else rehearsal.attendance.push({name,attending});try{await saveRehearsals();userSelect.value="";responseSelect.value="";renderStats()}catch(e){alert("Error al guardar asistencia: "+e.message)}}})}
+async function loadRehearsals() { try { const data = await withRetry(() => loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); } catch (e) { console.error("Error al cargar ensayos:", e); } }
+async function saveRehearsals() { try { await withRetry(() => saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar ensayos:", e); throw e; } }
+function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; }
 
-    itemDiv.querySelector('.save-edit-btn').onclick = async () => {
-        const newText = document.getElementById(`edit-text-${announcementId}`).value.trim();
-        const newAuthor = document.getElementById(`edit-author-${announcementId}`).value.trim();
-        if (newText && newAuthor) {
-            try {
-                await db.collection('announcements').doc(announcementId).update({ text: newText, author: newAuthor });
-                await loadAnnouncements();
-            } catch (e) { console.error("Error al actualizar anuncio:", e); alert("No se pudo guardar el cambio."); }
-        }
-    };
-    itemDiv.querySelector('.cancel-edit-btn').onclick = () => renderAnnouncements();
-}
+/* ---------- 8. Estadísticas ---------- */
+function updateMonthFilter() { const select=document.getElementById("stats-month-filter");select.innerHTML='<option value="all">Todos los meses</option>';const now=new Date();const pastRehearsals=rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);const months=new Set(pastRehearsals.map(r=>getMonthYear(r.date)));Array.from(months).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{select.insertAdjacentHTML("beforeend",`<option value="${month}">${month}</option>`)})}
+function getMonthIndex(monthName) { const months=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];return months.indexOf(monthName)}
+function renderStats() { const now=new Date();const selectedMonth=document.getElementById("stats-month-filter")?.value||"all";let filteredRehearsals=rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);if(selectedMonth!=="all"){filteredRehearsals=filteredRehearsals.filter(r=>getMonthYear(r.date)===selectedMonth)} const timePerMonth={};filteredRehearsals.forEach(r=>{const monthYear=getMonthYear(r.date);const duration=calculateDuration(r.startTime,r.endTime);timePerMonth[monthYear]=(timePerMonth[monthYear]||0)+duration});const tbodyMonth=document.getElementById("time-per-month-body");tbodyMonth.innerHTML="";Object.keys(timePerMonth).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{tbodyMonth.insertAdjacentHTML("beforeend",`<tr><td>${month}</td><td>${toHours(timePerMonth[month])}</td></tr>`)}); const timePerUser={};users.forEach(user=>{timePerUser[user.name]=0;filteredRehearsals.forEach(r=>{const attendance=r.attendance?.find(a=>a.name===user.name);if(attendance&&attendance.attending==="Sí"){timePerUser[user.name]+=calculateDuration(r.startTime,r.endTime)}})});const tbodyUser=document.getElementById("time-per-user-body");tbodyUser.innerHTML="";Object.keys(timePerUser).sort().forEach(user=>{tbodyUser.insertAdjacentHTML("beforeend",`<tr><td>${users.find(u=>u.name===user)?.nickname||user}</td><td>${toHours(timePerUser[user])}</td></tr>`)}); const tbodyPast=document.getElementById("past-rehearsals-body");tbodyPast.innerHTML="";filteredRehearsals.sort((a,b)=>new Date(b.date+'T'+(b.startTime||'00:00'))-new Date(a.date+'T'+(a.startTime||'00:00')));filteredRehearsals.forEach(r=>{const formattedDate=formatDateWithDay(r.date);const durationText=toHHMM(calculateDuration(r.startTime,r.endTime));const attendance=Array.isArray(r.attendance)?r.attendance:[];const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;tbodyPast.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td><td>${summary}</td></tr>`)})}
 
-async function deleteAnnouncement(announcementId) {
-    const password = prompt("Para borrar, introduce la contraseña de administrador:");
-    if (password === null) return;
-    if (password.toLowerCase() === PASSWORD.toLowerCase()) {
-        if (confirm("¿Estás seguro de que quieres borrar este anuncio permanentemente?")) {
-            try {
-                await db.collection('announcements').doc(announcementId).delete();
-                await loadAnnouncements();
-            } catch (e) { console.error("Error al borrar anuncio:", e); alert("No se pudo borrar el anuncio."); }
-        }
-    } else { alert("Contraseña incorrecta."); }
-}
+/* ---------- 9. PDF ---------- */
+const fontDataCache = {}; const PDF_FONT_PATHS = { bleedingCowboys: 'assets/Bleeding_Cowboys.ttf', carnevalee: 'assets/Carnevalee_Freakshow.ttf' };
+const PDF_FONT_NAMES = { bleedingCowboys: "BleedingCowboysCustom", carnevalee: "CarnevaleeCustom" }; const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png';
+async function loadFontAsBase64(fontPath) { if(fontDataCache[fontPath]){return fontDataCache[fontPath]}try{const response=await fetch(fontPath);if(!response.ok){throw new Error(`No se pudo cargar la fuente: ${response.statusText} (URL: ${fontPath})`)} const blob=await response.blob();return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onloadend=()=>{fontDataCache[fontPath]=reader.result.split(',')[1];resolve(fontDataCache[fontPath])};reader.onerror=(error)=>reject(new Error("Error del FileReader al convertir fuente a Base64: "+error.message));reader.readAsDataURL(blob)})}catch(error){console.error(`Error crítico cargando la fuente ${fontPath}:`,error);fontDataCache[fontPath]=null;return null}}
+async function registerFontWithDoc(doc,fontPath,fontVFSAlias,fontNameInDoc){const fontBase64=await loadFontAsBase64(fontPath);if(fontBase64){try{doc.addFileToVFS(fontVFSAlias,fontBase64);doc.addFont(fontVFSAlias,fontNameInDoc,'normal');console.log(`Fuente ${fontNameInDoc} registrada en jsPDF desde ${fontPath}.`);return true}catch(fontError){console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`,fontError)}}else{console.warn(`No se pudo cargar la fuente ${fontPath} para registrarla.`)} return false}
+async function getBackgroundImageDataURL(){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'))};img.onerror=(err)=>reject(new Error("Error al cargar la imagen de plantilla: "+(err.message||err.toString())));img.src=PDF_BACKGROUND_IMAGE_PATH;if(img.complete){if(img.naturalHeight!==0){const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'))}else if(img.src){reject(new Error("Imagen de plantilla en caché pero inválida."))}}})}
+async function genPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist"; let bleedingCowboysRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.bleedingCowboys,'Bleeding_Cowboys.ttf',PDF_FONT_NAMES.bleedingCowboys);let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S');doc.setFontSize(10);doc.setTextColor(150,0,0);doc.text("Advertencia: No se pudo cargar la plantilla de fondo.",pageWidth/2,pageHeight/2,{align:"center"})} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;doc.setFont(bleedingCowboysRegistered?PDF_FONT_NAMES.bleedingCowboys:"times",'normal');if(!bleedingCowboysRegistered)doc.setFontType("bold");doc.setFontSize(28);doc.text("SETLIST",pageWidth/2,currentY,{align:"center"});currentY+=28+10;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');if(!carnevaleeRegistered)doc.setFontType("bold");doc.setFontSize(22);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=22+5;doc.setFont("times","italic");doc.setFontSize(10); let totalOverallSeconds=0;let totalSongCount=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){totalOverallSeconds+=blockOrItem.calculatedBlockDurationSeconds||0;totalSongCount+=blockOrItem.songs?blockOrItem.songs.length:0}else if(blockOrItem.isBreak){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0}else if(blockOrItem.isSong){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0;totalSongCount++}});const totalItemsText=`${totalSongCount} canciones`;doc.text(`${totalItemsText}  |  Tiempo total: ${toHHMM(totalOverallSeconds)}`,pageWidth/2,currentY,{align:"center"});currentY+=10+20; const tableFont="helvetica";const tableHeadFont="helvetica";let pdfSongNumber=0;const tableBody=[];setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){tableBody.push([{content:`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,colSpan:5,styles:{halign:'center',fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0],fontSize:10}}]);if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{pdfSongNumber++;tableBody.push([pdfSongNumber,song.displayName,decodeHtmlEntities(song.key||"-"),decodeHtmlEntities(song.tempo||"-"),toMMSS(song.calculatedDurationSeconds||0)])})}}else if(blockOrItem.isBreak){tableBody.push([{content:"»",styles:{halign:'center',fontStyle:'italic',textColor:[100,100,100]}},{content:blockOrItem.displayName,styles:{fontStyle:'italic',textColor:[80,80,80]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:toMMSS(blockOrItem.calculatedDurationSeconds||0),styles:{halign:'center',fontStyle:'italic',textColor:[80,80,80]}}])}else if(blockOrItem.isSong){pdfSongNumber++;tableBody.push([pdfSongNumber,blockOrItem.displayName,decodeHtmlEntities(blockOrItem.key||"-"),decodeHtmlEntities(blockOrItem.tempo||"-"),toMMSS(blockOrItem.calculatedDurationSeconds||0)])}}); doc.autoTable({startY:currentY,head:[["#","Título","Key","Tempo","Time"]],body:tableBody,theme:'grid',headStyles:{fillColor:[200,200,200],textColor:[0,0,0],font:tableHeadFont,fontStyle:'bold',halign:'center',fontSize:10},styles:{font:tableFont,fontSize:9,cellPadding:{top:4,right:5,bottom:4,left:5},lineColor:[80,80,80],lineWidth:.5,textColor:[0,0,0]},columnStyles:{0:{halign:'center',cellWidth:25,fontSize:9},1:{halign:'left',cellWidth:'auto',fontSize:10},2:{halign:'center',cellWidth:50,fontSize:9},3:{halign:'center',cellWidth:50,fontSize:9},4:{halign:'center',cellWidth:50,fontSize:9}},margin:{top:contentMarginTop,right:contentMarginSides,bottom:contentMarginBottom,left:contentMarginSides},pageBreak:'auto',didDrawPage:function(data){if(data.pageNumber>1&&backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}}});doc.save(`${cleanFileName}.pdf`)}
+async function genBasicPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const itemTitleFontSize=14;const setHeaderFontSize=16;const itemLineHeight=itemTitleFontSize*1.6;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{if(currentY+itemLineHeight*2.5>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=itemLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderFontSize*1.6;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+itemLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=itemLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(itemTitleFontSize-1>8?itemTitleFontSize-1:8);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=(itemTitleFontSize-1>8?itemTitleFontSize-1:8)*1.6;if(idx<setlistStructure.length-1)currentY+=itemLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight}});doc.save(`${cleanFileName}_Basico.pdf`)}
+async function genPersonalPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf,songTitleFontSizeParam){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const songTitleFontSize=parseInt(songTitleFontSizeParam,10)||14;const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF Personal:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S')} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const setHeaderFontSize=16;const breakTextFontSize=Math.max(8,songTitleFontSize-2);const songTitleLineHeight=songTitleFontSize*1.5;const setHeaderLineHeight=setHeaderFontSize*1.5;const breakTextLineHeight=breakTextFontSize*1.5;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{let estimatedBlockHeight=songTitleLineHeight;if(blockOrItem.isSetHeader)estimatedBlockHeight=setHeaderLineHeight+(blockOrItem.songs?blockOrItem.songs.length*songTitleLineHeight:0);else if(blockOrItem.isBreak)estimatedBlockHeight=breakTextLineHeight;if(currentY+estimatedBlockHeight>pageHeight-contentMarginBottom&&idx>0){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=songTitleLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderLineHeight;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+songTitleLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=songTitleLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(breakTextFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=breakTextLineHeight;if(idx<setlistStructure.length-1)currentY+=songTitleLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight}});doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`)}
 
-function renderAnnouncements() {
-  const listContainer = document.getElementById('announcements-list');
-  if (!listContainer) return;
-  announcements.sort((a, b) => b.timestamp.seconds - a.timestamp.seconds);
-  listContainer.innerHTML = announcements.length === 0 
-    ? '<p style="text-align:center; color:#888;">No hay anuncios todavía.</p>'
-    : announcements.map(ann => `
-        <div class="announcement-item" id="announcement-${ann.id}">
-          <div class="announcement-content">
-              <div class="announcement-header">
-                <span class="announcement-author">${decodeHtmlEntities(ann.author)}</span>
-                <span class="announcement-date">${formatTimestamp(ann.timestamp)}</span>
-              </div>
-              <p class="announcement-body">${decodeHtmlEntities(ann.text)}</p>
-          </div>
-          <div class="announcement-actions">
-              <button class="edit-ann-btn" data-id="${ann.id}">Editar</button>
-              <button class="delete-ann-btn" data-id="${ann.id}">Borrar</button>
-          </div>
-        </div>`).join('');
-  document.querySelectorAll('.edit-ann-btn').forEach(btn => btn.onclick = () => showEditForm(btn.dataset.id));
-  document.querySelectorAll('.delete-ann-btn').forEach(btn => btn.onclick = () => deleteAnnouncement(btn.dataset.id));
-}
+/* ---------- 10. BandHelper & Detalles Concierto ---------- */
+let processTableAttempts = 0; const MAX_PROCESS_ATTEMPTS = 20;  
+function processBandHelperTable() { const container=document.getElementById('bandhelper-concerts-container');if(!container){console.error("processBandHelperTable: Contenedor 'bandhelper-concerts-container' no encontrado.");return} const table=container.querySelector("table");const loadingMessage=document.getElementById("bandhelper-loading-message");if(!table){processTableAttempts++;if(processTableAttempts<MAX_PROCESS_ATTEMPTS){setTimeout(processBandHelperTable,500)}else{console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de",MAX_PROCESS_ATTEMPTS,"intentos.");if(loadingMessage){loadingMessage.textContent="No se pudieron mostrar los conciertos (tabla no generada por BandHelper).";loadingMessage.style.display="block"}}}else{if(loadingMessage)loadingMessage.style.display="none";if(table.dataset.processed==="true"){return} table.dataset.processed="true";let headerRow=table.querySelector("thead tr");const desiredHeaders=["Fecha/Hora","Evento","Lugar","Cal","Info"];if(!table.tHead){table.createTHead()} headerRow=table.tHead.rows[0]||table.tHead.insertRow(0);headerRow.innerHTML='';desiredHeaders.forEach(text=>{const th=document.createElement('th');th.textContent=text;if(text==="Cal")th.classList.add("calendar-col-header");if(text==="Info")th.classList.add("details-col-header");headerRow.appendChild(th)});const dataRowsSource=table.querySelector("tbody")?Array.from(table.querySelectorAll("tbody tr")):[];dataRowsSource.forEach(row=>{const originalCells=Array.from(row.cells);row.innerHTML='';const dateCellFullText=originalCells[0]?.textContent.trim()||"";const eventTitleFromCell=originalCells[1]?.textContent.trim().split('\n')[0].trim()||"Evento Sin Título";const locationText=originalCells[3]?.textContent.trim().split('\n')[0].trim()||originalCells[2]?.textContent.trim().split('\n')[0].trim()||"";row.insertCell().textContent=dateCellFullText;row.insertCell().textContent=eventTitleFromCell;row.insertCell().textContent=locationText;const calendarDisplayCell=row.insertCell();calendarDisplayCell.className="calendar-col";calendarDisplayCell.style.textAlign="center";const detailDisplayCell=row.insertCell();detailDisplayCell.className="details-col-header";detailDisplayCell.style.textAlign="center";const dateForId=dateCellFullText.split(',')[0].trim();const concertId=sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);const detailsBtn=document.createElement("button");detailsBtn.className="details-btn";detailsBtn.innerHTML="➡️";detailsBtn.title="Ver/Editar Detalles del Concierto";detailsBtn.onclick=()=>openConcertDetailModal(concertId,dateCellFullText,eventTitleFromCell,locationText);detailDisplayCell.appendChild(detailsBtn);let icsDate=new Date().toISOString().split('T')[0];let startTimeForICS="20:00";let durationSecondsForICS=2*3600;const dateMatch=dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(dateMatch){let year=parseInt(dateMatch[3],10);year+=(year<70?2000:1900);icsDate=`${year}-${dateMatch[2]}-${dateMatch[1]}`} const timeRangeMatch=dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/);const singleTimeMatch=dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/);if(timeRangeMatch){startTimeForICS=timeRangeMatch[1];durationSecondsForICS=calculateDuration(timeRangeMatch[1],timeRangeMatch[2]);if(durationSecondsForICS<=0)durationSecondsForICS=2*3600}else if(singleTimeMatch){startTimeForICS=singleTimeMatch[1]} const locationForICS=locationText||eventTitleFromCell;const descriptionForICS=`Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;const calendarBtn=document.createElement('button');calendarBtn.className='calendar-btn';calendarBtn.title='Añadir a mi calendario';calendarBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';calendarBtn.onclick=()=>generateICS(`Concierto: ${eventTitleFromCell}`,icsDate,startTimeForICS,locationForICS,descriptionForICS,durationSecondsForICS);calendarDisplayCell.appendChild(calendarBtn)})}}
+const concertDetailModal = document.getElementById('concert-details-modal'); const concertDetailMessage = document.getElementById('concert-detail-message');
+async function openConcertDetailModal(concertId,concertFullDateText,concertTitle,concertLocationOriginal){concertDetailMessage.textContent="";concertDetailMessage.className="success-message";document.body.style.overflow='hidden';document.getElementById('concert-detail-id').value=concertId;const concertTitleDisplay=document.getElementById('concert-detail-title-display');if(concertTitleDisplay){const datePartOnly=concertFullDateText.split(',')[0].trim();concertTitleDisplay.innerHTML=`${decodeHtmlEntities(concertTitle)||"Título no disponible"} <span class="concert-date">(${datePartOnly||'Fecha no disp.'})</span>`} document.getElementById('concert-detail-location').value='';document.getElementById('concert-detail-soundsetup').value='';document.getElementById('concert-detail-instrumentssetup').value='';document.getElementById('concert-detail-soundcheck').value='';document.getElementById('concert-detail-showtime').value='';document.getElementById('concert-detail-notes').value='';document.getElementById('concert-detail-gmaps-link').value='';const openGmapsBtn=document.getElementById('open-gmaps-link-btn');openGmapsBtn.style.display='none';openGmapsBtn.onclick=null;const musiciansListDiv=document.getElementById('musicians-attendance-list');musiciansListDiv.innerHTML='Cargando músicos...';const excludedMusicians=["Ximo","Ginés Torres"];if(users&&users.length>0){musiciansListDiv.innerHTML='';users.filter(user=>!excludedMusicians.includes(user.name)).forEach(user=>{const userDiv=document.createElement('div');const checkboxId=`user-att-${sanitizeFirebaseKey(user.nickname||user.name)}-${concertId}`;userDiv.innerHTML=` <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname||user.name}"> <label for="${checkboxId}">${user.name} (${user.nickname})</label> `;musiciansListDiv.appendChild(userDiv)});if(musiciansListDiv.children.length===0){musiciansListDiv.innerHTML='No hay otros músicos para listar.'}}else{musiciansListDiv.innerHTML='No hay músicos registrados para listar.'} try{const details=await withRetry(()=>loadDoc('concert_details',concertId,{}));if(details&&Object.keys(details).length>0){document.getElementById('concert-detail-location').value=details.locationDetails||'';document.getElementById('concert-detail-soundsetup').value=details.soundSetupTime||'';document.getElementById('concert-detail-instrumentssetup').value=details.instrumentsSetupTime||'';document.getElementById('concert-detail-soundcheck').value=details.soundcheckTime||'';document.getElementById('concert-detail-showtime').value=details.showTime||'';document.getElementById('concert-detail-notes').value=details.generalNotes||'';const gmapsLink=details.googleMapsLink||'';document.getElementById('concert-detail-gmaps-link').value=gmapsLink;if(gmapsLink){openGmapsBtn.style.display='inline-block';openGmapsBtn.onclick=()=>{const currentLink=document.getElementById('concert-detail-gmaps-link').value.trim();if(currentLink)window.open(currentLink,'_blank')}}else{openGmapsBtn.style.display='none'} if(details.attendees&&Array.isArray(details.attendees)){details.attendees.forEach(attendeeName=>{const checkbox=musiciansListDiv.querySelector(`input[value="${attendeeName}"]`);if(checkbox){checkbox.checked=true}})}}else{openGmapsBtn.style.display='none'}}catch(error){console.error("Error al intentar cargar detalles del concierto desde Firestore:",error);concertDetailMessage.className="error-message";concertDetailMessage.textContent=`Error al cargar detalles: ${error.message}.`;openGmapsBtn.style.display='none'} concertDetailModal.classList.add('show')}
+document.getElementById('save-concert-details').onclick = async () => { const concertId=document.getElementById('concert-detail-id').value;const concertDetailMessage=document.getElementById('concert-detail-message');if(!concertId){concertDetailMessage.className="error-message";concertDetailMessage.textContent="Error: ID de concierto no encontrado. No se puede guardar.";return} const selectedAttendees=[];document.querySelectorAll('#musicians-attendance-list input[type="checkbox"]:checked').forEach(checkbox=>{selectedAttendees.push(checkbox.value)});const gmapsLinkValue=document.getElementById('concert-detail-gmaps-link').value.trim();const concertData={locationDetails:document.getElementById('concert-detail-location').value.trim(),soundSetupTime:document.getElementById('concert-detail-soundsetup').value,instrumentsSetupTime:document.getElementById('concert-detail-instrumentssetup').value,soundcheckTime:document.getElementById('concert-detail-soundcheck').value,showTime:document.getElementById('concert-detail-showtime').value,generalNotes:document.getElementById('concert-detail-notes').value.trim(),attendees:selectedAttendees,googleMapsLink:gmapsLinkValue,lastUpdated:new Date().toISOString()};try{await withRetry(()=>saveDoc('concert_details',concertId,concertData,true));concertDetailMessage.className="success-message";concertDetailMessage.textContent="Detalles guardados correctamente.";const openGmapsBtn=document.getElementById('open-gmaps-link-btn');if(gmapsLinkValue){openGmapsBtn.style.display='inline-block';openGmapsBtn.onclick=()=>{const currentLink=document.getElementById('concert-detail-gmaps-link').value.trim();if(currentLink)window.open(currentLink,'_blank')}}else{openGmapsBtn.style.display='none'}}catch(error){console.error("Error al guardar detalles del concierto en Firestore:",error);concertDetailMessage.className="error-message";concertDetailMessage.textContent=`Error al guardar: ${error.message}.`}};
+document.getElementById('close-concert-details-modal').onclick = () => { closeAll(); };
 
-async function loadAnnouncements() {
-  try {
-    const snapshot = await db.collection('announcements').orderBy('timestamp', 'desc').get();
-    announcements = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    renderAnnouncements();
-  } catch (e) {
-    document.getElementById('announcements-list').innerHTML = '<p class="error-message">No se pudieron cargar los anuncios.</p>';
-  }
-}
+/* ---------- 11. Menú & pantallas ---------- */
+const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
+function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
+document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
+document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
+const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
+setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
+document.getElementById("menu-config").onclick = e => { e.preventDefault();const submenu=document.getElementById("config-submenu");if(!isAuthenticated){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true;submenu.style.display=submenu.style.display==="block"?"none":"block"}else{alert("Contraseña incorrecta.");return}}else{submenu.style.display=submenu.style.display==="block"?"none":"block"}};
+const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; 
+document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
+document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; document.getElementById("setlist-message").textContent = ""; };
+document.getElementById("guardar-setlist-config").onclick = async () => { const msg=document.getElementById("setlist-message");msg.textContent="";const n1=document.getElementById("setlist1-name").value.trim(),u1=document.getElementById("setlist1-url").value.trim();const n2=document.getElementById("setlist2-name").value.trim(),raw2=document.getElementById("setlist2-url").value.trim();const nStar=document.getElementById("setlistStar-name").value.trim(),uStar=document.getElementById("setlistStar-url").value.trim();if(!n1||!u1||!n2||!raw2||!nStar||!uStar){msg.className="error-message";msg.textContent="Completa todos los campos.";return} try{setlistConfig.setlist1={name:n1,url:u1};setlistConfig.setlist2={name:n2,url:raw2.startsWith("http")?raw2:`https://www.bandhelper.com/feed/set_list/${raw2}`};setlistConfig.setlistStar={name:nStar,url:uStar};await saveSetlistConfig();await Promise.all([cargarPrimerSetlist(),cargarSegundoSetlist(),cargarStarSetlist()]);document.getElementById("setlist-config-screen").style.display="none"}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
+document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); openConfigScreen("user-mgmt-screen"); };
+document.getElementById("close-user-mgmt").onclick = () => { document.getElementById("user-mgmt-screen").style.display = "none"; document.getElementById("user-message").textContent = ""; resetUserForm(); };
+document.getElementById("add-user").onclick = async () => { const msg=document.getElementById("user-message");msg.textContent="";const name=document.getElementById("user-name").value.trim(),nickname=document.getElementById("user-nickname").value.trim();const roles=Array.from(document.getElementById("user-role").selectedOptions).map(o=>o.value);if(!name||!nickname||roles.length===0){msg.className="error-message";msg.textContent="Nombre, apodo y rol son obligatorios.";return} try{if(editingUserIndex!==null){const oldName=users[editingUserIndex].name;users[editingUserIndex]={name,nickname,roles};if(oldName!==name){rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance.forEach(a=>{if(a.name===oldName)a.name=name})}});await saveRehearsals()} msg.textContent="Usuario actualizado."}else{users.push({name,nickname,roles});msg.textContent="Usuario añadido."} await saveUsers();msg.className="success-message";resetUserForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
+document.getElementById("cancel-edit-user").onclick = () => { resetUserForm(); document.getElementById("user-message").textContent = ""; };
+document.getElementById("menu-rehearsal").onclick = e => { e.preventDefault(); openConfigScreen("rehearsal-screen"); };
+document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; document.getElementById("rehearsal-message").textContent = ""; resetRehearsalForm(); };
+document.getElementById("add-rehearsal").onclick = async () => { const msg=document.getElementById("rehearsal-message");msg.textContent="";const date=document.getElementById("rehearsal-date").value,startTime=document.getElementById("rehearsal-start-time").value,endTime=document.getElementById("rehearsal-end-time").value,loc=document.getElementById("rehearsal-location").value.trim();if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return} if(calculateDuration(startTime,endTime)<=0){msg.className="error-message";msg.textContent="Hora fin posterior a inicio.";return} try{const newData={date,startTime,endTime,location:loc,attendance:[]};if(editingRehearsalIndex!==null){newData.attendance=rehearsals[editingRehearsalIndex].attendance||[];rehearsals[editingRehearsalIndex]=newData;msg.textContent="Ensayo actualizado."}else{rehearsals.push(newData);msg.textContent="Ensayo añadido."} await saveRehearsals();msg.className="success-message";resetRehearsalForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
+document.getElementById("cancel-edit-rehearsal").onclick = () => { resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = ""; };
+document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(openConfigScreen("stats-screen")){ updateMonthFilter(); renderStats(); }};
+document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
+document.getElementById("stats-month-filter").addEventListener("change", renderStats);
+document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); openConfigScreen("user-list-screen"); };
+document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
 
-document.getElementById('add-announcement-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  const textInput = document.getElementById('announcement-text'), authorInput = document.getElementById('announcement-author'),
-        addButton = document.getElementById('add-announcement-btn'), msgEl = document.getElementById('announcement-message');
-  const text = textInput.value.trim(), author = authorInput.value.trim();
-  if (!text || !author) { msgEl.className = "error-message"; msgEl.textContent = "El mensaje y el autor son obligatorios."; return; }
-  addButton.disabled = true; addButton.textContent = 'Publicando...'; msgEl.textContent = "";
-  try {
-    await db.collection('announcements').add({ text, author, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-    textInput.value = ''; authorInput.value = ''; msgEl.className = "success-message"; msgEl.textContent = "¡Publicado!";
-    await loadAnnouncements();
-  } catch (err) { msgEl.className = "error-message"; msgEl.textContent = "Error: " + err.message;
-  } finally { addButton.disabled = false; addButton.textContent = 'Publicar Anuncio'; setTimeout(() => { msgEl.textContent = ""; }, 3000); }
-});
-
-
-// ---------- 6. User Management ----------
-let users = [];
-// ... (Toda la lógica de carga y gestión de usuarios)
-
-// ---------- 7. Rehearsal Management ----------
-let rehearsals = [];
-// ... (Toda la lógica de carga y gestión de ensayos)
-
-// ---------- 8. Statistics ----------
-// ... (Toda la lógica de estadísticas)
-
-// ---------- 9. PDF Generation ----------
-// ... (Toda la lógica de generación de PDF)
-
-// ---------- 10. BandHelper & Concert Details ----------
-// ... (Toda la lógica de conciertos)
-
-// ---------- 11. UI & Menu Logic ----------
-const PASSWORD = "Sotano2014";
-let isAuthenticated = false;
-// ... (Toda la lógica de menús, modales y pantallas de configuración)
-
-// ---------- 12. DOMContentLoaded - Initial Load ----------
+/* ---------- 12. Carga inicial & Lógica Audio Global y Splash ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
-    // Splash screen & audio logic
-    // ...
+  
+  // --- Lógica de Audio Global START ---
+  const siteAudioElement = document.getElementById('site-audio');
+  const siteAudioControlButton = document.getElementById('site-audio-control-button'); 
+  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; // TUS CANCIONES
+  let currentSiteSongIndex = -1; 
+  let siteAudioFadeInterval = null;
+  const SITE_AUDIO_FADE_DURATION = 500; 
+  const SITE_AUDIO_TARGET_VOLUME = 0.8; 
 
-    console.log("[DOMContentLoaded] Iniciando carga de datos...");
-    try {
-        await Promise.all([
-            // loadSetlistConfig(), // Asumiendo que esta función y las demás existen
-            loadUsers(),
-            loadRehearsals(),
-            loadAnnouncements()
-        ]);
-        console.log("[DOMContentLoaded] Carga de datos completada.");
-    } catch (e) {
-        console.error("[DOMContentLoaded] Error en la carga inicial:", e);
+  function stopSiteAudioFade() {
+    if (siteAudioFadeInterval) {
+      clearInterval(siteAudioFadeInterval);
+      siteAudioFadeInterval = null;
     }
+  }
 
-    // El resto de la lógica de inicialización (botones de PDF, etc.)
-    // setTimeout(processBandHelperTable, 2000);
+  function fadeInSiteAudio(audio, duration, targetVolume) {
+    stopSiteAudioFade();
+    if (!audio) return; 
+    if (audio.muted) { 
+      audio.volume = 0; 
+      audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio (muted):", e));
+      return;
+    }
+    audio.volume = 0;
+    if (audio.paused) { // Solo llama a play si está pausado
+        audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio:", e));
+    }
+    
+    let step = targetVolume / (duration / 50);
+    let currentVolume = 0;
+    siteAudioFadeInterval = setInterval(() => {
+      currentVolume += step;
+      if (currentVolume >= targetVolume) {
+        if(audio) audio.volume = targetVolume; 
+        stopSiteAudioFade();
+      } else if (audio) { 
+        audio.volume = currentVolume;
+      } else { 
+        stopSiteAudioFade();
+      }
+    }, 50);
+  }
+
+  function fadeOutSiteAudio(audio, duration, callback) {
+    stopSiteAudioFade();
+    if (!audio) { if (callback) callback(); return; }
+
+    if (audio.paused || audio.volume < 0.01) { 
+      if (!audio.paused) audio.pause();
+      audio.volume = 0; 
+      if (callback) callback();
+      return;
+    }
+    
+    let currentVolume = audio.volume;
+    let step = currentVolume / (duration / 50);
+    siteAudioFadeInterval = setInterval(() => {
+      currentVolume -= step;
+      if (currentVolume <= 0.01) { 
+        if (audio) {
+            audio.volume = 0;
+            audio.pause();
+        }
+        stopSiteAudioFade();
+        if (callback) callback();
+      } else if (audio) {
+        audio.volume = currentVolume;
+      } else {
+        stopSiteAudioFade();
+      }
+    }, 50);
+  }
+
+  function playNextSiteSong(audioElement) {
+    if (!audioElement || siteAudioSongs.length === 0) return;
+    currentSiteSongIndex = (currentSiteSongIndex + 1) % siteAudioSongs.length;
+    audioElement.src = siteAudioSongs[currentSiteSongIndex];
+    audioElement.load();
+
+    const eventName = 'canplaythrough';
+    
+    // Eliminamos cualquier listener previo para 'canplaythrough' para evitar duplicados
+    // Es un poco más complejo asegurar que se elimina el handler correcto si se define anónimamente.
+    // Por ello, es mejor definir el handler fuera y referenciarlo.
+    const playWhenReadyHandler = () => {
+      if (audioElement) { 
+        fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME);
+        // Ya no es necesario removerlo si se usa { once: true }
+      }
+    };
+    // Limpiar listeners anteriores explícitamente si no se usa once, o confiar en once.
+    // Para mayor seguridad, si se llama múltiples veces antes de que 'canplaythrough' se dispare:
+    // audioElement.removeEventListener(eventName, audioElement._playWhenReadyHandler); // Si guardamos la referencia
+    audioElement.addEventListener(eventName, playWhenReadyHandler, { once: true });
+  }
+
+  if (siteAudioElement && siteAudioControlButton) {
+    const iconMuted = siteAudioControlButton.querySelector('.icon-muted');
+    const iconUnmuted = siteAudioControlButton.querySelector('.icon-unmuted');
+
+    const updateSiteAudioMuteButton = () => {
+      if (!siteAudioElement || !iconMuted || !iconUnmuted || !siteAudioControlButton) return;
+      if (siteAudioElement.muted) {
+        iconMuted.style.display = 'inline';
+        iconUnmuted.style.display = 'none';
+        siteAudioControlButton.title = "Activar sonido";
+      } else {
+        iconMuted.style.display = 'none';
+        iconUnmuted.style.display = 'inline';
+        siteAudioControlButton.title = "Desactivar sonido";
+      }
+    };
+
+    siteAudioElement.muted = true; 
+    siteAudioElement.loop = false; 
+    updateSiteAudioMuteButton();
+    siteAudioControlButton.style.display = 'flex'; 
+
+    currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length);
+    siteAudioElement.src = siteAudioSongs[currentSiteSongIndex];
+    siteAudioElement.load(); 
+    
+    siteAudioElement.addEventListener('ended', () => {
+      fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => {
+        playNextSiteSong(siteAudioElement);
+      });
+    });
+
+    siteAudioControlButton.addEventListener('click', () => {
+      if (!siteAudioElement) return;
+      const wasMuted = siteAudioElement.muted;
+      siteAudioElement.muted = !siteAudioElement.muted;
+      updateSiteAudioMuteButton();
+
+      if (!siteAudioElement.muted) { 
+          if (siteAudioElement.paused || wasMuted) { 
+              if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused){
+                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
+              } else { 
+                  siteAudioElement.volume = 0; 
+                  fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); 
+              }
+          }
+      } else { 
+        stopSiteAudioFade(); 
+      }
+    });
+  }
+  // --- Lógica de Audio Global END ---
+
+
+  // --- Splash Screen Visual Logic START ---
+  const splashScreen = document.getElementById('splash-screen');
+  if (splashScreen) {
+    const visibleDuration = 1000; 
+    const exitAnimationDuration = 800; 
+
+    setTimeout(() => {
+      splashScreen.classList.add('hidden');
+      // La música NO se detiene aquí.
+      setTimeout(() => {
+        if (splashScreen.parentNode) {
+           splashScreen.style.display = 'none';
+        }
+      }, exitAnimationDuration);
+    }, visibleDuration);
+  }
+  // --- Splash Screen Visual Logic END ---
+
+  console.log("[DOMContentLoaded] Iniciando carga de la aplicación.");
+  updateConnectionStatus();
+  try {
+      console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
+      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
+      console.log("[DOMContentLoaded] Configuración, usuarios y ensayos cargados.");
+  } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
+
+  let items1 = [], items2 = [], itemsStar = [];  
+  try {  
+    console.log("[DOMContentLoaded] Cargando primer setlist...");
+    items1 = await cargarPrimerSetlist();  
+    console.log("[DOMContentLoaded] Primer setlist cargado:", items1 ? items1.length : 0, "bloques/items.");
+  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Ensayo:", e); }
+  
+  try {  
+    console.log("[DOMContentLoaded] Cargando segundo setlist...");
+    items2 = await cargarSegundoSetlist();  
+    console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "bloques/items.");
+  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Próx. Concierto:", e); }
+  
+  try {  
+    console.log("[DOMContentLoaded] Cargando setlist estrella...");
+    itemsStar = await cargarStarSetlist();  
+    console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "bloques/items.");
+  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Estrella:", e); }
+
+  document.getElementById("download-btn").onclick = () => { if (items1 && items1.length > 0) genPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
+  document.getElementById("download-basic-btn").onclick = () => { if (items1 && items1.length > 0) genBasicPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
+  
+  document.getElementById("download-btn-2").onclick = () => { if (items2 && items2.length > 0) genPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
+  document.getElementById("download-basic-btn-2").onclick = () => { if (items2 && items2.length > 0) genBasicPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
+  
+  document.getElementById("download-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
+  document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
+  
+  document.getElementById("download-personal-btn").onclick = () => {
+      if (items1 && items1.length > 0) {
+          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+          if (fontSizeInput) {
+              const fontSize = parseInt(fontSizeInput, 10);
+              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) { 
+                  genPersonalPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name, fontSize);
+              } else {
+                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
+              }
+          }
+      } else {
+          alert("No hay elementos en Setlist Ensayo para generar un PDF personal.");
+      }
+  };
+  document.getElementById("download-personal-btn-2").onclick = () => {
+      if (items2 && items2.length > 0) {
+          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+          if (fontSizeInput) {
+              const fontSize = parseInt(fontSizeInput, 10);
+              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
+                  genPersonalPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name, fontSize);
+              } else {
+                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
+              }
+          }
+      } else {
+          alert("No hay elementos en Setlist Próximo Concierto para generar un PDF personal.");
+      }
+  };
+  document.getElementById("download-personal-btn-star").onclick = () => {
+      if (itemsStar && itemsStar.length > 0) {
+          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+          if (fontSizeInput) {
+              const fontSize = parseInt(fontSizeInput, 10);
+              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
+                  genPersonalPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name, fontSize);
+              } else {
+                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
+              }
+          }
+      } else {
+          alert("No hay elementos en Setlist Estrella para generar un PDF personal.");
+      }
+  };
+
+  console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
+  setTimeout(processBandHelperTable, 2000);  
+  console.log("[DOMContentLoaded] Carga de la aplicación completada.");
 });
 </script>
-
 </body>
 </html>
