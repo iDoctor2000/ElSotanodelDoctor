@@ -476,7 +476,25 @@
       </div>
       <p id="total-time"></p>
     </section>
-    <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
+<section id="rehearsals">
+  <h2>Próximos Ensayos</h2>
+
+  <!-- CALENDARIO NUEVO -->
+  <div id="rehearsals-calendar" style="background:#111; padding:20px; border-radius:10px; margin-bottom:30px; box-shadow:0 0 20px rgba(0,255,255,.1);"></div>
+
+  <!-- TABLA ANTIGUA (la que ya tenías) -->
+  <div class="table-wrapper">
+    <table id="rehearsal-main-table">
+      <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th>Confirmar Asistencia</th></tr></thead>
+      <tbody id="rehearsal-main-body"></tbody>
+    </table>
+  </div>
+
+  <!-- BOTÓN + FLOTANTE -->
+  <button id="floating-add-rehearsal" style="position:fixed; bottom:30px; right:30px; width:60px; height:60px; border-radius:50%; background:#0cf; color:#000; border:none; font-size:30px; box-shadow:0 4px 15px rgba(0,255,255,0.4); z-index:1000; cursor:pointer;">+</button>
+</section>
+
+    
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
