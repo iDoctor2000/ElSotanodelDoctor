@@ -971,7 +971,7 @@ setTimeout(() => {
 }, 6000); // 6 segundos máximo
 
   
-/* ========== CALENDARIO DE ENSAYOS 2025 ========== */
+/* ========== CALENDARIO DE ENSAYOS 2025 - VERSIÓN ESTABLE ========== */
 let calendar = null;
 
 function initRehearsalsCalendar() {
@@ -980,11 +980,16 @@ function initRehearsalsCalendar() {
 
   calendar = new FullCalendar.Calendar(calEl, {
     initialView: 'dayGridMonth',
-    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' },
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,listWeek'
+    },
     locale: 'es',
     height: 'auto',
     eventClick: function(info) {
       const r = info.event.extendedProps.rehearsalData;
+      // Buscamos el índice del ensayo
       editingRehearsalIndex = rehearsals.findIndex(x => x.date === r.date && x.startTime === r.startTime);
       document.getElementById('rehearsal-date').value = r.date;
       document.getElementById('rehearsal-start-time').value = r.startTime;
@@ -995,15 +1000,28 @@ function initRehearsalsCalendar() {
       openConfigScreen('rehearsal-screen');
     },
     eventContent: function(arg) {
-      return { html: `<div style="padding:4px;font-size:0.9em"><b>${arg.timeText}</b><br>${arg.event.title}<br><i>${arg.event.extendedProps.location}</i></div>` };
+      return {
+        html: `<div style="padding:4px;font-size:0.9em;white-space:normal;">
+                 <b>${arg.timeText || ''}</b><br>
+                 ${arg.event.title}<br>
+                 <i>${arg.event.extendedProps.location || ''}</i>
+               </div>`
+      };
     }
   });
   calendar.render();
 }
 
+// Refrescar el calendario cuando haya ensayos
 window.refreshRehearsalsDisplay = function() {
   if (!calendar) return;
   calendar.getEvents().forEach(ev => ev.remove());
+
+  if (!Array.isArray(rehearsals) || rehearsals.length === 0) {
+    console.log("No hay ensayos aún");
+    return;
+  }
+
   rehearsals.forEach(r => {
     calendar.addEvent({
       title: 'Ensayo',
@@ -1015,17 +1033,19 @@ window.refreshRehearsalsDisplay = function() {
       extendedProps: { location: r.location, rehearsalData: r }
     });
   });
+
+  // También actualiza la tabla antigua si existe la función
   if (typeof renderRehearsalsTable === 'function') renderRehearsalsTable();
 };
 
-// Iniciar calendario y refrescar al cargar
+// Iniciar el calendario cuando la página cargue
 document.addEventListener('DOMContentLoaded', () => {
   initRehearsalsCalendar();
-  // Refrescar cuando se carguen los ensayos (después de loadRehearsals)
-  setTimeout(() => refreshRehearsalsDisplay(), 2000); // espera a que rehearsals esté cargado
+  // Damos tiempo a que loadRehearsals termine
+  setTimeout(refreshRehearsalsDisplay, 4000);
 });
 
-// Botón + abre el formulario
+// Botón + flotante
 document.getElementById('floating-add-rehearsal')?.addEventListener('click', () => {
   resetRehearsalForm();
   document.getElementById('add-rehearsal').textContent = "Añadir Ensayo";
@@ -1033,12 +1053,13 @@ document.getElementById('floating-add-rehearsal')?.addEventListener('click', () 
   openConfigScreen('rehearsal-screen');
 });
 
-// Refrescar calendario cada vez que se guarde un ensayo
-const oldSaveRehearsals = saveRehearsals;
+// Refrescar cuando se guarde un ensayo
+const originalSaveRehearsals = saveRehearsals;
 window.saveRehearsals = async function() {
-  await oldSaveRehearsals();
+  await originalSaveRehearsals();
   refreshRehearsalsDisplay();
 };
+
 
   
 </script>
