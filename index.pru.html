@@ -961,6 +961,16 @@ precachePdfAssets();
   console.log("[DOMContentLoaded] Carga de la aplicación completada.");
 });
 
+// === QUITAR SPLASH SIEMPRE POR SEGURIDAD ===
+setTimeout(() => {
+  const splash = document.getElementById('splash-screen');
+  if (splash && splash.classList.contains('hidden') === false) {
+    console.warn("Forzando desaparición del splash después de 6 segundos");
+    splash.classList.add('hidden');
+  }
+}, 6000); // 6 segundos máximo
+
+  
 /* ========== CALENDARIO DE ENSAYOS 2025 ========== */
 let calendar = null;
 
