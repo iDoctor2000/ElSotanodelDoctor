@@ -26,186 +26,81 @@
   <style>
     *,*::before,*::after{box-sizing:border-box}
     
-    /* --- MEJORA VISUAL: FONDO CON PROFUNDIDAD --- */
+    /* FONDO CON PROFUNDIDAD */
     html,body {
         margin:0; padding:0; overflow-x:hidden; 
         font-family:Arial,Helvetica,sans-serif; 
-        /* Degradado sutil para dar sensación de escenario oscuro */
         background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
-        background-attachment: fixed; /* El fondo se queda fijo al hacer scroll */
+        background-attachment: fixed;
         color:#fff;
     }
     
     /* ---------- Splash Screen ---------- */
     #splash-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: #000000; 
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 200000; 
-      opacity: 1;
-      visibility: visible;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background-color: #000000; display: flex; justify-content: center; align-items: center;
+      z-index: 200000; opacity: 1; visibility: visible;
       transition: opacity 0.8s ease-out, transform 0.8s ease-out, visibility 0.8s linear; 
       transform: scale(1);
     }
-
     #splash-screen img {
-      max-width: 60%; 
-      max-height: 60%; 
-      opacity: 0;
+      max-width: 60%; max-height: 60%; opacity: 0;
       transform: scale(0.85) translateY(15px); 
       animation: splash-image-entry 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
-
-    @keyframes splash-image-entry {
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0); 
-      }
-    }
-
-    #splash-screen.hidden {
-      opacity: 0;
-      transform: scale(0.95); 
-      visibility: hidden;
-      pointer-events: none; 
-    }
-    /* ---------- End Splash Screen ---------- */
+    @keyframes splash-image-entry { to { opacity: 1; transform: scale(1) translateY(0); } }
+    #splash-screen.hidden { opacity: 0; transform: scale(0.95); visibility: hidden; pointer-events: none; }
 
     header{
-        background: rgba(17, 17, 17, 0.95); /* Ligeramente transparente */
-        padding:10px 20px;  
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        position:fixed;  
-        top:0;
-        left:0;
-        width:100%;
-        z-index:1000;  
-        border-bottom: 1px solid #222;  
-        height: 60px;  
-        backdrop-filter: blur(5px); /* Efecto borroso detrás del header */
+        background: rgba(17, 17, 17, 0.95); padding:10px 20px; display:flex; align-items:center;
+        justify-content:space-between; position:fixed; top:0; left:0; width:100%; z-index:1000;  
+        border-bottom: 1px solid #222; height: 60px; backdrop-filter: blur(5px);
     }
-    .logo img.logo-main{
-        width: 135px;  
-        height:auto;
-        vertical-align: middle;  
-    }
-    .logo-intranet{
-        position:absolute;
-        left:50%;
-        top:50%;  
-        transform:translate(-50%,-50%);
-        height:45px;  
-        width:auto;
-    }
-
-    .header-controls-right { 
-        display: flex;
-        align-items: center;
-    }
-
+    .logo img.logo-main{ width: 135px; height:auto; vertical-align: middle; }
+    .logo-intranet{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); height:45px; width:auto; }
+    .header-controls-right { display: flex; align-items: center; }
     .header-audio-control { 
-        background: none;
-        border: 1px solid #0cf; 
-        color: #0cf;            
-        border-radius: 4px;
-        padding: 5px;           
-        margin-right: 15px;     
-        cursor: pointer;
-        display: none; 
-        align-items: center;
-        justify-content: center;
-        width: 37px; 
-        height: 37px; 
-        transition: background-color 0.2s ease, transform 0.2s ease;
+        background: none; border: 1px solid #0cf; color: #0cf; border-radius: 4px; padding: 5px;           
+        margin-right: 15px; cursor: pointer; display: none; align-items: center; justify-content: center;
+        width: 37px; height: 37px; transition: background-color 0.2s ease, transform 0.2s ease;
     }
-    .header-audio-control:hover {
-        background: #333; 
-        transform: scale(1.05);
-    }
-    .header-audio-control svg {
-        width: 20px; 
-        height: 20px;
-    }
-
+    .header-audio-control:hover { background: #333; transform: scale(1.05); }
+    .header-audio-control svg { width: 20px; height: 20px; }
     .hamburger{
-        cursor:pointer;
-        border:1px solid #0cf;
-        border-radius:4px;
-        padding:5px;
-        display: flex; 
-        flex-direction: column;
-        justify-content: space-around; 
-        width: 37px; 
-        height: 37px; 
-        box-sizing: border-box;
+        cursor:pointer; border:1px solid #0cf; border-radius:4px; padding:5px; display: flex; 
+        flex-direction: column; justify-content: space-around; width: 37px; height: 37px; box-sizing: border-box;
     }
     .hamburger div{width:25px;height:3px;background:#0cf;margin:0 auto;} 
     
     .sidebar{
-        position:fixed;
-        top:0;  
-        left:0;
-        width:280px;  
-        height:100vh;  
-        background:#1a1a1a;  
-        border-right:1px solid #222;
-        padding: 20px;
-        padding-top: calc(60px + 20px);  
-        box-shadow:3px 0 15px rgba(0,200,200,.15);  
-        transform:translateX(-100%);  
-        transition:transform .3s ease-in-out;
-        z-index:9999;  
-        overflow-y: auto;
+        position:fixed; top:0; left:0; width:280px; height:100vh; background:#1a1a1a; border-right:1px solid #222;
+        padding: 20px; padding-top: calc(60px + 20px); box-shadow:3px 0 15px rgba(0,200,200,.15);  
+        transform:translateX(-100%); transition:transform .3s ease-in-out; z-index:9999; overflow-y: auto;
     }
-    .sidebar.show{
-        transform:translateX(0);  
-    }
+    .sidebar.show{ transform:translateX(0); }
     .sidebar h2{color:#0cf;margin:0 0 20px 0;}
     .sidebar a{display:block;color:#fff;text-decoration:none;margin:12px 0;padding:10px 5px;border-bottom:1px solid #333; font-size: 1em;}
     .sidebar a:last-of-type { border-bottom: none; }
     .sidebar a:hover{color:#0cf}
-
-    .sidebar a#menu-second-setlist-section {
-        font-weight: bold;
-        color: #0cf !important; 
-    }
-
+    .sidebar a#menu-second-setlist-section { font-weight: bold; color: #0cf !important; }
     .sidebar .submenu { margin-left: 15px; margin-top: 10px; }
     .sidebar .submenu a { padding: 8px 0; font-size: 0.9em; border-top: 1px solid #2a2a2a; border-bottom: none; margin: 5px 0;}
     .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; }  
     .sidebar a#menu-config:hover { color: #fff2a7; }
     
-    #overlay{
-        position:fixed;top:0;left:0;width:100%;height:100%;
-        background:rgba(0,0,0,.75);  
-        z-index:5000;  
-        display:none;
-        opacity: 0;
-        transition: opacity .3s ease-in-out;
-    }
+    #overlay{ position:fixed;top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,.75); z-index:5000; display:none; opacity: 0; transition: opacity .3s ease-in-out; }
     #overlay.show{display:block; opacity: 1;}
     
     main { padding-top: 75px; }
     .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(3px); }
     .modal-backdrop.show { display: flex; }
     
-    /* --- MEJORA VISUAL: MODALES CON EFECTO CRISTAL --- */
+    /* MODALES CON EFECTO CRISTAL */
     .modal-content { 
-        background: rgba(26, 26, 26, 0.95); /* Más sólido para lectura */
-        color: #fff; padding: 20px; border-radius: 10px; 
-        box-shadow: 0 0 30px rgba(0,255,255,0.15); 
-        border: 1px solid rgba(0, 204, 255, 0.2);
+        background: rgba(26, 26, 26, 0.95); color: #fff; padding: 20px; border-radius: 10px; 
+        box-shadow: 0 0 30px rgba(0,255,255,0.15); border: 1px solid rgba(0, 204, 255, 0.2);
         width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; 
     }
-    
     .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 5px; }  
     .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
     #concert-detail-title-display { color: #fff; font-size: 1em; font-weight: normal; margin-top: 0px; margin-bottom: 20px; text-align: left; border-bottom: 1px solid #333; padding-bottom: 10px; padding-left: 0px; }
@@ -236,16 +131,13 @@
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
     
-    /* --- MEJORA VISUAL: SECCIONES CON EFECTO CRISTAL (Glassmorphism) --- */
+    /* SECCIONES CON EFECTO CRISTAL (Glassmorphism) */
     #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual { 
-        background: rgba(20, 20, 20, 0.75); /* Semitransparente */
-        backdrop-filter: blur(10px); /* Desenfoque del fondo */
-        -webkit-backdrop-filter: blur(10px); /* Para Safari */
-        padding:20px;
-        border-radius:12px; /* Bordes un poco más redondeados */
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Sombra suave */
-        border: 1px solid rgba(0, 204, 255, 0.1); /* Borde sutil cyan */
-        margin-bottom:40px 
+        background: rgba(20, 20, 20, 0.75); 
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
+        padding:20px; border-radius:12px; 
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); 
+        border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
     }
     
     #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 { text-align:center;color:#0cf;margin-bottom:5px }
@@ -327,8 +219,7 @@
       .modal-field-group { flex-direction: column; }  
     }
 
-    /* ---------- NUEVO: Vista Calendario Mensual CON MEJORAS VISUALES ---------- */
-    
+    /* CALENDARIO MENSUAL MEJORADO */
     #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
     .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #fff; }
     .calendar-controls button { background: rgba(34, 34, 34, 0.8); border: 1px solid #0cf; color: #0cf; padding: 5px 15px; border-radius: 4px; cursor: pointer; transition: all 0.2s;}
@@ -344,29 +235,19 @@
     .cal-day.today { border: 1px solid #0cf; background: rgba(0, 204, 255, 0.05); }
     .cal-day-number { font-size: 0.8em; color: #777; align-self: flex-end; margin-bottom: 5px; }
     
-    /* Items del calendario mejorados */
     .cal-event { 
         font-size: 0.75em; padding: 3px 5px; border-radius: 3px; margin-bottom: 3px; word-wrap: break-word; line-height: 1.2; 
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         transition: transform 0.2s ease, filter 0.2s ease;
     }
+    .cal-event:hover { transform: scale(1.02) translateY(-1px); filter: brightness(1.2); z-index: 5; }
     
-    /* Efecto Hover en eventos */
-    .cal-event:hover {
-        transform: scale(1.02) translateY(-1px);
-        filter: brightness(1.2);
-        z-index: 5;
-    }
-    
-    /* Estilos solicitados específicamente */
     .cal-event.type-ensayo { 
-        color: #ff9999; /* Rojo un poco más suave para que lea mejor sobre oscuro */
-        border-left: 3px solid #ff3333;
+        color: #ff9999; border-left: 3px solid #ff3333;
         background: linear-gradient(90deg, rgba(255, 0, 0, 0.15) 0%, rgba(255,0,0,0.05) 100%);
     }
     .cal-event.type-concierto { 
-        color: #ffff99; /* Amarillo suave */
-        border-left: 3px solid #ffff00;
+        color: #ffff99; border-left: 3px solid #ffff00;
         background: linear-gradient(90deg, rgba(255, 255, 0, 0.15) 0%, rgba(255,255,0,0.05) 100%);
     }
 
@@ -658,7 +539,7 @@ const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2,
 const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella");
 
 /* ---------- 6. Usuarios ---------- */
-let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["XXX", "YYY"];  
+let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
 function renderUsers() { const tbodyMgmt=document.getElementById("user-table-body");const tbodyDisplay=document.getElementById("users-body");if(tbodyMgmt)tbodyMgmt.innerHTML="";if(tbodyDisplay)tbodyDisplay.innerHTML="";if(!Array.isArray(users)||users.length===0){const emptyMsgMgmt='<tr><td colspan="4">No hay usuarios registrados.</td></tr>';const emptyMsgDisplay='<tr><td colspan="3">No hay usuarios registrados.</td></tr>';if(tbodyMgmt)tbodyMgmt.innerHTML=emptyMsgMgmt;if(tbodyDisplay)tbodyDisplay.innerHTML=emptyMsgDisplay;return} users.forEach((u,i)=>{if(!u||typeof u!=='object'||!u.name||!u.nickname||!Array.isArray(u.roles)){console.warn(`Usuario inválido en la posición ${i}:`,u);return} const rolesDisplay=u.roles.join(", ");if(tbodyMgmt){tbodyMgmt.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`)} if(tbodyDisplay){tbodyDisplay.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`)}});if(tbodyMgmt){tbodyMgmt.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{const userIndex=parseInt(btn.dataset.i,10);const userToDelete=users[userIndex];if(confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)){rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance=r.attendance.filter(a=>a.name!==userToDelete.name)}});users.splice(userIndex,1);await saveUsers();await saveRehearsals();renderStats()}});tbodyMgmt.querySelectorAll(".edit-user").forEach(btn=>btn.onclick=()=>{editingUserIndex=parseInt(btn.dataset.i,10);const user=users[editingUserIndex];document.getElementById("user-name").value=user.name;document.getElementById("user-nickname").value=user.nickname;const roleSelect=document.getElementById("user-role");Array.from(roleSelect.options).forEach(option=>{option.selected=user.roles.includes(option.value)});document.getElementById("add-user").textContent="Guardar Cambios";document.getElementById("cancel-edit-user").style.display="inline-block"})}}
 async function loadUsers() { try { const data = await withRetry(() => loadDoc("intranet", "users", { users: [] })); users = Array.isArray(data.users) ? data.users : []; users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles)); renderUsers(); } catch (e) { console.error("Error al cargar usuarios:", e); } }
 async function saveUsers() { try { await withRetry(() => saveDoc("intranet", "users", { users })); renderUsers(); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar usuarios:", e); throw e; } }
@@ -723,7 +604,7 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     musiciansListDiv.innerHTML = 'Cargando...';
     techListDiv.innerHTML = 'Cargando...';
 
-    const excludedMusicians = ["XXX", "YYY"];
+    const excludedMusicians = ["Ximo", "Ginés Torres"];
     
     // Definimos qué roles se consideran "Técnicos"
     const techRolesList = ["Técnico de Sonido", "Montador", "Técnico de Luces", "Road Manager", "Backliner"];
@@ -1145,7 +1026,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
   setTimeout(processBandHelperTable, 2000);  
 
-  
 /* ---------- 13. Lógica Calendario Visual (INTERACTIVO) ---------- */
   let currentCalDate = new Date();
   let globalConcertDetails = {}; 
@@ -1215,15 +1095,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-    // --- LÓGICA 2: CONCIERTOS (Ahora capturamos datos para el click) ---
+    // --- LÓGICA 2: CONCIERTOS ---
     const concertRows = document.querySelectorAll('#bandhelper-concerts-container table tbody tr');
     concertRows.forEach(row => {
       const cells = row.cells;
-      // Verificamos que la fila tenga al menos 3 celdas (Fecha, Título, Lugar)
       if (cells.length >= 3) {
         const dateText = cells[0].textContent.trim(); 
         const titleText = cells[1].textContent.trim();
-        const locationText = cells[2].textContent.trim(); // Capturamos ubicación para pasarla al modal
+        const locationText = cells[2].textContent.trim(); 
         
         const dateMatch = dateText.match(/(\d{2})\/(\d{2})\/(\d{2})/);
         if (dateMatch) {
@@ -1254,7 +1133,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               dateStr: isoDate,
               type: 'concierto',
               title: `${titleText}${missingStr}`,
-              // Guardamos los datos crudos para usarlos al hacer click
               rawDate: dateText,
               rawTitle: titleText,
               rawLoc: locationText,
@@ -1291,17 +1169,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         evtDiv.className = `cal-event type-${evt.type}`; 
         evtDiv.innerHTML = evt.title; 
         
-        // --- LÓGICA CLICK PARA CONCIERTOS ---
+        // Click para Conciertos
         if (evt.type === 'concierto') {
-            evtDiv.style.cursor = 'pointer'; // Pone la manita del ratón
+            evtDiv.style.cursor = 'pointer';
             evtDiv.title = "Click para ver detalles y asistencia";
             evtDiv.onclick = (e) => {
-                e.stopPropagation(); // Evita conflictos con otros clicks
-                // Llamamos a la función de abrir modal con los datos que guardamos antes
+                e.stopPropagation();
                 openConcertDetailModal(evt.id, evt.rawDate, evt.rawTitle, evt.rawLoc);
             };
         }
-        // ------------------------------------
         
         div.appendChild(evtDiv);
       });
@@ -1334,7 +1210,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderVisualCalendar(); 
   setTimeout(renderVisualCalendar, 2000); 
   setTimeout(renderVisualCalendar, 5000);
-  
+
+  console.log("[DOMContentLoaded] Carga de la aplicación completada.");
+});
 </script>
 </body>
 </html>
