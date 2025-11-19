@@ -1144,8 +1144,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
   setTimeout(processBandHelperTable, 2000);  
-
-/* ---------- 13. Lógica Calendario Visual (TEXTO NEUTRO EN BLANCO) ---------- */
+/* ---------- 13. Lógica Calendario Visual (INTERACTIVO) ---------- */
   let currentCalDate = new Date();
   let globalConcertDetails = {}; 
 
@@ -1202,7 +1201,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
             
             if (missingNames.length > 0) {
-                // Color blanco (#fff) y salto de línea (<br>)
                 missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`;
             }
         }
@@ -1215,13 +1213,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-    // --- LÓGICA 2: CONCIERTOS ---
+    // --- LÓGICA 2: CONCIERTOS (Ahora capturamos datos para el click) ---
     const concertRows = document.querySelectorAll('#bandhelper-concerts-container table tbody tr');
     concertRows.forEach(row => {
       const cells = row.cells;
-      if (cells.length >= 2) {
+      // Verificamos que la fila tenga al menos 3 celdas (Fecha, Título, Lugar)
+      if (cells.length >= 3) {
         const dateText = cells[0].textContent.trim(); 
         const titleText = cells[1].textContent.trim();
+        const locationText = cells[2].textContent.trim(); // Capturamos ubicación para pasarla al modal
         
         const dateMatch = dateText.match(/(\d{2})\/(\d{2})\/(\d{2})/);
         if (dateMatch) {
@@ -1251,7 +1251,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             events.push({
               dateStr: isoDate,
               type: 'concierto',
-              title: `${titleText}${missingStr}`
+              title: `${titleText}${missingStr}`,
+              // Guardamos los datos crudos para usarlos al hacer click
+              rawDate: dateText,
+              rawTitle: titleText,
+              rawLoc: locationText,
+              id: concertId
             });
         }
       }
@@ -1283,6 +1288,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         const evtDiv = document.createElement('div');
         evtDiv.className = `cal-event type-${evt.type}`; 
         evtDiv.innerHTML = evt.title; 
+        
+        // --- LÓGICA CLICK PARA CONCIERTOS ---
+        if (evt.type === 'concierto') {
+            evtDiv.style.cursor = 'pointer'; // Pone la manita del ratón
+            evtDiv.title = "Click para ver detalles y asistencia";
+            evtDiv.onclick = (e) => {
+                e.stopPropagation(); // Evita conflictos con otros clicks
+                // Llamamos a la función de abrir modal con los datos que guardamos antes
+                openConcertDetailModal(evt.id, evt.rawDate, evt.rawTitle, evt.rawLoc);
+            };
+        }
+        // ------------------------------------
+        
         div.appendChild(evtDiv);
       });
 
@@ -1315,8 +1333,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setTimeout(renderVisualCalendar, 2000); 
   setTimeout(renderVisualCalendar, 5000);
 
-  console.log("[DOMContentLoaded] Carga de la aplicación completada.");
-});
+  
 </script>
 </body>
 </html>
