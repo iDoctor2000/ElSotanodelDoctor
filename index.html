@@ -25,176 +25,85 @@
 
   <style>
     *,*::before,*::after{box-sizing:border-box}
-    html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
+    
+    /* FONDO CON PROFUNDIDAD */
+    html,body {
+        margin:0; padding:0; overflow-x:hidden; 
+        font-family:Arial,Helvetica,sans-serif; 
+        background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+        background-attachment: fixed;
+        color:#fff;
+    }
     
     /* ---------- Splash Screen ---------- */
     #splash-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: #000000; 
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 200000; 
-      opacity: 1;
-      visibility: visible;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background-color: #000000; display: flex; justify-content: center; align-items: center;
+      z-index: 200000; opacity: 1; visibility: visible;
       transition: opacity 0.8s ease-out, transform 0.8s ease-out, visibility 0.8s linear; 
       transform: scale(1);
     }
-
     #splash-screen img {
-      max-width: 60%; 
-      max-height: 60%; 
-      opacity: 0;
+      max-width: 60%; max-height: 60%; opacity: 0;
       transform: scale(0.85) translateY(15px); 
       animation: splash-image-entry 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
-
-    @keyframes splash-image-entry {
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0); 
-      }
-    }
-
-    #splash-screen.hidden {
-      opacity: 0;
-      transform: scale(0.95); 
-      visibility: hidden;
-      pointer-events: none; 
-    }
-    /* ---------- End Splash Screen ---------- */
+    @keyframes splash-image-entry { to { opacity: 1; transform: scale(1) translateY(0); } }
+    #splash-screen.hidden { opacity: 0; transform: scale(0.95); visibility: hidden; pointer-events: none; }
 
     header{
-        background:#111;
-        padding:10px 20px;  
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        position:fixed;  
-        top:0;
-        left:0;
-        width:100%;
-        z-index:1000;  
-        border-bottom: 1px solid #222;  
-        height: 60px;  
+        background: rgba(17, 17, 17, 0.95); padding:10px 20px; display:flex; align-items:center;
+        justify-content:space-between; position:fixed; top:0; left:0; width:100%; z-index:1000;  
+        border-bottom: 1px solid #222; height: 60px; backdrop-filter: blur(5px);
     }
-    .logo img.logo-main{
-        width: 135px;  
-        height:auto;
-        vertical-align: middle;  
-    }
-    .logo-intranet{
-        position:absolute;
-        left:50%;
-        top:50%;  
-        transform:translate(-50%,-50%);
-        height:45px;  
-        width:auto;
-    }
-
-    .header-controls-right { 
-        display: flex;
-        align-items: center;
-    }
-
+    .logo img.logo-main{ width: 135px; height:auto; vertical-align: middle; }
+    .logo-intranet{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); height:45px; width:auto; }
+    .header-controls-right { display: flex; align-items: center; }
     .header-audio-control { 
-        background: none;
-        border: 1px solid #0cf; 
-        color: #0cf;            
-        border-radius: 4px;
-        padding: 5px;          
-        margin-right: 15px;    
-        cursor: pointer;
-        display: none; 
-        align-items: center;
-        justify-content: center;
-        width: 37px; 
-        height: 37px; 
-        transition: background-color 0.2s ease, transform 0.2s ease;
+        background: none; border: 1px solid #0cf; color: #0cf; border-radius: 4px; padding: 5px;           
+        margin-right: 15px; cursor: pointer; display: none; align-items: center; justify-content: center;
+        width: 37px; height: 37px; transition: background-color 0.2s ease, transform 0.2s ease;
     }
-    .header-audio-control:hover {
-        background: #333; 
-        transform: scale(1.05);
-    }
-    .header-audio-control svg {
-        width: 20px; 
-        height: 20px;
-    }
-
+    .header-audio-control:hover { background: #333; transform: scale(1.05); }
+    .header-audio-control svg { width: 20px; height: 20px; }
     .hamburger{
-        cursor:pointer;
-        border:1px solid #0cf;
-        border-radius:4px;
-        padding:5px;
-        display: flex; 
-        flex-direction: column;
-        justify-content: space-around; 
-        width: 37px; 
-        height: 37px; 
-        box-sizing: border-box;
+        cursor:pointer; border:1px solid #0cf; border-radius:4px; padding:5px; display: flex; 
+        flex-direction: column; justify-content: space-around; width: 37px; height: 37px; box-sizing: border-box;
     }
     .hamburger div{width:25px;height:3px;background:#0cf;margin:0 auto;} 
     
     .sidebar{
-        position:fixed;
-        top:0;  
-        left:0;
-        width:280px;  
-        height:100vh;  
-        background:#1a1a1a;  
-        border-right:1px solid #222;
-        padding: 20px;
-        padding-top: calc(60px + 20px);  
-        box-shadow:3px 0 15px rgba(0,200,200,.15);  
-        transform:translateX(-100%);  
-        transition:transform .3s ease-in-out;
-        z-index:9999;  
-        overflow-y: auto;
+        position:fixed; top:0; left:0; width:280px; height:100vh; background:#1a1a1a; border-right:1px solid #222;
+        padding: 20px; padding-top: calc(60px + 20px); box-shadow:3px 0 15px rgba(0,200,200,.15);  
+        transform:translateX(-100%); transition:transform .3s ease-in-out; z-index:9999; overflow-y: auto;
     }
-    .sidebar.show{
-        transform:translateX(0);  
-    }
+    .sidebar.show{ transform:translateX(0); }
     .sidebar h2{color:#0cf;margin:0 0 20px 0;}
     .sidebar a{display:block;color:#fff;text-decoration:none;margin:12px 0;padding:10px 5px;border-bottom:1px solid #333; font-size: 1em;}
     .sidebar a:last-of-type { border-bottom: none; }
     .sidebar a:hover{color:#0cf}
-
-    /* Estilo específico para "Setlist Próximo Concierto" */
-    .sidebar a#menu-second-setlist-section {
-        font-weight: bold;
-        color: #0cf !important; /* Usamos !important para asegurar que sobreescriba el color base si es necesario */
-    }
-    /* Opcional: Si quieres un hover diferente para este enlace específico */
-    /* .sidebar a#menu-second-setlist-section:hover { */
-    /* color: #09b !important; /* Un azul un poco más oscuro o diferente */
-    /* } */
-
+    .sidebar a#menu-second-setlist-section { font-weight: bold; color: #0cf !important; }
     .sidebar .submenu { margin-left: 15px; margin-top: 10px; }
     .sidebar .submenu a { padding: 8px 0; font-size: 0.9em; border-top: 1px solid #2a2a2a; border-bottom: none; margin: 5px 0;}
     .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; }  
     .sidebar a#menu-config:hover { color: #fff2a7; }
     
-    #overlay{
-        position:fixed;top:0;left:0;width:100%;height:100%;
-        background:rgba(0,0,0,.75);  
-        z-index:5000;  
-        display:none;
-        opacity: 0;
-        transition: opacity .3s ease-in-out;
-    }
+    #overlay{ position:fixed;top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,.75); z-index:5000; display:none; opacity: 0; transition: opacity .3s ease-in-out; }
     #overlay.show{display:block; opacity: 1;}
     
     main { padding-top: 75px; }
-    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 10px; }
+    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(3px); }
     .modal-backdrop.show { display: flex; }
-    .modal-content { background: #1a1a1a; color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; }
+    
+    /* MODALES CON EFECTO CRISTAL */
+    .modal-content { 
+        background: rgba(26, 26, 26, 0.95); color: #fff; padding: 20px; border-radius: 10px; 
+        box-shadow: 0 0 30px rgba(0,255,255,0.15); border: 1px solid rgba(0, 204, 255, 0.2);
+        width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; 
+    }
     .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 5px; }  
     .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
-    #concert-detail-title-display { color: #fff; font-size: 1em; font-weight: normal; margin-top: 0px; margin-bottom: 20px; text-align: left; border-bottom: 1px solid #333; padding-bottom: 10px; padding-left: 0px; }
+    #concert-detail-title-display, #rehearsal-detail-title-display { color: #fff; font-size: 1em; font-weight: normal; margin-top: 0px; margin-bottom: 20px; text-align: left; border-bottom: 1px solid #333; padding-bottom: 10px; padding-left: 0px; }
     #concert-detail-title-display .concert-date { font-style: italic; font-size: 0.9em; margin-left: 8px; }
     .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
     .modal-content input[type="text"], .modal-content input[type="url"], .modal-content input[type="time"], .modal-content textarea { width: 100%; padding: 10px; background: #222; color: #fff; border: 1px solid #333; border-radius: 5px; margin-bottom: 15px; }
@@ -221,7 +130,16 @@
     .config-screen .close-btn{ position:absolute; top:15px; right:20px; font-size:1.2em;background:none;border:1px solid #0cf; color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer; z-index: 10002; }
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px }
+    
+    /* SECCIONES CON EFECTO CRISTAL (Glassmorphism) */
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual { 
+        background: rgba(20, 20, 20, 0.75); 
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
+        padding:20px; border-radius:12px; 
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); 
+        border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
+    }
+    
     #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 { text-align:center;color:#0cf;margin-bottom:5px }
     .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
@@ -236,7 +154,7 @@
     .set-header-row td { font-weight: bold; text-align: center; background-color: #383838; color: #0cf; padding-top: 12px; padding-bottom: 12px; border-top: 1px solid #505050 !important; border-bottom: 1px solid #505050 !important; }
     th.calendar-col-header, td.calendar-col { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
     th.details-col-header { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
-    tr:nth-child(even):not(.set-header-row):not(.break-row){background:#1a1a1a}
+    tr:nth-child(even):not(.set-header-row):not(.break-row){background: rgba(26, 26, 26, 0.6);}
     .download-btn{display:inline-block;margin:20px 5px 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
     #total-time, #total-time-star, #total-time-2{color:#0cf;margin-top:10px;text-align:center}
@@ -300,6 +218,44 @@
       .modal-content { width: 95%; padding: 15px; }  
       .modal-field-group { flex-direction: column; }  
     }
+
+    /* CALENDARIO MENSUAL MEJORADO */
+    #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
+    .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #fff; }
+    .calendar-controls button { background: rgba(34, 34, 34, 0.8); border: 1px solid #0cf; color: #0cf; padding: 5px 15px; border-radius: 4px; cursor: pointer; transition: all 0.2s;}
+    .calendar-controls button:hover { background: #0cf; color: #000; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; background: transparent; border: none; }
+    .cal-header { background: rgba(26, 26, 26, 0.8); color: #0cf; text-align: center; padding: 10px 0; font-weight: bold; font-size: 0.9em; border-radius: 4px; }
+    .cal-day { 
+        background: rgba(0, 0, 0, 0.5); 
+        min-height: 100px; padding: 5px; position: relative; display: flex; flex-direction: column; gap: 2px; 
+        border-radius: 4px; border: 1px solid #333;
+    }
+    .cal-day.other-month { background: rgba(0, 0, 0, 0.2); opacity: 0.5; border: none; }
+    .cal-day.today { border: 1px solid #0cf; background: rgba(0, 204, 255, 0.05); }
+    .cal-day-number { font-size: 0.8em; color: #777; align-self: flex-end; margin-bottom: 5px; }
+    
+    .cal-event { 
+        font-size: 0.75em; padding: 3px 5px; border-radius: 3px; margin-bottom: 3px; word-wrap: break-word; line-height: 1.2; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        transition: transform 0.2s ease, filter 0.2s ease;
+    }
+    .cal-event:hover { transform: scale(1.02) translateY(-1px); filter: brightness(1.2); z-index: 5; }
+    
+    .cal-event.type-ensayo { 
+        color: #ff9999; border-left: 3px solid #ff3333;
+        background: linear-gradient(90deg, rgba(255, 0, 0, 0.15) 0%, rgba(255,0,0,0.05) 100%);
+    }
+    .cal-event.type-concierto { 
+        color: #ffff99; border-left: 3px solid #ffff00;
+        background: linear-gradient(90deg, rgba(255, 255, 0, 0.15) 0%, rgba(255,255,0,0.05) 100%);
+    }
+
+    @media(max-width:768px){
+        .cal-day { min-height: 70px; font-size: 0.9em; }
+        .cal-event { font-size: 0.7em; }
+        .cal-header { font-size: 0.7em; padding: 5px 0; }
+    }
   </style>
 </head>
 
@@ -338,6 +294,7 @@
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
+    <a href="#vista-calendario-mensual" id="menu-calendar-view">Calendario Mensual</a>
     <a href="#" id="menu-stats">Estadísticas</a>
     <a href="#" id="menu-user-list-display">Usuarios Registrados</a>  
     <a href="#" id="menu-config">Configuración</a>
@@ -371,11 +328,32 @@
         </div>
         <label for="concert-detail-notes">Notas generales:</label>
         <textarea id="concert-detail-notes"></textarea>
-        <h4>Músicos Asistentes al Concierto</h4>
+        <label for="concert-detail-sound-company">Empresa de Sonorización:</label>
+        <input type="text" id="concert-detail-sound-company" placeholder="Nombre de la empresa o técnico externo">
+
+        <h4>Músicos Asistentes</h4>
         <div id="musicians-attendance-list"></div>
+
+        <h4>Técnicos Responsables</h4>
+        <div id="technicians-attendance-list" style="border: 1px solid #333; padding: 10px; margin-bottom:15px;"></div>
+
         <button id="save-concert-details">Guardar Detalles</button>
         <button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button>
         <p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p>
+    </div>
+  </div>
+
+  <div id="rehearsal-details-modal" class="modal-backdrop">
+    <div class="modal-content">
+        <h3>Información del Ensayo</h3>
+        <h4 id="rehearsal-detail-title-display"></h4>  
+        <input type="hidden" id="rehearsal-detail-index">
+        <label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label>
+        <textarea id="rehearsal-notes" style="min-height: 150px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea>
+        
+        <button id="save-rehearsal-details">Guardar Información</button>
+        <button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button>
+        <p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p>
     </div>
   </div>
 
@@ -403,8 +381,13 @@
       <option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option>
       <option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option>
       <option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option>
-      <option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option>
-      <option value="Montador">Montador</option><option value="Coros">Coros</option>
+      <option value="Coros">Coros</option>
+      <option value="Dirección Musical">Dirección Musical</option>
+      <option value="Técnico de Sonido">Técnico de Sonido</option>
+      <option value="Técnico de Luces">Técnico de Luces</option>
+      <option value="Montador">Montador</option>
+      <option value="Road Manager">Road Manager</option>
+      <option value="Backliner">Backliner</option>
     </select>
     <button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button>
     <p id="user-message" class="error-message"></p>
@@ -462,7 +445,7 @@
       </div>
       <p id="total-time"></p>
     </section>
-    <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
+    <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th class="details-col-header">Info</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
@@ -486,6 +469,18 @@
       <p id="total-time-star"></p>
     </section>
     <section id="calendario"> <h2>Próximos Conciertos</h2> <div id="bandhelper-concerts-container"> <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script> <p id="bandhelper-loading-message" style="display:none;">Procesando conciertos...</p> </div> </section>
+
+  <section id="vista-calendario-mensual">
+      <h2>Calendario Mensual</h2>
+      <div class="calendar-controls">
+        <button id="prev-month-btn">< Anterior</button>
+        <h3 id="calendar-month-display" style="margin:0; color:#fff;">Mes Año</h3>
+        <button id="next-month-btn">Siguiente ></button>
+      </div>
+      <div class="calendar-grid" id="calendar-grid-container">
+        </div>
+    </section>
+  
   </main>
 
   <footer>© Año 2025 -iDoctor & El Sótano del Doctor- All Rights Reserved.</footer>
@@ -566,7 +561,98 @@ function resetUserForm() { document.getElementById("user-name").value = ""; docu
 
 /* ---------- 7. Ensayos ---------- */
 let rehearsals = []; let editingRehearsalIndex = null;
-function renderRehearsals() { const tbodyConfig=document.getElementById("rehearsal-table-body");const tbodyMain=document.getElementById("rehearsal-main-body");if(!tbodyConfig||!tbodyMain){console.error("Tablas de ensayos no encontradas en el DOM.");return} rehearsals.sort((a,b)=>new Date(a.date+'T'+(a.startTime||'00:00'))-new Date(b.date+'T'+(b.startTime||'00:00')));tbodyConfig.innerHTML=tbodyMain.innerHTML="";if(!Array.isArray(rehearsals)||rehearsals.length===0){const emptyMsgConfig='<tr><td colspan="6">No hay ensayos programados.</td></tr>';tbodyConfig.innerHTML=emptyMsgConfig;const emptyMsgMain='<tr><td colspan="5">No hay próximos ensayos.</td></tr>';tbodyMain.innerHTML=emptyMsgMain;return} const availableUsersForRehearsal=users.filter(user=>!excludedRehearsalUsers.includes(user.name));const userOptions=availableUsersForRehearsal.length>0?availableUsersForRehearsal.map(user=>`<option value="${user.name}">${user.nickname||user.name}</option>`).join(""):`<option value="" disabled>No hay usuarios disponibles</option>`;const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()); rehearsals.forEach((r,i)=>{if(r.time&&(!r.startTime||!r.endTime)){r.startTime=r.time;const[hours,minutes]=r.time.split(":").map(Number);const endHours=(hours+2)%24;r.endTime=`${String(endHours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}`;delete r.time} const formattedDate=formatDateWithDay(r.date);const durationSeconds=calculateDuration(r.startTime,r.endTime);const durationText=toHHMM(durationSeconds);const attendance=Array.isArray(r.attendance)?r.attendance:[];const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); const rehearsalDate=new Date(r.date+'T00:00:00Z');if(rehearsalDate>=today){const calendarCell=`<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;tbodyMain.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`)}}); tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block"}); tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn=>btn.onclick=async()=>{if(confirm("¿Estás seguro de que deseas eliminar este ensayo?")){rehearsals.splice(parseInt(btn.dataset.i,10),1);await saveRehearsals();renderStats()}}); tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn=>btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[index];if(confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)){rehearsal.attendance=[];await saveRehearsals();document.getElementById("rehearsal-message").textContent="Asistencias eliminadas.";renderStats()}}); tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn=>{btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const userSelect=document.querySelector(`.attendance-user[data-i="${index}"]`);const responseSelect=document.querySelector(`.attendance-response[data-i="${index}"]`);const name=userSelect.value;const attending=responseSelect.value;if(!name||!attending){alert("Selecciona nombre y respuesta.");return} const rehearsal=rehearsals[index];const confirmMsg=`${name}, ¿${attending==="Sí"?"ASISTIRÁS":"NO ASISTIRÁS"} al ensayo del ${formatDateWithDay(rehearsal.date)}?`;if(!confirm(confirmMsg))return;if(!Array.isArray(rehearsal.attendance))rehearsal.attendance=[];const existingResponse=rehearsal.attendance.find(a=>a.name===name);if(existingResponse)existingResponse.attending=attending;else rehearsal.attendance.push({name,attending});try{await saveRehearsals();userSelect.value="";responseSelect.value="";renderStats()}catch(e){alert("Error al guardar asistencia: "+e.message)}}})}
+function renderRehearsals() { 
+    const tbodyConfig=document.getElementById("rehearsal-table-body");
+    const tbodyMain=document.getElementById("rehearsal-main-body");
+    
+    if(!tbodyConfig||!tbodyMain){console.error("Tablas de ensayos no encontradas en el DOM.");return} 
+    
+    rehearsals.sort((a,b)=>new Date(a.date+'T'+(a.startTime||'00:00'))-new Date(b.date+'T'+(b.startTime||'00:00')));
+    tbodyConfig.innerHTML=tbodyMain.innerHTML="";
+    
+    if(!Array.isArray(rehearsals)||rehearsals.length===0){
+        const emptyMsgConfig='<tr><td colspan="6">No hay ensayos programados.</td></tr>';
+        tbodyConfig.innerHTML=emptyMsgConfig;
+        const emptyMsgMain='<tr><td colspan="6">No hay próximos ensayos.</td></tr>';
+        tbodyMain.innerHTML=emptyMsgMain;
+        return
+    } 
+    
+    const availableUsersForRehearsal=users.filter(user=>!excludedRehearsalUsers.includes(user.name));
+    const userOptions=availableUsersForRehearsal.length>0?availableUsersForRehearsal.map(user=>`<option value="${user.name}">${user.nickname||user.name}</option>`).join(""):`<option value="" disabled>No hay usuarios disponibles</option>`;
+    
+    const now=new Date();
+    const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()); 
+    
+    rehearsals.forEach((r,i)=>{
+        if(r.time&&(!r.startTime||!r.endTime)){r.startTime=r.time;const[hours,minutes]=r.time.split(":").map(Number);const endHours=(hours+2)%24;r.endTime=`${String(endHours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}`;delete r.time} 
+        
+        const formattedDate=formatDateWithDay(r.date);
+        const durationSeconds=calculateDuration(r.startTime,r.endTime);
+        const durationText=toHHMM(durationSeconds);
+        const attendance=Array.isArray(r.attendance)?r.attendance:[];
+        const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";
+        const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
+        
+        // Tabla Configuración
+        tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); 
+        
+        const rehearsalDate=new Date(r.date+'T00:00:00Z');
+        if(rehearsalDate>=today){
+            const calendarCell=`<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
+            // NUEVA COLUMNA INFO CON FLECHA
+            const detailsCell = `<td class="details-col-header"><button class="details-btn" onclick="openRehearsalDetailsModal(${i})" title="Notas del Ensayo">➡️</button></td>`;
+
+            // Tabla Principal
+            tbodyMain.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}${detailsCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`)
+        }
+    }); 
+
+    // Event Listeners Config
+    tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block"}); 
+    tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn=>btn.onclick=async()=>{if(confirm("¿Estás seguro de que deseas eliminar este ensayo?")){rehearsals.splice(parseInt(btn.dataset.i,10),1);await saveRehearsals();renderStats()}}); 
+    tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn=>btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[index];if(confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)){rehearsal.attendance=[];await saveRehearsals();document.getElementById("rehearsal-message").textContent="Asistencias eliminadas.";renderStats()}}); 
+    
+    // Event Listeners Main
+    tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn=>{btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const userSelect=document.querySelector(`.attendance-user[data-i="${index}"]`);const responseSelect=document.querySelector(`.attendance-response[data-i="${index}"]`);const name=userSelect.value;const attending=responseSelect.value;if(!name||!attending){alert("Selecciona nombre y respuesta.");return} const rehearsal=rehearsals[index];const confirmMsg=`${name}, ¿${attending==="Sí"?"ASISTIRÁS":"NO ASISTIRÁS"} al ensayo del ${formatDateWithDay(rehearsal.date)}?`;if(!confirm(confirmMsg))return;if(!Array.isArray(rehearsal.attendance))rehearsal.attendance=[];const existingResponse=rehearsal.attendance.find(a=>a.name===name);if(existingResponse)existingResponse.attending=attending;else rehearsal.attendance.push({name,attending});try{await saveRehearsals();userSelect.value="";responseSelect.value="";renderStats()}catch(e){alert("Error al guardar asistencia: "+e.message)}}})
+}
+
+/* Lógica Modal Detalles Ensayo */
+const rehearsalDetailModal = document.getElementById('rehearsal-details-modal');
+function openRehearsalDetailsModal(index) {
+    const rehearsal = rehearsals[index];
+    if(!rehearsal) return;
+
+    document.getElementById('rehearsal-detail-index').value = index;
+    document.getElementById('rehearsal-detail-title-display').textContent = `Ensayo: ${formatDateWithDay(rehearsal.date)} (${rehearsal.startTime} - ${rehearsal.endTime})`;
+    document.getElementById('rehearsal-notes').value = rehearsal.notes || "";
+    document.getElementById('rehearsal-detail-message').textContent = "";
+    
+    rehearsalDetailModal.classList.add('show');
+}
+
+document.getElementById('close-rehearsal-details-modal').onclick = () => {
+    rehearsalDetailModal.classList.remove('show');
+};
+
+document.getElementById('save-rehearsal-details').onclick = async () => {
+    const index = parseInt(document.getElementById('rehearsal-detail-index').value, 10);
+    const notes = document.getElementById('rehearsal-notes').value;
+    const msg = document.getElementById('rehearsal-detail-message');
+
+    if (rehearsals[index]) {
+        rehearsals[index].notes = notes;
+        try {
+            await saveRehearsals();
+            msg.textContent = "Información guardada correctamente.";
+            msg.className = "success-message";
+        } catch (e) {
+            msg.textContent = "Error al guardar: " + e.message;
+            msg.className = "error-message";
+        }
+    }
+};
+
 async function loadRehearsals() { try { const data = await withRetry(() => loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); } catch (e) { console.error("Error al cargar ensayos:", e); } }
 async function saveRehearsals() { try { await withRetry(() => saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar ensayos:", e); throw e; } }
 function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; }
@@ -590,17 +676,184 @@ async function genPersonalPDF(setlistStructure,setlistDynamicName,rawFileNameFor
 let processTableAttempts = 0; const MAX_PROCESS_ATTEMPTS = 20;  
 function processBandHelperTable() { const container=document.getElementById('bandhelper-concerts-container');if(!container){console.error("processBandHelperTable: Contenedor 'bandhelper-concerts-container' no encontrado.");return} const table=container.querySelector("table");const loadingMessage=document.getElementById("bandhelper-loading-message");if(!table){processTableAttempts++;if(processTableAttempts<MAX_PROCESS_ATTEMPTS){setTimeout(processBandHelperTable,500)}else{console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de",MAX_PROCESS_ATTEMPTS,"intentos.");if(loadingMessage){loadingMessage.textContent="No se pudieron mostrar los conciertos (tabla no generada por BandHelper).";loadingMessage.style.display="block"}}}else{if(loadingMessage)loadingMessage.style.display="none";if(table.dataset.processed==="true"){return} table.dataset.processed="true";let headerRow=table.querySelector("thead tr");const desiredHeaders=["Fecha/Hora","Evento","Lugar","Cal","Info"];if(!table.tHead){table.createTHead()} headerRow=table.tHead.rows[0]||table.tHead.insertRow(0);headerRow.innerHTML='';desiredHeaders.forEach(text=>{const th=document.createElement('th');th.textContent=text;if(text==="Cal")th.classList.add("calendar-col-header");if(text==="Info")th.classList.add("details-col-header");headerRow.appendChild(th)});const dataRowsSource=table.querySelector("tbody")?Array.from(table.querySelectorAll("tbody tr")):[];dataRowsSource.forEach(row=>{const originalCells=Array.from(row.cells);row.innerHTML='';const dateCellFullText=originalCells[0]?.textContent.trim()||"";const eventTitleFromCell=originalCells[1]?.textContent.trim().split('\n')[0].trim()||"Evento Sin Título";const locationText=originalCells[3]?.textContent.trim().split('\n')[0].trim()||originalCells[2]?.textContent.trim().split('\n')[0].trim()||"";row.insertCell().textContent=dateCellFullText;row.insertCell().textContent=eventTitleFromCell;row.insertCell().textContent=locationText;const calendarDisplayCell=row.insertCell();calendarDisplayCell.className="calendar-col";calendarDisplayCell.style.textAlign="center";const detailDisplayCell=row.insertCell();detailDisplayCell.className="details-col-header";detailDisplayCell.style.textAlign="center";const dateForId=dateCellFullText.split(',')[0].trim();const concertId=sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);const detailsBtn=document.createElement("button");detailsBtn.className="details-btn";detailsBtn.innerHTML="➡️";detailsBtn.title="Ver/Editar Detalles del Concierto";detailsBtn.onclick=()=>openConcertDetailModal(concertId,dateCellFullText,eventTitleFromCell,locationText);detailDisplayCell.appendChild(detailsBtn);let icsDate=new Date().toISOString().split('T')[0];let startTimeForICS="20:00";let durationSecondsForICS=2*3600;const dateMatch=dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(dateMatch){let year=parseInt(dateMatch[3],10);year+=(year<70?2000:1900);icsDate=`${year}-${dateMatch[2]}-${dateMatch[1]}`} const timeRangeMatch=dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/);const singleTimeMatch=dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/);if(timeRangeMatch){startTimeForICS=timeRangeMatch[1];durationSecondsForICS=calculateDuration(timeRangeMatch[1],timeRangeMatch[2]);if(durationSecondsForICS<=0)durationSecondsForICS=2*3600}else if(singleTimeMatch){startTimeForICS=singleTimeMatch[1]} const locationForICS=locationText||eventTitleFromCell;const descriptionForICS=`Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;const calendarBtn=document.createElement('button');calendarBtn.className='calendar-btn';calendarBtn.title='Añadir a mi calendario';calendarBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';calendarBtn.onclick=()=>generateICS(`Concierto: ${eventTitleFromCell}`,icsDate,startTimeForICS,locationForICS,descriptionForICS,durationSecondsForICS);calendarDisplayCell.appendChild(calendarBtn)})}}
 const concertDetailModal = document.getElementById('concert-details-modal'); const concertDetailMessage = document.getElementById('concert-detail-message');
-async function openConcertDetailModal(concertId,concertFullDateText,concertTitle,concertLocationOriginal){concertDetailMessage.textContent="";concertDetailMessage.className="success-message";document.body.style.overflow='hidden';document.getElementById('concert-detail-id').value=concertId;const concertTitleDisplay=document.getElementById('concert-detail-title-display');if(concertTitleDisplay){const datePartOnly=concertFullDateText.split(',')[0].trim();concertTitleDisplay.innerHTML=`${decodeHtmlEntities(concertTitle)||"Título no disponible"} <span class="concert-date">(${datePartOnly||'Fecha no disp.'})</span>`} document.getElementById('concert-detail-location').value='';document.getElementById('concert-detail-soundsetup').value='';document.getElementById('concert-detail-instrumentssetup').value='';document.getElementById('concert-detail-soundcheck').value='';document.getElementById('concert-detail-showtime').value='';document.getElementById('concert-detail-notes').value='';document.getElementById('concert-detail-gmaps-link').value='';const openGmapsBtn=document.getElementById('open-gmaps-link-btn');openGmapsBtn.style.display='none';openGmapsBtn.onclick=null;const musiciansListDiv=document.getElementById('musicians-attendance-list');musiciansListDiv.innerHTML='Cargando músicos...';const excludedMusicians=["Ximo","Ginés Torres"];if(users&&users.length>0){musiciansListDiv.innerHTML='';users.filter(user=>!excludedMusicians.includes(user.name)).forEach(user=>{const userDiv=document.createElement('div');const checkboxId=`user-att-${sanitizeFirebaseKey(user.nickname||user.name)}-${concertId}`;userDiv.innerHTML=` <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname||user.name}"> <label for="${checkboxId}">${user.name} (${user.nickname})</label> `;musiciansListDiv.appendChild(userDiv)});if(musiciansListDiv.children.length===0){musiciansListDiv.innerHTML='No hay otros músicos para listar.'}}else{musiciansListDiv.innerHTML='No hay músicos registrados para listar.'} try{const details=await withRetry(()=>loadDoc('concert_details',concertId,{}));if(details&&Object.keys(details).length>0){document.getElementById('concert-detail-location').value=details.locationDetails||'';document.getElementById('concert-detail-soundsetup').value=details.soundSetupTime||'';document.getElementById('concert-detail-instrumentssetup').value=details.instrumentsSetupTime||'';document.getElementById('concert-detail-soundcheck').value=details.soundcheckTime||'';document.getElementById('concert-detail-showtime').value=details.showTime||'';document.getElementById('concert-detail-notes').value=details.generalNotes||'';const gmapsLink=details.googleMapsLink||'';document.getElementById('concert-detail-gmaps-link').value=gmapsLink;if(gmapsLink){openGmapsBtn.style.display='inline-block';openGmapsBtn.onclick=()=>{const currentLink=document.getElementById('concert-detail-gmaps-link').value.trim();if(currentLink)window.open(currentLink,'_blank')}}else{openGmapsBtn.style.display='none'} if(details.attendees&&Array.isArray(details.attendees)){details.attendees.forEach(attendeeName=>{const checkbox=musiciansListDiv.querySelector(`input[value="${attendeeName}"]`);if(checkbox){checkbox.checked=true}})}}else{openGmapsBtn.style.display='none'}}catch(error){console.error("Error al intentar cargar detalles del concierto desde Firestore:",error);concertDetailMessage.className="error-message";concertDetailMessage.textContent=`Error al cargar detalles: ${error.message}.`;openGmapsBtn.style.display='none'} concertDetailModal.classList.add('show')}
-document.getElementById('save-concert-details').onclick = async () => { const concertId=document.getElementById('concert-detail-id').value;const concertDetailMessage=document.getElementById('concert-detail-message');if(!concertId){concertDetailMessage.className="error-message";concertDetailMessage.textContent="Error: ID de concierto no encontrado. No se puede guardar.";return} const selectedAttendees=[];document.querySelectorAll('#musicians-attendance-list input[type="checkbox"]:checked').forEach(checkbox=>{selectedAttendees.push(checkbox.value)});const gmapsLinkValue=document.getElementById('concert-detail-gmaps-link').value.trim();const concertData={locationDetails:document.getElementById('concert-detail-location').value.trim(),soundSetupTime:document.getElementById('concert-detail-soundsetup').value,instrumentsSetupTime:document.getElementById('concert-detail-instrumentssetup').value,soundcheckTime:document.getElementById('concert-detail-soundcheck').value,showTime:document.getElementById('concert-detail-showtime').value,generalNotes:document.getElementById('concert-detail-notes').value.trim(),attendees:selectedAttendees,googleMapsLink:gmapsLinkValue,lastUpdated:new Date().toISOString()};try{await withRetry(()=>saveDoc('concert_details',concertId,concertData,true));concertDetailMessage.className="success-message";concertDetailMessage.textContent="Detalles guardados correctamente.";const openGmapsBtn=document.getElementById('open-gmaps-link-btn');if(gmapsLinkValue){openGmapsBtn.style.display='inline-block';openGmapsBtn.onclick=()=>{const currentLink=document.getElementById('concert-detail-gmaps-link').value.trim();if(currentLink)window.open(currentLink,'_blank')}}else{openGmapsBtn.style.display='none'}}catch(error){console.error("Error al guardar detalles del concierto en Firestore:",error);concertDetailMessage.className="error-message";concertDetailMessage.textContent=`Error al guardar: ${error.message}.`}};
+async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
+    const concertDetailMessage = document.getElementById('concert-detail-message');
+    concertDetailMessage.textContent = "";
+    concertDetailMessage.className = "success-message";
+    document.body.style.overflow = 'hidden';
+    document.getElementById('concert-detail-id').value = concertId;
+    
+    const concertTitleDisplay = document.getElementById('concert-detail-title-display');
+    if (concertTitleDisplay) {
+        const datePartOnly = concertFullDateText.split(',')[0].trim();
+        concertTitleDisplay.innerHTML = `${decodeHtmlEntities(concertTitle) || "Título no disponible"} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`
+    }
+    
+    // Limpiar campos
+    document.getElementById('concert-detail-location').value = '';
+    document.getElementById('concert-detail-sound-company').value = ''; // NUEVO LIMPIEZA
+    document.getElementById('concert-detail-soundsetup').value = '';
+    document.getElementById('concert-detail-instrumentssetup').value = '';
+    document.getElementById('concert-detail-soundcheck').value = '';
+    document.getElementById('concert-detail-showtime').value = '';
+    document.getElementById('concert-detail-notes').value = '';
+    document.getElementById('concert-detail-gmaps-link').value = '';
+    
+    const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
+    openGmapsBtn.style.display = 'none';
+    openGmapsBtn.onclick = null;
+
+    // Preparar listas
+    const musiciansListDiv = document.getElementById('musicians-attendance-list');
+    const techListDiv = document.getElementById('technicians-attendance-list'); // NUEVO
+    musiciansListDiv.innerHTML = 'Cargando...';
+    techListDiv.innerHTML = 'Cargando...';
+
+    const excludedMusicians = ["Ximo", "Ginés Torres"];
+    
+    // Definimos qué roles se consideran "Técnicos"
+    const techRolesList = ["Técnico de Sonido", "Montador", "Técnico de Luces", "Road Manager", "Backliner"];
+
+    if (users && users.length > 0) {
+        musiciansListDiv.innerHTML = '';
+        techListDiv.innerHTML = '';
+
+        users.filter(user => !excludedMusicians.includes(user.name)).forEach(user => {
+            const userDiv = document.createElement('div');
+            
+            // --- ESTAS 3 LINEAS SON LA SOLUCIÓN PARA ALINEARLOS ---
+            userDiv.style.display = 'flex';         // Los pone en fila
+            userDiv.style.alignItems = 'center';    // Los centra verticalmente
+            userDiv.style.marginBottom = '8px';     // Un poco de espacio debajo
+            // ------------------------------------------------------
+
+            const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`;
+            userDiv.innerHTML = ` <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}" style="margin-right: 8px;"> <label for="${checkboxId}" style="margin:0; cursor:pointer;">${user.name} (${user.nickname})</label> `;
+            
+            // LÓGICA DE SEPARACIÓN:
+            const isTech = user.roles.some(r => techRolesList.includes(r));
+
+            if (isTech) {
+                techListDiv.appendChild(userDiv);
+            } else {
+                musiciansListDiv.appendChild(userDiv);
+            }
+        });
+
+        if (musiciansListDiv.children.length === 0) musiciansListDiv.innerHTML = 'No hay músicos listados.';
+        if (techListDiv.children.length === 0) techListDiv.innerHTML = 'No hay técnicos listados.'; // NUEVO
+    } else {
+        musiciansListDiv.innerHTML = 'No hay usuarios registrados.';
+        techListDiv.innerHTML = '';
+    }
+
+    try {
+        const details = await withRetry(() => loadDoc('concert_details', concertId, {}));
+        if (details && Object.keys(details).length > 0) {
+            document.getElementById('concert-detail-location').value = details.locationDetails || '';
+            document.getElementById('concert-detail-sound-company').value = details.soundCompany || ''; // NUEVO CARGA
+            document.getElementById('concert-detail-soundsetup').value = details.soundSetupTime || '';
+            document.getElementById('concert-detail-instrumentssetup').value = details.instrumentsSetupTime || '';
+            document.getElementById('concert-detail-soundcheck').value = details.soundcheckTime || '';
+            document.getElementById('concert-detail-showtime').value = details.showTime || '';
+            document.getElementById('concert-detail-notes').value = details.generalNotes || '';
+            const gmapsLink = details.googleMapsLink || '';
+            document.getElementById('concert-detail-gmaps-link').value = gmapsLink;
+            
+            if (gmapsLink) {
+                openGmapsBtn.style.display = 'inline-block';
+                openGmapsBtn.onclick = () => {
+                    const currentLink = document.getElementById('concert-detail-gmaps-link').value.trim();
+                    if (currentLink) window.open(currentLink, '_blank')
+                }
+            } else {
+                openGmapsBtn.style.display = 'none'
+            }
+            
+            // Marcar checkboxes (sirve para ambas listas porque buscamos por ID global)
+            if (details.attendees && Array.isArray(details.attendees)) {
+                details.attendees.forEach(attendeeName => {
+                    // Buscamos el input en todo el documento (así pilla músicos y técnicos)
+                    const checkbox = document.querySelector(`input[name="concertAttendees"][value="${attendeeName}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true
+                    }
+                })
+            }
+        } else {
+            openGmapsBtn.style.display = 'none'
+        }
+    } catch (error) {
+        console.error("Error al intentar cargar detalles del concierto desde Firestore:", error);
+        concertDetailMessage.className = "error-message";
+        concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}.`;
+        openGmapsBtn.style.display = 'none'
+    }
+    concertDetailModal.classList.add('show')
+}
+document.getElementById('save-concert-details').onclick = async () => {
+    const concertId = document.getElementById('concert-detail-id').value;
+    const concertDetailMessage = document.getElementById('concert-detail-message');
+    
+    if (!concertId) {
+        concertDetailMessage.className = "error-message";
+        concertDetailMessage.textContent = "Error: ID de concierto no encontrado. No se puede guardar.";
+        return
+    }
+    
+    const selectedAttendees = [];
+    // Capturamos checkboxes de AMBAS listas (Músicos y Técnicos)
+    document.querySelectorAll('input[name="concertAttendees"]:checked').forEach(checkbox => {
+        selectedAttendees.push(checkbox.value)
+    });
+    
+    const gmapsLinkValue = document.getElementById('concert-detail-gmaps-link').value.trim();
+    
+    const concertData = {
+        locationDetails: document.getElementById('concert-detail-location').value.trim(),
+        soundCompany: document.getElementById('concert-detail-sound-company').value.trim(), // NUEVO GUARDAR
+        soundSetupTime: document.getElementById('concert-detail-soundsetup').value,
+        instrumentsSetupTime: document.getElementById('concert-detail-instrumentssetup').value,
+        soundcheckTime: document.getElementById('concert-detail-soundcheck').value,
+        showTime: document.getElementById('concert-detail-showtime').value,
+        generalNotes: document.getElementById('concert-detail-notes').value.trim(),
+        attendees: selectedAttendees,
+        googleMapsLink: gmapsLinkValue,
+        lastUpdated: new Date().toISOString()
+    };
+    
+    try {
+        await withRetry(() => saveDoc('concert_details', concertId, concertData, true));
+        concertDetailMessage.className = "success-message";
+        concertDetailMessage.textContent = "Detalles guardados correctamente.";
+        
+        const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
+        if (gmapsLinkValue) {
+            openGmapsBtn.style.display = 'inline-block';
+            openGmapsBtn.onclick = () => {
+                const currentLink = document.getElementById('concert-detail-gmaps-link').value.trim();
+                if (currentLink) window.open(currentLink, '_blank')
+            }
+        } else {
+            openGmapsBtn.style.display = 'none'
+        }
+    } catch (error) {
+        console.error("Error al guardar detalles del concierto en Firestore:", error);
+        concertDetailMessage.className = "error-message";
+        concertDetailMessage.textContent = `Error al guardar: ${error.message}.`
+    }
+};
+
 document.getElementById('close-concert-details-modal').onclick = () => { closeAll(); };
 
 /* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
-function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
+function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
 document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
+setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
 document.getElementById("menu-config").onclick = e => { e.preventDefault();const submenu=document.getElementById("config-submenu");if(!isAuthenticated){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true;submenu.style.display=submenu.style.display==="block"?"none":"block"}else{alert("Contraseña incorrecta.");return}}else{submenu.style.display=submenu.style.display==="block"?"none":"block"}};
 const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; 
 document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
@@ -877,6 +1130,192 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
   setTimeout(processBandHelperTable, 2000);  
+
+/* ---------- 13. Lógica Calendario Visual (INTERACTIVO) ---------- */
+  let currentCalDate = new Date();
+  let globalConcertDetails = {}; 
+
+  // Escuchar base de datos en tiempo real
+  if (typeof db !== 'undefined') {
+      db.collection('concert_details').onSnapshot(snapshot => {
+          snapshot.forEach(doc => {
+              globalConcertDetails[doc.id] = doc.data();
+          });
+          renderVisualCalendar(); 
+      });
+  }
+
+  function renderVisualCalendar() {
+    const grid = document.getElementById('calendar-grid-container');
+    const monthDisplay = document.getElementById('calendar-month-display');
+    
+    if (!grid || !monthDisplay) return;
+
+    grid.innerHTML = ''; 
+    const year = currentCalDate.getFullYear();
+    const month = currentCalDate.getMonth();
+    
+    const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const dayHeaders = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+    
+    monthDisplay.textContent = `${monthNames[month]} ${year}`;
+
+    dayHeaders.forEach(day => {
+      const div = document.createElement('div');
+      div.className = 'cal-header';
+      div.textContent = day;
+      grid.appendChild(div);
+    });
+
+    const firstDayOfMonth = new Date(year, month, 1);
+    let startDay = firstDayOfMonth.getDay() - 1; 
+    if (startDay === -1) startDay = 6;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+
+    const events = [];
+
+    // --- LÓGICA 1: ENSAYOS ---
+    if (Array.isArray(rehearsals)) {
+      rehearsals.forEach(r => {
+        let missingStr = "";
+        if (r.attendance && Array.isArray(r.attendance)) {
+            const missingNames = r.attendance
+                .filter(a => a.attending === "No")
+                .map(a => {
+                    const u = users.find(user => user.name === a.name);
+                    return u ? u.nickname : a.name;
+                });
+            
+            if (missingNames.length > 0) {
+                missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`;
+            }
+        }
+
+        events.push({
+          dateStr: r.date, 
+          type: 'ensayo',
+          title: `Ensayo (${r.startTime} - ${r.endTime})${missingStr}`
+        });
+      });
+    }
+
+    // --- LÓGICA 2: CONCIERTOS ---
+    const concertRows = document.querySelectorAll('#bandhelper-concerts-container table tbody tr');
+    concertRows.forEach(row => {
+      const cells = row.cells;
+      if (cells.length >= 3) {
+        const dateText = cells[0].textContent.trim(); 
+        const titleText = cells[1].textContent.trim();
+        const locationText = cells[2].textContent.trim(); 
+        
+        const dateMatch = dateText.match(/(\d{2})\/(\d{2})\/(\d{2})/);
+        if (dateMatch) {
+            let y = parseInt(dateMatch[3], 10);
+            y += (y < 70 ? 2000 : 1900);
+            const isoDate = `${y}-${dateMatch[2]}-${dateMatch[1]}`;
+            
+            const dateForId = dateText.split(',')[0].trim();
+            const concertId = sanitizeFirebaseKey(`${dateForId}_${titleText}`);
+            
+            let missingStr = "";
+            const details = globalConcertDetails[concertId];
+
+            if (details && details.attendees) {
+                const missingNames = users
+                    .filter(u => {
+                       const val = u.nickname || u.name;
+                       return !details.attendees.includes(val);
+                    })
+                    .map(u => u.nickname);
+
+                if (missingNames.length > 0) {
+                    missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`;
+                }
+            }
+
+            events.push({
+              dateStr: isoDate,
+              type: 'concierto',
+              title: `${titleText}${missingStr}`,
+              rawDate: dateText,
+              rawTitle: titleText,
+              rawLoc: locationText,
+              id: concertId
+            });
+        }
+      }
+    });
+
+    for (let i = 0; i < startDay; i++) {
+      const div = document.createElement('div');
+      div.className = 'cal-day other-month';
+      grid.appendChild(div);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const div = document.createElement('div');
+      div.className = 'cal-day';
+      
+      if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+        div.classList.add('today');
+      }
+
+      const numDiv = document.createElement('div');
+      numDiv.className = 'cal-day-number';
+      numDiv.textContent = day;
+      div.appendChild(numDiv);
+
+      const currentIso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayEvents = events.filter(e => e.dateStr === currentIso);
+      
+      dayEvents.forEach(evt => {
+        const evtDiv = document.createElement('div');
+        evtDiv.className = `cal-event type-${evt.type}`; 
+        evtDiv.innerHTML = evt.title; 
+        
+        // Click para Conciertos
+        if (evt.type === 'concierto') {
+            evtDiv.style.cursor = 'pointer';
+            evtDiv.title = "Click para ver detalles y asistencia";
+            evtDiv.onclick = (e) => {
+                e.stopPropagation();
+                openConcertDetailModal(evt.id, evt.rawDate, evt.rawTitle, evt.rawLoc);
+            };
+        }
+        
+        div.appendChild(evtDiv);
+      });
+
+      grid.appendChild(div);
+    }
+  }
+
+  const prevBtn = document.getElementById('prev-month-btn');
+  const nextBtn = document.getElementById('next-month-btn');
+  
+  if(prevBtn) {
+      const newPrev = prevBtn.cloneNode(true);
+      prevBtn.parentNode.replaceChild(newPrev, prevBtn);
+      newPrev.addEventListener('click', () => {
+        currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+        renderVisualCalendar();
+      });
+  }
+  
+  if(nextBtn) {
+      const newNext = nextBtn.cloneNode(true);
+      nextBtn.parentNode.replaceChild(newNext, nextBtn);
+      newNext.addEventListener('click', () => {
+        currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+        renderVisualCalendar();
+      });
+  }
+
+  renderVisualCalendar(); 
+  setTimeout(renderVisualCalendar, 2000); 
+  setTimeout(renderVisualCalendar, 5000);
+
   console.log("[DOMContentLoaded] Carga de la aplicación completada.");
 });
 </script>
