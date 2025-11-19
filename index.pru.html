@@ -691,13 +691,19 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
         musiciansListDiv.innerHTML = '';
         techListDiv.innerHTML = '';
 
-        users.filter(user => !excludedMusicians.includes(user.name)).forEach(user => {
+users.filter(user => !excludedMusicians.includes(user.name)).forEach(user => {
             const userDiv = document.createElement('div');
+            
+            // --- ESTAS 3 LINEAS SON LA SOLUCIÓN PARA ALINEARLOS ---
+            userDiv.style.display = 'flex';         // Los pone en fila
+            userDiv.style.alignItems = 'center';    // Los centra verticalmente
+            userDiv.style.marginBottom = '8px';     // Un poco de espacio debajo
+            // ------------------------------------------------------
+
             const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`;
-            userDiv.innerHTML = ` <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}"> <label for="${checkboxId}">${user.name} (${user.nickname})</label> `;
+            userDiv.innerHTML = ` <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}" style="margin-right: 8px;"> <label for="${checkboxId}" style="margin:0; cursor:pointer;">${user.name} (${user.nickname})</label> `;
             
             // LÓGICA DE SEPARACIÓN:
-            // Si el usuario tiene AL MENOS un rol técnico, lo ponemos en la lista de técnicos.
             const isTech = user.roles.some(r => techRolesList.includes(r));
 
             if (isTech) {
