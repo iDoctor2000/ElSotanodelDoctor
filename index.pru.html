@@ -25,7 +25,16 @@
 
   <style>
     *,*::before,*::after{box-sizing:border-box}
-    html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
+    
+    /* --- MEJORA VISUAL: FONDO CON PROFUNDIDAD --- */
+    html,body {
+        margin:0; padding:0; overflow-x:hidden; 
+        font-family:Arial,Helvetica,sans-serif; 
+        /* Degradado sutil para dar sensación de escenario oscuro */
+        background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+        background-attachment: fixed; /* El fondo se queda fijo al hacer scroll */
+        color:#fff;
+    }
     
     /* ---------- Splash Screen ---------- */
     #splash-screen {
@@ -69,7 +78,7 @@
     /* ---------- End Splash Screen ---------- */
 
     header{
-        background:#111;
+        background: rgba(17, 17, 17, 0.95); /* Ligeramente transparente */
         padding:10px 20px;  
         display:flex;
         align-items:center;
@@ -81,6 +90,7 @@
         z-index:1000;  
         border-bottom: 1px solid #222;  
         height: 60px;  
+        backdrop-filter: blur(5px); /* Efecto borroso detrás del header */
     }
     .logo img.logo-main{
         width: 135px;  
@@ -106,8 +116,8 @@
         border: 1px solid #0cf; 
         color: #0cf;            
         border-radius: 4px;
-        padding: 5px;          
-        margin-right: 15px;    
+        padding: 5px;           
+        margin-right: 15px;     
         cursor: pointer;
         display: none; 
         align-items: center;
@@ -163,15 +173,10 @@
     .sidebar a:last-of-type { border-bottom: none; }
     .sidebar a:hover{color:#0cf}
 
-    /* Estilo específico para "Setlist Próximo Concierto" */
     .sidebar a#menu-second-setlist-section {
         font-weight: bold;
-        color: #0cf !important; /* Usamos !important para asegurar que sobreescriba el color base si es necesario */
+        color: #0cf !important; 
     }
-    /* Opcional: Si quieres un hover diferente para este enlace específico */
-    /* .sidebar a#menu-second-setlist-section:hover { */
-    /* color: #09b !important; /* Un azul un poco más oscuro o diferente */
-    /* } */
 
     .sidebar .submenu { margin-left: 15px; margin-top: 10px; }
     .sidebar .submenu a { padding: 8px 0; font-size: 0.9em; border-top: 1px solid #2a2a2a; border-bottom: none; margin: 5px 0;}
@@ -189,9 +194,18 @@
     #overlay.show{display:block; opacity: 1;}
     
     main { padding-top: 75px; }
-    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 10px; }
+    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(3px); }
     .modal-backdrop.show { display: flex; }
-    .modal-content { background: #1a1a1a; color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; }
+    
+    /* --- MEJORA VISUAL: MODALES CON EFECTO CRISTAL --- */
+    .modal-content { 
+        background: rgba(26, 26, 26, 0.95); /* Más sólido para lectura */
+        color: #fff; padding: 20px; border-radius: 10px; 
+        box-shadow: 0 0 30px rgba(0,255,255,0.15); 
+        border: 1px solid rgba(0, 204, 255, 0.2);
+        width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; 
+    }
+    
     .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 5px; }  
     .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
     #concert-detail-title-display { color: #fff; font-size: 1em; font-weight: normal; margin-top: 0px; margin-bottom: 20px; text-align: left; border-bottom: 1px solid #333; padding-bottom: 10px; padding-left: 0px; }
@@ -221,7 +235,19 @@
     .config-screen .close-btn{ position:absolute; top:15px; right:20px; font-size:1.2em;background:none;border:1px solid #0cf; color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer; z-index: 10002; }
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px }
+    
+    /* --- MEJORA VISUAL: SECCIONES CON EFECTO CRISTAL (Glassmorphism) --- */
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual { 
+        background: rgba(20, 20, 20, 0.75); /* Semitransparente */
+        backdrop-filter: blur(10px); /* Desenfoque del fondo */
+        -webkit-backdrop-filter: blur(10px); /* Para Safari */
+        padding:20px;
+        border-radius:12px; /* Bordes un poco más redondeados */
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Sombra suave */
+        border: 1px solid rgba(0, 204, 255, 0.1); /* Borde sutil cyan */
+        margin-bottom:40px 
+    }
+    
     #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 { text-align:center;color:#0cf;margin-bottom:5px }
     .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
@@ -236,7 +262,7 @@
     .set-header-row td { font-weight: bold; text-align: center; background-color: #383838; color: #0cf; padding-top: 12px; padding-bottom: 12px; border-top: 1px solid #505050 !important; border-bottom: 1px solid #505050 !important; }
     th.calendar-col-header, td.calendar-col { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
     th.details-col-header { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
-    tr:nth-child(even):not(.set-header-row):not(.break-row){background:#1a1a1a}
+    tr:nth-child(even):not(.set-header-row):not(.break-row){background: rgba(26, 26, 26, 0.6);}
     .download-btn{display:inline-block;margin:20px 5px 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .download-btn:hover{background:#09b}
     #total-time, #total-time-star, #total-time-2{color:#0cf;margin-top:10px;text-align:center}
@@ -301,32 +327,47 @@
       .modal-field-group { flex-direction: column; }  
     }
 
-    /* ---------- NUEVO: Vista Calendario Mensual ---------- */
-    #vista-calendario-mensual { background: #111; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,255,255,.1); margin-bottom: 40px; }
+    /* ---------- NUEVO: Vista Calendario Mensual CON MEJORAS VISUALES ---------- */
+    
     #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
     .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #fff; }
-    .calendar-controls button { background: #222; border: 1px solid #0cf; color: #0cf; padding: 5px 15px; border-radius: 4px; cursor: pointer; }
-    .calendar-controls button:hover { background: #333; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; background: #333; border: 1px solid #333; }
-    .cal-header { background: #1a1a1a; color: #0cf; text-align: center; padding: 10px 0; font-weight: bold; font-size: 0.9em; }
-    .cal-day { background: #000; min-height: 100px; padding: 5px; position: relative; display: flex; flex-direction: column; gap: 2px; }
-    .cal-day.other-month { background: #0a0a0a; opacity: 0.5; }
-    .cal-day.today { border: 1px solid #0cf; }
+    .calendar-controls button { background: rgba(34, 34, 34, 0.8); border: 1px solid #0cf; color: #0cf; padding: 5px 15px; border-radius: 4px; cursor: pointer; transition: all 0.2s;}
+    .calendar-controls button:hover { background: #0cf; color: #000; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; background: transparent; border: none; }
+    .cal-header { background: rgba(26, 26, 26, 0.8); color: #0cf; text-align: center; padding: 10px 0; font-weight: bold; font-size: 0.9em; border-radius: 4px; }
+    .cal-day { 
+        background: rgba(0, 0, 0, 0.5); 
+        min-height: 100px; padding: 5px; position: relative; display: flex; flex-direction: column; gap: 2px; 
+        border-radius: 4px; border: 1px solid #333;
+    }
+    .cal-day.other-month { background: rgba(0, 0, 0, 0.2); opacity: 0.5; border: none; }
+    .cal-day.today { border: 1px solid #0cf; background: rgba(0, 204, 255, 0.05); }
     .cal-day-number { font-size: 0.8em; color: #777; align-self: flex-end; margin-bottom: 5px; }
     
-    /* Items del calendario */
-    .cal-event { font-size: 0.75em; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; word-wrap: break-word; line-height: 1.2; }
+    /* Items del calendario mejorados */
+    .cal-event { 
+        font-size: 0.75em; padding: 3px 5px; border-radius: 3px; margin-bottom: 3px; word-wrap: break-word; line-height: 1.2; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        transition: transform 0.2s ease, filter 0.2s ease;
+    }
+    
+    /* Efecto Hover en eventos */
+    .cal-event:hover {
+        transform: scale(1.02) translateY(-1px);
+        filter: brightness(1.2);
+        z-index: 5;
+    }
     
     /* Estilos solicitados específicamente */
     .cal-event.type-ensayo { 
-        color: #ff3333; /* Rojo brillante para legibilidad sobre negro */
-        border-left: 2px solid #ff3333;
-        background: rgba(255, 0, 0, 0.1);
+        color: #ff9999; /* Rojo un poco más suave para que lea mejor sobre oscuro */
+        border-left: 3px solid #ff3333;
+        background: linear-gradient(90deg, rgba(255, 0, 0, 0.15) 0%, rgba(255,0,0,0.05) 100%);
     }
     .cal-event.type-concierto { 
-        color: #ffff00; /* Amarillo */
-        border-left: 2px solid #ffff00;
-        background: rgba(255, 255, 0, 0.1);
+        color: #ffff99; /* Amarillo suave */
+        border-left: 3px solid #ffff00;
+        background: linear-gradient(90deg, rgba(255, 255, 0, 0.15) 0%, rgba(255,255,0,0.05) 100%);
     }
 
     @media(max-width:768px){
@@ -537,9 +578,9 @@
   <section id="vista-calendario-mensual">
       <h2>Calendario Mensual</h2>
       <div class="calendar-controls">
-        <button id="prev-month-btn">&lt; Anterior</button>
+        <button id="prev-month-btn">< Anterior</button>
         <h3 id="calendar-month-display" style="margin:0; color:#fff;">Mes Año</h3>
-        <button id="next-month-btn">Siguiente &gt;</button>
+        <button id="next-month-btn">Siguiente ></button>
       </div>
       <div class="calendar-grid" id="calendar-grid-container">
         </div>
@@ -691,7 +732,7 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
         musiciansListDiv.innerHTML = '';
         techListDiv.innerHTML = '';
 
-users.filter(user => !excludedMusicians.includes(user.name)).forEach(user => {
+        users.filter(user => !excludedMusicians.includes(user.name)).forEach(user => {
             const userDiv = document.createElement('div');
             
             // --- ESTAS 3 LINEAS SON LA SOLUCIÓN PARA ALINEARLOS ---
@@ -1104,142 +1145,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
   setTimeout(processBandHelperTable, 2000);  
 
-/* ---------- 13. Lógica Calendario Visual (Ensamblado) ---------- */
-  let currentCalDate = new Date();
-
-  function renderVisualCalendar() {
-    const grid = document.getElementById('calendar-grid-container');
-    const monthDisplay = document.getElementById('calendar-month-display');
-    if (!grid || !monthDisplay) return;
-
-    grid.innerHTML = '';
-    const year = currentCalDate.getFullYear();
-    const month = currentCalDate.getMonth();
-    
-    // Nombres meses y días
-    const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    const dayHeaders = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-    
-    monthDisplay.textContent = `${monthNames[month]} ${year}`;
-
-    // Renderizar cabeceras
-    dayHeaders.forEach(day => {
-      const div = document.createElement('div');
-      div.className = 'cal-header';
-      div.textContent = day;
-      grid.appendChild(div);
-    });
-
-    // Cálculos de fechas
-    const firstDayOfMonth = new Date(year, month, 1);
-    // Ajustar para que Lunes sea 0 (0=Lun, 6=Dom)
-    let startDay = firstDayOfMonth.getDay() - 1; 
-    if (startDay === -1) startDay = 6;
-    
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const today = new Date();
-
-    // 1. Recopilar ENSAYOS (Global rehearsals array)
-    const events = [];
-    if (Array.isArray(rehearsals)) {
-      rehearsals.forEach(r => {
-        events.push({
-          dateStr: r.date, // Formato YYYY-MM-DD
-          type: 'ensayo',
-          title: 'Ensayo'
-        });
-      });
-    }
-
-    // 2. Recopilar CONCIERTOS (Scraping de la tabla BandHelper generada)
-    const concertRows = document.querySelectorAll('#bandhelper-concerts-container table tbody tr');
-    concertRows.forEach(row => {
-      const cells = row.cells;
-      if (cells.length >= 2) {
-        const dateText = cells[0].textContent.trim(); // Espera formato DD/MM/YY o similar
-        const titleText = cells[1].textContent.trim();
-        
-        // Parsear fecha de BandHelper (asumiendo formato DD/MM/YY que suele usar el widget)
-        const dateMatch = dateText.match(/(\d{2})\/(\d{2})\/(\d{2})/);
-        if (dateMatch) {
-            // Ajuste año 2000+
-            let y = parseInt(dateMatch[3], 10);
-            y += (y < 70 ? 2000 : 1900);
-            const isoDate = `${y}-${dateMatch[2]}-${dateMatch[1]}`;
-            
-            events.push({
-              dateStr: isoDate,
-              type: 'concierto',
-              title: titleText
-            });
-        }
-      }
-    });
-
-    // Generar celdas vacías previas
-    for (let i = 0; i < startDay; i++) {
-      const div = document.createElement('div');
-      div.className = 'cal-day other-month';
-      grid.appendChild(div);
-    }
-
-    // Generar días del mes
-    for (let day = 1; day <= daysInMonth; day++) {
-      const div = document.createElement('div');
-      div.className = 'cal-day';
-      
-      // Marcar hoy
-      if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
-        div.classList.add('today');
-      }
-
-      // Número del día
-      const numDiv = document.createElement('div');
-      numDiv.className = 'cal-day-number';
-      numDiv.textContent = day;
-      div.appendChild(numDiv);
-
-      // Buscar eventos para este día
-      const currentIso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      
-      // Filtrar eventos del día
-      const dayEvents = events.filter(e => e.dateStr === currentIso);
-      
-      dayEvents.forEach(evt => {
-        const evtDiv = document.createElement('div');
-        evtDiv.className = `cal-event type-${evt.type}`;
-        // Lógica solicitada: "Ensayo" o el Título del evento
-        evtDiv.textContent = evt.type === 'ensayo' ? 'Ensayo' : evt.title; 
-        div.appendChild(evtDiv);
-      });
-
-      grid.appendChild(div);
-    }
-  }
-
-  // Listeners de navegación calendario
-  document.getElementById('prev-month-btn').addEventListener('click', () => {
-    currentCalDate.setMonth(currentCalDate.getMonth() - 1);
-    renderVisualCalendar();
-  });
-  document.getElementById('next-month-btn').addEventListener('click', () => {
-    currentCalDate.setMonth(currentCalDate.getMonth() + 1);
-    renderVisualCalendar();
-  });
-
-  // INICIALIZACIÓN: Llamar al renderizado
-  // 1. Al cargar (para ver ensayos inmediatamente)
-  renderVisualCalendar();
-  
-  // 2. IMPORTANTE: Enganchar al proceso de BandHelper para ver conciertos cuando carguen
-  // Buscamos tu función processBandHelperTable y la "monkey-patcheamos" o simplemente 
-  // usamos un intervalo seguro, pero como soy senior, vamos a interceptar el final de la carga.
-  // Modificando ligeramente tu setTimeout existente al final del script:
-
-  
-  console.log("[DOMContentLoaded] Carga de la aplicación completada.");
-});
-
 /* ---------- 13. Lógica Calendario Visual (TEXTO NEUTRO EN BLANCO) ---------- */
   let currentCalDate = new Date();
   let globalConcertDetails = {}; 
@@ -1297,7 +1202,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
             
             if (missingNames.length > 0) {
-                // AQUÍ ESTÁ EL CAMBIO: Color blanco (#fff) y salto de línea (<br>)
+                // Color blanco (#fff) y salto de línea (<br>)
                 missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`;
             }
         }
@@ -1305,7 +1210,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         events.push({
           dateStr: r.date, 
           type: 'ensayo',
-          // Importante: Ahora 'title' contiene HTML, no solo texto plano
           title: `Ensayo (${r.startTime} - ${r.endTime})${missingStr}`
         });
       });
@@ -1340,7 +1244,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                     .map(u => u.nickname);
 
                 if (missingNames.length > 0) {
-                    // AQUÍ ESTÁ EL CAMBIO: Color blanco (#fff) y salto de línea (<br>)
                     missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`;
                 }
             }
@@ -1379,7 +1282,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       dayEvents.forEach(evt => {
         const evtDiv = document.createElement('div');
         evtDiv.className = `cal-event type-${evt.type}`; 
-        // CAMBIO CRÍTICO: Usamos innerHTML para que lea los colores y el salto de linea
         evtDiv.innerHTML = evt.title; 
         div.appendChild(evtDiv);
       });
@@ -1413,6 +1315,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   setTimeout(renderVisualCalendar, 2000); 
   setTimeout(renderVisualCalendar, 5000);
 
+  console.log("[DOMContentLoaded] Carga de la aplicación completada.");
+});
 </script>
 </body>
 </html>
