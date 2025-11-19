@@ -1240,17 +1240,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DOMContentLoaded] Carga de la aplicación completada.");
 });
 
-/* ---------- 13. Lógica Calendario Visual (CON CHIVATO DE ASISTENCIA) ---------- */
+/* ---------- 13. Lógica Calendario Visual (TEXTO NEUTRO EN BLANCO) ---------- */
   let currentCalDate = new Date();
-  let globalConcertDetails = {}; // Almacén para los datos de asistencia de conciertos
+  let globalConcertDetails = {}; 
 
-  // 1. Escuchamos en tiempo real los detalles de conciertos para saber quién falta
+  // Escuchar base de datos en tiempo real
   if (typeof db !== 'undefined') {
       db.collection('concert_details').onSnapshot(snapshot => {
           snapshot.forEach(doc => {
               globalConcertDetails[doc.id] = doc.data();
           });
-          // Cuando lleguen datos, repintamos el calendario automáticamente
           renderVisualCalendar(); 
       });
   }
@@ -1270,7 +1269,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     monthDisplay.textContent = `${monthNames[month]} ${year}`;
 
-    // Cabeceras
     dayHeaders.forEach(day => {
       const div = document.createElement('div');
       div.className = 'cal-header';
@@ -1278,7 +1276,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       grid.appendChild(div);
     });
 
-    // Cálculos fechas
     const firstDayOfMonth = new Date(year, month, 1);
     let startDay = firstDayOfMonth.getDay() - 1; 
     if (startDay === -1) startDay = 6;
@@ -1287,34 +1284,34 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const events = [];
 
-    // --- LÓGICA 1: ENSAYOS (¿Quién falta?) ---
+    // --- LÓGICA 1: ENSAYOS ---
     if (Array.isArray(rehearsals)) {
       rehearsals.forEach(r => {
-        // Buscamos quién ha dicho "No"
         let missingStr = "";
         if (r.attendance && Array.isArray(r.attendance)) {
             const missingNames = r.attendance
                 .filter(a => a.attending === "No")
                 .map(a => {
-                    // Intentamos usar el apodo si existe
                     const u = users.find(user => user.name === a.name);
                     return u ? u.nickname : a.name;
                 });
             
             if (missingNames.length > 0) {
-                missingStr = ` [Faltan: ${missingNames.join(", ")}]`;
+                // AQUÍ ESTÁ EL CAMBIO: Color blanco (#fff) y salto de línea (<br>)
+                missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`;
             }
         }
 
         events.push({
           dateStr: r.date, 
           type: 'ensayo',
+          // Importante: Ahora 'title' contiene HTML, no solo texto plano
           title: `Ensayo (${r.startTime} - ${r.endTime})${missingStr}`
         });
       });
     }
 
-    // --- LÓGICA 2: CONCIERTOS (¿Quién falta?) ---
+    // --- LÓGICA 2: CONCIERTOS ---
     const concertRows = document.querySelectorAll('#bandhelper-concerts-container table tbody tr');
     concertRows.forEach(row => {
       const cells = row.cells;
@@ -1328,29 +1325,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             y += (y < 70 ? 2000 : 1900);
             const isoDate = `${y}-${dateMatch[2]}-${dateMatch[1]}`;
             
-            // Generamos el ID del concierto igual que lo hace el sistema
             const dateForId = dateText.split(',')[0].trim();
             const concertId = sanitizeFirebaseKey(`${dateForId}_${titleText}`);
             
-            // Miramos en nuestro almacén si tenemos datos de este concierto
             let missingStr = "";
             const details = globalConcertDetails[concertId];
 
-            // Solo mostramos faltas si alguien ha guardado detalles del concierto alguna vez
             if (details && details.attendees) {
-                // Comparamos TODOS los usuarios con la lista de asistentes (attendees)
-                // Excluimos usuarios que quizás no quieras contar si lo deseas, aquí compara contra todos los registrados
                 const missingNames = users
                     .filter(u => {
-                       // El value del checkbox es nickname o name. 
-                       // Si NO está incluido en attendees, es que falta.
                        const val = u.nickname || u.name;
                        return !details.attendees.includes(val);
                     })
-                    .map(u => u.nickname); // Mostramos solo el apodo para ahorrar espacio
+                    .map(u => u.nickname);
 
                 if (missingNames.length > 0) {
-                    missingStr = ` [Faltan: ${missingNames.join(", ")}]`;
+                    // AQUÍ ESTÁ EL CAMBIO: Color blanco (#fff) y salto de línea (<br>)
+                    missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`;
                 }
             }
 
@@ -1363,14 +1354,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-    // Renderizado de celdas vacías
     for (let i = 0; i < startDay; i++) {
       const div = document.createElement('div');
       div.className = 'cal-day other-month';
       grid.appendChild(div);
     }
 
-    // Renderizado de días
     for (let day = 1; day <= daysInMonth; day++) {
       const div = document.createElement('div');
       div.className = 'cal-day';
@@ -1390,7 +1379,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       dayEvents.forEach(evt => {
         const evtDiv = document.createElement('div');
         evtDiv.className = `cal-event type-${evt.type}`; 
-        evtDiv.textContent = evt.title; 
+        // CAMBIO CRÍTICO: Usamos innerHTML para que lea los colores y el salto de linea
+        evtDiv.innerHTML = evt.title; 
         div.appendChild(evtDiv);
       });
 
@@ -1398,7 +1388,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Listeners de botones (con clonación para evitar duplicados al recargar scripts)
   const prevBtn = document.getElementById('prev-month-btn');
   const nextBtn = document.getElementById('next-month-btn');
   
@@ -1420,11 +1409,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
   }
 
-  // Ejecución inicial y reintentos
   renderVisualCalendar(); 
   setTimeout(renderVisualCalendar, 2000); 
   setTimeout(renderVisualCalendar, 5000);
-
 
 </script>
 </body>
