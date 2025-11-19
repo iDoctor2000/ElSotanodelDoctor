@@ -1240,8 +1240,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DOMContentLoaded] Carga de la aplicación completada.");
 });
 
-/* ---------- 13. Lógica Calendario Visual (ACTUALIZADO CON HORARIOS) ---------- */
+/* ---------- 13. Lógica Calendario Visual (CON CHIVATO DE ASISTENCIA) ---------- */
   let currentCalDate = new Date();
+  let globalConcertDetails = {}; // Almacén para los datos de asistencia de conciertos
+
+  // 1. Escuchamos en tiempo real los detalles de conciertos para saber quién falta
+  if (typeof db !== 'undefined') {
+      db.collection('concert_details').onSnapshot(snapshot => {
+          snapshot.forEach(doc => {
+              globalConcertDetails[doc.id] = doc.data();
+          });
+          // Cuando lleguen datos, repintamos el calendario automáticamente
+          renderVisualCalendar(); 
+      });
+  }
 
   function renderVisualCalendar() {
     const grid = document.getElementById('calendar-grid-container');
@@ -1266,31 +1278,43 @@ document.addEventListener("DOMContentLoaded", async () => {
       grid.appendChild(div);
     });
 
-    // Cálculos
+    // Cálculos fechas
     const firstDayOfMonth = new Date(year, month, 1);
     let startDay = firstDayOfMonth.getDay() - 1; 
     if (startDay === -1) startDay = 6;
-    
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
 
     const events = [];
 
-    // 1. ENSAYOS (Ahora con HORARIO)
+    // --- LÓGICA 1: ENSAYOS (¿Quién falta?) ---
     if (Array.isArray(rehearsals)) {
       rehearsals.forEach(r => {
-        // Construimos el texto con el horario
-        const textoEnsayo = `Ensayo (${r.startTime} - ${r.endTime})`;
-        
+        // Buscamos quién ha dicho "No"
+        let missingStr = "";
+        if (r.attendance && Array.isArray(r.attendance)) {
+            const missingNames = r.attendance
+                .filter(a => a.attending === "No")
+                .map(a => {
+                    // Intentamos usar el apodo si existe
+                    const u = users.find(user => user.name === a.name);
+                    return u ? u.nickname : a.name;
+                });
+            
+            if (missingNames.length > 0) {
+                missingStr = ` [Faltan: ${missingNames.join(", ")}]`;
+            }
+        }
+
         events.push({
           dateStr: r.date, 
           type: 'ensayo',
-          title: textoEnsayo // <--- Aquí está el cambio
+          title: `Ensayo (${r.startTime} - ${r.endTime})${missingStr}`
         });
       });
     }
 
-    // 2. CONCIERTOS (Desde BandHelper)
+    // --- LÓGICA 2: CONCIERTOS (¿Quién falta?) ---
     const concertRows = document.querySelectorAll('#bandhelper-concerts-container table tbody tr');
     concertRows.forEach(row => {
       const cells = row.cells;
@@ -1304,23 +1328,49 @@ document.addEventListener("DOMContentLoaded", async () => {
             y += (y < 70 ? 2000 : 1900);
             const isoDate = `${y}-${dateMatch[2]}-${dateMatch[1]}`;
             
+            // Generamos el ID del concierto igual que lo hace el sistema
+            const dateForId = dateText.split(',')[0].trim();
+            const concertId = sanitizeFirebaseKey(`${dateForId}_${titleText}`);
+            
+            // Miramos en nuestro almacén si tenemos datos de este concierto
+            let missingStr = "";
+            const details = globalConcertDetails[concertId];
+
+            // Solo mostramos faltas si alguien ha guardado detalles del concierto alguna vez
+            if (details && details.attendees) {
+                // Comparamos TODOS los usuarios con la lista de asistentes (attendees)
+                // Excluimos usuarios que quizás no quieras contar si lo deseas, aquí compara contra todos los registrados
+                const missingNames = users
+                    .filter(u => {
+                       // El value del checkbox es nickname o name. 
+                       // Si NO está incluido en attendees, es que falta.
+                       const val = u.nickname || u.name;
+                       return !details.attendees.includes(val);
+                    })
+                    .map(u => u.nickname); // Mostramos solo el apodo para ahorrar espacio
+
+                if (missingNames.length > 0) {
+                    missingStr = ` [Faltan: ${missingNames.join(", ")}]`;
+                }
+            }
+
             events.push({
               dateStr: isoDate,
               type: 'concierto',
-              title: titleText
+              title: `${titleText}${missingStr}`
             });
         }
       }
     });
 
-    // Días vacíos iniciales
+    // Renderizado de celdas vacías
     for (let i = 0; i < startDay; i++) {
       const div = document.createElement('div');
       div.className = 'cal-day other-month';
       grid.appendChild(div);
     }
 
-    // Días del mes
+    // Renderizado de días
     for (let day = 1; day <= daysInMonth; day++) {
       const div = document.createElement('div');
       div.className = 'cal-day';
@@ -1334,7 +1384,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       numDiv.textContent = day;
       div.appendChild(numDiv);
 
-      // Pintar eventos
       const currentIso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const dayEvents = events.filter(e => e.dateStr === currentIso);
       
@@ -1349,12 +1398,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Botones
+  // Listeners de botones (con clonación para evitar duplicados al recargar scripts)
   const prevBtn = document.getElementById('prev-month-btn');
   const nextBtn = document.getElementById('next-month-btn');
   
   if(prevBtn) {
-      // Clonamos el nodo para eliminar listeners antiguos si se recarga el script
       const newPrev = prevBtn.cloneNode(true);
       prevBtn.parentNode.replaceChild(newPrev, prevBtn);
       newPrev.addEventListener('click', () => {
@@ -1372,13 +1420,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
   }
 
-  // Ejecución
+  // Ejecución inicial y reintentos
   renderVisualCalendar(); 
   setTimeout(renderVisualCalendar, 2000); 
   setTimeout(renderVisualCalendar, 5000);
-  setTimeout(renderVisualCalendar, 10000);
 
-  
+
 </script>
 </body>
 </html>
