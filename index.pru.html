@@ -103,7 +103,7 @@
     }
     .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 5px; }  
     .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
-    #concert-detail-title-display { color: #fff; font-size: 1em; font-weight: normal; margin-top: 0px; margin-bottom: 20px; text-align: left; border-bottom: 1px solid #333; padding-bottom: 10px; padding-left: 0px; }
+    #concert-detail-title-display, #rehearsal-detail-title-display { color: #fff; font-size: 1em; font-weight: normal; margin-top: 0px; margin-bottom: 20px; text-align: left; border-bottom: 1px solid #333; padding-bottom: 10px; padding-left: 0px; }
     #concert-detail-title-display .concert-date { font-style: italic; font-size: 0.9em; margin-left: 8px; }
     .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
     .modal-content input[type="text"], .modal-content input[type="url"], .modal-content input[type="time"], .modal-content textarea { width: 100%; padding: 10px; background: #222; color: #fff; border: 1px solid #333; border-radius: 5px; margin-bottom: 15px; }
@@ -343,6 +343,20 @@
     </div>
   </div>
 
+  <div id="rehearsal-details-modal" class="modal-backdrop">
+    <div class="modal-content">
+        <h3>Información del Ensayo</h3>
+        <h4 id="rehearsal-detail-title-display"></h4>  
+        <input type="hidden" id="rehearsal-detail-index">
+        <label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label>
+        <textarea id="rehearsal-notes" style="min-height: 150px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea>
+        
+        <button id="save-rehearsal-details">Guardar Información</button>
+        <button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button>
+        <p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p>
+    </div>
+  </div>
+
   <div id="setlist-config-screen" class="config-screen">
     <button class="close-btn" id="close-setlist-config">Cerrar</button>
     <h2>Configuración de Setlists</h2>
@@ -431,7 +445,7 @@
       </div>
       <p id="total-time"></p>
     </section>
-    <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
+    <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th class="details-col-header">Info</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
@@ -547,7 +561,98 @@ function resetUserForm() { document.getElementById("user-name").value = ""; docu
 
 /* ---------- 7. Ensayos ---------- */
 let rehearsals = []; let editingRehearsalIndex = null;
-function renderRehearsals() { const tbodyConfig=document.getElementById("rehearsal-table-body");const tbodyMain=document.getElementById("rehearsal-main-body");if(!tbodyConfig||!tbodyMain){console.error("Tablas de ensayos no encontradas en el DOM.");return} rehearsals.sort((a,b)=>new Date(a.date+'T'+(a.startTime||'00:00'))-new Date(b.date+'T'+(b.startTime||'00:00')));tbodyConfig.innerHTML=tbodyMain.innerHTML="";if(!Array.isArray(rehearsals)||rehearsals.length===0){const emptyMsgConfig='<tr><td colspan="6">No hay ensayos programados.</td></tr>';tbodyConfig.innerHTML=emptyMsgConfig;const emptyMsgMain='<tr><td colspan="5">No hay próximos ensayos.</td></tr>';tbodyMain.innerHTML=emptyMsgMain;return} const availableUsersForRehearsal=users.filter(user=>!excludedRehearsalUsers.includes(user.name));const userOptions=availableUsersForRehearsal.length>0?availableUsersForRehearsal.map(user=>`<option value="${user.name}">${user.nickname||user.name}</option>`).join(""):`<option value="" disabled>No hay usuarios disponibles</option>`;const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()); rehearsals.forEach((r,i)=>{if(r.time&&(!r.startTime||!r.endTime)){r.startTime=r.time;const[hours,minutes]=r.time.split(":").map(Number);const endHours=(hours+2)%24;r.endTime=`${String(endHours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}`;delete r.time} const formattedDate=formatDateWithDay(r.date);const durationSeconds=calculateDuration(r.startTime,r.endTime);const durationText=toHHMM(durationSeconds);const attendance=Array.isArray(r.attendance)?r.attendance:[];const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); const rehearsalDate=new Date(r.date+'T00:00:00Z');if(rehearsalDate>=today){const calendarCell=`<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;tbodyMain.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`)}}); tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block"}); tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn=>btn.onclick=async()=>{if(confirm("¿Estás seguro de que deseas eliminar este ensayo?")){rehearsals.splice(parseInt(btn.dataset.i,10),1);await saveRehearsals();renderStats()}}); tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn=>btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[index];if(confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)){rehearsal.attendance=[];await saveRehearsals();document.getElementById("rehearsal-message").textContent="Asistencias eliminadas.";renderStats()}}); tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn=>{btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const userSelect=document.querySelector(`.attendance-user[data-i="${index}"]`);const responseSelect=document.querySelector(`.attendance-response[data-i="${index}"]`);const name=userSelect.value;const attending=responseSelect.value;if(!name||!attending){alert("Selecciona nombre y respuesta.");return} const rehearsal=rehearsals[index];const confirmMsg=`${name}, ¿${attending==="Sí"?"ASISTIRÁS":"NO ASISTIRÁS"} al ensayo del ${formatDateWithDay(rehearsal.date)}?`;if(!confirm(confirmMsg))return;if(!Array.isArray(rehearsal.attendance))rehearsal.attendance=[];const existingResponse=rehearsal.attendance.find(a=>a.name===name);if(existingResponse)existingResponse.attending=attending;else rehearsal.attendance.push({name,attending});try{await saveRehearsals();userSelect.value="";responseSelect.value="";renderStats()}catch(e){alert("Error al guardar asistencia: "+e.message)}}})}
+function renderRehearsals() { 
+    const tbodyConfig=document.getElementById("rehearsal-table-body");
+    const tbodyMain=document.getElementById("rehearsal-main-body");
+    
+    if(!tbodyConfig||!tbodyMain){console.error("Tablas de ensayos no encontradas en el DOM.");return} 
+    
+    rehearsals.sort((a,b)=>new Date(a.date+'T'+(a.startTime||'00:00'))-new Date(b.date+'T'+(b.startTime||'00:00')));
+    tbodyConfig.innerHTML=tbodyMain.innerHTML="";
+    
+    if(!Array.isArray(rehearsals)||rehearsals.length===0){
+        const emptyMsgConfig='<tr><td colspan="6">No hay ensayos programados.</td></tr>';
+        tbodyConfig.innerHTML=emptyMsgConfig;
+        const emptyMsgMain='<tr><td colspan="6">No hay próximos ensayos.</td></tr>';
+        tbodyMain.innerHTML=emptyMsgMain;
+        return
+    } 
+    
+    const availableUsersForRehearsal=users.filter(user=>!excludedRehearsalUsers.includes(user.name));
+    const userOptions=availableUsersForRehearsal.length>0?availableUsersForRehearsal.map(user=>`<option value="${user.name}">${user.nickname||user.name}</option>`).join(""):`<option value="" disabled>No hay usuarios disponibles</option>`;
+    
+    const now=new Date();
+    const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()); 
+    
+    rehearsals.forEach((r,i)=>{
+        if(r.time&&(!r.startTime||!r.endTime)){r.startTime=r.time;const[hours,minutes]=r.time.split(":").map(Number);const endHours=(hours+2)%24;r.endTime=`${String(endHours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}`;delete r.time} 
+        
+        const formattedDate=formatDateWithDay(r.date);
+        const durationSeconds=calculateDuration(r.startTime,r.endTime);
+        const durationText=toHHMM(durationSeconds);
+        const attendance=Array.isArray(r.attendance)?r.attendance:[];
+        const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";
+        const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
+        
+        // Tabla Configuración
+        tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); 
+        
+        const rehearsalDate=new Date(r.date+'T00:00:00Z');
+        if(rehearsalDate>=today){
+            const calendarCell=`<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
+            // NUEVA COLUMNA INFO CON FLECHA
+            const detailsCell = `<td class="details-col-header"><button class="details-btn" onclick="openRehearsalDetailsModal(${i})" title="Notas del Ensayo">➡️</button></td>`;
+
+            // Tabla Principal
+            tbodyMain.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}${detailsCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`)
+        }
+    }); 
+
+    // Event Listeners Config
+    tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block"}); 
+    tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn=>btn.onclick=async()=>{if(confirm("¿Estás seguro de que deseas eliminar este ensayo?")){rehearsals.splice(parseInt(btn.dataset.i,10),1);await saveRehearsals();renderStats()}}); 
+    tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn=>btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[index];if(confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)){rehearsal.attendance=[];await saveRehearsals();document.getElementById("rehearsal-message").textContent="Asistencias eliminadas.";renderStats()}}); 
+    
+    // Event Listeners Main
+    tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn=>{btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const userSelect=document.querySelector(`.attendance-user[data-i="${index}"]`);const responseSelect=document.querySelector(`.attendance-response[data-i="${index}"]`);const name=userSelect.value;const attending=responseSelect.value;if(!name||!attending){alert("Selecciona nombre y respuesta.");return} const rehearsal=rehearsals[index];const confirmMsg=`${name}, ¿${attending==="Sí"?"ASISTIRÁS":"NO ASISTIRÁS"} al ensayo del ${formatDateWithDay(rehearsal.date)}?`;if(!confirm(confirmMsg))return;if(!Array.isArray(rehearsal.attendance))rehearsal.attendance=[];const existingResponse=rehearsal.attendance.find(a=>a.name===name);if(existingResponse)existingResponse.attending=attending;else rehearsal.attendance.push({name,attending});try{await saveRehearsals();userSelect.value="";responseSelect.value="";renderStats()}catch(e){alert("Error al guardar asistencia: "+e.message)}}})
+}
+
+/* Lógica Modal Detalles Ensayo */
+const rehearsalDetailModal = document.getElementById('rehearsal-details-modal');
+function openRehearsalDetailsModal(index) {
+    const rehearsal = rehearsals[index];
+    if(!rehearsal) return;
+
+    document.getElementById('rehearsal-detail-index').value = index;
+    document.getElementById('rehearsal-detail-title-display').textContent = `Ensayo: ${formatDateWithDay(rehearsal.date)} (${rehearsal.startTime} - ${rehearsal.endTime})`;
+    document.getElementById('rehearsal-notes').value = rehearsal.notes || "";
+    document.getElementById('rehearsal-detail-message').textContent = "";
+    
+    rehearsalDetailModal.classList.add('show');
+}
+
+document.getElementById('close-rehearsal-details-modal').onclick = () => {
+    rehearsalDetailModal.classList.remove('show');
+};
+
+document.getElementById('save-rehearsal-details').onclick = async () => {
+    const index = parseInt(document.getElementById('rehearsal-detail-index').value, 10);
+    const notes = document.getElementById('rehearsal-notes').value;
+    const msg = document.getElementById('rehearsal-detail-message');
+
+    if (rehearsals[index]) {
+        rehearsals[index].notes = notes;
+        try {
+            await saveRehearsals();
+            msg.textContent = "Información guardada correctamente.";
+            msg.className = "success-message";
+        } catch (e) {
+            msg.textContent = "Error al guardar: " + e.message;
+            msg.className = "error-message";
+        }
+    }
+};
+
 async function loadRehearsals() { try { const data = await withRetry(() => loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); } catch (e) { console.error("Error al cargar ensayos:", e); } }
 async function saveRehearsals() { try { await withRetry(() => saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar ensayos:", e); throw e; } }
 function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; }
@@ -743,7 +848,7 @@ document.getElementById('close-concert-details-modal').onclick = () => { closeAl
 
 /* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
-function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
+function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
 document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
