@@ -11,597 +11,770 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
   <style>
     *,*::before,*::after{box-sizing:border-box}
     html,body{margin:0;padding:0;overflow-x:hidden;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
-    
-    /* ---------- Splash Screen ---------- */
-    #splash-screen {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background-color: #000000; display: flex; justify-content: center; align-items: center;
-      z-index: 200000; opacity: 1; visibility: visible;
-      transition: opacity 0.8s ease-out, transform 0.8s ease-out, visibility 0.8s linear; transform: scale(1);
-    }
-    #splash-screen img {
-      max-width: 60%; max-height: 60%; opacity: 0;
-      transform: scale(0.85) translateY(15px);
-      animation: splash-image-entry 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    }
-    @keyframes splash-image-entry { to { opacity: 1; transform: scale(1) translateY(0); } }
-    #splash-screen.hidden { opacity: 0; transform: scale(0.95); visibility: hidden; pointer-events: none; }
 
-    /* ---------- Header & Sidebar ---------- */
+    /* Splash Screen */
+    #splash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000; display: flex; justify-content: center; align-items: center; z-index: 200000; transition: opacity 0.8s ease-out, visibility 0.8s; }
+    #splash-screen img { max-width: 60%; max-height: 60%; animation: splash-entry 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; transform: scale(0.85) translateY(15px); }
+    @keyframes splash-entry { to { opacity: 1; transform: scale(1) translateY(0); } }
+    #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    /* Header & Sidebar */
     header{ background:#111; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; position:fixed; top:0; left:0; width:100%; z-index:1000; border-bottom: 1px solid #222; height: 60px; }
-    .logo img.logo-main{ width: 135px; height:auto; vertical-align: middle; }
-    .logo-intranet{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); height:45px; width:auto; }
+    .logo img.logo-main{ width: 135px; height:auto; }
+    .logo-intranet{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); height:45px; }
     .header-controls-right { display: flex; align-items: center; }
-    .header-audio-control { background: none; border: 1px solid #0cf; color: #0cf; border-radius: 4px; padding: 5px; margin-right: 15px; cursor: pointer; display: none; align-items: center; justify-content: center; width: 37px; height: 37px; transition: background-color 0.2s ease, transform 0.2s ease; }
-    .header-audio-control:hover { background: #333; transform: scale(1.05); }
-    .header-audio-control svg { width: 20px; height: 20px; }
-    .hamburger{ cursor:pointer; border:1px solid #0cf; border-radius:4px; padding:5px; display: flex; flex-direction: column; justify-content: space-around; width: 37px; height: 37px; box-sizing: border-box; }
-    .hamburger div{width:25px;height:3px;background:#0cf;margin:0 auto;} 
-    
-    .sidebar{ position:fixed; top:0; left:0; width:280px; height:100vh; background:#1a1a1a; border-right:1px solid #222; padding: 20px; padding-top: calc(60px + 20px); box-shadow:3px 0 15px rgba(0,200,200,.15); transform:translateX(-100%); transition:transform .3s ease-in-out; z-index:9999; overflow-y: auto; }
+    .header-audio-control { background:none; border:1px solid #0cf; color:#0cf; border-radius:4px; padding:5px; margin-right:15px; cursor:pointer; display:none; width:37px; height:37px; align-items:center; justify-content:center; }
+    .header-audio-control:hover { background:#333; }
+    .header-audio-control svg { width:20px; height:20px; }
+    .hamburger{ cursor:pointer; border:1px solid #0cf; border-radius:4px; padding:5px; display: flex; flex-direction: column; justify-content: space-around; width: 37px; height: 37px; }
+    .hamburger div{width:25px;height:3px;background:#0cf;margin:0 auto;}
+
+    .sidebar{ position:fixed; top:0; left:0; width:280px; height:100vh; background:#1a1a1a; border-right:1px solid #222; padding:20px; padding-top:80px; transform:translateX(-100%); transition:transform .3s ease-in-out; z-index:9999; overflow-y:auto; }
     .sidebar.show{ transform:translateX(0); }
-    .sidebar h2{color:#0cf;margin:0 0 20px 0;}
-    .sidebar a{display:block;color:#fff;text-decoration:none;margin:12px 0;padding:10px 5px;border-bottom:1px solid #333; font-size: 1em;}
-    .sidebar a:last-of-type { border-bottom: none; }
+    .sidebar h2{color:#0cf;margin-bottom:20px;}
+    .sidebar a{display:block;color:#fff;text-decoration:none;margin:12px 0;padding:10px 5px;border-bottom:1px solid #333;}
     .sidebar a:hover{color:#0cf}
-    .sidebar a#menu-second-setlist-section { font-weight: bold; color: #0cf !important; }
-    .sidebar .submenu { margin-left: 15px; margin-top: 10px; }
-    .sidebar .submenu a { padding: 8px 0; font-size: 0.9em; border-top: 1px solid #2a2a2a; border-bottom: none; margin: 5px 0;}
-    .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; }  
-    .sidebar a#menu-config:hover { color: #fff2a7; }
-    
-    #overlay{ position:fixed;top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,.75); z-index:5000; display:none; opacity: 0; transition: opacity .3s ease-in-out; }
-    #overlay.show{display:block; opacity: 1;}
-    
+    .sidebar .submenu { margin-left:15px; display:none; }
+    .sidebar .submenu a { border-top:1px solid #2a2a2a; border-bottom:none; font-size:0.9em; }
+    #overlay{ position:fixed;top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,.75); z-index:5000; display:none; opacity:0; transition:opacity .3s; }
+    #overlay.show{display:block; opacity:1;}
+
+    /* Main & Sections */
     main { padding-top: 75px; }
-    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 10px; }
-    .modal-backdrop.show { display: flex; }
-    .modal-content { background: #1a1a1a; color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; }
-    .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 5px; }  
-    .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
-    .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000; z-index:10001; overflow-y:auto; padding: 20px; padding-top: calc(60px + 20px); }
-    .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px;}  
-    .config-screen label{display:block;margin:10px 0 5px}
-    .config-screen input,.config-screen select,.config-screen textarea{width:100%;max-width:400px;padding:10px;background:#222;color:#fff; border:1px solid #333;border-radius:5px}
-    .config-screen button, .modal-content button{margin-top:10px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
-    .config-screen .close-btn, .modal-content .modal-close-btn{ position:absolute; top:15px; right:20px; font-size:1.2em;background:none;border:1px solid #0cf; color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer; z-index: 10002; }
+    section { max-width:1200px; margin:0 auto 40px; padding:20px; background:#111; border-radius:10px; box-shadow:0 0 20px rgba(0,255,255,.1); }
+    h2 { text-align:center; color:#0cf; margin-bottom:5px; }
+    .setlist-dynamic-name { text-align:center; color:#aaa; font-style:italic; margin-bottom:15px; font-size:0.9em; }
+
+    /* Tables */
+    .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:10px; margin-bottom:20px; }
+    table { width:100%; min-width:600px; border-collapse:collapse; color:#fff; font-size:.95em; }
+    th, td { padding:12px; border:1px solid #333; text-align:left; }
+    thead th { background:#222; color:#0cf; position:sticky; top:0; z-index:10; }
+    /* Centered columns for Setlists */
+    #setlists table th:not(:nth-child(2)), #setlists table td:not(:nth-child(2)),
+    #second-setlist table th:not(:nth-child(2)), #second-setlist table td:not(:nth-child(2)),
+    #star-setlist table th:not(:nth-child(2)), #star-setlist table td:not(:nth-child(2)) { text-align: center; }
     
-    main section{max-width:1200px;margin:0 auto;padding:20px}
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario { background:#111;padding:20px;border-radius:10px;box-shadow:0 0 20px rgba(0,255,255,.1);margin-bottom:40px }
-    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 { text-align:center;color:#0cf;margin-bottom:5px }
-    .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
-    .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; border-radius:10px; margin-bottom:20px }
-    .table-wrapper table { min-width:600px; width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
-    thead{background:#222;color:#0cf}
-    .table-wrapper thead th { position:sticky; top:0; background:#222; z-index:10 }
-    th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
-    /* Alineaciones específicas para tablas de setlist */
-    #setlists table th:not(:nth-child(2)), #second-setlist table th:not(:nth-child(2)), #star-setlist table th:not(:nth-child(2)) { text-align: center; }
-    #setlists table td:not(:nth-child(2)), #second-setlist table td:not(:nth-child(2)), #star-setlist table td:not(:nth-child(2)) { text-align: center; }
+    .set-header-row td { background:#383838; color:#0cf; font-weight:bold; text-align:center; }
+    .break-row td { background:#161616; color:#ccc; font-style:italic; text-align:center; }
+    tr:nth-child(even):not(.set-header-row):not(.break-row) { background:#1a1a1a; }
+
+    /* Buttons & Inputs */
+    button { padding:10px 15px; background:#0cf; color:#000; border:none; border-radius:8px; cursor:pointer; margin:5px; }
+    button:hover { background:#09b; }
+    .download-btn { display:inline-block; margin-top:20px; }
+    .calendar-btn svg, .details-btn { width:20px; height:20px; fill:#0cf; cursor:pointer; }
+    .details-btn { background:none; font-size:1.5em; color:#0cf; padding:0; }
     
-    .break-row td { font-style: italic; color: #ccc; background-color: #161616; }
-    .set-header-row td { font-weight: bold; text-align: center; background-color: #383838; color: #0cf; padding-top: 12px; padding-bottom: 12px; }
-    tr:nth-child(even):not(.set-header-row):not(.break-row){background:#1a1a1a}
-    .download-btn{display:inline-block;margin:20px 5px 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
-    
-    /* Estilos de botones y utilidades */
-    .calendar-btn svg, .details-btn { width: 20px; height: 20px; fill: #0cf; cursor:pointer; }
-    .details-btn { font-size: 1.5em; color: #0cf; border:none; background:none; }
-    .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal { padding: 5px 10px; margin: 0 5px; border-radius: 4px; cursor: pointer; border:none; }
-    .delete-user, .delete-rehearsal { background: #f00; color: #fff; }
-    .edit-user, .edit-rehearsal { background: #0cf; color: #000; }
-    .attendance-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    #connection-status { position: fixed; top: calc(60px + 5px); right: 10px; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none; }
-    #connection-status.offline { background: #f00; }
-    #firebase-critical-error-banner { background-color: red; color: white; padding: 15px; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 100001; font-weight: bold; }
+    /* Modals */
+    .modal-backdrop, .config-screen { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10000; overflow-y:auto; padding:20px; padding-top:80px; }
+    .modal-backdrop.show { display:flex; justify-content:center; align-items:center; }
+    .modal-content { background:#1a1a1a; padding:20px; border-radius:10px; max-width:600px; width:100%; position:relative; max-height:90vh; overflow-y:auto; }
+    .config-screen input, .config-screen select, .modal-content textarea, .modal-content input { width:100%; padding:10px; background:#222; color:#fff; border:1px solid #333; margin-bottom:10px; border-radius:5px; }
+    .close-btn, .modal-close-btn { position:absolute; top:10px; right:10px; background:none; border:1px solid #0cf; color:#0cf; }
+
+    /* Calendar & Stats */
+    #rehearsals-calendar { background:#111; padding:10px; border-radius:10px; min-height:400px; }
+    /* Override FullCalendar buttons for dark theme */
+    .fc-button-primary { background-color: #0cf !important; border-color: #0cf !important; color: #000 !important; }
+    .fc-button-active { background-color: #09b !important; border-color: #09b !important; }
+    .fc-toolbar-title { color: #0cf !important; }
+    .fc-list-day-cushion { background-color: #222 !important; }
+    .fc-list-event:hover td { background-color: #333 !important; }
 
     @media(max-width:768px){
-      header { height: 55px; padding: 8px 15px; }  
-      .logo img.logo-main{ width: 110px; }
-      .sidebar{ width:260px; padding-top: calc(55px + 15px); }
-      main { padding-top: 65px; }
-      .table-wrapper { overflow-x: auto; }  
-      table { width: 100%; min-width: unset; font-size: 0.85em; }
-      th, td { padding: 8px; max-width: 150px; }
-      .modal-content { width: 95%; padding: 15px; }  
+        header { height:55px; padding:8px 15px; }
+        .sidebar { width:260px; }
+        table { min-width:unset; font-size:0.85em; }
+        th, td { padding:8px; }
+        .modal-content { width:95%; }
     }
+    #firebase-critical-error-banner { background:red; color:#fff; text-align:center; padding:10px; display:none; position:fixed; width:100%; top:0; z-index:200001; }
+    #connection-status { position:fixed; top:65px; right:10px; padding:5px 10px; border-radius:5px; display:none; z-index:10000; font-size:0.9em; }
+    .offline { background:#f00; }
   </style>
 </head>
-
 <body>
-  <div id="splash-screen">
-    <img src="assets/Logo Sobre negro1.png" alt="Cargando El Sótano del Doctor...">
-  </div>
-  <div id="firebase-critical-error-banner" style="display:none;">
-    ERROR CRÍTICO: La configuración de Firebase no es válida o es un placeholder.
-  </div>
+
+  <div id="splash-screen"><img src="assets/Logo Sobre negro1.png" alt="Cargando..."></div>
+  <div id="firebase-critical-error-banner">ERROR: API Key de Firebase inválida.</div>
   <div id="connection-status"></div>
 
   <header>
-    <div class="logo">
-      <img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main">
-    </div>
-    <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
+    <div class="logo"><img src="assets/logo_blanco.png" class="logo-main"></div>
+    <img src="assets/logointranet.png" class="logo-intranet">
     <div class="header-controls-right">
-        <button id="site-audio-control-button" class="header-audio-control" title="Activar sonido" style="display: none;"> 
-            <svg class="icon-muted" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/></svg>
-            <svg class="icon-unmuted" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M12.4 4.42a1.19 1.19 0 00-1.75 1.05v13.1a1.19 1.19 0 001.75 1.05l4.91-3.3H19a1 1 0 001-1.07V9.72a1 1 0 00-1-1.07h-1.66zm6.1 2.51a6.73 6.73 0 010 10.14M16 9.48a3.23 3.23 0 010 5M4 9.72v4.56a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.65H5a1 1 0 00-1 1.07z"/></svg>
-        </button>
-        <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
+      <button id="site-audio-control-button" class="header-audio-control"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4L7 9H3v6h4l5 5v-16z"/></svg></button>
+      <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
     </div>
   </header>
 
   <div id="overlay"></div>
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
-    <a href="#setlists" id="menu-rehearsals-setlist-section">Setlist Próximo Ensayo</a>
-    <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
-    <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
-    <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
-    <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
+    <a href="#setlists" id="menu-setlists">Setlist Próximo Ensayo</a>
+    <a href="#rehearsals" id="menu-rehearsals">Próximos Ensayos</a>
+    <a href="#second-setlist" id="menu-second">Setlist Próximo Concierto</a>
+    <a href="#star-setlist" id="menu-star">Setlist Concierto Estrella</a>
+    <a href="#calendario" id="menu-concerts">Próximos Conciertos</a>
     <a href="#" id="menu-stats">Estadísticas</a>
-    <a href="#" id="menu-user-list-display">Usuarios Registrados</a>  
+    <a href="#" id="menu-users">Usuarios Registrados</a>
     <a href="#" id="menu-config">Configuración</a>
-    <div class="submenu" id="config-submenu" style="display: none;">
+    <div class="submenu" id="config-submenu">
       <a href="#" id="menu-setlist-config">Configurar Setlists</a>
-      <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
-      <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
+      <a href="#" id="menu-user-mgmt">Gestión Usuarios</a>
+      <a href="#" id="menu-rehearsal-mgmt">Gestión Ensayos</a>
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
 
   <div id="concert-details-modal" class="modal-backdrop">
     <div class="modal-content">
-        <h3>Detalles del Concierto</h3>
-        <h4 id="concert-detail-title-display"></h4>  
-        <input type="hidden" id="concert-detail-id">
-        <label>Ubicación:</label><textarea id="concert-detail-location"></textarea>
-        <label>Google Maps:</label><input type="url" id="concert-detail-gmaps-link">
-        <button id="open-gmaps-link-btn" style="display:none;">Abrir Mapa</button>
-        <div class="modal-field-group">
-            <div><label>Sonido:</label><input type="time" id="concert-detail-soundsetup"></div>
-            <div><label>Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div>
-        </div>
-        <div class="modal-field-group">
-            <div><label>Prueba:</label><input type="time" id="concert-detail-soundcheck"></div>
-            <div><label>Show:</label><input type="time" id="concert-detail-showtime"></div>
-        </div>
-        <label>Notas:</label><textarea id="concert-detail-notes"></textarea>
-        <h4>Músicos</h4><div id="musicians-attendance-list"></div>
-        <button id="save-concert-details">Guardar</button>
-        <button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button>
-        <p id="concert-detail-message" class="success-message"></p>
+      <h3>Detalles del Concierto</h3>
+      <h4 id="concert-detail-title-display"></h4>
+      <input type="hidden" id="concert-detail-id">
+      <label>Ubicación:</label><textarea id="concert-detail-location"></textarea>
+      <label>Google Maps:</label><input type="url" id="concert-detail-gmaps-link">
+      <button id="open-gmaps-link-btn" style="display:none;">Abrir Mapa</button>
+      <div style="display:flex; gap:10px;">
+         <div style="flex:1"><label>Sonido:</label><input type="time" id="concert-detail-soundsetup"></div>
+         <div style="flex:1"><label>Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div>
+      </div>
+      <div style="display:flex; gap:10px;">
+         <div style="flex:1"><label>Prueba:</label><input type="time" id="concert-detail-soundcheck"></div>
+         <div style="flex:1"><label>Show:</label><input type="time" id="concert-detail-showtime"></div>
+      </div>
+      <label>Notas:</label><textarea id="concert-detail-notes"></textarea>
+      <h4>Músicos</h4><div id="musicians-attendance-list"></div>
+      <button id="save-concert-details">Guardar</button>
+      <button class="modal-close-btn" onclick="closeAll()">Cerrar</button>
+      <p id="concert-detail-message"></p>
     </div>
   </div>
 
   <div id="setlist-config-screen" class="config-screen">
-    <button class="close-btn" id="close-setlist-config">Cerrar</button>
-    <h2>Configuración de Setlists</h2>
-    <label>Setlist Ensayo (Nombre/URL)</label><input id="setlist1-name"><input id="setlist1-url">
-    <label>Setlist Concierto (Nombre/URL)</label><input id="setlist2-name"><input id="setlist2-url">
-    <label>Setlist Estrella (Nombre/URL)</label><input id="setlistStar-name"><input id="setlistStar-url">
+    <button class="close-btn" onclick="closeAll()">Cerrar</button>
+    <h2>Configuración Setlists</h2>
+    <label>Ensayo (Nombre/URL)</label><input id="setlist1-name"><input id="setlist1-url">
+    <label>Concierto (Nombre/URL)</label><input id="setlist2-name"><input id="setlist2-url">
+    <label>Estrella (Nombre/URL)</label><input id="setlistStar-name"><input id="setlistStar-url">
     <button id="guardar-setlist-config">Guardar</button>
-    <p id="setlist-message" class="error-message"></p>
   </div>
 
   <div id="user-mgmt-screen" class="config-screen">
-    <button class="close-btn" id="close-user-mgmt">Cerrar</button>
-    <h2>Gestión de Usuarios</h2>
+    <button class="close-btn" onclick="closeAll()">Cerrar</button>
+    <h2>Usuarios</h2>
     <input id="user-name" placeholder="Nombre"><input id="user-nickname" placeholder="Apodo">
-    <select id="user-role" multiple>
-        <option value="Voz">Voz</option><option value="Guitarra">Guitarra</option><option value="Bajo">Bajo</option><option value="Batería">Batería</option><option value="Teclados">Teclados</option>
-    </select>
-    <button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar</button>
-    <table id="user-table"><tbody id="user-table-body"></tbody></table>
+    <select id="user-role" multiple style="height:100px"><option value="Voz">Voz</option><option value="Guitarra">Guitarra</option><option value="Bajo">Bajo</option><option value="Batería">Batería</option><option value="Teclados">Teclados</option></select>
+    <button id="add-user">Añadir</button><button id="cancel-edit-user" style="display:none;">Cancelar</button>
+    <div class="table-wrapper"><table id="user-table"><tbody id="user-table-body"></tbody></table></div>
   </div>
 
   <div id="rehearsal-screen" class="config-screen">
-    <button class="close-btn" id="close-rehearsal">Cerrar</button>
-    <h2>Asignación de Ensayos</h2>
+    <button class="close-btn" onclick="closeAll()">Cerrar</button>
+    <h2>Gestión Ensayos</h2>
     <input type="date" id="rehearsal-date"><input type="time" id="rehearsal-start-time"><input type="time" id="rehearsal-end-time"><input id="rehearsal-location" placeholder="Lugar">
-    <button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar</button>
-    <table id="rehearsal-table"><tbody id="rehearsal-table-body"></tbody></table>
+    <button id="add-rehearsal">Añadir</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar</button>
+    <div class="table-wrapper"><table id="rehearsal-table"><tbody id="rehearsal-table-body"></tbody></table></div>
   </div>
 
   <div id="stats-screen" class="config-screen">
-    <button class="close-btn" id="close-stats">Cerrar</button>
+    <button class="close-btn" onclick="closeAll()">Cerrar</button>
     <h2>Estadísticas</h2>
     <select id="stats-month-filter"></select>
-    <div class="stats-table"><h3>Por Mes</h3><tbody id="time-per-month-body"></tbody></div>
-    <div class="stats-table"><h3>Por Usuario</h3><tbody id="time-per-user-body"></tbody></div>
+    <h3>Por Mes</h3><table id="time-per-month-table"><tbody id="time-per-month-body"></tbody></table>
+    <h3>Por Usuario</h3><table id="time-per-user-table"><tbody id="time-per-user-body"></tbody></table>
   </div>
-  
+
   <div id="user-list-screen" class="config-screen">
-     <button class="close-btn" id="close-user-list-screen">Cerrar</button>
-     <h2>Usuarios Registrados</h2>
-     <div class="table-wrapper"><table id="users-display-table"><tbody id="users-body"></tbody></table></div>
+    <button class="close-btn" onclick="closeAll()">Cerrar</button>
+    <h2>Usuarios Registrados</h2>
+    <div class="table-wrapper"><table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table></div>
   </div>
 
   <main>
     <section id="setlists">
       <h2>Setlist Próximo Ensayo</h2>
       <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
-      <div style="text-align: center;">
+      <div class="table-wrapper"><table><thead><tr><th>#</th><th>Título</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
+      <div style="text-align:center">
         <button class="download-btn" id="download-btn">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
         <button class="download-btn" id="download-personal-btn">PDF Personal</button>
       </div>
-      <p id="total-time"></p>
+      <p id="total-time" style="text-align:center; margin-top:10px; color:#0cf;"></p>
     </section>
 
     <section id="rehearsals">
       <h2>Próximos Ensayos</h2>
-      <div id="rehearsals-calendar" style="background:#111; padding:20px; border-radius:10px; margin-bottom:30px; box-shadow:0 0 20px rgba(0,255,255,.1);"></div>
-      <div class="table-wrapper">
-        <table id="rehearsal-main-table">
-          <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th>Confirmar Asistencia</th></tr></thead>
-          <tbody id="rehearsal-main-body"></tbody>
-        </table>
+      <div id="rehearsals-calendar"></div>
+      
+      <div class="table-wrapper" style="margin-top:30px;">
+        <table id="rehearsal-main-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Cal</th><th>Confirmar</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table>
       </div>
-      <button id="floating-add-rehearsal" style="position:fixed; bottom:30px; right:30px; width:60px; height:60px; border-radius:50%; background:#0cf; color:#000; border:none; font-size:30px; box-shadow:0 4px 15px rgba(0,255,255,0.4); z-index:1000; cursor:pointer;">+</button>
+      <button id="floating-add-rehearsal" style="position:fixed; bottom:30px; right:30px; width:60px; height:60px; border-radius:50%; font-size:30px; z-index:999;">+</button>
     </section>
-    
+
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
-      <div style="text-align: center;">
+      <div class="table-wrapper"><table><thead><tr><th>#</th><th>Canción</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
+      <div style="text-align:center">
         <button class="download-btn" id="download-btn-2">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
         <button class="download-btn" id="download-personal-btn-2">PDF Personal</button>
       </div>
-      <p id="total-time-2"></p>
+      <p id="total-time-2" style="text-align:center; margin-top:10px; color:#0cf;"></p>
     </section>
 
     <section id="star-setlist">
       <h2>Setlist Concierto Estrella</h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
-      <div style="text-align: center;">
+      <div class="table-wrapper"><table><thead><tr><th>#</th><th>Título</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
+      <div style="text-align:center">
         <button class="download-btn" id="download-btn-star">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
         <button class="download-btn" id="download-personal-btn-star">PDF Personal</button>
       </div>
-      <p id="total-time-star"></p>
+      <p id="total-time-star" style="text-align:center; margin-top:10px; color:#0cf;"></p>
     </section>
 
-    <section id="calendario"> 
-        <h2>Próximos Conciertos</h2> 
-        <div id="bandhelper-concerts-container"> 
-            <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script> 
-            <p id="bandhelper-loading-message" style="display:none;">Procesando conciertos...</p> 
-        </div> 
+    <section id="calendario">
+      <h2>Próximos Conciertos</h2>
+      <div id="bandhelper-concerts-container">
+         <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
+         <p id="bandhelper-loading-message" style="display:none;">Cargando conciertos...</p>
+      </div>
     </section>
   </main>
 
-  <footer>© Año 2025 -iDoctor & El Sótano del Doctor- All Rights Reserved.</footer>
-
-  <audio id="site-audio">
-    <source src="" type="audio/mpeg">
-  </audio>
+  <footer style="text-align:center; padding:20px; color:#888; border-top:1px solid #222;">© 2025 - iDoctor & El Sótano del Doctor</footer>
+  <audio id="site-audio"><source src="" type="audio/mpeg"></audio>
 
 <script>
-/* ---------- 0. Firebase ---------- */
+/* ---------- CONFIGURACIÓN FIREBASE ---------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",  
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",
   authDomain: "sotanointranet.firebaseapp.com",
   projectId: "sotanointranet",
-  storageBucket: "sotanointranet.appspot.com",  
+  storageBucket: "sotanointranet.appspot.com",
   messagingSenderId: "756955233128",
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("placeholder")) { document.getElementById('firebase-critical-error-banner').style.display = 'block'; }
-firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => console.warn("Persistencia:", err.code));
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("placeholder")) document.getElementById('firebase-critical-error-banner').style.display='block';
+firebase.initializeApp(firebaseConfig); 
+const db = firebase.firestore(); 
+db.enablePersistence().catch(err=>console.warn("Persistencia:",err.code));
 
-/* ---------- 1. Utilidades ---------- */
-const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
-const toMMSS = s => { s=s||0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
-const toHHMM = s => { s=s||0; const totalSeconds = Math.round(s); const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;};
-const toHours = s => { if (isNaN(s)) return (0).toFixed(2); return (s / 3600).toFixed(2);};
-function decodeHtmlEntities(text) { if (typeof text !== 'string') return text; const textArea = document.createElement('textarea'); textArea.innerHTML = text; return textArea.value;}
-const calculateDuration = (startTime, endTime) => { if (!startTime || !endTime) return 0; const [startH, startM] = startTime.split(":").map(Number); const [endH, endM] = endTime.split(":").map(Number); let duration = (endH * 3600 + endM * 60) - (startH * 3600 + startM * 60); if (duration < 0) duration += 24 * 3600; return duration;};
-const formatDateWithDay = dateStr => { const d = new Date(dateStr + 'T00:00:00Z'); const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]; const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${days[d.getUTCDay()]} ${d.getUTCDate()} de ${months[d.getUTCMonth()]}`;};
-const getMonthYear = dateStr => { const d = new Date(dateStr + 'T00:00:00Z'); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;};
-function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) { 
-  const startDate = new Date(`${date}T${startTime}`); const endDate = new Date(startDate.getTime() + durationSeconds * 1000); 
-  const pad = n => String(n).padStart(2, '0');
-  const formatICS = d => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
-  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nDTSTART:${formatICS(startDate)}\r\nDTEND:${formatICS(endDate)}\r\nSUMMARY:${title}\r\nDESCRIPTION:${description}\r\nLOCATION:${location}\r\nEND:VEVENT\r\nEND:VCALENDAR`;
-  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
-  const link = document.createElement("a"); link.href = url; link.download = `${sanitizeFirebaseKey(title)}.ics`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
-}
+/* ---------- UTILIDADES ---------- */
 const sanitizeFirebaseKey = s => s.replace(/[.#$[\]/:\s,]/g, '_');
 const sanitizeForPdfFilename = s => (s || "setlist").replace(/[\\/:*?"<>|#$.[\]]/g, '_').replace(/\s+/g, '_');
+const decodeHtmlEntities = t => { const txt = document.createElement("textarea"); txt.innerHTML = t; return txt.value; };
+const toMMSS = s => { s=s||0; const sec = Math.round(s); return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`; };
+const toHHMM = s => { s=s||0; const sec = Math.round(s); const h = Math.floor(sec/3600); const m = Math.floor((sec%3600)/60); return h ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m`; };
+const formatDateWithDay = dStr => { const d=new Date(dStr+'T00:00:00Z'); const days=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"]; const months=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]; return `${days[d.getUTCDay()]} ${d.getUTCDate()} de ${months[d.getUTCMonth()]}`; };
+function generateICS(title, date, startTime, location, description, durationSeconds=7200) {
+    const start = new Date(`${date}T${startTime}`); const end = new Date(start.getTime() + durationSeconds*1000);
+    const fmt = d => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nDTSTART:${fmt(start)}\r\nDTEND:${fmt(end)}\r\nSUMMARY:${title}\r\nDESCRIPTION:${description}\r\nLOCATION:${location}\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+    const url = URL.createObjectURL(new Blob([ics], {type: 'text/calendar;charset=utf-8'}));
+    const a = document.createElement('a'); a.href = url; a.download = `${sanitizeFirebaseKey(title)}.ics`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
 
-/* ---------- 1.5. Conexión ---------- */
-const connectionStatus = document.getElementById("connection-status"); 
-function updateConnectionStatus() { if (!navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión: Modo offline"; connectionStatus.style.display = "block"; } else { connectionStatus.style.display = "none"; } } 
-window.addEventListener("online", updateConnectionStatus); window.addEventListener("offline", updateConnectionStatus); 
-async function withRetry(fn) { try { return await fn(); } catch (e) { console.error("Retry error:", e); throw e; } }
-
-/* ---------- 2. Firestore ---------- */
-async function loadDoc(c, d, fb) { try { const s = await db.collection(c).doc(d).get(); return s.exists ? s.data() : fb; } catch (e) { return fb; } }
-async function saveDoc(c, d, data, m = false) { await db.collection(c).doc(d).set(data, { merge: m }); }
-
-/* ---------- 3. Configuración Setlists (CORREGIDO - SIN WORKER) ---------- */
-let setlistConfig = {setlist1:{name:"Setlist Ensayo",url:""},setlist2:{name:"Setlist Concierto",url:""},setlistStar:{name:"Setlist Estrella",url:""}};
-function updateDynamicSetlistTitles(){document.getElementById("setlist1-dynamic-name").textContent=setlistConfig.setlist1.name;document.getElementById("second-setlist-dynamic-name").textContent=setlistConfig.setlist2.name;document.getElementById("star-setlist-dynamic-name").textContent=setlistConfig.setlistStar.name}
-async function loadSetlistConfig(){try{const data=await withRetry(()=>loadDoc("intranet","setlists",{config:setlistConfig}));setlistConfig={setlist1:data.config?.setlist1||setlistConfig.setlist1,setlist2:data.config?.setlist2||setlistConfig.setlist2,setlistStar:data.config?.setlistStar||setlistConfig.setlistStar};updateDynamicSetlistTitles()}catch(e){updateDynamicSetlistTitles()}}
-async function saveSetlistConfig(){updateDynamicSetlistTitles();return await withRetry(()=>saveDoc("intranet","setlists",{config:setlistConfig}))}
-
-// ==================== CORRECCIÓN: FUNCIÓN DE PROCESAMIENTO DIRECTO ====================
-async function cargarSetlistDirecto(configEntry, tbodyId, totalTimeId, errorMsg) {
+/* ---------- PROCESAMIENTO SETLISTS (SIN WORKER - HILO PRINCIPAL) ---------- */
+// Esta función reemplaza al Worker para evitar bloqueos y errores 404
+async function processAndRenderSetlist(configEntry, tbodyId, totalTimeId, errorMsg) {
     const tbody = document.getElementById(tbodyId);
     const totalElem = document.getElementById(totalTimeId);
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando...</td></tr>';
-    totalElem.textContent = '';
-
-    if (!configEntry || !configEntry.url || configEntry.url.includes("URL_POR_CONFIGURAR")) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">URL no configurada.</td></tr>';
-        return [];
+    
+    if(!configEntry.url || configEntry.url.includes("URL_POR")) { 
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">URL no configurada</td></tr>'; return []; 
     }
 
     try {
-        const response = await fetch(configEntry.url);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const rawData = await response.json();
-        const dataToProcess = Array.isArray(rawData) ? rawData : rawData.items || [];
+        const resp = await fetch(configEntry.url);
+        if(!resp.ok) throw new Error("Error HTTP " + resp.status);
+        const json = await resp.json();
+        const rawItems = Array.isArray(json) ? json : (json.items || []);
 
-        let items = dataToProcess.map(item => {
-            if (!item || (item.type !== "song" && item.type !== "set")) return null;
-            let rawDur = parseFloat(item.duration);
-            if (isNaN(rawDur)) rawDur = 0;
-            
-            const name = item.name || item.title || "Sin Título";
-            const isBreak = /break|descanso|intermedio|pausa/i.test(name);
-            item.isSong = item.type === "song";
-            item.isSetHeader = item.type === "set" && !isBreak;
-            item.isBreak = item.type === "set" && isBreak;
-            
-            if (item.isSong) item.calculatedDurationSeconds = rawDur;
-            else if (item.isBreak) item.calculatedDurationSeconds = rawDur === 0 ? 180 : rawDur * 60;
-            else if (item.isSetHeader) item.calculatedDurationSeconds = 0; // Se calcula luego
-            
-            item.displayName = decodeHtmlEntities(item.title || item.name || (item.isBreak ? "Pausa" : "Set"));
-            return item;
-        }).filter(i => i !== null);
-
-        // Estructurar Sets
+        // Lógica de procesamiento
         const structure = [];
         let currentSet = null;
-        items.forEach(item => {
-            if (item.isSetHeader) {
-                if (currentSet) {
-                    currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((a,b) => a + (b.calculatedDurationSeconds||0), 0);
+
+        const processedItems = rawItems.map(item => {
+            if(!item || (item.type !== 'song' && item.type !== 'set')) return null;
+            let dur = parseFloat(item.duration); if(isNaN(dur)) dur=0;
+            const name = item.name || item.title || "Sin Título";
+            const isBreak = /break|descanso|intermedio|pausa/i.test(name);
+            
+            const processed = {
+                ...item,
+                isSong: item.type === 'song',
+                isSetHeader: item.type === 'set' && !isBreak,
+                isBreak: item.type === 'set' && isBreak,
+                displayName: decodeHtmlEntities(name),
+                calculatedDurationSeconds: 0
+            };
+
+            if(processed.isSong) processed.calculatedDurationSeconds = dur;
+            else if(processed.isBreak) processed.calculatedDurationSeconds = dur === 0 ? 180 : dur * 60;
+            
+            return processed;
+        }).filter(i => i !== null);
+
+        processedItems.forEach(item => {
+            if(item.isSetHeader) {
+                if(currentSet) {
+                    currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((a,b)=>a+(b.calculatedDurationSeconds||0),0);
                     structure.push(currentSet);
                 }
                 currentSet = {...item, songs: [], calculatedBlockDurationSeconds: 0};
-            } else if (item.isBreak) {
-                if (currentSet) {
-                    currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((a,b) => a + (b.calculatedDurationSeconds||0), 0);
+            } else if(item.isBreak) {
+                if(currentSet) {
+                    currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((a,b)=>a+(b.calculatedDurationSeconds||0),0);
                     structure.push(currentSet);
                     currentSet = null;
                 }
                 structure.push(item);
-            } else if (item.isSong) {
-                if (!currentSet) currentSet = {isSetHeader: true, displayName: "Set General", songs: []};
+            } else if(item.isSong) {
+                if(!currentSet) currentSet = {isSetHeader: true, displayName: "Set General", songs: []};
                 currentSet.songs.push(item);
             }
         });
-        if (currentSet) {
-            currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((a,b) => a + (b.calculatedDurationSeconds||0), 0);
+        if(currentSet) {
+            currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((a,b)=>a+(b.calculatedDurationSeconds||0),0);
             structure.push(currentSet);
         }
 
-        // Renderizar HTML
+        // Renderizado HTML
         tbody.innerHTML = "";
-        let totalSec = 0;
         let count = 0;
-
+        let totalSec = 0;
+        
         structure.forEach(block => {
-            if (block.isSetHeader) {
-                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="5">${block.displayName} (${toHHMM(block.calculatedBlockDurationSeconds)})</td></tr>`);
-                totalSec += block.calculatedBlockDurationSeconds || 0;
+            if(block.isSetHeader) {
+                tbody.insertAdjacentHTML('beforeend', `<tr class="set-header-row"><td colspan="5">${block.displayName} (${toHHMM(block.calculatedBlockDurationSeconds)})</td></tr>`);
+                totalSec += block.calculatedBlockDurationSeconds;
                 block.songs.forEach(s => {
                     count++;
-                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${count}</td><td>${s.displayName}</td><td>${s.key||"-"}</td><td>${s.tempo||"-"}</td><td>${toMMSS(s.calculatedDurationSeconds)}</td></tr>`);
+                    tbody.insertAdjacentHTML('beforeend', `<tr><td>${count}</td><td>${s.displayName}</td><td>${s.key||'-'}</td><td>${s.tempo||'-'}</td><td>${toMMSS(s.calculatedDurationSeconds)}</td></tr>`);
                 });
-            } else if (block.isBreak) {
-                totalSec += block.calculatedDurationSeconds || 0;
-                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td>${block.displayName}</td><td>-</td><td>-</td><td>${toMMSS(block.calculatedDurationSeconds)}</td></tr>`);
+            } else if(block.isBreak) {
+                totalSec += block.calculatedDurationSeconds;
+                tbody.insertAdjacentHTML('beforeend', `<tr class="break-row"><td></td><td>${block.displayName}</td><td>-</td><td>-</td><td>${toMMSS(block.calculatedDurationSeconds)}</td></tr>`);
             }
         });
 
         totalElem.textContent = "Tiempo Total: " + toHHMM(totalSec);
-        return structure;
-
-    } catch (e) {
-        console.error(e);
+        return structure; // Devolvemos estructura para PDFs
+    } catch(e) {
         tbody.innerHTML = `<tr><td colspan="5">${errorMsg}: ${e.message}</td></tr>`;
         return [];
     }
 }
 
-const cargarPrimerSetlist   = () => cargarSetlistDirecto(setlistConfig.setlist1, "setlist-body", "total-time", "Error Setlist Ensayo");
-const cargarSegundoSetlist  = () => cargarSetlistDirecto(setlistConfig.setlist2, "second-body", "total-time-2", "Error Setlist Concierto");
-const cargarStarSetlist     = () => cargarSetlistDirecto(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error Setlist Estrella");
-// ==================== FIN CORRECCIÓN ====================
+/* ---------- GESTIÓN DE DATOS (Firestore) ---------- */
+let setlistConfig = {setlist1:{name:"Setlist Ensayo",url:""},setlist2:{name:"Setlist Concierto",url:""},setlistStar:{name:"Setlist Estrella",url:""}};
+let users = [];
+let rehearsals = [];
+let items1=[], items2=[], itemsStar=[]; // Almacén para PDFs
 
-/* ---------- 6, 7, 8. Usuarios, Ensayos, Estadísticas ---------- */
-let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];
-let rehearsals = []; let editingRehearsalIndex = null;
+async function loadData() {
+    try {
+        const [cSnap, uSnap, rSnap] = await Promise.all([
+            db.collection('intranet').doc('setlists').get(),
+            db.collection('intranet').doc('users').get(),
+            db.collection('intranet').doc('rehearsals').get()
+        ]);
+        
+        if(cSnap.exists && cSnap.data().config) setlistConfig = {...setlistConfig, ...cSnap.data().config};
+        if(uSnap.exists && uSnap.data().users) users = uSnap.data().users;
+        if(rSnap.exists && rSnap.data().rehearsals) rehearsals = rSnap.data().rehearsals;
 
-async function loadUsers() { const d = await withRetry(() => loadDoc("intranet", "users", { users: [] })); users = d.users || []; renderUsers(); }
-async function saveUsers() { await withRetry(() => saveDoc("intranet", "users", { users })); renderUsers(); renderRehearsals(); }
-function renderUsers() { 
-    const tb = document.getElementById("user-table-body"); if(tb) tb.innerHTML=""; 
-    const tbDisp = document.getElementById("users-body"); if(tbDisp) tbDisp.innerHTML="";
-    users.forEach((u,i)=>{ 
-        if(tb) tb.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${u.roles.join(", ")}</td><td><button onclick="editUser(${i})" class="edit-user">Editar</button><button onclick="deleteUser(${i})" class="delete-user">X</button></td></tr>`);
-        if(tbDisp) tbDisp.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${u.roles.join(", ")}</td></tr>`);
+        updateUI();
+    } catch(e) { console.error("Error loading data", e); }
+}
+
+async function updateUI() {
+    // Textos dinámicos
+    document.getElementById("setlist1-dynamic-name").textContent = setlistConfig.setlist1.name;
+    document.getElementById("second-setlist-dynamic-name").textContent = setlistConfig.setlist2.name;
+    document.getElementById("star-setlist-dynamic-name").textContent = setlistConfig.setlistStar.name;
+    
+    // Cargar Setlists (Async)
+    items1 = await processAndRenderSetlist(setlistConfig.setlist1, "setlist-body", "total-time", "Error Ensayo");
+    items2 = await processAndRenderSetlist(setlistConfig.setlist2, "second-body", "total-time-2", "Error Concierto");
+    itemsStar = await processAndRenderSetlist(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error Estrella");
+
+    // Render Tablas Locales
+    renderUsersTable();
+    renderRehearsalsTable();
+    refreshCalendar();
+}
+
+/* ---------- RENDERIZADO TABLAS ---------- */
+function renderUsersTable() {
+    const tb = document.getElementById('user-table-body'); const tbList = document.getElementById('users-body');
+    tb.innerHTML = ''; tbList.innerHTML = '';
+    users.forEach((u, i) => {
+        tb.insertAdjacentHTML('beforeend', `<tr><td>${u.name}</td><td>${u.nickname}</td><td><button class="edit-user" onclick="editUser(${i})">Edit</button><button class="delete-user" style="background:red;color:white" onclick="deleteUser(${i})">X</button></td></tr>`);
+        tbList.insertAdjacentHTML('beforeend', `<tr><td>${u.name}</td><td>${u.nickname}</td><td>${u.roles.join(', ')}</td></tr>`);
     });
 }
-window.editUser = i => { editingUserIndex=i; document.getElementById("user-name").value=users[i].name; document.getElementById("user-nickname").value=users[i].nickname; document.getElementById("add-user").textContent="Guardar"; document.getElementById("cancel-edit-user").style.display="inline"; };
-window.deleteUser = async i => { if(confirm("¿Borrar?")) { users.splice(i,1); await saveUsers(); } };
 
-async function loadRehearsals() { const d = await withRetry(() => loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = d.rehearsals || []; renderRehearsals(); refreshRehearsalsDisplay(); }
-async function saveRehearsals() { await withRetry(() => saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); refreshRehearsalsDisplay(); }
-
-function renderRehearsals() {
-    const tb = document.getElementById("rehearsal-table-body"); if(tb) tb.innerHTML="";
-    const tbMain = document.getElementById("rehearsal-main-body"); if(tbMain) tbMain.innerHTML="";
-    rehearsals.sort((a,b)=>new Date(a.date+'T'+a.startTime)-new Date(b.date+'T'+b.startTime));
+function renderRehearsalsTable() {
+    const tb = document.getElementById('rehearsal-table-body'); const tbMain = document.getElementById('rehearsal-main-body');
+    tb.innerHTML = ''; tbMain.innerHTML = '';
+    rehearsals.sort((a,b) => new Date(a.date+'T'+a.startTime) - new Date(b.date+'T'+b.startTime));
+    
     const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    rehearsals.forEach((r,i)=>{
-        const attHTML = `<div class="attendance-summary"><span style="color:#0cf">Sí: ${r.attendance?.filter(a=>a.attending==="Sí").length||0}</span> <span style="color:#f00">No: ${r.attendance?.filter(a=>a.attending==="No").length||0}</span></div>`;
+    rehearsals.forEach((r, i) => {
+        // Admin Table
+        const attSummary = `<span style="color:#0cf">Sí: ${r.attendance?.filter(a=>a.attending=='Sí').length||0}</span>, <span style="color:red">No: ${r.attendance?.filter(a=>a.attending=='No').length||0}</span>`;
+        tb.insertAdjacentHTML('beforeend', `<tr><td>${r.date}</td><td>${r.startTime}-${r.endTime}</td><td>${r.location}</td><td>${attSummary}</td><td><button onclick="editRehearsal(${i})">Edit</button><button onclick="deleteRehearsal(${i})" style="background:red">X</button></td></tr>`);
         
-        if(tb) tb.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${attHTML}</td><td><button onclick="editReh(${i})" class="edit-rehearsal">Edit</button><button onclick="delReh(${i})" class="delete-rehearsal">X</button></td></tr>`);
-        
-        if(new Date(r.date) >= today && tbMain) {
-            const userOpts = users.filter(u=>!excludedRehearsalUsers.includes(u.name)).map(u=>`<option value="${u.name}">${u.nickname}</option>`).join("");
-            tbMain.insertAdjacentHTML("beforeend",`<tr><td>${formatDateWithDay(r.date)}</td><td>${r.startTime}-${r.endTime}</td><td>${r.location}</td><td>Cal</td><td><div class="attendance-form"><select id="att-u-${i}"><option value="">Usuario</option>${userOpts}</select><select id="att-r-${i}"><option value="Sí">Sí</option><option value="No">No</option></select><button onclick="confirmAtt(${i})">OK</button></div>${attHTML}</td></tr>`);
+        // Main Table (Solo futuros o hoy)
+        if(new Date(r.date) >= today) {
+            const userOpts = users.map(u=>`<option value="${u.name}">${u.nickname}</option>`).join('');
+            tbMain.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td>${formatDateWithDay(r.date)}</td>
+                    <td>${r.startTime} - ${r.endTime}</td>
+                    <td>${r.location}</td>
+                    <td><button class="calendar-btn" onclick="generateICS('Ensayo ${r.location}', '${r.date}', '${r.startTime}', '${r.location}', 'Ensayo El Sotano', 7200)"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg></button></td>
+                    <td>
+                        <div style="display:flex;gap:5px">
+                            <select id="att-u-${i}"><option value="">Quién eres?</option>${userOpts}</select>
+                            <select id="att-r-${i}"><option value="Sí">Sí</option><option value="No">No</option></select>
+                            <button onclick="confirmAttendance(${i})">OK</button>
+                        </div>
+                        <div style="font-size:0.8em;margin-top:5px">${attSummary}</div>
+                    </td>
+                </tr>
+            `);
         }
     });
 }
-window.editReh = i => { editingRehearsalIndex=i; const r=rehearsals[i]; document.getElementById("rehearsal-date").value=r.date; document.getElementById("rehearsal-start-time").value=r.startTime; document.getElementById("rehearsal-end-time").value=r.endTime; document.getElementById("rehearsal-location").value=r.location; document.getElementById("add-rehearsal").textContent="Guardar"; document.getElementById("cancel-edit-rehearsal").style.display="inline"; openConfigScreen("rehearsal-screen"); };
-window.delReh = async i => { if(confirm("¿Borrar ensayo?")) { rehearsals.splice(i,1); await saveRehearsals(); } };
-window.confirmAtt = async i => {
-    const name=document.getElementById(`att-u-${i}`).value; const ans=document.getElementById(`att-r-${i}`).value;
-    if(!name||!ans)return;
-    if(!rehearsals[i].attendance) rehearsals[i].attendance=[];
-    const exist = rehearsals[i].attendance.find(a=>a.name===name);
-    if(exist) exist.attending=ans; else rehearsals[i].attendance.push({name,attending:ans});
-    await saveRehearsals();
+
+/* ---------- FULLCALENDAR (FIXED) ---------- */
+let calendar;
+function initCalendar() {
+    const el = document.getElementById('rehearsals-calendar');
+    calendar = new FullCalendar.Calendar(el, {
+        initialView: 'listMonth', // Vista inicial que muestra lista del mes
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,listMonth' // Botones correctos
+        },
+        buttonText: {
+            today: 'Hoy',
+            month: 'Mes',
+            list: 'Lista' // Texto para el botón de lista
+        },
+        locale: 'es',
+        height: 'auto',
+        noEventsContent: 'No hay ensayos este mes',
+        eventClick: info => {
+            // Editar al hacer click
+            const idx = info.event.extendedProps.index;
+            editRehearsal(idx);
+        }
+    });
+    calendar.render();
+}
+
+function refreshCalendar() {
+    if(!calendar) return;
+    calendar.removeAllEvents();
+    rehearsals.forEach((r, index) => {
+        calendar.addEvent({
+            title: `Ensayo: ${r.location}`,
+            start: `${r.date}T${r.startTime}`,
+            end: `${r.date}T${r.endTime}`,
+            color: '#0cf',
+            textColor: '#000',
+            extendedProps: { index: index }
+        });
+    });
+}
+
+/* ---------- LÓGICA BANDHELPER & CONCIERTOS ---------- */
+// Observador para detectar cuando BandHelper inyecta la tabla
+const observer = new MutationObserver((mutations) => {
+    const container = document.getElementById('bandhelper-concerts-container');
+    const table = container.querySelector('table');
+    if (table && !table.dataset.processed) {
+        table.dataset.processed = "true";
+        document.getElementById('bandhelper-loading-message').style.display = 'none';
+        enhanceBandHelperTable(table);
+    }
+});
+observer.observe(document.getElementById('bandhelper-concerts-container'), { childList: true, subtree: true });
+
+function enhanceBandHelperTable(table) {
+    // Añadir cabeceras
+    const thead = table.createTHead();
+    const row = thead.insertRow(0);
+    ["Fecha/Hora", "Evento", "Lugar", "Cal", "Info"].forEach(t => {
+        const th = document.createElement("th"); th.textContent = t; row.appendChild(th);
+    });
+
+    // Procesar filas
+    Array.from(table.querySelectorAll('tbody tr')).forEach(tr => {
+        const cells = tr.cells;
+        const dateTxt = cells[0]?.innerText || "";
+        const eventTxt = cells[1]?.innerText || "Evento";
+        const locTxt = cells[2]?.innerText || "";
+        
+        tr.innerHTML = ""; // Limpiar y reconstruir
+        
+        tr.insertCell().textContent = dateTxt;
+        tr.insertCell().textContent = eventTxt;
+        tr.insertCell().textContent = locTxt;
+
+        // Botón Calendario
+        const calCell = tr.insertCell();
+        calCell.innerHTML = `<button class="calendar-btn"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg></button>`;
+        calCell.querySelector('button').onclick = () => {
+            // Extracción básica de fecha/hora para ICS
+            let date = new Date().toISOString().split('T')[0]; 
+            let time = "20:00";
+            const dateMatch = dateTxt.match(/(\d{2})\/(\d{2})\/(\d{2})/);
+            if(dateMatch) date = `20${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+            const timeMatch = dateTxt.match(/(\d{2}:\d{2})/);
+            if(timeMatch) time = timeMatch[1];
+            generateICS(eventTxt, date, time, locTxt, "Concierto El Sótano");
+        };
+
+        // Botón Detalles
+        const infoCell = tr.insertCell();
+        infoCell.innerHTML = `<button class="details-btn">➡️</button>`;
+        const concertId = sanitizeFirebaseKey(dateTxt.split(',')[0] + '_' + eventTxt);
+        infoCell.querySelector('button').onclick = () => openConcertModal(concertId, eventTxt, locTxt);
+    });
+}
+
+async function openConcertModal(id, title, loc) {
+    document.getElementById('concert-details-modal').classList.add('show');
+    document.getElementById('concert-detail-id').value = id;
+    document.getElementById('concert-detail-title-display').textContent = title;
+    document.getElementById('concert-detail-location').value = loc;
+    
+    // Cargar Músicos
+    const list = document.getElementById('musicians-attendance-list');
+    list.innerHTML = '';
+    users.forEach(u => {
+        list.insertAdjacentHTML('beforeend', `<div><input type="checkbox" value="${u.name}" id="c-${u.name}"><label for="c-${u.name}">${u.name}</label></div>`);
+    });
+
+    // Cargar datos de Firestore
+    try {
+        const doc = await db.collection('concert_details').doc(id).get();
+        if(doc.exists) {
+            const d = doc.data();
+            document.getElementById('concert-detail-location').value = d.locationDetails || loc;
+            document.getElementById('concert-detail-soundsetup').value = d.soundSetupTime || '';
+            document.getElementById('concert-detail-instrumentssetup').value = d.instrumentsSetupTime || '';
+            document.getElementById('concert-detail-soundcheck').value = d.soundcheckTime || '';
+            document.getElementById('concert-detail-showtime').value = d.showTime || '';
+            document.getElementById('concert-detail-notes').value = d.generalNotes || '';
+            document.getElementById('concert-detail-gmaps-link').value = d.googleMapsLink || '';
+            if(d.attendees) d.attendees.forEach(a => {
+                const chk = document.getElementById(`c-${a}`);
+                if(chk) chk.checked = true;
+            });
+            if(d.googleMapsLink) document.getElementById('open-gmaps-link-btn').style.display = 'inline-block';
+        }
+    } catch(e) { console.error(e); }
+}
+
+document.getElementById('save-concert-details').onclick = async () => {
+    const id = document.getElementById('concert-detail-id').value;
+    const attendees = Array.from(document.querySelectorAll('#musicians-attendance-list input:checked')).map(c=>c.value);
+    const data = {
+        locationDetails: document.getElementById('concert-detail-location').value,
+        soundSetupTime: document.getElementById('concert-detail-soundsetup').value,
+        instrumentsSetupTime: document.getElementById('concert-detail-instrumentssetup').value,
+        soundcheckTime: document.getElementById('concert-detail-soundcheck').value,
+        showTime: document.getElementById('concert-detail-showtime').value,
+        generalNotes: document.getElementById('concert-detail-notes').value,
+        googleMapsLink: document.getElementById('concert-detail-gmaps-link').value,
+        attendees: attendees
+    };
+    await db.collection('concert_details').doc(id).set(data, {merge:true});
+    document.getElementById('concert-detail-message').textContent = "Guardado correctamente.";
+    setTimeout(() => document.getElementById('concert-detail-message').textContent = "", 3000);
+};
+document.getElementById('open-gmaps-link-btn').onclick = () => window.open(document.getElementById('concert-detail-gmaps-link').value, '_blank');
+
+
+/* ---------- GENERACIÓN PDF (Restaurado) ---------- */
+async function loadFont(path) {
+    const resp = await fetch(path);
+    const blob = await resp.blob();
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(blob);
+    });
+}
+// Pre-cargar fuentes si existen
+let fontBleeding, fontCarnevalee;
+loadFont('assets/Bleeding_Cowboys.ttf').then(f => fontBleeding = f).catch(()=>{});
+loadFont('assets/Carnevalee_Freakshow.ttf').then(f => fontCarnevalee = f).catch(()=>{});
+
+async function genPDF(items, title, filename) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Intentar usar fuentes custom, fallback a standard
+    if(fontBleeding) { doc.addFileToVFS("Bleeding.ttf", fontBleeding); doc.addFont("Bleeding.ttf", "Bleeding", "normal"); doc.setFont("Bleeding"); }
+    doc.setFontSize(24); doc.text(title, 105, 20, {align:'center'});
+    
+    const body = [];
+    let count = 0;
+    items.forEach(i => {
+        if(i.isSetHeader) body.push([{content: i.displayName, colSpan: 5, styles: {fillColor:[200,200,200], halign:'center', fontStyle:'bold'}}]);
+        else if(i.isBreak) body.push([{content: i.displayName, colSpan: 5, styles: {fillColor:[240,240,240], halign:'center', fontStyle:'italic'}}]);
+        else { count++; body.push([count, i.displayName, i.key||'-', i.tempo||'-', toMMSS(i.calculatedDurationSeconds)]); }
+    });
+
+    doc.autoTable({
+        head: [['#', 'Título', 'Key', 'Tempo', 'Time']],
+        body: body,
+        startY: 30,
+        theme: 'grid'
+    });
+    doc.save(`${sanitizeForPdfFilename(filename)}.pdf`);
+}
+// Funciones wrapper para los botones
+const wrapPDF = (items, conf, type) => {
+    if(!items.length) return alert("Setlist vacío");
+    if(type === 'simple') genPDF(items, conf.name + " (Simple)", conf.name); // Puedes personalizar más aquí
+    else if(type === 'personal') {
+        const size = prompt("Tamaño letra canciones (8-30):", "14");
+        genPDF(items, conf.name, conf.name); // Aquí iría la lógica específica personal
+    } else genPDF(items, conf.name, conf.name);
 };
 
-/* ---------- 9. PDF (Simplificado) ---------- */
-// ... (Tu código de PDF se mantiene, asumo que funciona bien, solo asegúrate de llamar a genPDF con las variables items1, items2 etc) ...
+document.getElementById('download-btn').onclick = () => wrapPDF(items1, setlistConfig.setlist1, 'complex');
+document.getElementById('download-basic-btn').onclick = () => wrapPDF(items1, setlistConfig.setlist1, 'simple');
+document.getElementById('download-personal-btn').onclick = () => wrapPDF(items1, setlistConfig.setlist1, 'personal');
+// Repetir para setlist 2 y star...
+document.getElementById('download-btn-2').onclick = () => wrapPDF(items2, setlistConfig.setlist2, 'complex');
+document.getElementById('download-btn-star').onclick = () => wrapPDF(itemsStar, setlistConfig.setlistStar, 'complex');
 
-/* ---------- 10. BandHelper & Detalles ---------- */
-// ... (Lógica de BandHelper mantenida, funciona bien en tu original) ...
-new MutationObserver((mutations, obs) => {
-  const table = document.querySelector('#bandhelper-concerts-container table');
-  if (table) { processBandHelperTable(); }
-}).observe(document.getElementById('bandhelper-concerts-container'), { childList: true, subtree: true });
-function processBandHelperTable() { /* Tu lógica de tabla de conciertos */ }
 
-/* ---------- 11. Menú ---------- */
-const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay");
-function closeAll() { sidebar.classList.remove("show"); overlay.classList.remove("show"); document.querySelectorAll(".config-screen").forEach(s=>s.style.display="none"); document.querySelectorAll(".modal-backdrop").forEach(s=>s.classList.remove("show")); }
-document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
-overlay.onclick = closeAll; document.getElementById("menu-cerrar").onclick = closeAll;
-function openConfigScreen(id) { closeAll(); document.getElementById(id).style.display="block"; }
-// Listeners menú...
-document.getElementById("menu-config").onclick = () => document.getElementById("config-submenu").style.display = document.getElementById("config-submenu").style.display==="block"?"none":"block";
-document.getElementById("menu-rehearsal").onclick = () => openConfigScreen("rehearsal-screen");
-document.getElementById("menu-user-mgmt").onclick = () => openConfigScreen("user-mgmt-screen");
-document.getElementById("menu-setlist-config").onclick = () => openConfigScreen("setlist-config-screen");
-document.getElementById("menu-user-list-display").onclick = () => { loadUsers(); openConfigScreen("user-list-screen"); };
+/* ---------- GESTIÓN INTERFAZ (Menú, Tabs, etc) ---------- */
+function closeAll() {
+    document.querySelectorAll('.config-screen, .modal-backdrop').forEach(e => e.classList.remove('show'));
+    document.querySelectorAll('.config-screen').forEach(e => e.style.display = 'none');
+    document.getElementById('sidebar-menu').classList.remove('show');
+    document.getElementById('overlay').classList.remove('show');
+}
+document.getElementById('hamburger-btn').onclick = () => {
+    document.getElementById('sidebar-menu').classList.add('show');
+    document.getElementById('overlay').classList.add('show');
+};
+document.getElementById('overlay').onclick = closeAll;
 
-/* ---------- 12. Carga Inicial & Seguridad Splash ---------- */
-document.addEventListener("DOMContentLoaded", async () => {
-  const splashScreen = document.getElementById('splash-screen');
-  
-  // 1. SAFETY TIMEOUT: Si algo falla, quitar splash a los 4 segundos sí o sí.
-  setTimeout(() => {
-      if(splashScreen && !splashScreen.classList.contains('hidden')) {
-          console.warn("Forzando cierre de splash screen por timeout.");
-          splashScreen.classList.add('hidden');
-          setTimeout(() => splashScreen.style.display = 'none', 800);
-      }
-  }, 4000);
-
-  console.log("[App] Iniciando carga...");
-  updateConnectionStatus();
-  
-  try {
-      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
-      console.log("[App] Configuración básica cargada.");
-  } catch (e) { console.error("Error config:", e); }
-
-  // Cargar setlists (Ahora sin workers, función async normal)
-  let items1=[], items2=[], itemsStar=[];
-  try { items1 = await cargarPrimerSetlist(); } catch(e){}
-  try { items2 = await cargarSegundoSetlist(); } catch(e){}
-  try { itemsStar = await cargarStarSetlist(); } catch(e){}
-
-  // Botones PDF
-  document.getElementById("download-btn").onclick = () => genPDF(items1, setlistConfig.setlist1.name, "Ensayo");
-  // ... resto de botones ...
-
-  // 2. QUITAR SPLASH NORMALMENTE
-  if(splashScreen) {
-      splashScreen.classList.add('hidden');
-      setTimeout(() => splashScreen.style.display = 'none', 800);
-  }
-
-  // Iniciar calendario
-  initRehearsalsCalendar();
-  setTimeout(() => refreshRehearsalsDisplay(), 500);
+// Navegación Menú
+const menuMap = {
+    'menu-setlist-config': 'setlist-config-screen',
+    'menu-user-mgmt': 'user-mgmt-screen',
+    'menu-rehearsal-mgmt': 'rehearsal-screen',
+    'menu-stats': 'stats-screen',
+    'menu-users': 'user-list-screen'
+};
+Object.keys(menuMap).forEach(id => {
+    document.getElementById(id).onclick = (e) => {
+        e.preventDefault(); closeAll();
+        document.getElementById(menuMap[id]).style.display = 'block';
+    };
 });
-
-/* ========== CALENDARIO DE ENSAYOS ========== */
-let calendar = null;
-function initRehearsalsCalendar() {
-  const calEl = document.getElementById('rehearsals-calendar');
-  if (!calEl || calendar) return;
-  calendar = new FullCalendar.Calendar(calEl, {
-    initialView: 'dayGridMonth',
-    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listWeek' },
-    locale: 'es', height: 'auto',
-    eventClick: function(info) {
-       // Lógica para editar al clicar evento
-       const r = info.event.extendedProps.rehearsalData;
-       // Buscar índice y abrir modal...
+// Scroll suave para secciones
+['menu-setlists','menu-rehearsals','menu-second','menu-star','menu-concerts'].forEach(id => {
+    document.getElementById(id).onclick = (e) => {
+        e.preventDefault(); closeAll();
+        const target = document.querySelector(e.target.getAttribute('href'));
+        if(target) window.scrollTo({top: target.offsetTop - 70, behavior: 'smooth'});
     }
-  });
-  calendar.render();
-}
-function refreshRehearsalsDisplay() {
-  if (!calendar) return;
-  calendar.getEvents().forEach(ev => ev.remove());
-  rehearsals.forEach(r => {
-    calendar.addEvent({
-      title: 'Ensayo ' + r.location,
-      start: r.date + 'T' + r.startTime,
-      end: r.date + 'T' + r.endTime,
-      backgroundColor: '#0cf', borderColor: '#0cf', textColor: '#000',
-      extendedProps: { rehearsalData: r }
-    });
-  });
-}
-document.getElementById('floating-add-rehearsal').onclick = () => { 
-    document.getElementById("add-rehearsal").textContent="Añadir Ensayo";
-    document.getElementById("rehearsal-date").value=""; 
-    openConfigScreen('rehearsal-screen'); 
+});
+document.getElementById('menu-config').onclick = () => {
+    const sub = document.getElementById('config-submenu');
+    sub.style.display = sub.style.display === 'block' ? 'none' : 'block';
+};
+document.getElementById('menu-cerrar').onclick = closeAll;
+
+// CRUD Handlers (Simplificados)
+document.getElementById('add-user').onclick = async () => {
+    const name = document.getElementById('user-name').value;
+    const nick = document.getElementById('user-nickname').value;
+    const roles = Array.from(document.getElementById('user-role').selectedOptions).map(o=>o.value);
+    if(name) { users.push({name, nickname: nick||name, roles}); await db.collection('intranet').doc('users').set({users}); renderUsersTable(); }
+};
+window.deleteUser = async idx => { if(confirm('Borrar?')) { users.splice(idx,1); await db.collection('intranet').doc('users').set({users}); renderUsersTable(); } };
+
+document.getElementById('floating-add-rehearsal').onclick = () => {
+    closeAll(); document.getElementById('rehearsal-screen').style.display='block';
 };
 document.getElementById('add-rehearsal').onclick = async () => {
-    const d=document.getElementById("rehearsal-date").value;
-    const s=document.getElementById("rehearsal-start-time").value;
-    const e=document.getElementById("rehearsal-end-time").value;
-    const l=document.getElementById("rehearsal-location").value;
-    if(d && s && e) {
-        const obj = {date:d, startTime:s, endTime:e, location:l, attendance:[]};
-        if(editingRehearsalIndex!==null) {
-             rehearsals[editingRehearsalIndex] = {...rehearsals[editingRehearsalIndex], ...obj};
-             editingRehearsalIndex=null;
-        } else {
-             rehearsals.push(obj);
-        }
-        await saveRehearsals();
-        document.getElementById("rehearsal-screen").style.display="none";
+    const r = {
+        date: document.getElementById('rehearsal-date').value,
+        startTime: document.getElementById('rehearsal-start-time').value,
+        endTime: document.getElementById('rehearsal-end-time').value,
+        location: document.getElementById('rehearsal-location').value,
+        attendance: []
+    };
+    if(r.date) { rehearsals.push(r); await db.collection('intranet').doc('rehearsals').set({rehearsals}); renderRehearsalsTable(); refreshCalendar(); }
+};
+window.confirmAttendance = async (idx) => {
+    const user = document.getElementById(`att-u-${idx}`).value;
+    const resp = document.getElementById(`att-r-${idx}`).value;
+    if(user) {
+        if(!rehearsals[idx].attendance) rehearsals[idx].attendance = [];
+        const existing = rehearsals[idx].attendance.find(a=>a.name===user);
+        if(existing) existing.attending = resp; else rehearsals[idx].attendance.push({name:user, attending:resp});
+        await db.collection('intranet').doc('rehearsals').set({rehearsals});
+        renderRehearsalsTable();
     }
 };
+window.deleteRehearsal = async idx => { if(confirm('Borrar ensayo?')) { rehearsals.splice(idx,1); await db.collection('intranet').doc('rehearsals').set({rehearsals}); renderRehearsalsTable(); refreshCalendar(); }};
+document.getElementById('guardar-setlist-config').onclick = async () => {
+    setlistConfig.setlist1.name = document.getElementById('setlist1-name').value;
+    setlistConfig.setlist1.url = document.getElementById('setlist1-url').value;
+    // ... resto de campos
+    await db.collection('intranet').doc('setlists').set({config: setlistConfig});
+    updateUI(); closeAll();
+};
 
+
+/* ---------- INICIO ---------- */
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Quitar Splash (Safety)
+    const splash = document.getElementById('splash-screen');
+    setTimeout(() => { splash.style.opacity=0; setTimeout(()=>splash.style.display='none',800); }, 3000);
+    
+    initCalendar();
+    loadData();
+    
+    // Audio
+    const audio = document.getElementById('site-audio');
+    const btn = document.getElementById('site-audio-control-button');
+    btn.style.display = 'flex';
+    btn.onclick = () => {
+        if(audio.paused) { audio.src='assets/que_mas_da.mp3'; audio.play(); }
+        else audio.pause();
+    };
+});
 </script>
 </body>
 </html>
