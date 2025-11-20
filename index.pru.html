@@ -52,14 +52,21 @@
     }
     .logo img.logo-main{ width: 135px; height:auto; vertical-align: middle; }
     .logo-intranet{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); height:45px; width:auto; }
-    .header-controls-right { display: flex; align-items: center; }
-    .header-audio-control { 
+    
+    .header-controls-right { display: flex; align-items: center; gap: 10px; } /* Añadido gap para separar iconos */
+
+    /* Clase compartida para botones del header (Audio y Calendario) */
+    .header-icon-btn { 
         background: none; border: 1px solid #0cf; color: #0cf; border-radius: 4px; padding: 5px;           
-        margin-right: 15px; cursor: pointer; display: none; align-items: center; justify-content: center;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
         width: 37px; height: 37px; transition: background-color 0.2s ease, transform 0.2s ease;
     }
-    .header-audio-control:hover { background: #333; transform: scale(1.05); }
-    .header-audio-control svg { width: 20px; height: 20px; }
+    .header-icon-btn:hover { background: #333; transform: scale(1.05); }
+    .header-icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+    /* El de audio se oculta por defecto hasta cargar JS */
+    #site-audio-control-button { display: none; } 
+
     .hamburger{
         cursor:pointer; border:1px solid #0cf; border-radius:4px; padding:5px; display: flex; 
         flex-direction: column; justify-content: space-around; width: 37px; height: 37px; box-sizing: border-box;
@@ -409,7 +416,7 @@
     </div>
     <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
     <div class="header-controls-right">
-        <button id="site-audio-control-button" class="header-audio-control" title="Activar sonido" style="display: none;"> 
+        <button id="site-audio-control-button" class="header-icon-btn" title="Activar sonido"> 
             <svg class="icon-muted" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/>
             </svg>
@@ -417,6 +424,13 @@
                 <path d="M12.4 4.42a1.19 1.19 0 00-1.75 1.05v13.1a1.19 1.19 0 001.75 1.05l4.91-3.3H19a1 1 0 001-1.07V9.72a1 1 0 00-1-1.07h-1.66zm6.1 2.51a6.73 6.73 0 010 10.14M16 9.48a3.23 3.23 0 010 5M4 9.72v4.56a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.65H5a1 1 0 00-1 1.07z"/>
             </svg>
         </button>
+        
+        <button id="header-calendar-btn" class="header-icon-btn" title="Calendario Mensual">
+             <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
+             </svg>
+        </button>
+        
         <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
     </div>
   </header>
@@ -1039,6 +1053,16 @@ const setupMenuLink = (menuId, targetId) => { const link=document.getElementById
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
 setupMenuLink("menu-suggestions", "suggestions");
+
+// --- CONFIGURACIÓN MENÚ SUGGESTIONS (NUEVO: ABRE PANTALLA) ---
+document.getElementById("menu-suggestions").onclick = e => { 
+    e.preventDefault(); 
+    openConfigScreen("suggestions-screen");
+    renderSuggestions(); 
+};
+document.getElementById("close-suggestions").onclick = () => {
+    document.getElementById("suggestions-screen").style.display = "none";
+};
 
 document.getElementById("menu-config").onclick = e => { e.preventDefault();const submenu=document.getElementById("config-submenu");if(!isAuthenticated){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true;submenu.style.display=submenu.style.display==="block"?"none":"block"}else{alert("Contraseña incorrecta.");return}}else{submenu.style.display=submenu.style.display==="block"?"none":"block"}};
 const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'&&screenId!=='suggestions-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'||screenId==='suggestions-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; 
@@ -1755,6 +1779,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderVisualCalendar();
       });
   }
+
+  // Lógica de botón de calendario en header
+  document.getElementById('header-calendar-btn').onclick = () => {
+     const target = document.getElementById('vista-calendario-mensual');
+     // Cerramos menú si está abierto
+     closeAll();
+     // Scroll
+     if(target) {
+         const headerOffset = 60;
+         const elementPosition = target.getBoundingClientRect().top;
+         const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10;
+         window.scrollTo({top: offsetPosition, behavior: "smooth"});
+     }
+  };
 
   renderVisualCalendar(); 
   setTimeout(renderVisualCalendar, 2000); 
