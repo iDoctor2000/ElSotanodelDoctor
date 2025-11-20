@@ -8,14 +8,8 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
   <meta property="og:title"        content="El Sótano del Doctor – Intranet">
-  <meta property="og:description"  content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y más.">
+  <meta property="og:description"  content="Banda de rock y versiones. Intranet de gestión.">
   <meta property="og:image"        content="assets/logo_negro copia.jpg">
-  <meta property="og:type"         content="website">
-  <meta property="og:url"          content="https://tusitioweb.com">
-  <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="El Sótano del Doctor – Intranet">
-  <meta name="twitter:description" content="Banda de rock y versiones. Explora nuestro setlist, fechas de conciertos y mucho más. ¡Disfruta de la música!">
-  <meta name="twitter:image"       content="assets/logo_negro copia.jpg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -132,7 +126,7 @@
     main section{max-width:1200px;margin:0 auto;padding:20px}
     
     /* SECCIONES CON EFECTO CRISTAL (Glassmorphism) */
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual { 
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual, #suggestions { 
         background: rgba(20, 20, 20, 0.75); 
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
         padding:20px; border-radius:12px; 
@@ -140,7 +134,7 @@
         border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
     }
     
-    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 { text-align:center;color:#0cf;margin-bottom:5px }
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2 { text-align:center;color:#0cf;margin-bottom:5px }
     .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
     table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
@@ -256,6 +250,137 @@
         .cal-event { font-size: 0.7em; }
         .cal-header { font-size: 0.7em; padding: 5px 0; }
     }
+
+    /* ESTILOS PROPUESTAS (SUGGESTIONS) */
+    .suggestion-form {
+        background: rgba(0,0,0,0.3);
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #333;
+    }
+    .suggestion-form-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+    .suggestion-form-row input {
+        flex: 1;
+        min-width: 150px;
+    }
+    .suggestions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    .suggestion-card {
+        background: rgba(30, 30, 30, 0.6);
+        border: 1px solid rgba(0, 204, 255, 0.1);
+        border-radius: 8px;
+        padding: 15px;
+        position: relative;
+        transition: transform 0.2s;
+        display: flex;
+        flex-direction: column;
+    }
+    .suggestion-card:hover {
+        transform: translateY(-3px);
+        background: rgba(40, 40, 40, 0.8);
+        border-color: rgba(0, 204, 255, 0.3);
+    }
+    .suggestion-header {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+    .suggestion-title {
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #fff;
+        margin-bottom: 2px;
+    }
+    .suggestion-artist {
+        color: #0cf;
+        font-size: 0.9em;
+        margin-bottom: 5px;
+    }
+    .suggestion-meta {
+        font-size: 0.75em;
+        color: #888;
+        font-style: italic;
+    }
+    .suggestion-body {
+        flex-grow: 1;
+        margin-bottom: 10px;
+    }
+    .star-rating-display {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 10px;
+    }
+    .star-rating-display .avg-score {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #FFD700;
+    }
+    .star-rating-display .star-visual {
+        color: #555; /* Gris por defecto */
+        font-size: 1.2em;
+    }
+    .star-visual.filled {
+        color: #FFD700; /* Oro */
+    }
+
+    /* VOTACIÓN INTERACTIVA */
+    .voting-area {
+        background: rgba(0,0,0,0.3);
+        padding: 8px;
+        border-radius: 5px;
+        text-align: center;
+    }
+    .voting-label { font-size: 0.8em; color: #aaa; margin-bottom: 5px; display:block; }
+    .interactive-stars {
+        display: inline-flex;
+        gap: 5px;
+        cursor: pointer;
+    }
+    .interactive-star {
+        font-size: 1.5em;
+        color: #555;
+        transition: color 0.2s;
+    }
+    .interactive-star:hover, .interactive-star.active {
+        color: #FFD700;
+    }
+
+    /* DETALLES DE VOTANTES */
+    .voters-details {
+        margin-top: 10px;
+        font-size: 0.8em;
+        color: #ccc;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 5px;
+        display: none; /* Oculto por defecto */
+    }
+    .voters-details.show { display: block; }
+    .toggle-voters-btn {
+        background: none; border: none; color: #0cf; font-size: 0.8em; cursor: pointer; padding: 0; margin-top: 5px; text-decoration: underline;
+    }
+
+    #user-identity-selector {
+        background: #222;
+        color: #fff;
+        border: 1px solid #0cf;
+        padding: 5px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        width: 100%;
+        max-width: 300px;
+    }
+    .admin-badge { background: red; color: white; font-size: 0.7em; padding: 2px 5px; border-radius: 3px; margin-left: 5px; }
+    .deleted-row { background: rgba(255, 0, 0, 0.1); color: #aaa; }
   </style>
 </head>
 
@@ -295,6 +420,8 @@
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#vista-calendario-mensual" id="menu-calendar-view">Calendario Mensual</a>
+    <a href="#suggestions" id="menu-suggestions">Propuestas de Canciones</a>
+    
     <a href="#" id="menu-stats">Estadísticas</a>
     <a href="#" id="menu-user-list-display">Usuarios Registrados</a>  
     <a href="#" id="menu-config">Configuración</a>
@@ -302,6 +429,7 @@
       <a href="#" id="menu-setlist-config">Configurar Setlists</a>
       <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
       <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
+      <a href="#" id="menu-admin-suggestions">Gestión de Propuestas</a>
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
@@ -407,6 +535,26 @@
     </table>
   </div>
 
+  <div id="admin-suggestions-screen" class="config-screen">
+    <button class="close-btn" id="close-admin-suggestions">Cerrar</button>
+    <h2>Gestión de Propuestas (Admin)</h2>
+    <p style="color:#aaa; text-align:center;">Aquí puedes ver el historial y eliminar propuestas inadecuadas.</p>
+    <div class="table-wrapper">
+        <table id="admin-suggestions-table">
+            <thead>
+                <tr>
+                    <th>Canción</th>
+                    <th>Propuesta por</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="admin-suggestions-body"></tbody>
+        </table>
+    </div>
+  </div>
+
   <div id="stats-screen" class="config-screen">
     <button class="close-btn" id="close-stats">Cerrar</button>
     <h2>Estadísticas</h2>
@@ -470,15 +618,40 @@
     </section>
     <section id="calendario"> <h2>Próximos Conciertos</h2> <div id="bandhelper-concerts-container"> <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script> <p id="bandhelper-loading-message" style="display:none;">Procesando conciertos...</p> </div> </section>
 
-  <section id="vista-calendario-mensual">
+    <section id="vista-calendario-mensual">
       <h2>Calendario Mensual</h2>
       <div class="calendar-controls">
         <button id="prev-month-btn">< Anterior</button>
         <h3 id="calendar-month-display" style="margin:0; color:#fff;">Mes Año</h3>
         <button id="next-month-btn">Siguiente ></button>
       </div>
-      <div class="calendar-grid" id="calendar-grid-container">
+      <div class="calendar-grid" id="calendar-grid-container"></div>
+    </section>
+
+    <section id="suggestions">
+        <h2>Propuestas de Canciones</h2>
+        <div style="text-align:center; margin-bottom:20px;">
+            <label for="user-identity-selector" style="color:#0cf; font-weight:bold; display:block; margin-bottom:5px;">¿Quién eres? (Necesario para proponer y votar)</label>
+            <select id="user-identity-selector">
+                <option value="" disabled selected>-- Selecciona tu nombre --</option>
+            </select>
         </div>
+        
+        <div class="suggestion-form">
+            <h4 style="color:#fff; margin-top:0;">Nueva Propuesta</h4>
+            <div class="suggestion-form-row">
+                <input type="text" id="suggestion-title" placeholder="Título de la canción">
+                <input type="text" id="suggestion-artist" placeholder="Artista / Banda original">
+            </div>
+            <div class="suggestion-form-row">
+                <input type="url" id="suggestion-link" placeholder="Enlace (Spotify/Youtube) - Opcional">
+                <button id="add-suggestion-btn" style="width:auto; flex:0 0 150px;">Proponer</button>
+            </div>
+            <p id="suggestion-message" class="error-message" style="text-align:left; margin:0;"></p>
+        </div>
+
+        <div class="suggestions-grid" id="suggestions-container">
+            </div>
     </section>
   
   </main>
@@ -555,9 +728,17 @@ const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar,
 /* ---------- 6. Usuarios ---------- */
 let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
 function renderUsers() { const tbodyMgmt=document.getElementById("user-table-body");const tbodyDisplay=document.getElementById("users-body");if(tbodyMgmt)tbodyMgmt.innerHTML="";if(tbodyDisplay)tbodyDisplay.innerHTML="";if(!Array.isArray(users)||users.length===0){const emptyMsgMgmt='<tr><td colspan="4">No hay usuarios registrados.</td></tr>';const emptyMsgDisplay='<tr><td colspan="3">No hay usuarios registrados.</td></tr>';if(tbodyMgmt)tbodyMgmt.innerHTML=emptyMsgMgmt;if(tbodyDisplay)tbodyDisplay.innerHTML=emptyMsgDisplay;return} users.forEach((u,i)=>{if(!u||typeof u!=='object'||!u.name||!u.nickname||!Array.isArray(u.roles)){console.warn(`Usuario inválido en la posición ${i}:`,u);return} const rolesDisplay=u.roles.join(", ");if(tbodyMgmt){tbodyMgmt.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`)} if(tbodyDisplay){tbodyDisplay.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`)}});if(tbodyMgmt){tbodyMgmt.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{const userIndex=parseInt(btn.dataset.i,10);const userToDelete=users[userIndex];if(confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)){rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance=r.attendance.filter(a=>a.name!==userToDelete.name)}});users.splice(userIndex,1);await saveUsers();await saveRehearsals();renderStats()}});tbodyMgmt.querySelectorAll(".edit-user").forEach(btn=>btn.onclick=()=>{editingUserIndex=parseInt(btn.dataset.i,10);const user=users[editingUserIndex];document.getElementById("user-name").value=user.name;document.getElementById("user-nickname").value=user.nickname;const roleSelect=document.getElementById("user-role");Array.from(roleSelect.options).forEach(option=>{option.selected=user.roles.includes(option.value)});document.getElementById("add-user").textContent="Guardar Cambios";document.getElementById("cancel-edit-user").style.display="inline-block"})}}
-async function loadUsers() { try { const data = await withRetry(() => loadDoc("intranet", "users", { users: [] })); users = Array.isArray(data.users) ? data.users : []; users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles)); renderUsers(); } catch (e) { console.error("Error al cargar usuarios:", e); } }
+async function loadUsers() { try { const data = await withRetry(() => loadDoc("intranet", "users", { users: [] })); users = Array.isArray(data.users) ? data.users : []; users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles)); renderUsers(); populateIdentitySelector(); } catch (e) { console.error("Error al cargar usuarios:", e); } }
 async function saveUsers() { try { await withRetry(() => saveDoc("intranet", "users", { users })); renderUsers(); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar usuarios:", e); throw e; } }
 function resetUserForm() { document.getElementById("user-name").value = ""; document.getElementById("user-nickname").value = ""; const roleSelect = document.getElementById("user-role"); Array.from(roleSelect.options).forEach(option => option.selected = false); document.getElementById("add-user").textContent = "Añadir Usuario"; document.getElementById("cancel-edit-user").style.display = "none"; editingUserIndex = null; }
+
+function populateIdentitySelector() {
+    const select = document.getElementById('user-identity-selector');
+    select.innerHTML = '<option value="" disabled selected>-- Selecciona tu nombre --</option>';
+    users.sort((a, b) => a.name.localeCompare(b.name)).forEach(u => {
+        select.insertAdjacentHTML('beforeend', `<option value="${u.name}">${u.name} (${u.nickname})</option>`);
+    });
+}
 
 /* ---------- 7. Ensayos ---------- */
 let rehearsals = []; let editingRehearsalIndex = null;
@@ -691,7 +872,7 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     
     // Limpiar campos
     document.getElementById('concert-detail-location').value = '';
-    document.getElementById('concert-detail-sound-company').value = ''; // NUEVO LIMPIEZA
+    document.getElementById('concert-detail-sound-company').value = ''; 
     document.getElementById('concert-detail-soundsetup').value = '';
     document.getElementById('concert-detail-instrumentssetup').value = '';
     document.getElementById('concert-detail-soundcheck').value = '';
@@ -705,27 +886,21 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
 
     // Preparar listas
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
-    const techListDiv = document.getElementById('technicians-attendance-list'); // NUEVO
+    const techListDiv = document.getElementById('technicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando...';
     techListDiv.innerHTML = 'Cargando...';
 
-    const excludedMusicians = ["Ximo", "Ginés Torres"];
-    
-    // Definimos qué roles se consideran "Técnicos"
     const techRolesList = ["Técnico de Sonido", "Montador", "Técnico de Luces", "Road Manager", "Backliner"];
 
     if (users && users.length > 0) {
         musiciansListDiv.innerHTML = '';
         techListDiv.innerHTML = '';
 
-        users.filter(user => !excludedMusicians.includes(user.name)).forEach(user => {
+        users.forEach(user => {
             const userDiv = document.createElement('div');
-            
-            // --- ESTAS 3 LINEAS SON LA SOLUCIÓN PARA ALINEARLOS ---
-            userDiv.style.display = 'flex';         // Los pone en fila
-            userDiv.style.alignItems = 'center';    // Los centra verticalmente
-            userDiv.style.marginBottom = '8px';     // Un poco de espacio debajo
-            // ------------------------------------------------------
+            userDiv.style.display = 'flex';         
+            userDiv.style.alignItems = 'center';    
+            userDiv.style.marginBottom = '8px';     
 
             const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`;
             userDiv.innerHTML = ` <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}" style="margin-right: 8px;"> <label for="${checkboxId}" style="margin:0; cursor:pointer;">${user.name} (${user.nickname})</label> `;
@@ -741,7 +916,7 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
         });
 
         if (musiciansListDiv.children.length === 0) musiciansListDiv.innerHTML = 'No hay músicos listados.';
-        if (techListDiv.children.length === 0) techListDiv.innerHTML = 'No hay técnicos listados.'; // NUEVO
+        if (techListDiv.children.length === 0) techListDiv.innerHTML = 'No hay técnicos listados.';
     } else {
         musiciansListDiv.innerHTML = 'No hay usuarios registrados.';
         techListDiv.innerHTML = '';
@@ -751,7 +926,7 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
         const details = await withRetry(() => loadDoc('concert_details', concertId, {}));
         if (details && Object.keys(details).length > 0) {
             document.getElementById('concert-detail-location').value = details.locationDetails || '';
-            document.getElementById('concert-detail-sound-company').value = details.soundCompany || ''; // NUEVO CARGA
+            document.getElementById('concert-detail-sound-company').value = details.soundCompany || ''; 
             document.getElementById('concert-detail-soundsetup').value = details.soundSetupTime || '';
             document.getElementById('concert-detail-instrumentssetup').value = details.instrumentsSetupTime || '';
             document.getElementById('concert-detail-soundcheck').value = details.soundcheckTime || '';
@@ -770,10 +945,8 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
                 openGmapsBtn.style.display = 'none'
             }
             
-            // Marcar checkboxes (sirve para ambas listas porque buscamos por ID global)
             if (details.attendees && Array.isArray(details.attendees)) {
                 details.attendees.forEach(attendeeName => {
-                    // Buscamos el input en todo el documento (así pilla músicos y técnicos)
                     const checkbox = document.querySelector(`input[name="concertAttendees"][value="${attendeeName}"]`);
                     if (checkbox) {
                         checkbox.checked = true
@@ -854,6 +1027,8 @@ document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); clos
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
+setupMenuLink("menu-suggestions", "suggestions");
+
 document.getElementById("menu-config").onclick = e => { e.preventDefault();const submenu=document.getElementById("config-submenu");if(!isAuthenticated){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true;submenu.style.display=submenu.style.display==="block"?"none":"block"}else{alert("Contraseña incorrecta.");return}}else{submenu.style.display=submenu.style.display==="block"?"none":"block"}};
 const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; 
 document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
@@ -872,6 +1047,238 @@ document.getElementById("close-stats").onclick = () => document.getElementById("
 document.getElementById("stats-month-filter").addEventListener("change", renderStats);
 document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); openConfigScreen("user-list-screen"); };
 document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
+
+// --- GESTIÓN DE PROPUESTAS (SUGGESTIONS) ---
+let suggestions = [];
+
+// Listener de Firestore para propuestas (incluye eliminadas)
+if (typeof db !== 'undefined') {
+    db.collection('suggestions').onSnapshot(snapshot => {
+        suggestions = [];
+        snapshot.forEach(doc => {
+            suggestions.push({ id: doc.id, ...doc.data() });
+        });
+        renderSuggestions();
+        renderAdminSuggestions(); // También actualiza la tabla de admin
+    });
+}
+
+document.getElementById("add-suggestion-btn").onclick = async () => {
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value;
+    const title = document.getElementById('suggestion-title').value.trim();
+    const artist = document.getElementById('suggestion-artist').value.trim();
+    const link = document.getElementById('suggestion-link').value.trim();
+    const msg = document.getElementById('suggestion-message');
+    
+    msg.textContent = "";
+
+    if (!currentUser) {
+        alert("Por favor, selecciona quién eres en el desplegable de arriba.");
+        userSelector.focus();
+        return;
+    }
+    if (!title || !artist) {
+        msg.textContent = "Título y Artista son obligatorios.";
+        return;
+    }
+
+    const newSuggestion = {
+        title,
+        artist,
+        link,
+        proposedBy: currentUser,
+        proposedAt: new Date().toISOString(),
+        votes: {}, // { "Juan": 5, "Fer": 3 }
+        averageRating: 0,
+        status: 'active'
+    };
+
+    try {
+        await db.collection('suggestions').add(newSuggestion);
+        document.getElementById('suggestion-title').value = "";
+        document.getElementById('suggestion-artist').value = "";
+        document.getElementById('suggestion-link').value = "";
+        alert("¡Propuesta enviada!");
+    } catch (e) {
+        console.error("Error al añadir propuesta:", e);
+        msg.textContent = "Error: " + e.message;
+    }
+};
+
+async function rateSuggestion(id, rating) {
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value;
+    
+    if (!currentUser) {
+        alert("Por favor, selecciona quién eres arriba para poder votar.");
+        window.scrollTo(0, document.getElementById('suggestions').offsetTop);
+        return;
+    }
+
+    const suggestion = suggestions.find(s => s.id === id);
+    if (!suggestion) return;
+
+    const currentVotes = suggestion.votes || {};
+    
+    // Si ya votaste lo mismo, quitamos el voto (toggle)
+    if (currentVotes[currentUser] === rating) {
+        delete currentVotes[currentUser];
+    } else {
+        currentVotes[currentUser] = rating;
+    }
+
+    // Recalcular media
+    const scores = Object.values(currentVotes);
+    const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+
+    try {
+        await db.collection('suggestions').doc(id).update({
+            votes: currentVotes,
+            averageRating: avg
+        });
+    } catch (e) {
+        console.error("Error al votar:", e);
+    }
+}
+
+function renderSuggestions() {
+    const container = document.getElementById('suggestions-container');
+    container.innerHTML = "";
+
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value;
+
+    // Filtramos solo las activas y ordenamos por valoración media
+    const activeSuggestions = suggestions
+        .filter(s => s.status === 'active')
+        .sort((a, b) => b.averageRating - a.averageRating);
+
+    if (activeSuggestions.length === 0) {
+        container.innerHTML = "<p style='color:#888; font-style:italic;'>No hay propuestas activas.</p>";
+        return;
+    }
+
+    activeSuggestions.forEach(s => {
+        const date = new Date(s.proposedAt).toLocaleDateString();
+        const votes = s.votes || {};
+        const myVote = currentUser ? votes[currentUser] : 0;
+        const votersCount = Object.keys(votes).length;
+        
+        // Generar estrellas visuales (promedio)
+        let starsHtml = '';
+        for (let i = 1; i <= 5; i++) {
+            starsHtml += `<span class="star-visual ${i <= Math.round(s.averageRating) ? 'filled' : ''}">★</span>`;
+        }
+
+        // Generar estrellas interactivas (para votar)
+        let interactiveStarsHtml = '';
+        for (let i = 1; i <= 5; i++) {
+            interactiveStarsHtml += `<span class="interactive-star ${i <= myVote ? 'active' : ''}" onclick="rateSuggestion('${s.id}', ${i})">★</span>`;
+        }
+
+        // Detalles de votantes
+        let votersDetailsHtml = '';
+        if (votersCount > 0) {
+            const details = Object.entries(votes).map(([name, score]) => `${name}: ${score}★`).join(', ');
+            votersDetailsHtml = `<div class="voters-details" id="voters-${s.id}">${details}</div>`;
+        } else {
+            votersDetailsHtml = `<div class="voters-details" id="voters-${s.id}">Nadie ha votado aún.</div>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'suggestion-card';
+        card.innerHTML = `
+            <div class="suggestion-header">
+                <div class="suggestion-title">${s.title}</div>
+                <div class="suggestion-artist">${s.artist}</div>
+                <div class="suggestion-meta">Propuesto por: ${s.proposedBy} el ${date}</div>
+            </div>
+            <div class="suggestion-body">
+                ${s.link ? `<a href="${s.link}" target="_blank" style="color:#0cf; font-size:0.8em;">Escuchar (Link)</a>` : ''}
+                
+                <div style="margin-top:15px;">
+                    <div class="star-rating-display">
+                        <span class="avg-score">${s.averageRating.toFixed(1)}</span>
+                        <div style="display:flex;">${starsHtml}</div>
+                        <span style="font-size:0.8em; color:#888; margin-left:5px;">(${votersCount} votos)</span>
+                    </div>
+                    
+                    <button class="toggle-voters-btn" onclick="document.getElementById('voters-${s.id}').classList.toggle('show')">Ver votaciones</button>
+                    ${votersDetailsHtml}
+                </div>
+            </div>
+            <div class="suggestion-actions">
+                <div class="voting-area">
+                    <span class="voting-label">Tu Voto:</span>
+                    <div class="interactive-stars">${interactiveStarsHtml}</div>
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// --- ADMIN SUGGESTIONS ---
+document.getElementById("menu-admin-suggestions").onclick = e => { 
+    e.preventDefault(); 
+    openConfigScreen("admin-suggestions-screen");
+    renderAdminSuggestions();
+};
+document.getElementById("close-admin-suggestions").onclick = () => {
+    document.getElementById("admin-suggestions-screen").style.display = "none";
+};
+
+function renderAdminSuggestions() {
+    const tbody = document.getElementById('admin-suggestions-body');
+    tbody.innerHTML = "";
+
+    // Ordenar por fecha (más reciente primero)
+    const sorted = [...suggestions].sort((a, b) => new Date(b.proposedAt) - new Date(a.proposedAt));
+
+    sorted.forEach(s => {
+        const date = new Date(s.proposedAt).toLocaleDateString();
+        const isDeleted = s.status === 'deleted';
+        const rowClass = isDeleted ? 'deleted-row' : '';
+        const statusText = isDeleted 
+            ? `Eliminada por ${s.deletedBy || '?'} (${new Date(s.deletedAt).toLocaleDateString()})` 
+            : '<span style="color:#0cf">Activa</span>';
+        
+        const actionBtn = isDeleted 
+            ? '-' 
+            : `<button onclick="deleteSuggestion('${s.id}')" style="background:#ff3333; padding:5px; font-size:0.8em;">Eliminar</button>`;
+
+        const row = `
+            <tr class="${rowClass}">
+                <td>${s.title} (${s.artist})</td>
+                <td>${s.proposedBy}</td>
+                <td>${date}</td>
+                <td style="font-size:0.8em;">${statusText}</td>
+                <td>${actionBtn}</td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+}
+
+async function deleteSuggestion(id) {
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value || "Admin"; // Si entra directo, al menos que ponga Admin
+
+    if(confirm("¿Seguro que quieres eliminar esta propuesta? Se ocultará de la lista principal.")){
+        try {
+            await db.collection('suggestions').doc(id).update({
+                status: 'deleted',
+                deletedAt: new Date().toISOString(),
+                deletedBy: currentUser
+            });
+            alert("Propuesta eliminada.");
+        } catch(e) {
+            console.error(e);
+            alert("Error al eliminar.");
+        }
+    }
+}
 
 /* ---------- 12. Carga inicial & Lógica Audio Global y Splash ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
