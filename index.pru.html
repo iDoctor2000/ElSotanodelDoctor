@@ -113,7 +113,14 @@
     .modal-field-group { display: flex; gap: 15px; flex-wrap: wrap; }
     .modal-field-group > div { flex: 1; min-width: 200px; }
     .modal-field-group input[type="time"] { text-align: left; }
-    .config-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000; z-index:10001; overflow-y:auto; padding: 20px; padding-top: calc(60px + 20px); }
+    
+    /* CONFIG SCREENS (Ahora incluye SUGGESTIONS SCREEN) */
+    .config-screen {
+        display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+        background: rgba(10, 10, 10, 0.95); /* Fondo casi negro pero con toque */
+        z-index:10001; overflow-y:auto; padding: 20px; padding-top: calc(60px + 20px); 
+        backdrop-filter: blur(5px);
+    }
     .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px;}  
     .config-screen h3{color:#0cf;margin:20px 0 10px}
     .config-screen label{display:block;margin:10px 0 5px}
@@ -126,7 +133,7 @@
     main section{max-width:1200px;margin:0 auto;padding:20px}
     
     /* SECCIONES CON EFECTO CRISTAL (Glassmorphism) */
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual, #suggestions { 
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual { 
         background: rgba(20, 20, 20, 0.75); 
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
         padding:20px; border-radius:12px; 
@@ -134,7 +141,7 @@
         border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
     }
     
-    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2 { text-align:center;color:#0cf;margin-bottom:5px }
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 { text-align:center;color:#0cf;margin-bottom:5px }
     .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
     table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
@@ -354,6 +361,9 @@
     .interactive-star:hover, .interactive-star.active {
         color: #FFD700;
     }
+    /* Bloqueo de voto */
+    .interactive-stars.voted { pointer-events: none; opacity: 0.8; }
+    .interactive-stars.voted .interactive-star.active { color: #FFD700; }
 
     /* DETALLES DE VOTANTES */
     .voters-details {
@@ -555,6 +565,33 @@
     </div>
   </div>
 
+  <div id="suggestions-screen" class="config-screen">
+    <button class="close-btn" id="close-suggestions">Cerrar</button>
+    <h2>Propuestas de Canciones</h2>
+        <div style="text-align:center; margin-bottom:20px;">
+            <label for="user-identity-selector" style="color:#0cf; font-weight:bold; display:block; margin-bottom:5px;">¿Quién eres? (Necesario para proponer y votar)</label>
+            <select id="user-identity-selector">
+                <option value="" disabled selected>-- Selecciona tu nombre --</option>
+            </select>
+        </div>
+        
+        <div class="suggestion-form">
+            <h4 style="color:#fff; margin-top:0;">Nueva Propuesta</h4>
+            <div class="suggestion-form-row">
+                <input type="text" id="suggestion-title" placeholder="Título de la canción">
+                <input type="text" id="suggestion-artist" placeholder="Artista / Banda original">
+            </div>
+            <div class="suggestion-form-row">
+                <input type="url" id="suggestion-link" placeholder="Enlace (Spotify/Youtube) - Opcional">
+                <button id="add-suggestion-btn" style="width:auto; flex:0 0 150px;">Proponer</button>
+            </div>
+            <p id="suggestion-message" class="error-message" style="text-align:left; margin:0;"></p>
+        </div>
+
+        <div class="suggestions-grid" id="suggestions-container">
+            </div>
+  </div>
+
   <div id="stats-screen" class="config-screen">
     <button class="close-btn" id="close-stats">Cerrar</button>
     <h2>Estadísticas</h2>
@@ -626,32 +663,6 @@
         <button id="next-month-btn">Siguiente ></button>
       </div>
       <div class="calendar-grid" id="calendar-grid-container"></div>
-    </section>
-
-    <section id="suggestions">
-        <h2>Propuestas de Canciones</h2>
-        <div style="text-align:center; margin-bottom:20px;">
-            <label for="user-identity-selector" style="color:#0cf; font-weight:bold; display:block; margin-bottom:5px;">¿Quién eres? (Necesario para proponer y votar)</label>
-            <select id="user-identity-selector">
-                <option value="" disabled selected>-- Selecciona tu nombre --</option>
-            </select>
-        </div>
-        
-        <div class="suggestion-form">
-            <h4 style="color:#fff; margin-top:0;">Nueva Propuesta</h4>
-            <div class="suggestion-form-row">
-                <input type="text" id="suggestion-title" placeholder="Título de la canción">
-                <input type="text" id="suggestion-artist" placeholder="Artista / Banda original">
-            </div>
-            <div class="suggestion-form-row">
-                <input type="url" id="suggestion-link" placeholder="Enlace (Spotify/Youtube) - Opcional">
-                <button id="add-suggestion-btn" style="width:auto; flex:0 0 150px;">Proponer</button>
-            </div>
-            <p id="suggestion-message" class="error-message" style="text-align:left; margin:0;"></p>
-        </div>
-
-        <div class="suggestions-grid" id="suggestions-container">
-            </div>
     </section>
   
   </main>
@@ -726,7 +737,7 @@ const cargarSegundoSetlist = () => cargarSetlistGenerico(setlistConfig.setlist2,
 const cargarStarSetlist = () => cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella");
 
 /* ---------- 6. Usuarios ---------- */
-let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["XXX", "YYY"];  
+let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
 function renderUsers() { const tbodyMgmt=document.getElementById("user-table-body");const tbodyDisplay=document.getElementById("users-body");if(tbodyMgmt)tbodyMgmt.innerHTML="";if(tbodyDisplay)tbodyDisplay.innerHTML="";if(!Array.isArray(users)||users.length===0){const emptyMsgMgmt='<tr><td colspan="4">No hay usuarios registrados.</td></tr>';const emptyMsgDisplay='<tr><td colspan="3">No hay usuarios registrados.</td></tr>';if(tbodyMgmt)tbodyMgmt.innerHTML=emptyMsgMgmt;if(tbodyDisplay)tbodyDisplay.innerHTML=emptyMsgDisplay;return} users.forEach((u,i)=>{if(!u||typeof u!=='object'||!u.name||!u.nickname||!Array.isArray(u.roles)){console.warn(`Usuario inválido en la posición ${i}:`,u);return} const rolesDisplay=u.roles.join(", ");if(tbodyMgmt){tbodyMgmt.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`)} if(tbodyDisplay){tbodyDisplay.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`)}});if(tbodyMgmt){tbodyMgmt.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{const userIndex=parseInt(btn.dataset.i,10);const userToDelete=users[userIndex];if(confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)){rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance=r.attendance.filter(a=>a.name!==userToDelete.name)}});users.splice(userIndex,1);await saveUsers();await saveRehearsals();renderStats()}});tbodyMgmt.querySelectorAll(".edit-user").forEach(btn=>btn.onclick=()=>{editingUserIndex=parseInt(btn.dataset.i,10);const user=users[editingUserIndex];document.getElementById("user-name").value=user.name;document.getElementById("user-nickname").value=user.nickname;const roleSelect=document.getElementById("user-role");Array.from(roleSelect.options).forEach(option=>{option.selected=user.roles.includes(option.value)});document.getElementById("add-user").textContent="Guardar Cambios";document.getElementById("cancel-edit-user").style.display="inline-block"})}}
 async function loadUsers() { try { const data = await withRetry(() => loadDoc("intranet", "users", { users: [] })); users = Array.isArray(data.users) ? data.users : []; users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles)); renderUsers(); populateIdentitySelector(); } catch (e) { console.error("Error al cargar usuarios:", e); } }
 async function saveUsers() { try { await withRetry(() => saveDoc("intranet", "users", { users })); renderUsers(); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar usuarios:", e); throw e; } }
@@ -1021,16 +1032,25 @@ document.getElementById('close-concert-details-modal').onclick = () => { closeAl
 
 /* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
-function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
+function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
 document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
-setupMenuLink("menu-suggestions", "suggestions");
+
+// --- CONFIGURACIÓN MENÚ SUGGESTIONS (NUEVO: ABRE PANTALLA) ---
+document.getElementById("menu-suggestions").onclick = e => { 
+    e.preventDefault(); 
+    openConfigScreen("suggestions-screen");
+    renderSuggestions(); 
+};
+document.getElementById("close-suggestions").onclick = () => {
+    document.getElementById("suggestions-screen").style.display = "none";
+};
 
 document.getElementById("menu-config").onclick = e => { e.preventDefault();const submenu=document.getElementById("config-submenu");if(!isAuthenticated){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true;submenu.style.display=submenu.style.display==="block"?"none":"block"}else{alert("Contraseña incorrecta.");return}}else{submenu.style.display=submenu.style.display==="block"?"none":"block"}};
-const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; 
+const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'&&screenId!=='suggestions-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'||screenId==='suggestions-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; 
 document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
 document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; document.getElementById("setlist-message").textContent = ""; };
 document.getElementById("guardar-setlist-config").onclick = async () => { const msg=document.getElementById("setlist-message");msg.textContent="";const n1=document.getElementById("setlist1-name").value.trim(),u1=document.getElementById("setlist1-url").value.trim();const n2=document.getElementById("setlist2-name").value.trim(),raw2=document.getElementById("setlist2-url").value.trim();const nStar=document.getElementById("setlistStar-name").value.trim(),uStar=document.getElementById("setlistStar-url").value.trim();if(!n1||!u1||!n2||!raw2||!nStar||!uStar){msg.className="error-message";msg.textContent="Completa todos los campos.";return} try{setlistConfig.setlist1={name:n1,url:u1};setlistConfig.setlist2={name:n2,url:raw2.startsWith("http")?raw2:`https://www.bandhelper.com/feed/set_list/${raw2}`};setlistConfig.setlistStar={name:nStar,url:uStar};await saveSetlistConfig();await Promise.all([cargarPrimerSetlist(),cargarSegundoSetlist(),cargarStarSetlist()]);document.getElementById("setlist-config-screen").style.display="none"}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
@@ -1112,7 +1132,8 @@ async function rateSuggestion(id, rating) {
     
     if (!currentUser) {
         alert("Por favor, selecciona quién eres arriba para poder votar.");
-        window.scrollTo(0, document.getElementById('suggestions').offsetTop);
+        // Scrollear arriba si está muy abajo
+        document.getElementById('suggestions-screen').scrollTop = 0;
         return;
     }
 
@@ -1165,6 +1186,9 @@ function renderSuggestions() {
         const myVote = currentUser ? votes[currentUser] : 0;
         const votersCount = Object.keys(votes).length;
         
+        // NUEVO: Detectar si ya ha votado para bloquear interacción
+        const hasVoted = myVote > 0;
+
         // Generar estrellas visuales (promedio)
         let starsHtml = '';
         for (let i = 1; i <= 5; i++) {
@@ -1173,8 +1197,16 @@ function renderSuggestions() {
 
         // Generar estrellas interactivas (para votar)
         let interactiveStarsHtml = '';
-        for (let i = 1; i <= 5; i++) {
-            interactiveStarsHtml += `<span class="interactive-star ${i <= myVote ? 'active' : ''}" onclick="rateSuggestion('${s.id}', ${i})">★</span>`;
+        // Si ha votado, no ponemos onclick y mostramos estado "bloqueado"
+        if (hasVoted) {
+            for (let i = 1; i <= 5; i++) {
+                interactiveStarsHtml += `<span class="interactive-star ${i <= myVote ? 'active' : ''}" style="cursor:default; opacity:${i <= myVote ? 1 : 0.3};">★</span>`;
+            }
+        } else {
+            // Si NO ha votado, permitimos click
+            for (let i = 1; i <= 5; i++) {
+                interactiveStarsHtml += `<span class="interactive-star" onclick="rateSuggestion('${s.id}', ${i})">★</span>`;
+            }
         }
 
         // Detalles de votantes
@@ -1185,6 +1217,9 @@ function renderSuggestions() {
         } else {
             votersDetailsHtml = `<div class="voters-details" id="voters-${s.id}">Nadie ha votado aún.</div>`;
         }
+        
+        // Texto de estado de voto
+        const voteStatusText = hasVoted ? `<span style="color:#FFD700; font-size:0.9em;">Votado (${myVote}/5)</span>` : `<span class="voting-label">Tu Voto:</span>`;
 
         const card = document.createElement('div');
         card.className = 'suggestion-card';
@@ -1210,8 +1245,8 @@ function renderSuggestions() {
             </div>
             <div class="suggestion-actions">
                 <div class="voting-area">
-                    <span class="voting-label">Tu Voto:</span>
-                    <div class="interactive-stars">${interactiveStarsHtml}</div>
+                    ${voteStatusText}
+                    <div class="interactive-stars ${hasVoted ? 'voted' : ''}">${interactiveStarsHtml}</div>
                 </div>
             </div>
         `;
