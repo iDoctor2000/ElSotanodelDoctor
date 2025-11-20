@@ -133,7 +133,7 @@
     main section{max-width:1200px;margin:0 auto;padding:20px}
     
     /* SECCIONES CON EFECTO CRISTAL (Glassmorphism) */
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual { 
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual, #suggestions { 
         background: rgba(20, 20, 20, 0.75); 
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
         padding:20px; border-radius:12px; 
@@ -141,7 +141,7 @@
         border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
     }
     
-    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2 { text-align:center;color:#0cf;margin-bottom:5px }
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2 { text-align:center;color:#0cf;margin-bottom:5px }
     .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
     table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
@@ -1038,16 +1038,7 @@ document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); clos
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
-
-// --- CONFIGURACIÓN MENÚ SUGGESTIONS (NUEVO: ABRE PANTALLA) ---
-document.getElementById("menu-suggestions").onclick = e => { 
-    e.preventDefault(); 
-    openConfigScreen("suggestions-screen");
-    renderSuggestions(); 
-};
-document.getElementById("close-suggestions").onclick = () => {
-    document.getElementById("suggestions-screen").style.display = "none";
-};
+setupMenuLink("menu-suggestions", "suggestions");
 
 document.getElementById("menu-config").onclick = e => { e.preventDefault();const submenu=document.getElementById("config-submenu");if(!isAuthenticated){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true;submenu.style.display=submenu.style.display==="block"?"none":"block"}else{alert("Contraseña incorrecta.");return}}else{submenu.style.display=submenu.style.display==="block"?"none":"block"}};
 const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'&&screenId!=='suggestions-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'||screenId==='suggestions-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; 
@@ -1619,7 +1610,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // --- LÓGICA 1: ENSAYOS ---
     if (Array.isArray(rehearsals)) {
-      rehearsals.forEach(r => {
+      rehearsals.forEach((r, i) => {
         let missingStr = "";
         if (r.attendance && Array.isArray(r.attendance)) {
             const missingNames = r.attendance
@@ -1637,7 +1628,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         events.push({
           dateStr: r.date, 
           type: 'ensayo',
-          title: `Ensayo (${r.startTime} - ${r.endTime})${missingStr}`
+          title: `Ensayo (${r.startTime} - ${r.endTime})${missingStr}`,
+          index: i // Index para click handler
         });
       });
     }
@@ -1723,6 +1715,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             evtDiv.onclick = (e) => {
                 e.stopPropagation();
                 openConcertDetailModal(evt.id, evt.rawDate, evt.rawTitle, evt.rawLoc);
+            };
+        }
+
+        // Click para Ensayos (NUEVO)
+        if (evt.type === 'ensayo') {
+            evtDiv.style.cursor = 'pointer';
+            evtDiv.title = "Click para ver notas del ensayo";
+            evtDiv.onclick = (e) => {
+                e.stopPropagation();
+                openRehearsalDetailsModal(evt.index);
             };
         }
         
