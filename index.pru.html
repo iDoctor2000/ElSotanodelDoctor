@@ -463,6 +463,7 @@
       <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
       <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
       <a href="#" id="menu-admin-suggestions">Gestión de Propuestas</a>
+      <a href="#" id="menu-jukebox-mgmt">Gestión Jukebox</a> <!-- NUEVO MENU -->
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
@@ -471,22 +472,30 @@
   <div id="rehearsal-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Información del Ensayo</h3><h4 id="rehearsal-detail-title-display"></h4><input type="hidden" id="rehearsal-detail-index"><label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label><textarea id="rehearsal-notes" style="min-height: 400px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea><button id="save-rehearsal-details">Guardar Información</button><button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button><p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="setlist-config-screen" class="config-screen"><button class="close-btn" id="close-setlist-config">Cerrar</button><h2>Configuración de Setlists</h2><h3>Setlist Próximo Ensayo</h3><label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025"><label>ID/URL feed</label><input id="setlist1-url" placeholder="URL"><h3>Setlist Próximo Concierto</h3><label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad"><label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa"><h3>Setlist Concierto Estrella</h3><label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025"><label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL"><button id="guardar-setlist-config">Guardar Configuración</button><p id="setlist-message" class="error-message"></p></div>
   
+  <!-- JUKEBOX MGMT SCREEN (Nuevo: Gestión Masiva) -->
+  <div id="jukebox-mgmt-screen" class="config-screen">
+      <button class="close-btn" id="close-jukebox-mgmt">Cerrar</button>
+      <h2>Gestión Jukebox</h2>
+      <p style="color:#aaa; text-align:center;">Listado de canciones que tienen un enlace de audio asignado.</p>
+      <div class="table-wrapper">
+          <table id="jukebox-mgmt-table">
+              <thead><tr><th>Canción (ID)</th><th>Enlace</th><th>Acciones</th></tr></thead>
+              <tbody id="jukebox-mgmt-body"></tbody>
+          </table>
+      </div>
+  </div>
+
   <!-- JUKEBOX EDIT MODAL (Nuevo: Reemplaza al Jukebox Config Screen) -->
   <div id="jukebox-edit-modal" class="modal-backdrop">
       <div class="modal-content" style="max-width: 500px;">
          <h3>Jukebox: <span id="jb-modal-songname" style="color:#fff;"></span></h3>
          
-         <!-- Play controls if link exists -->
-         <div id="jb-modal-play-controls" style="display:none; margin-bottom:25px; text-align:center; padding: 10px; background: rgba(0,204,255,0.1); border-radius: 8px;">
-            <button id="jb-modal-play-btn" class="live-mode-btn" style="margin:0; width: 100%; font-size: 1.2em;">▶ Reproducir Ahora</button>
-         </div>
-
          <label for="jb-modal-url-input">Enlace de Audio (YouTube, MP3, Drive):</label>
          <input type="text" id="jb-modal-url-input" placeholder="Pegar URL aquí para activar el audio...">
          <p style="font-size:0.8em; color:#888; margin-top:5px;">* Soporta YouTube y Google Drive (modo vista previa)</p>
 
-         <div style="margin-top:20px; display: flex; justify-content: space-between; align-items: center;">
-            <button id="jb-modal-delete-btn" style="background:#ff3333; color:#fff;">Borrar Enlace</button>
+         <div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;">
+            <!-- Eliminado botón borrar y play de aquí, movido a gestión o automático -->
             <div>
                 <button id="jb-modal-cancel-btn" class="modal-close-btn">Cancelar</button>
                 <button id="jb-modal-save-btn">Guardar</button>
@@ -926,12 +935,20 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 
     let totalSecondsOverall = 0;
     
-    // Helper for Jukebox Cell
+    // Helper for Jukebox Cell (NUEVO ICONO AURICULARES + LÓGICA DIRECTA)
     const createJukeboxCell = (songName) => {
         const cleanName = sanitizeFirebaseKey(songName);
-        const hasLink = jukeboxLibrary[cleanName] ? true : false;
+        const url = jukeboxLibrary[cleanName];
+        const hasLink = !!url;
         const statusClass = hasLink ? 'active' : 'inactive';
-        return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="openJukeboxEditModal('${songName.replace(/'/g, "\\'")}')"><svg viewBox="0 0 24 24"><path d="M12 3v9.28a4.39 4.39 0 00-1.5-.28 4.5 4.5 0 104.5 4.5V6h3V3h-6z"/></svg></button></td>`;
+        const safeName = songName.replace(/'/g, "\\'");
+        
+        // Si tiene link, reproduce directo. Si no, abre modal editar.
+        const clickAction = hasLink 
+            ? `openJukeboxPlayer('${safeName}', '${url}')` 
+            : `openJukeboxEditModal('${safeName}')`;
+
+        return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
     };
 
     setlistStructure.forEach(blockOrItem => {
@@ -969,7 +986,7 @@ const cargarPrimerSetlist = async () => { globalItems1 = await cargarSetlistGene
 const cargarSegundoSetlist = async () => { globalItems2 = await cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto"); return globalItems2; };
 const cargarStarSetlist = async () => { globalItemsStar = await cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella"); return globalItemsStar; };
 
-/* ---------- 3.5. Jukebox Edit Modal Logic ---------- */
+/* ---------- 3.5. Jukebox Edit & Management Logic ---------- */
 let currentEditingSongName = null;
 const jukeboxEditModal = document.getElementById('jukebox-edit-modal');
 
@@ -981,23 +998,8 @@ function openJukeboxEditModal(songName) {
     document.getElementById('jb-modal-songname').textContent = songName;
     document.getElementById('jb-modal-url-input').value = currentLink;
     
-    const playControls = document.getElementById('jb-modal-play-controls');
-    if(currentLink) {
-        playControls.style.display = 'block';
-    } else {
-        playControls.style.display = 'none';
-    }
-
     jukeboxEditModal.classList.add('show');
 }
-
-document.getElementById('jb-modal-play-btn').onclick = () => {
-    const url = document.getElementById('jb-modal-url-input').value.trim();
-    if(url && currentEditingSongName) {
-        openJukeboxPlayer(currentEditingSongName, url);
-        jukeboxEditModal.classList.remove('show');
-    }
-};
 
 document.getElementById('jb-modal-save-btn').onclick = async () => {
     if(!currentEditingSongName) return;
@@ -1012,19 +1014,63 @@ document.getElementById('jb-modal-save-btn').onclick = async () => {
     
     await saveJukeboxLibrary();
     
-    // Recargar tablas para actualizar colores
+    // Recargar tablas para actualizar colores y lógica
     await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
     jukeboxEditModal.classList.remove('show');
-};
-
-document.getElementById('jb-modal-delete-btn').onclick = async () => {
-    document.getElementById('jb-modal-url-input').value = "";
-    document.getElementById('jb-modal-save-btn').click();
 };
 
 document.getElementById('jb-modal-cancel-btn').onclick = () => {
     jukeboxEditModal.classList.remove('show');
 };
+
+// --- GESTIÓN MASIVA JUKEBOX (NUEVO) ---
+document.getElementById("menu-jukebox-mgmt").onclick = e => { 
+    e.preventDefault(); 
+    openConfigScreen("jukebox-mgmt-screen");
+    renderJukeboxMgmtTable();
+};
+document.getElementById("close-jukebox-mgmt").onclick = () => {
+    document.getElementById("jukebox-mgmt-screen").style.display = "none";
+};
+
+function renderJukeboxMgmtTable() {
+    const tbody = document.getElementById('jukebox-mgmt-body');
+    tbody.innerHTML = "";
+    
+    const keys = Object.keys(jukeboxLibrary);
+    if (keys.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay canciones con enlace.</td></tr>";
+        return;
+    }
+
+    keys.forEach(key => {
+        const url = jukeboxLibrary[key];
+        // Intentamos 'adivinar' el nombre real reemplazando _ por espacio, 
+        // aunque lo ideal sería guardar el nombre real. Para admin, esto sirve.
+        const displayName = key.replace(/_/g, " "); 
+        
+        const row = `
+            <tr>
+                <td>${displayName}</td>
+                <td style="font-size:0.8em; color:#aaa; max-width: 200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${url}</td>
+                <td>
+                    <button onclick="deleteJukeboxLink('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;">Eliminar</button>
+                </td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+}
+
+async function deleteJukeboxLink(cleanKey) {
+    if(confirm("¿Eliminar el enlace de esta canción?")) {
+        delete jukeboxLibrary[cleanKey];
+        await saveJukeboxLibrary();
+        renderJukeboxMgmtTable(); // Refrescar tabla admin
+        // Refrescar setlists principales para apagar el icono
+        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
+    }
+}
 
 
 /* ---------- 6. Usuarios ---------- */
