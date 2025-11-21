@@ -659,8 +659,8 @@ function convertGoogleDriveLink(url) {
     }
 
     if (id) {
-        // Usar el endpoint de exportación directa
-        return `https://drive.google.com/uc?export=download&id=${id}`;
+        // Usar docs.google.com en lugar de drive.google.com a veces ayuda con las cookies
+        return `https://docs.google.com/uc?export=download&id=${id}`;
     }
     return url;
 }
@@ -701,6 +701,12 @@ function openJukeboxPlayer(title, rawUrl) {
     } else {
         currentJukeboxType = 'html5';
         currentAudioObj = document.getElementById('jukebox-audio-element');
+        
+        // Detener y limpiar completamente
+        currentAudioObj.pause();
+        currentAudioObj.removeAttribute('src');
+        currentAudioObj.load(); 
+
         // Reset error handler
         currentAudioObj.onerror = null; 
         currentAudioObj.src = url;
@@ -710,15 +716,17 @@ function openJukeboxPlayer(title, rawUrl) {
             const err = currentAudioObj.error;
             let msg = "Error desconocido al cargar audio.";
             if (err && err.code === 4) msg = "Archivo no soportado o no encontrado.";
-            if (url.includes('drive.google.com')) {
+            if (url.includes('google.com')) {
                 msg += "\n\nIMPORTANTE: Para Google Drive, asegúrate de que el archivo tenga permisos 'Cualquier persona con el enlace' (Lector). Si es privado, no sonará.";
             }
             alert(msg);
             stopJukebox();
         };
 
+        // Importante: .load() para resetear el buffer
+        currentAudioObj.load(); 
+
         currentAudioObj.play().catch(e => {
-            // Auto-play restrictions often caught here, or immediate format errors
             console.warn("Play catch:", e);
         });
 
