@@ -123,6 +123,7 @@
     .modal-field-group { display: flex; gap: 15px; flex-wrap: wrap; }
     .modal-field-group > div { flex: 1; min-width: 200px; }
     .modal-field-group input[type="time"] { text-align: left; }
+    
     .config-screen {
         display:none; position:fixed; top:0; left:0; width:100%; height:100%;
         background: rgba(10, 10, 10, 0.95); z-index:10001; overflow-y:auto; padding: 20px; padding-top: calc(60px + 20px); 
@@ -336,7 +337,7 @@
     <div class="header-controls-right">
         <button id="site-audio-control-button" class="header-icon-btn" title="Activar sonido"> 
             <svg class="icon-muted" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/>
+                <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/>
             </svg>
             <svg class="icon-unmuted" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
                 <path d="M12.4 4.42a1.19 1.19 0 00-1.75 1.05v13.1a1.19 1.19 0 001.75 1.05l4.91-3.3H19a1 1 0 001-1.07V9.72a1 1 0 00-1-1.07h-1.66zm6.1 2.51a6.73 6.73 0 010 10.14M16 9.48a3.23 3.23 0 010 5M4 9.72v4.56a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.65H5a1 1 0 00-1 1.07z"/>
@@ -601,22 +602,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     document.getElementById(totalTimeId).textContent = timeText;
     return setlistStructure;
 }
-                                                                                              const response=await fetch(configEntry.url);if(!response.ok){console.error(`[cargarSetlistGenerico] Error en la respuesta de la API para ${tbodyId}. Status: ${response.status}, URL: ${configEntry.url}`);throw new Error(`Error en la respuesta de la API (${response.status}): ${response.statusText}`)}
-const rawData=await response.json(); const dataToProcess=Array.isArray(rawData)?rawData:rawData.items||[];
-const processedItems=dataToProcess.map(item=>{if(!item||item.type!=="song"&&item.type!=="set"){return null}
-let rawDurationValue=parseFloat(item.duration);let durationIsInvalidOrMissing=isNaN(rawDurationValue)||rawDurationValue===0;if(isNaN(rawDurationValue)){rawDurationValue=0;durationIsInvalidOrMissing=true}
-let durationInSeconds;const itemName=item.name||item.title||(item.type==="song"?"Canción sin título":"Set sin nombre");const isBreakByName=/break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);item.isSong=false;item.isBreak=false;item.isSetHeader=false;
-if(item.type==="song"){durationInSeconds=rawDurationValue;item.isSong=true;}else if(item.type==="set"){if(isBreakByName){item.isBreak=true;if(durationIsInvalidOrMissing){durationInSeconds=3*60}else{durationInSeconds=rawDurationValue*60}}else{item.isSetHeader=true;durationInSeconds=rawDurationValue*60}}else{durationInSeconds=0}
-item.calculatedDurationSeconds=durationInSeconds;item.displayName=decodeHtmlEntities(item.title||item.name||(item.isSong?"Canción sin título":item.isBreak?"Pausa":"Set"));item.originalJSONDuration=item.duration;return item}).filter(item=>item!==null);
-const tbody=document.getElementById(tbodyId);tbody.innerHTML="";let songCount=0;const setlistStructure=[];let currentSet=null;
-processedItems.forEach(item=>{if(item.isSetHeader){if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet)}
-currentSet={...item,songs:[],calculatedBlockDurationSeconds:0}}else if(item.isBreak){if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet);currentSet=null}
-setlistStructure.push(item)}else if(item.isSong){if(!currentSet){currentSet={isSetHeader:true,displayName:"Set General",calculatedDurationSeconds:0,songs:[],calculatedBlockDurationSeconds:0}}
-currentSet.songs.push(item)}});if(currentSet){currentSet.calculatedBlockDurationSeconds=currentSet.songs.reduce((sum,song)=>sum+(song.calculatedDurationSeconds||0),0);setlistStructure.push(currentSet)}
-let totalSecondsOverall=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){
-const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
-tbody.insertAdjacentHTML("beforeend",`<tr class="set-header-row"><td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);totalSecondsOverall+=(blockOrItem.calculatedBlockDurationSeconds||0);blockOrItem.songs.forEach(song=>{songCount++;const songFormattedTime=toMMSS(song.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${song.displayName}</td><td>${decodeHtmlEntities(song.key||"-")}</td><td>${decodeHtmlEntities(song.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)})}else if(blockOrItem.isBreak){const breakFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)}else if(blockOrItem.isSong){songCount++;const songFormattedTime=toMMSS(blockOrItem.calculatedDurationSeconds||0);totalSecondsOverall+=(blockOrItem.calculatedDurationSeconds||0);tbody.insertAdjacentHTML("beforeend",`<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td><td>${decodeHtmlEntities(blockOrItem.key||"-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo||"-")}</td><td>${songFormattedTime}</td></tr>`)}});
-document.getElementById(totalTimeId).textContent="Tiempo total del set: "+toHHMM(totalSecondsOverall);return setlistStructure}catch(e){console.error(`[cargarSetlistGenerico] Error fatal en ${defaultErrorMessage} para ${tbodyId}:`,e);const tbody=document.getElementById(tbodyId);if(tbody)tbody.innerHTML=`<tr><td colspan="5">${defaultErrorMessage}. ${e.message}</td></tr>`;const totalTimeElem=document.getElementById(totalTimeId);if(totalTimeElem)totalTimeElem.textContent="Error al calcular tiempo.";return[]}}
+
 const cargarPrimerSetlist = async () => { globalItems1 = await cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo"); return globalItems1; };
 const cargarSegundoSetlist = async () => { globalItems2 = await cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto"); return globalItems2; };
 const cargarStarSetlist = async () => { globalItemsStar = await cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella"); return globalItemsStar; };
@@ -677,7 +663,10 @@ function renderRehearsals() {
         const rehearsalDate=new Date(r.date+'T00:00:00Z');
         if(rehearsalDate>=today){
             const calendarCell=`<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
+            // NUEVA COLUMNA INFO CON FLECHA
             const detailsCell = `<td class="details-col-header"><button class="details-btn" onclick="openRehearsalDetailsModal(${i})" title="Notas del Ensayo">➡️</button></td>`;
+
+            // Tabla Principal
             tbodyMain.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}${detailsCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`)
         }
     }); 
@@ -868,6 +857,7 @@ document.getElementById('save-concert-details').onclick = async () => {
     }
     
     const selectedAttendees = [];
+    // Capturamos checkboxes de AMBAS listas (Músicos y Técnicos)
     document.querySelectorAll('input[name="concertAttendees"]:checked').forEach(checkbox => {
         selectedAttendees.push(checkbox.value)
     });
@@ -876,7 +866,7 @@ document.getElementById('save-concert-details').onclick = async () => {
     
     const concertData = {
         locationDetails: document.getElementById('concert-detail-location').value.trim(),
-        soundCompany: document.getElementById('concert-detail-sound-company').value.trim(), 
+        soundCompany: document.getElementById('concert-detail-sound-company').value.trim(), // NUEVO GUARDAR
         soundSetupTime: document.getElementById('concert-detail-soundsetup').value,
         instrumentsSetupTime: document.getElementById('concert-detail-instrumentssetup').value,
         soundcheckTime: document.getElementById('concert-detail-soundcheck').value,
@@ -921,7 +911,7 @@ setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("men
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
 setupMenuLink("menu-suggestions", "suggestions");
 
-// --- CONFIGURACIÓN MENÚ SUGGESTIONS ---
+// --- CONFIGURACIÓN MENÚ SUGGESTIONS (NUEVO: ABRE PANTALLA) ---
 document.getElementById("menu-suggestions").onclick = e => { 
     e.preventDefault(); 
     openConfigScreen("suggestions-screen");
@@ -950,8 +940,10 @@ document.getElementById("stats-month-filter").addEventListener("change", renderS
 document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); openConfigScreen("user-list-screen"); };
 document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
 
-// --- GESTIÓN DE PROPUESTAS ---
+// --- GESTIÓN DE PROPUESTAS (SUGGESTIONS) ---
 let suggestions = [];
+
+// Listener de Firestore para propuestas (incluye eliminadas)
 if (typeof db !== 'undefined') {
     db.collection('suggestions').onSnapshot(snapshot => {
         suggestions = [];
@@ -959,7 +951,7 @@ if (typeof db !== 'undefined') {
             suggestions.push({ id: doc.id, ...doc.data() });
         });
         renderSuggestions();
-        renderAdminSuggestions();
+        renderAdminSuggestions(); // También actualiza la tabla de admin
     });
 }
 
@@ -970,191 +962,230 @@ document.getElementById("add-suggestion-btn").onclick = async () => {
     const artist = document.getElementById('suggestion-artist').value.trim();
     const link = document.getElementById('suggestion-link').value.trim();
     const msg = document.getElementById('suggestion-message');
+    
     msg.textContent = "";
-    if (!currentUser) { alert("Por favor, selecciona quién eres en el desplegable de arriba."); userSelector.focus(); return; }
-    if (!title || !artist) { msg.textContent = "Título y Artista son obligatorios."; return; }
-    const newSuggestion = { title, artist, link, proposedBy: currentUser, proposedAt: new Date().toISOString(), votes: {}, averageRating: 0, status: 'active' };
-    try { await db.collection('suggestions').add(newSuggestion); document.getElementById('suggestion-title').value = ""; document.getElementById('suggestion-artist').value = ""; document.getElementById('suggestion-link').value = ""; alert("¡Propuesta enviada!"); } catch (e) { console.error("Error:", e); msg.textContent = "Error: " + e.message; }
+
+    if (!currentUser) {
+        alert("Por favor, selecciona quién eres en el desplegable de arriba.");
+        userSelector.focus();
+        return;
+    }
+    if (!title || !artist) {
+        msg.textContent = "Título y Artista son obligatorios.";
+        return;
+    }
+
+    const newSuggestion = {
+        title,
+        artist,
+        link,
+        proposedBy: currentUser,
+        proposedAt: new Date().toISOString(),
+        votes: {}, // { "Juan": 5, "Fer": 3 }
+        averageRating: 0,
+        status: 'active'
+    };
+
+    try {
+        await db.collection('suggestions').add(newSuggestion);
+        document.getElementById('suggestion-title').value = "";
+        document.getElementById('suggestion-artist').value = "";
+        document.getElementById('suggestion-link').value = "";
+        alert("¡Propuesta enviada!");
+    } catch (e) {
+        console.error("Error al añadir propuesta:", e);
+        msg.textContent = "Error: " + e.message;
+    }
 };
 
 async function rateSuggestion(id, rating) {
     const userSelector = document.getElementById('user-identity-selector');
     const currentUser = userSelector.value;
-    if (!currentUser) { alert("Por favor, selecciona quién eres arriba para poder votar."); document.getElementById('suggestions-screen').scrollTop = 0; return; }
-    const suggestion = suggestions.find(s => s.id === id); if (!suggestion) return;
+    
+    if (!currentUser) {
+        alert("Por favor, selecciona quién eres arriba para poder votar.");
+        // Scrollear arriba si está muy abajo
+        document.getElementById('suggestions-screen').scrollTop = 0;
+        return;
+    }
+
+    const suggestion = suggestions.find(s => s.id === id);
+    if (!suggestion) return;
+
     const currentVotes = suggestion.votes || {};
-    if (currentVotes[currentUser] === rating) { delete currentVotes[currentUser]; } else { currentVotes[currentUser] = rating; }
+    
+    // Si ya votaste lo mismo, quitamos el voto (toggle)
+    if (currentVotes[currentUser] === rating) {
+        delete currentVotes[currentUser];
+    } else {
+        currentVotes[currentUser] = rating;
+    }
+
+    // Recalcular media
     const scores = Object.values(currentVotes);
     const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-    try { await db.collection('suggestions').doc(id).update({ votes: currentVotes, averageRating: avg }); } catch (e) { console.error("Error al votar:", e); }
+
+    try {
+        await db.collection('suggestions').doc(id).update({
+            votes: currentVotes,
+            averageRating: avg
+        });
+    } catch (e) {
+        console.error("Error al votar:", e);
+    }
 }
 
 function renderSuggestions() {
-    const container = document.getElementById('suggestions-container'); container.innerHTML = "";
-    const userSelector = document.getElementById('user-identity-selector'); const currentUser = userSelector.value;
-    const activeSuggestions = suggestions.filter(s => s.status === 'active').sort((a, b) => b.averageRating - a.averageRating);
-    if (activeSuggestions.length === 0) { container.innerHTML = "<p style='color:#888; font-style:italic;'>No hay propuestas activas.</p>"; return; }
+    const container = document.getElementById('suggestions-container');
+    container.innerHTML = "";
+
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value;
+
+    // Filtramos solo las activas y ordenamos por valoración media
+    const activeSuggestions = suggestions
+        .filter(s => s.status === 'active')
+        .sort((a, b) => b.averageRating - a.averageRating);
+
+    if (activeSuggestions.length === 0) {
+        container.innerHTML = "<p style='color:#888; font-style:italic;'>No hay propuestas activas.</p>";
+        return;
+    }
+
     activeSuggestions.forEach(s => {
         const date = new Date(s.proposedAt).toLocaleDateString();
-        const votes = s.votes || {}; const myVote = currentUser ? votes[currentUser] : 0; const votersCount = Object.keys(votes).length; const hasVoted = myVote > 0;
-        let starsHtml = ''; for (let i = 1; i <= 5; i++) { starsHtml += `<span class="star-visual ${i <= Math.round(s.averageRating) ? 'filled' : ''}">★</span>`; }
-        let interactiveStarsHtml = ''; if (hasVoted) { for (let i = 1; i <= 5; i++) { interactiveStarsHtml += `<span class="interactive-star ${i <= myVote ? 'active' : ''}" style="cursor:default; opacity:${i <= myVote ? 1 : 0.3};">★</span>`; } } else { for (let i = 1; i <= 5; i++) { interactiveStarsHtml += `<span class="interactive-star" onclick="rateSuggestion('${s.id}', ${i})">★</span>`; } }
-        let votersDetailsHtml = ''; if (votersCount > 0) { const details = Object.entries(votes).map(([name, score]) => `${name}: ${score}★`).join(', '); votersDetailsHtml = `<div class="voters-details" id="voters-${s.id}">${details}</div>`; } else { votersDetailsHtml = `<div class="voters-details" id="voters-${s.id}">Nadie ha votado aún.</div>`; }
+        const votes = s.votes || {};
+        const myVote = currentUser ? votes[currentUser] : 0;
+        const votersCount = Object.keys(votes).length;
+        
+        // NUEVO: Detectar si ya ha votado para bloquear interacción
+        const hasVoted = myVote > 0;
+
+        // Generar estrellas visuales (promedio)
+        let starsHtml = '';
+        for (let i = 1; i <= 5; i++) {
+            starsHtml += `<span class="star-visual ${i <= Math.round(s.averageRating) ? 'filled' : ''}">★</span>`;
+        }
+
+        // Generar estrellas interactivas (para votar)
+        let interactiveStarsHtml = '';
+        // Si ha votado, no ponemos onclick y mostramos estado "bloqueado"
+        if (hasVoted) {
+            for (let i = 1; i <= 5; i++) {
+                interactiveStarsHtml += `<span class="interactive-star ${i <= myVote ? 'active' : ''}" style="cursor:default; opacity:${i <= myVote ? 1 : 0.3};">★</span>`;
+            }
+        } else {
+            // Si NO ha votado, permitimos click
+            for (let i = 1; i <= 5; i++) {
+                interactiveStarsHtml += `<span class="interactive-star" onclick="rateSuggestion('${s.id}', ${i})">★</span>`;
+            }
+        }
+
+        // Detalles de votantes
+        let votersDetailsHtml = '';
+        if (votersCount > 0) {
+            const details = Object.entries(votes).map(([name, score]) => `${name}: ${score}★`).join(', ');
+            votersDetailsHtml = `<div class="voters-details" id="voters-${s.id}">${details}</div>`;
+        } else {
+            votersDetailsHtml = `<div class="voters-details" id="voters-${s.id}">Nadie ha votado aún.</div>`;
+        }
+        
+        // Texto de estado de voto
         const voteStatusText = hasVoted ? `<span style="color:#FFD700; font-size:0.9em;">Votado (${myVote}/5)</span>` : `<span class="voting-label">Tu Voto:</span>`;
-        const card = document.createElement('div'); card.className = 'suggestion-card';
-        card.innerHTML = `<div class="suggestion-header"><div class="suggestion-title">${s.title}</div><div class="suggestion-artist">${s.artist}</div><div class="suggestion-meta">Propuesto por: ${s.proposedBy} el ${date}</div></div><div class="suggestion-body">${s.link ? `<a href="${s.link}" target="_blank" style="color:#0cf; font-size:0.8em;">Escuchar (Link)</a>` : ''}<div style="margin-top:15px;"><div class="star-rating-display"><span class="avg-score">${s.averageRating.toFixed(1)}</span><div style="display:flex;">${starsHtml}</div><span style="font-size:0.8em; color:#888; margin-left:5px;">(${votersCount} votos)</span></div><button class="toggle-voters-btn" onclick="document.getElementById('voters-${s.id}').classList.toggle('show')">Ver votaciones</button>${votersDetailsHtml}</div></div><div class="suggestion-actions"><div class="voting-area">${voteStatusText}<div class="interactive-stars ${hasVoted ? 'voted' : ''}">${interactiveStarsHtml}</div></div></div>`;
+
+        const card = document.createElement('div');
+        card.className = 'suggestion-card';
+        card.innerHTML = `
+            <div class="suggestion-header">
+                <div class="suggestion-title">${s.title}</div>
+                <div class="suggestion-artist">${s.artist}</div>
+                <div class="suggestion-meta">Propuesto por: ${s.proposedBy} el ${date}</div>
+            </div>
+            <div class="suggestion-body">
+                ${s.link ? `<a href="${s.link}" target="_blank" style="color:#0cf; font-size:0.8em;">Escuchar (Link)</a>` : ''}
+                
+                <div style="margin-top:15px;">
+                    <div class="star-rating-display">
+                        <span class="avg-score">${s.averageRating.toFixed(1)}</span>
+                        <div style="display:flex;">${starsHtml}</div>
+                        <span style="font-size:0.8em; color:#888; margin-left:5px;">(${votersCount} votos)</span>
+                    </div>
+                    
+                    <button class="toggle-voters-btn" onclick="document.getElementById('voters-${s.id}').classList.toggle('show')">Ver votaciones</button>
+                    ${votersDetailsHtml}
+                </div>
+            </div>
+            <div class="suggestion-actions">
+                <div class="voting-area">
+                    ${voteStatusText}
+                    <div class="interactive-stars ${hasVoted ? 'voted' : ''}">${interactiveStarsHtml}</div>
+                </div>
+            </div>
+        `;
         container.appendChild(card);
     });
 }
 
-document.getElementById("menu-admin-suggestions").onclick = e => { e.preventDefault(); openConfigScreen("admin-suggestions-screen"); renderAdminSuggestions(); };
-document.getElementById("close-admin-suggestions").onclick = () => { document.getElementById("admin-suggestions-screen").style.display = "none"; };
+// --- ADMIN SUGGESTIONS ---
+document.getElementById("menu-admin-suggestions").onclick = e => { 
+    e.preventDefault(); 
+    openConfigScreen("admin-suggestions-screen");
+    renderAdminSuggestions();
+};
+document.getElementById("close-admin-suggestions").onclick = () => {
+    document.getElementById("admin-suggestions-screen").style.display = "none";
+};
+
 function renderAdminSuggestions() {
-    const tbody = document.getElementById('admin-suggestions-body'); tbody.innerHTML = "";
+    const tbody = document.getElementById('admin-suggestions-body');
+    tbody.innerHTML = "";
+
+    // Ordenar por fecha (más reciente primero)
     const sorted = [...suggestions].sort((a, b) => new Date(b.proposedAt) - new Date(a.proposedAt));
+
     sorted.forEach(s => {
-        const date = new Date(s.proposedAt).toLocaleDateString(); const isDeleted = s.status === 'deleted'; const rowClass = isDeleted ? 'deleted-row' : ''; const statusText = isDeleted ? `Eliminada por ${s.deletedBy || '?'} (${new Date(s.deletedAt).toLocaleDateString()})` : '<span style="color:#0cf">Activa</span>'; const actionBtn = isDeleted ? '-' : `<button onclick="deleteSuggestion('${s.id}')" style="background:#ff3333; padding:5px; font-size:0.8em;">Eliminar</button>`;
-        const row = `<tr class="${rowClass}"><td>${s.title} (${s.artist})</td><td>${s.proposedBy}</td><td>${date}</td><td style="font-size:0.8em;">${statusText}</td><td>${actionBtn}</td></tr>`; tbody.insertAdjacentHTML('beforeend', row);
+        const date = new Date(s.proposedAt).toLocaleDateString();
+        const isDeleted = s.status === 'deleted';
+        const rowClass = isDeleted ? 'deleted-row' : '';
+        const statusText = isDeleted 
+            ? `Eliminada por ${s.deletedBy || '?'} (${new Date(s.deletedAt).toLocaleDateString()})` 
+            : '<span style="color:#0cf">Activa</span>';
+        
+        const actionBtn = isDeleted 
+            ? '-' 
+            : `<button onclick="deleteSuggestion('${s.id}')" style="background:#ff3333; padding:5px; font-size:0.8em;">Eliminar</button>`;
+
+        const row = `
+            <tr class="${rowClass}">
+                <td>${s.title} (${s.artist})</td>
+                <td>${s.proposedBy}</td>
+                <td>${date}</td>
+                <td style="font-size:0.8em;">${statusText}</td>
+                <td>${actionBtn}</td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', row);
     });
 }
-async function deleteSuggestion(id) { const userSelector = document.getElementById('user-identity-selector'); const currentUser = userSelector.value || "Admin"; if(confirm("¿Seguro que quieres eliminar esta propuesta?")){ try { await db.collection('suggestions').doc(id).update({ status: 'deleted', deletedAt: new Date().toISOString(), deletedBy: currentUser }); alert("Propuesta eliminada."); } catch(e) { console.error(e); alert("Error al eliminar."); } } }
 
-/* --- LÓGICA MODO DIRECTO (LIVE MODE) --- */
-let currentLiveSetlist = [];
-let currentLiveIndex = 0;
-let wakeLock = null;
+async function deleteSuggestion(id) {
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value || "Admin"; // Si entra directo, al menos que ponga Admin
 
-// Solicitar Wake Lock (Evitar que se apague la pantalla)
-async function requestWakeLock() {
-    try {
-        if ('wakeLock' in navigator) {
-            wakeLock = await navigator.wakeLock.request('screen');
-            wakeLock.addEventListener('release', () => { console.log('Pantalla desbloqueada'); });
-            console.log('Pantalla mantenida encendida');
-        }
-    } catch (err) {
-        console.error(`${err.name}, ${err.message}`);
-    }
-}
-
-// Liberar Wake Lock
-async function releaseWakeLock() {
-    if (wakeLock !== null) {
-        await wakeLock.release();
-        wakeLock = null;
-    }
-}
-
-function startLiveMode(setlistData) {
-    // CORRECCIÓN CRÍTICA: Aplanar la estructura
-    // El setlist viene por "Bloques" (Set 1, Set 2...). Hay que extraer las canciones de dentro.
-    currentLiveSetlist = [];
-
-    if (Array.isArray(setlistData)) {
-        setlistData.forEach(item => {
-            // Caso A: Es un Set (Header) que contiene canciones dentro
-            if (item.isSetHeader && Array.isArray(item.songs)) {
-                currentLiveSetlist = currentLiveSetlist.concat(item.songs);
-            }
-            // Caso B: Es una canción suelta (sin Set)
-            else if (item.isSong) {
-                currentLiveSetlist.push(item);
-            }
-            // Caso C: Es un Break (Descanso) -> Opcional: Si quieres que salga el descanso, descomenta esto:
-            /*
-            else if (item.isBreak) {
-                item.displayName = "--- DESCANSO ---"; // Forzamos un título visible
-                currentLiveSetlist.push(item);
-            }
-            */
-        });
-    }
-    
-    // Comprobación de seguridad
-    if (currentLiveSetlist.length === 0) {
-        console.log("Datos recibidos:", setlistData); // Para depurar en consola si falla
-        alert("Este setlist no tiene canciones cargadas o el formato es incorrecto.");
-        return;
-    }
-
-    currentLiveIndex = 0;
-    renderLiveSong(currentLiveIndex);
-    
-    // Mostrar Overlay
-    const overlay = document.getElementById('live-mode-overlay');
-    overlay.classList.add('show');
-    
-    // Activar pantalla siempre encendida
-    requestWakeLock();
-}
-
-function renderLiveSong(index) {
-    const song = currentLiveSetlist[index];
-    if (!song) return;
-
-    // Actualizar textos en pantalla
-    document.getElementById('live-counter').textContent = `${index + 1} / ${currentLiveSetlist.length}`;
-    
-    // Ajuste de tamaño de fuente dinámico si el título es muy largo
-    const titleEl = document.getElementById('live-song-title');
-    titleEl.textContent = song.displayName;
-    if (song.displayName.length > 20) { titleEl.style.fontSize = "2.5em"; } 
-    else { titleEl.style.fontSize = "3.5em"; }
-
-    document.getElementById('live-song-key').textContent = `Key: ${song.key || '-'}`;
-    document.getElementById('live-song-tempo').textContent = `${song.tempo || '-'} BPM`;
-
-    // Previsualizar siguiente canción
-    const nextSong = currentLiveSetlist[index + 1];
-    const nextEl = document.getElementById('live-next-song');
-    
-    if (nextSong) {
-        nextEl.textContent = `Siguiente: ${nextSong.displayName}`;
-        nextEl.style.color = '#555';
-    } else {
-        nextEl.textContent = "¡FIN DEL SHOW! 👏";
-        nextEl.style.color = '#0cf'; // Cyan chillón para celebrar
-    }
-}
-
-// Listeners Live Mode
-document.getElementById('live-close-btn').onclick = () => {
-    document.getElementById('live-mode-overlay').classList.remove('show');
-    releaseWakeLock();
-};
-
-document.getElementById('live-next-btn').onclick = () => {
-    if (currentLiveIndex < currentLiveSetlist.length - 1) {
-        currentLiveIndex++;
-        renderLiveSong(currentLiveIndex);
-    }
-};
-
-document.getElementById('live-prev-btn').onclick = () => {
-    if (currentLiveIndex > 0) {
-        currentLiveIndex--;
-        renderLiveSong(currentLiveIndex);
-    }
-};
-
-// Zonas táctiles de pantalla (Invisible click areas)
-document.getElementById('live-content-area').onclick = (e) => {
-    const width = window.innerWidth;
-    // Si pulsas en la mitad derecha -> Siguiente
-    if (e.clientX > width / 2) {
-        if (currentLiveIndex < currentLiveSetlist.length - 1) {
-            currentLiveIndex++;
-            renderLiveSong(currentLiveIndex);
-        }
-    } 
-    // Si pulsas en la mitad izquierda -> Anterior
-    else {
-        if (currentLiveIndex > 0) {
-            currentLiveIndex--;
-            renderLiveSong(currentLiveIndex);
+    if(confirm("¿Seguro que quieres eliminar esta propuesta? Se ocultará de la lista principal.")){
+        try {
+            await db.collection('suggestions').doc(id).update({
+                status: 'deleted',
+                deletedAt: new Date().toISOString(),
+                deletedBy: currentUser
+            });
+            alert("Propuesta eliminada.");
+        } catch(e) {
+            console.error(e);
+            alert("Error al eliminar.");
         }
     }
-};
+}
 
 /* ---------- 12. Carga inicial & Lógica Audio Global y Splash ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
@@ -1242,11 +1273,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     const eventName = 'canplaythrough';
     
     // Eliminamos cualquier listener previo para 'canplaythrough' para evitar duplicados
+    // Es un poco más complejo asegurar que se elimina el handler correcto si se define anónimamente.
+    // Por ello, es mejor definir el handler fuera y referenciarlo.
     const playWhenReadyHandler = () => {
       if (audioElement) { 
         fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME);
+        // Ya no es necesario removerlo si se usa { once: true }
       }
     };
+    // Limpiar listeners anteriores explícitamente si no se usa once, o confiar en once.
+    // Para mayor seguridad, si se llama múltiples veces antes de que 'canplaythrough' se dispare:
+    // audioElement.removeEventListener(eventName, audioElement._playWhenReadyHandler); // Si guardamos la referencia
     audioElement.addEventListener(eventName, playWhenReadyHandler, { once: true });
   }
 
