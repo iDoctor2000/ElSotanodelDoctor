@@ -641,7 +641,32 @@ function onPlayerStateChange(event) {
 let currentJukeboxType = null; // 'youtube' or 'html5'
 let currentAudioObj = null; // HTML5 Audio element reference
 
-function openJukeboxPlayer(title, url) {
+// Helper para enlaces de Google Drive
+function convertGoogleDriveLink(url) {
+    // Si es un enlace de Google Drive
+    if (url.includes('drive.google.com') && (url.includes('/view') || url.includes('/file/d/') || url.includes('open?id='))) {
+         let fileId = "";
+         // Intento 1: /file/d/ID/
+         const match1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+         if (match1 && match1[1]) {
+             fileId = match1[1];
+         } else {
+             // Intento 2: id=ID
+             const match2 = url.match(/id=([a-zA-Z0-9_-]+)/);
+             if (match2 && match2[1]) {
+                 fileId = match2[1];
+             }
+         }
+
+         if (fileId) {
+             // Retornar enlace de descarga directa para que funcione en <audio>
+             return `https://drive.google.com/uc?export=download&id=${fileId}`;
+         }
+    }
+    return url;
+}
+
+function openJukeboxPlayer(title, rawUrl) {
     const playerBar = document.getElementById('jukebox-player-bar');
     const titleEl = document.getElementById('jukebox-current-title');
     
@@ -654,6 +679,9 @@ function openJukeboxPlayer(title, url) {
 
     playerBar.classList.add('visible');
     titleEl.textContent = title;
+    
+    // Convertir URL si es necesario (Drive)
+    const url = convertGoogleDriveLink(rawUrl);
 
     // Detect Type
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
