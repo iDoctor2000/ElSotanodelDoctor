@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -325,6 +325,16 @@
     .jukebox-embed-container audio { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
     .modal-close-jukebox { position: absolute; top: -10px; right: -10px; z-index: 10002; width: 30px; height: 30px; border-radius: 50%; background: #ff3333; color: white; border: 2px solid #fff; cursor: pointer; font-weight: bold; line-height: 1; padding: 0; font-size: 1.2em; }
     .modal-close-jukebox:hover { background: #d00; }
+
+    /* ESTILOS NUEVOS PARA LA GESTIÓN DE AUDIO LINKS */
+    .link-management-screen h3 { text-align: center; color: #fff; margin-top: 15px; }
+    .link-management-screen .table-wrapper { max-height: 70vh; overflow-y: auto; }
+    .link-management-screen table { width: 100%; margin: 10px auto; }
+    .link-management-screen table th:nth-child(1) { width: 40%; }
+    .link-management-screen table th:nth-child(2) { width: 40%; }
+    .link-management-screen table td { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .link-management-screen input[type="url"] { width: 100%; padding: 5px; margin: 0; background: #333; color: #fff; border: 1px solid #555; }
+    .link-management-screen .save-link-btn { padding: 5px 10px; margin: 0; font-size: 0.9em; border-radius: 4px; }
   </style>
 </head>
 
@@ -399,6 +409,7 @@
       <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
       <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
       <a href="#" id="menu-admin-suggestions">Gestión de Propuestas</a>
+      <a href="#" id="menu-audio-links">Gestión de Audio Links 🎧</a>
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
@@ -423,11 +434,45 @@
     </div>
 </div>
 
+<div id="audio-link-management-screen" class="config-screen link-management-screen">
+    <button class="close-btn" id="close-audio-link-management">Cerrar</button>
+    <h2>Gestión de Audio Links (Jukebox 🎧)</h2>
+    <p style="color:#aaa; text-align:center;">Introduce o modifica la URL de audio/video para cada canción del setlist maestro (actualiza la lista principal al cerrar el modal).</p>
+    <div class="table-wrapper">
+        <table id="audio-links-table">
+            <thead>
+                <tr>
+                    <th>Canción</th>
+                    <th>URL de Audio/Video (YouTube, Drive, MP3)</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="audio-links-body">
+                <tr><td colspan="3" style="text-align:center;">Cargando lista de canciones...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p id="audio-link-message" class="success-message" style="text-align:center;"></p>
+</div>
+
   <main>
     <section id="setlists">
       <h2>Setlist Próximo Ensayo</h2>
       <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> 
+        <table> 
+          <thead> 
+            <tr>
+              <th>#</th>
+              <th>Título</th>
+              <th class="jukebox-col-header">🎧</th>               <th>Key</th>
+              <th>Tempo</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="setlist-body"></tbody>
+        </table>
+      </div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
@@ -436,11 +481,43 @@
       </div>
       <p id="total-time"></p>
     </section>
-    <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th class="details-col-header">Info</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
+    
+    <section id="rehearsals"> 
+        <h2>Próximos Ensayos</h2> 
+        <div class="table-wrapper">
+            <table id="rehearsal-main-table"> 
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Lugar</th>
+                        <th class="calendar-col-header">Cal</th>
+                        <th class="details-col-header">Info</th>
+                        <th>Confirmar Asistencia</th>
+                    </tr>
+                </thead>
+                <tbody id="rehearsal-main-body"></tbody>
+            </table>
+        </div>
+    </section>
+    
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
+      <div class="table-wrapper"> 
+        <table id="second-list-table"> 
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Canción</th>
+              <th class="jukebox-col-header">🎧</th>               <th>Key</th>
+              <th>Tempo</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="second-body"></tbody>
+        </table>
+      </div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-2">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
@@ -449,10 +526,24 @@
       </div>
       <p id="total-time-2"></p>
     </section>
+    
     <section id="star-setlist">
       <h2>Setlist Concierto Estrella</h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> 
+        <table> 
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Título</th>
+              <th class="jukebox-col-header">🎧</th>               <th>Key</th>
+              <th>Tempo</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="star-setlist-body"></tbody>
+        </table>
+      </div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-star">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
@@ -461,6 +552,7 @@
       </div>
       <p id="total-time-star"></p>
     </section>
+    
     <section id="calendario"> <h2>Próximos Conciertos</h2> <div id="bandhelper-concerts-container"> <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script> <p id="bandhelper-loading-message" style="display:none;">Procesando conciertos...</p> </div> </section>
 
     <section id="vista-calendario-mensual">
@@ -498,6 +590,7 @@ firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); firebas
 let globalItems1 = [];
 let globalItems2 = [];
 let globalItemsStar = [];
+let globalAudioLinks = {}; // NUEVO: Almacén global para los links de audio
 
 const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
 const toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
@@ -531,6 +624,11 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     let rawData = null;
     let usedCache = false;
 
+    // 1. Cargamos los links de audio de Firebase
+    if(Object.keys(globalAudioLinks).length === 0) {
+        await loadAudioLinks(); 
+    }
+    
     try {
         if (!configEntry.url || configEntry.url.startsWith("URL_POR_CONFIGURAR")) { throw new Error("URL no configurada."); }
         const response = await fetch(configEntry.url);
@@ -548,7 +646,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
         } else {
             console.error(`[cargarSetlistGenerico] Error fatal: ${defaultErrorMessage}`, networkError);
             const tbody = document.getElementById(tbodyId);
-            if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="color:red;">${defaultErrorMessage}. Sin conexión y sin caché.</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="color:red;">${defaultErrorMessage}. Sin conexión y sin caché.</td></tr>`; // Modificado a colspan="6"
             const totalTimeElem = document.getElementById(totalTimeId);
             if (totalTimeElem) totalTimeElem.textContent = "Error de conexión.";
             return [];
@@ -573,8 +671,11 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
         item.calculatedDurationSeconds = durationInSeconds;
         item.displayName = decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : item.isBreak ? "Pausa" : "Set"));
         item.originalJSONDuration = item.duration;
-        // NUEVA LÓGICA DE AUDIO: Si existe 'link_audio', lo adjuntamos al item
-        item.link_audio = item.link_audio || null; 
+        
+        // **NUEVA LÓGICA DE AUDIO:** Toma el link del campo de Firebase (link_audio)
+        const songKey = sanitizeFirebaseKey(item.displayName);
+        item.link_audio = globalAudioLinks[songKey] || null; 
+        
         return item
     }).filter(item => item !== null);
 
@@ -930,7 +1031,7 @@ document.getElementById('close-concert-details-modal').onclick = () => { closeAl
 
 /* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
-function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
+function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message, #audio-link-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
 document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
@@ -959,13 +1060,28 @@ document.getElementById("add-user").onclick = async () => { const msg=document.g
 document.getElementById("cancel-edit-user").onclick = () => { resetUserForm(); document.getElementById("user-message").textContent = ""; };
 document.getElementById("menu-rehearsal").onclick = e => { e.preventDefault(); openConfigScreen("rehearsal-screen"); };
 document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; document.getElementById("rehearsal-message").textContent = ""; resetRehearsalForm(); };
-document.getElementById("add-rehearsal").onclick = async () => { const msg=document.getElementById("rehearsal-message");msg.textContent="";const date=document.getElementById("rehearsal-date").value,startTime=document.getElementById("rehearsal-start-time").value,endTime=document.getElementById("rehearsal-end-time").value,loc=document.getElementById("rehearsal-location").value.trim();if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return} if(calculateDuration(startTime,endTime)<=0){msg.className="error-message";msg.textContent="Hora fin posterior a inicio.";return} try{const newData={date,startTime,endTime,location:loc,attendance:[]};if(editingRehearsalIndex!==null){newData.attendance=rehearsals[editingRehearsalIndex].attendance||[];rehearsals[editingRehearsalIndex]=newData;msg.textContent="Ensayo actualizado."}else{rehearsals.push(newData);msg.textContent="Ensayo añadido."} await saveRehearsals();msg.className="success-message";resetRehearsalForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
+document.getElementById("add-rehearsal").onclick = async () => { const msg=document.getElementById("rehearsal-message");msg.textContent="";const date=document.getElementById("rehearsal-date").value,startTime=document.getElementById("rehearsal-start-time").value,endTime=document.getElementById("rehearsal-end-time").value,loc=document.getElementById("rehearsal-location").value.trim();if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return} if(calculateDuration(startTime,endTime)<=0){msg.className="error-error-message";msg.textContent="Hora fin posterior a inicio.";return} try{const newData={date,startTime,endTime,location:loc,attendance:[]};if(editingRehearsalIndex!==null){newData.attendance=rehearsals[editingRehearsalIndex].attendance||[];rehearsals[editingRehearsalIndex]=newData;msg.textContent="Ensayo actualizado."}else{rehearsals.push(newData);msg.textContent="Ensayo añadido."} await saveRehearsals();msg.className="success-message";resetRehearsalForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
 document.getElementById("cancel-edit-rehearsal").onclick = () => { resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = ""; };
 document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(openConfigScreen("stats-screen")){ updateMonthFilter(); renderStats(); }};
 document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
 document.getElementById("stats-month-filter").addEventListener("change", renderStats);
 document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); openConfigScreen("user-list-screen"); };
 document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
+// **NUEVA FUNCIÓN DE MENÚ**
+document.getElementById("menu-audio-links").onclick = async e => { 
+    e.preventDefault(); 
+    if(openConfigScreen("audio-link-management-screen")){
+        // Aseguramos que la última lista de canciones maestra se cargue antes de renderizar la tabla
+        await loadSetlistMasterSongs();
+        renderAudioLinksTable(); 
+    }
+};
+document.getElementById("close-audio-link-management").onclick = async () => { 
+    document.getElementById("audio-link-management-screen").style.display = "none"; 
+    document.getElementById("audio-link-message").textContent = "";
+    // Una vez cerrada la gestión de links, volvemos a cargar las setlists para que usen los nuevos links
+    await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
+};
 
 // --- GESTIÓN DE PROPUESTAS (SUGGESTIONS) ---
 let suggestions = [];
@@ -1214,6 +1330,135 @@ async function deleteSuggestion(id) {
     }
 }
 
+
+/* ---------- 15. Gestión de Links de Audio (NUEVA LÓGICA) ---------- */
+let setlistMasterSongs = []; // Almacenará la lista única de canciones
+
+// Carga la lista de canciones únicas de los 3 setlists para tener una "lista maestra" de nombres
+async function loadSetlistMasterSongs() {
+    let allSongs = new Map(); // Usamos Map para asegurar unicidad
+    
+    // Función auxiliar para procesar un setlist (similar a cargarSetlistGenerico pero sin renderizar)
+    const fetchAndProcessSetlist = async (configEntry) => {
+        try {
+            const response = await fetch(configEntry.url);
+            if (!response.ok) throw new Error("API error");
+            const rawData = await response.json();
+            const dataToProcess = Array.isArray(rawData) ? rawData : rawData.items || [];
+            
+            dataToProcess.forEach(item => {
+                if (item && item.type === "song") {
+                    const displayName = decodeHtmlEntities(item.title || item.name || "Canción sin título");
+                    const songKey = sanitizeFirebaseKey(displayName);
+                    if (displayName && !allSongs.has(songKey)) {
+                        allSongs.set(songKey, displayName);
+                    }
+                }
+            });
+        } catch (e) {
+            console.warn(`No se pudo cargar el setlist ${configEntry.name} para lista maestra.`, e);
+        }
+    };
+
+    // Recogemos canciones de los 3 setlists
+    await Promise.all([
+        fetchAndProcessSetlist(setlistConfig.setlist1),
+        fetchAndProcessSetlist(setlistConfig.setlist2),
+        fetchAndProcessSetlist(setlistConfig.setlistStar)
+    ]);
+    
+    setlistMasterSongs = Array.from(allSongs).map(([key, name]) => ({ key, name })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// Carga los links de audio guardados en Firebase
+async function loadAudioLinks() {
+    try {
+        const doc = await withRetry(() => db.collection('intranet').doc('audio_links').get());
+        globalAudioLinks = doc.exists ? (doc.data().links || {}) : {};
+        console.log("Audio Links cargados:", globalAudioLinks);
+    } catch(e) {
+        console.error("Error al cargar Audio Links:", e);
+        globalAudioLinks = {};
+    }
+}
+
+// Guarda un link de audio en Firebase
+async function saveAudioLink(key, url) {
+    globalAudioLinks[key] = url.trim();
+    if (!url.trim()) {
+        delete globalAudioLinks[key]; // Si está vacío, lo eliminamos de la lista
+    }
+
+    try {
+        await withRetry(() => saveDoc('intranet', 'audio_links', { links: globalAudioLinks }, true));
+        return true;
+    } catch (e) {
+        console.error("Error al guardar link:", e);
+        return false;
+    }
+}
+
+// Renderiza la tabla de gestión de links
+function renderAudioLinksTable() {
+    const tbody = document.getElementById('audio-links-body');
+    tbody.innerHTML = '';
+
+    if (setlistMasterSongs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#ff9800;">No se pudo cargar ninguna canción de los setlists. Asegúrate de que las URLs de configuración son correctas.</td></tr>';
+        return;
+    }
+
+    setlistMasterSongs.forEach(song => {
+        const currentLink = globalAudioLinks[song.key] || '';
+        const hasLink = !!currentLink;
+        const buttonText = hasLink ? 'Guardar Cambios' : 'Añadir Link';
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${song.name}</td>
+            <td>
+                <input type="url" id="link-${song.key}" value="${currentLink}" placeholder="Ej: https://youtube.com/watch?v=..." style="border: 1px solid ${hasLink ? '#0cf' : '#888'};">
+            </td>
+            <td>
+                <button class="save-link-btn" 
+                        data-key="${song.key}" 
+                        onclick="handleSaveLink('${song.key}', '${song.name}')">
+                    ${buttonText}
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Maneja el guardado del link
+async function handleSaveLink(key, name) {
+    const input = document.getElementById(`link-${key}`);
+    const url = input.value.trim();
+    const messageEl = document.getElementById('audio-link-message');
+    
+    messageEl.textContent = 'Guardando...';
+    messageEl.className = 'error-message'; // Reiniciar a error por defecto o amarillo
+
+    const success = await saveAudioLink(key, url);
+    
+    if (success) {
+        messageEl.className = 'success-message';
+        messageEl.textContent = `Link para "${name}" guardado con éxito.`;
+        
+        // Actualiza el borde del input y el botón
+        if(url) {
+            input.style.borderColor = '#0cf';
+            input.nextElementSibling.textContent = 'Guardar Cambios';
+        } else {
+            input.style.borderColor = '#888';
+            input.nextElementSibling.textContent = 'Añadir Link';
+        }
+    } else {
+        messageEl.className = 'error-message';
+        messageEl.textContent = `Error al guardar el link para "${name}".`;
+    }
+}
 
 
 /* --- LÓGICA MODO DIRECTO (LIVE MODE) --- */
@@ -1592,7 +1837,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateConnectionStatus();
   try {
       console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
-      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
+      // Carga inicial de links de audio y lista de canciones maestra (antes de renderizar setlists)
+      await loadAudioLinks();
+      await loadSetlistMasterSongs();
+
+      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
       console.log("[DOMContentLoaded] Configuración, usuarios y ensayos cargados.");
   } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
 
@@ -1877,7 +2126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   if(nextBtn) {
       const newNext = nextBtn.cloneNode(true);
-      nextBtn.parentNode.replaceChild(newNext, nextBtn);
+      prevBtn.parentNode.replaceChild(newNext, prevBtn);
       newNext.addEventListener('click', () => {
         currentCalDate.setMonth(currentCalDate.getMonth() + 1);
         renderVisualCalendar();
