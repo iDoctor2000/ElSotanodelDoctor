@@ -1168,6 +1168,8 @@ async function deleteSuggestion(id) {
     }
 }
 
+
+
 /* --- LÓGICA MODO DIRECTO (LIVE MODE) --- */
 let currentLiveSetlist = [];
 let currentLiveIndex = 0;
@@ -1195,33 +1197,20 @@ async function releaseWakeLock() {
 }
 
 function startLiveMode(setlistData) {
-    // CORRECCIÓN CRÍTICA: Aplanar la estructura
-    // El setlist viene por "Bloques" (Set 1, Set 2...). Hay que extraer las canciones de dentro.
     currentLiveSetlist = [];
 
     if (Array.isArray(setlistData)) {
         setlistData.forEach(item => {
-            // Caso A: Es un Set (Header) que contiene canciones dentro
             if (item.isSetHeader && Array.isArray(item.songs)) {
                 currentLiveSetlist = currentLiveSetlist.concat(item.songs);
             }
-            // Caso B: Es una canción suelta (sin Set)
             else if (item.isSong) {
                 currentLiveSetlist.push(item);
             }
-            // Caso C: Es un Break (Descanso) -> Opcional: Si quieres que salga el descanso, descomenta esto:
-            /*
-            else if (item.isBreak) {
-                item.displayName = "--- DESCANSO ---"; // Forzamos un título visible
-                currentLiveSetlist.push(item);
-            }
-            */
         });
     }
     
-    // Comprobación de seguridad
     if (currentLiveSetlist.length === 0) {
-        console.log("Datos recibidos:", setlistData); // Para depurar en consola si falla
         alert("Este setlist no tiene canciones cargadas o el formato es incorrecto.");
         return;
     }
@@ -1229,11 +1218,9 @@ function startLiveMode(setlistData) {
     currentLiveIndex = 0;
     renderLiveSong(currentLiveIndex);
     
-    // Mostrar Overlay
     const overlay = document.getElementById('live-mode-overlay');
     overlay.classList.add('show');
     
-    // Activar pantalla siempre encendida
     requestWakeLock();
 }
 
@@ -1241,19 +1228,22 @@ function renderLiveSong(index) {
     const song = currentLiveSetlist[index];
     if (!song) return;
 
-    // Actualizar textos en pantalla
     document.getElementById('live-counter').textContent = `${index + 1} / ${currentLiveSetlist.length}`;
     
-    // Ajuste de tamaño de fuente dinámico si el título es muy largo
     const titleEl = document.getElementById('live-song-title');
+    // decodeHtmlEntities ya se aplicó al displayName al cargar, así que aquí sale bien
     titleEl.textContent = song.displayName;
     if (song.displayName.length > 20) { titleEl.style.fontSize = "2.5em"; } 
     else { titleEl.style.fontSize = "3.5em"; }
 
-    document.getElementById('live-song-key').textContent = `Key: ${song.key || '-'}`;
-    document.getElementById('live-song-tempo').textContent = `${song.tempo || '-'} BPM`;
+    // --- CORRECCIÓN AQUÍ: Decodificamos los caracteres raros en Key y Tempo ---
+    const cleanKey = decodeHtmlEntities(song.key || '-');
+    const cleanTempo = decodeHtmlEntities(song.tempo || '-');
+    // --------------------------------------------------------------------------
 
-    // Previsualizar siguiente canción
+    document.getElementById('live-song-key').textContent = `Key: ${cleanKey}`;
+    document.getElementById('live-song-tempo').textContent = `${cleanTempo} BPM`;
+
     const nextSong = currentLiveSetlist[index + 1];
     const nextEl = document.getElementById('live-next-song');
     
@@ -1262,11 +1252,10 @@ function renderLiveSong(index) {
         nextEl.style.color = '#555';
     } else {
         nextEl.textContent = "¡FIN DEL SHOW! 👏";
-        nextEl.style.color = '#0cf'; // Cyan chillón para celebrar
+        nextEl.style.color = '#0cf'; 
     }
 }
 
-// Listeners Live Mode
 document.getElementById('live-close-btn').onclick = () => {
     document.getElementById('live-mode-overlay').classList.remove('show');
     releaseWakeLock();
@@ -1286,17 +1275,14 @@ document.getElementById('live-prev-btn').onclick = () => {
     }
 };
 
-// Zonas táctiles de pantalla (Invisible click areas)
 document.getElementById('live-content-area').onclick = (e) => {
     const width = window.innerWidth;
-    // Si pulsas en la mitad derecha -> Siguiente
     if (e.clientX > width / 2) {
         if (currentLiveIndex < currentLiveSetlist.length - 1) {
             currentLiveIndex++;
             renderLiveSong(currentLiveIndex);
         }
     } 
-    // Si pulsas en la mitad izquierda -> Anterior
     else {
         if (currentLiveIndex > 0) {
             currentLiveIndex--;
@@ -1304,6 +1290,8 @@ document.getElementById('live-content-area').onclick = (e) => {
         }
     }
 };
+  
+
 
 /* ---------- 12. Carga inicial & Lógica Audio Global y Splash ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
