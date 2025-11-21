@@ -488,8 +488,120 @@ let setlistConfig = {setlist1:{name:"Setlist Predeterminado Ensayo",url:"URL_POR
 function updateDynamicSetlistTitles(){document.getElementById("setlist1-dynamic-name").textContent=setlistConfig.setlist1.name;document.getElementById("second-setlist-dynamic-name").textContent=setlistConfig.setlist2.name;document.getElementById("star-setlist-dynamic-name").textContent=setlistConfig.setlistStar.name}
 async function loadSetlistConfig(){try{const data=await withRetry(()=>loadDoc("intranet","setlists",{config:setlistConfig}));setlistConfig={setlist1:data.config?.setlist1||setlistConfig.setlist1,setlist2:data.config?.setlist2||setlistConfig.setlist2,setlistStar:data.config?.setlistStar||setlistConfig.setlistStar};updateDynamicSetlistTitles()}catch(e){console.error("Error al cargar la configuración de setlists:",e);updateDynamicSetlistTitles()}}
 async function saveSetlistConfig(){updateDynamicSetlistTitles();return await withRetry(()=>saveDoc("intranet","setlists",{config:setlistConfig}))}
-async function cargarSetlistGenerico(configEntry,tbodyId,totalTimeId,defaultErrorMessage){try{if(!configEntry.url||configEntry.url.startsWith("URL_POR_CONFIGURAR")){console.warn(`[cargarSetlistGenerico] URL no configurada o es placeholder para ${tbodyId}`);throw new Error("URL no configurada.")}
-const response=await fetch(configEntry.url);if(!response.ok){console.error(`[cargarSetlistGenerico] Error en la respuesta de la API para ${tbodyId}. Status: ${response.status}, URL: ${configEntry.url}`);throw new Error(`Error en la respuesta de la API (${response.status}): ${response.statusText}`)}
+async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
+    const CACHE_KEY = `cache_setlist_${tbodyId}`; // Clave única para guardar en el móvil
+    
+    let rawData = null;
+    let usedCache = false;
+
+    // 1. Intentamos descargar de Internet
+    try {
+        if (!configEntry.url || configEntry.url.startsWith("URL_POR_CONFIGURAR")) {
+            throw new Error("URL no configurada.");
+        }
+        const response = await fetch(configEntry.url);
+        if (!response.ok) throw new Error(`Error API (${response.status})`);
+        
+        rawData = await response.json();
+        
+        // ¡ÉXITO! Guardamos copia de seguridad en el móvil
+        localStorage.setItem(CACHE_KEY, JSON.stringify(rawData));
+        
+    } catch (networkError) {
+        console.warn(`[Offline Mode] Falló la descarga para ${tbodyId}. Intentando caché...`, networkError);
+        
+        // 2. Si falla, intentamos leer de la memoria del móvil
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        if (cachedData) {
+            rawData = JSON.parse(cachedData);
+            usedCache = true;
+            // Avisamos visualmente de que estamos tirando de caché
+            const titleEl = document.getElementById(totalTimeId).previousElementSibling.previousElementSibling; // El <p> del título
+            if(titleEl) titleEl.innerHTML += " <span style='color:orange; font-size:0.8em;'>(⚠️ Modo Offline)</span>";
+        } else {
+            // 3. Si no hay internet ni caché, mostramos el error
+            console.error(`[cargarSetlistGenerico] Error fatal: ${defaultErrorMessage}`, networkError);
+            const tbody = document.getElementById(tbodyId);
+            if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="color:red;">${defaultErrorMessage}. Sin conexión y sin caché.</td></tr>`;
+            const totalTimeElem = document.getElementById(totalTimeId);
+            if (totalTimeElem) totalTimeElem.textContent = "Error de conexión.";
+            return [];
+        }
+    }
+
+    // A partir de aquí, procesamos 'rawData' (ya sea de internet o de caché)
+    const dataToProcess = Array.isArray(rawData) ? rawData : rawData.items || [];
+    
+    const processedItems = dataToProcess.map(item => {
+        if (!item || item.type !== "song" && item.type !== "set") { return null }
+        let rawDurationValue = parseFloat(item.duration);
+        let durationIsInvalidOrMissing = isNaN(rawDurationValue) || rawDurationValue === 0;
+        if (isNaN(rawDurationValue)) { rawDurationValue = 0; durationIsInvalidOrMissing = true }
+        let durationInSeconds;
+        const itemName = item.name || item.title || (item.type === "song" ? "Canción sin título" : "Set sin nombre");
+        const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);
+        item.isSong = false; item.isBreak = false; item.isSetHeader = false;
+        if (item.type === "song") { durationInSeconds = rawDurationValue; item.isSong = true; } 
+        else if (item.type === "set") {
+            if (isBreakByName) { item.isBreak = true; if (durationIsInvalidOrMissing) { durationInSeconds = 3 * 60 } else { durationInSeconds = rawDurationValue * 60 } } 
+            else { item.isSetHeader = true; durationInSeconds = rawDurationValue * 60 }
+        } else { durationInSeconds = 0 }
+        item.calculatedDurationSeconds = durationInSeconds;
+        item.displayName = decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : item.isBreak ? "Pausa" : "Set"));
+        item.originalJSONDuration = item.duration;
+        return item
+    }).filter(item => item !== null);
+
+    const tbody = document.getElementById(tbodyId);
+    tbody.innerHTML = "";
+    let songCount = 0;
+    const setlistStructure = [];
+    let currentSet = null;
+
+    processedItems.forEach(item => {
+        if (item.isSetHeader) {
+            if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet) }
+            currentSet = { ...item, songs: [], calculatedBlockDurationSeconds: 0 }
+        } else if (item.isBreak) {
+            if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet); currentSet = null }
+            setlistStructure.push(item)
+        } else if (item.isSong) {
+            if (!currentSet) { currentSet = { isSetHeader: true, displayName: "Set General", calculatedDurationSeconds: 0, songs: [], calculatedBlockDurationSeconds: 0 } }
+            currentSet.songs.push(item)
+        }
+    });
+    if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet) }
+
+    let totalSecondsOverall = 0;
+    setlistStructure.forEach(blockOrItem => {
+        if (blockOrItem.isSetHeader) {
+            const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
+            tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="5">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
+            totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
+            blockOrItem.songs.forEach(song => {
+                songCount++;
+                const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
+                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td><td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
+            })
+        } else if (blockOrItem.isBreak) {
+            const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
+            tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
+        } else if (blockOrItem.isSong) {
+            songCount++;
+            const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
+            tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td><td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
+        }
+    });
+    
+    let timeText = "Tiempo total del set: " + toHHMM(totalSecondsOverall);
+    if(usedCache) timeText += " (Datos guardados)";
+    
+    document.getElementById(totalTimeId).textContent = timeText;
+    return setlistStructure;
+}
+                                                                                              const response=await fetch(configEntry.url);if(!response.ok){console.error(`[cargarSetlistGenerico] Error en la respuesta de la API para ${tbodyId}. Status: ${response.status}, URL: ${configEntry.url}`);throw new Error(`Error en la respuesta de la API (${response.status}): ${response.statusText}`)}
 const rawData=await response.json(); const dataToProcess=Array.isArray(rawData)?rawData:rawData.items||[];
 const processedItems=dataToProcess.map(item=>{if(!item||item.type!=="song"&&item.type!=="set"){return null}
 let rawDurationValue=parseFloat(item.duration);let durationIsInvalidOrMissing=isNaN(rawDurationValue)||rawDurationValue===0;if(isNaN(rawDurationValue)){rawDurationValue=0;durationIsInvalidOrMissing=true}
