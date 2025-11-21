@@ -912,12 +912,14 @@ let currentLiveSetlist = [];
 let currentLiveIndex = 0;
 let wakeLock = null;
 
-// Solicitar Wake Lock
+// Solicitar Wake Lock (Evitar que se apague la pantalla)
 async function requestWakeLock() {
     try {
-        wakeLock = await navigator.wakeLock.request('screen');
-        wakeLock.addEventListener('release', () => { console.log('Pantalla desbloqueada (Wake Lock released)'); });
-        console.log('Pantalla mantenida encendida (Wake Lock active)');
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            wakeLock.addEventListener('release', () => { console.log('Pantalla desbloqueada'); });
+            console.log('Pantalla mantenida encendida');
+        }
     } catch (err) {
         console.error(`${err.name}, ${err.message}`);
     }
@@ -932,12 +934,34 @@ async function releaseWakeLock() {
 }
 
 function startLiveMode(setlistData) {
-    // Filtramos solo canciones (no breaks ni headers por ahora, o si quieres headers avísame)
-    // Para simplificar, filtramos solo canciones (isSong = true)
-    currentLiveSetlist = setlistData.filter(item => item.isSong);
+    // CORRECCIÓN CRÍTICA: Aplanar la estructura
+    // El setlist viene por "Bloques" (Set 1, Set 2...). Hay que extraer las canciones de dentro.
+    currentLiveSetlist = [];
+
+    if (Array.isArray(setlistData)) {
+        setlistData.forEach(item => {
+            // Caso A: Es un Set (Header) que contiene canciones dentro
+            if (item.isSetHeader && Array.isArray(item.songs)) {
+                currentLiveSetlist = currentLiveSetlist.concat(item.songs);
+            }
+            // Caso B: Es una canción suelta (sin Set)
+            else if (item.isSong) {
+                currentLiveSetlist.push(item);
+            }
+            // Caso C: Es un Break (Descanso) -> Opcional: Si quieres que salga el descanso, descomenta esto:
+            /*
+            else if (item.isBreak) {
+                item.displayName = "--- DESCANSO ---"; // Forzamos un título visible
+                currentLiveSetlist.push(item);
+            }
+            */
+        });
+    }
     
+    // Comprobación de seguridad
     if (currentLiveSetlist.length === 0) {
-        alert("Este setlist no tiene canciones cargadas.");
+        console.log("Datos recibidos:", setlistData); // Para depurar en consola si falla
+        alert("Este setlist no tiene canciones cargadas o el formato es incorrecto.");
         return;
     }
 
@@ -956,20 +980,28 @@ function renderLiveSong(index) {
     const song = currentLiveSetlist[index];
     if (!song) return;
 
-    // Actualizar UI
+    // Actualizar textos en pantalla
     document.getElementById('live-counter').textContent = `${index + 1} / ${currentLiveSetlist.length}`;
-    document.getElementById('live-song-title').textContent = song.displayName;
+    
+    // Ajuste de tamaño de fuente dinámico si el título es muy largo
+    const titleEl = document.getElementById('live-song-title');
+    titleEl.textContent = song.displayName;
+    if (song.displayName.length > 20) { titleEl.style.fontSize = "2.5em"; } 
+    else { titleEl.style.fontSize = "3.5em"; }
+
     document.getElementById('live-song-key').textContent = `Key: ${song.key || '-'}`;
     document.getElementById('live-song-tempo').textContent = `${song.tempo || '-'} BPM`;
 
-    // Next Song Preview
+    // Previsualizar siguiente canción
     const nextSong = currentLiveSetlist[index + 1];
+    const nextEl = document.getElementById('live-next-song');
+    
     if (nextSong) {
-        document.getElementById('live-next-song').textContent = `Siguiente: ${nextSong.displayName}`;
-        document.getElementById('live-next-song').style.display = 'block';
+        nextEl.textContent = `Siguiente: ${nextSong.displayName}`;
+        nextEl.style.color = '#555';
     } else {
-        document.getElementById('live-next-song').textContent = "¡FIN DEL SETLIST!";
-        document.getElementById('live-next-song').style.color = '#ff3333';
+        nextEl.textContent = "¡FIN DEL SHOW! 👏";
+        nextEl.style.color = '#0cf'; // Cyan chillón para celebrar
     }
 }
 
@@ -993,24 +1025,24 @@ document.getElementById('live-prev-btn').onclick = () => {
     }
 };
 
-// Zonas táctiles de pantalla (Opcional: Click izquierda/derecha)
+// Zonas táctiles de pantalla (Invisible click areas)
 document.getElementById('live-content-area').onclick = (e) => {
     const width = window.innerWidth;
+    // Si pulsas en la mitad derecha -> Siguiente
     if (e.clientX > width / 2) {
-        // Click derecha -> Next
         if (currentLiveIndex < currentLiveSetlist.length - 1) {
             currentLiveIndex++;
             renderLiveSong(currentLiveIndex);
         }
-    } else {
-        // Click izquierda -> Prev
+    } 
+    // Si pulsas en la mitad izquierda -> Anterior
+    else {
         if (currentLiveIndex > 0) {
             currentLiveIndex--;
             renderLiveSong(currentLiveIndex);
         }
     }
 };
-
 
 /* ---------- 12. Carga inicial & Lógica Audio Global y Splash ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
