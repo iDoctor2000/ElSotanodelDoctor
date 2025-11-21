@@ -643,25 +643,24 @@ let currentAudioObj = null; // HTML5 Audio element reference
 
 // Helper para enlaces de Google Drive
 function convertGoogleDriveLink(url) {
-    // Si es un enlace de Google Drive
-    if (url.includes('drive.google.com') && (url.includes('/view') || url.includes('/file/d/') || url.includes('open?id='))) {
-         let fileId = "";
-         // Intento 1: /file/d/ID/
-         const match1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-         if (match1 && match1[1]) {
-             fileId = match1[1];
-         } else {
-             // Intento 2: id=ID
-             const match2 = url.match(/id=([a-zA-Z0-9_-]+)/);
-             if (match2 && match2[1]) {
-                 fileId = match2[1];
-             }
-         }
+    url = url.trim();
+    // Detectar ID de Google Drive
+    let id = null;
+    // Patrón 1: .../d/ID/...
+    const parts = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (parts && parts[1]) {
+        id = parts[1];
+    } else {
+        // Patrón 2: id=ID
+        const parts2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (parts2 && parts2[1]) {
+            id = parts2[1];
+        }
+    }
 
-         if (fileId) {
-             // Retornar enlace de descarga directa para que funcione en <audio>
-             return `https://drive.google.com/uc?export=download&id=${fileId}`;
-         }
+    if (id) {
+        // Usar el endpoint de exportación directa
+        return `https://drive.google.com/uc?export=download&id=${id}`;
     }
     return url;
 }
@@ -702,8 +701,27 @@ function openJukeboxPlayer(title, rawUrl) {
     } else {
         currentJukeboxType = 'html5';
         currentAudioObj = document.getElementById('jukebox-audio-element');
+        // Reset error handler
+        currentAudioObj.onerror = null; 
         currentAudioObj.src = url;
-        currentAudioObj.play().catch(e => alert("Error reproduciendo archivo: " + e.message));
+        
+        // New error handler
+        currentAudioObj.onerror = () => {
+            const err = currentAudioObj.error;
+            let msg = "Error desconocido al cargar audio.";
+            if (err && err.code === 4) msg = "Archivo no soportado o no encontrado.";
+            if (url.includes('drive.google.com')) {
+                msg += "\n\nIMPORTANTE: Para Google Drive, asegúrate de que el archivo tenga permisos 'Cualquier persona con el enlace' (Lector). Si es privado, no sonará.";
+            }
+            alert(msg);
+            stopJukebox();
+        };
+
+        currentAudioObj.play().catch(e => {
+            // Auto-play restrictions often caught here, or immediate format errors
+            console.warn("Play catch:", e);
+        });
+
         currentAudioObj.onplay = () => { 
              document.getElementById('icon-play').style.display = 'none'; 
              document.getElementById('icon-pause').style.display = 'block';
@@ -866,6 +884,15 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet) }
 
     let totalSecondsOverall = 0;
+    
+    // Helper for Jukebox Cell
+    const createJukeboxCell = (songName) => {
+        const cleanName = sanitizeFirebaseKey(songName);
+        const hasLink = jukeboxLibrary[cleanName] ? true : false;
+        const statusClass = hasLink ? 'active' : 'inactive';
+        return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="openJukeboxEditModal('${songName.replace(/'/g, "\\'")}')"><svg viewBox="0 0 24 24"><path d="M12 3v9.28a4.39 4.39 0 00-1.5-.28 4.5 4.5 0 104.5 4.5V6h3V3h-6z"/></svg></button></td>`;
+    };
+
     setlistStructure.forEach(blockOrItem => {
         if (blockOrItem.isSetHeader) {
             const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
@@ -874,16 +901,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
             blockOrItem.songs.forEach(song => {
                 songCount++;
                 const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
-                
-                // JUKEBOX LINK LOGIC - NEW (Edit Modal)
-                const audioLink = jukeboxLibrary[song.displayName];
-                const isLinkActive = !!audioLink;
-                const jukeboxClass = isLinkActive ? "jukebox-btn active" : "jukebox-btn inactive";
-                const jukeboxIcon = `<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9zM7 15v4H5v-4h2zm12 4h-2v-4h2v4z"/></svg>`;
-                // Always clickable, always opens modal
-                const onclick = `openJukeboxEditModal('${song.displayName.replace(/'/g, "\\'")}')`;
-                const jukeboxCell = `<td class="jukebox-col"><button class="${jukeboxClass}" onclick="${onclick}" title="${isLinkActive ? 'Escuchar/Editar' : 'Añadir enlace'}">${jukeboxIcon}</button></td>`;
-                
+                const jukeboxCell = createJukeboxCell(song.displayName);
                 tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
             })
         } else if (blockOrItem.isBreak) {
@@ -894,15 +912,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
             songCount++;
             const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
             totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-            
-            // JUKEBOX LINK LOGIC - NEW (Edit Modal)
-            const audioLink = jukeboxLibrary[blockOrItem.displayName];
-            const isLinkActive = !!audioLink;
-            const jukeboxClass = isLinkActive ? "jukebox-btn active" : "jukebox-btn inactive";
-            const jukeboxIcon = `<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9zM7 15v4H5v-4h2zm12 4h-2v-4h2v4z"/></svg>`;
-            const onclick = `openJukeboxEditModal('${blockOrItem.displayName.replace(/'/g, "\\'")}')`;
-            const jukeboxCell = `<td class="jukebox-col"><button class="${jukeboxClass}" onclick="${onclick}" title="${isLinkActive ? 'Escuchar/Editar' : 'Añadir enlace'}">${jukeboxIcon}</button></td>`;
-            
+            const jukeboxCell = createJukeboxCell(blockOrItem.displayName);
             tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
         }
     });
@@ -917,6 +927,64 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 const cargarPrimerSetlist = async () => { globalItems1 = await cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo"); return globalItems1; };
 const cargarSegundoSetlist = async () => { globalItems2 = await cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto"); return globalItems2; };
 const cargarStarSetlist = async () => { globalItemsStar = await cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella"); return globalItemsStar; };
+
+/* ---------- 3.5. Jukebox Edit Modal Logic ---------- */
+let currentEditingSongName = null;
+const jukeboxEditModal = document.getElementById('jukebox-edit-modal');
+
+function openJukeboxEditModal(songName) {
+    currentEditingSongName = songName;
+    const cleanName = sanitizeFirebaseKey(songName);
+    const currentLink = jukeboxLibrary[cleanName] || "";
+    
+    document.getElementById('jb-modal-songname').textContent = songName;
+    document.getElementById('jb-modal-url-input').value = currentLink;
+    
+    const playControls = document.getElementById('jb-modal-play-controls');
+    if(currentLink) {
+        playControls.style.display = 'block';
+    } else {
+        playControls.style.display = 'none';
+    }
+
+    jukeboxEditModal.classList.add('show');
+}
+
+document.getElementById('jb-modal-play-btn').onclick = () => {
+    const url = document.getElementById('jb-modal-url-input').value.trim();
+    if(url && currentEditingSongName) {
+        openJukeboxPlayer(currentEditingSongName, url);
+        jukeboxEditModal.classList.remove('show');
+    }
+};
+
+document.getElementById('jb-modal-save-btn').onclick = async () => {
+    if(!currentEditingSongName) return;
+    const url = document.getElementById('jb-modal-url-input').value.trim();
+    const cleanName = sanitizeFirebaseKey(currentEditingSongName);
+    
+    if (url) {
+        jukeboxLibrary[cleanName] = url;
+    } else {
+        delete jukeboxLibrary[cleanName];
+    }
+    
+    await saveJukeboxLibrary();
+    
+    // Recargar tablas para actualizar colores
+    await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
+    jukeboxEditModal.classList.remove('show');
+};
+
+document.getElementById('jb-modal-delete-btn').onclick = async () => {
+    document.getElementById('jb-modal-url-input').value = "";
+    document.getElementById('jb-modal-save-btn').click();
+};
+
+document.getElementById('jb-modal-cancel-btn').onclick = () => {
+    jukeboxEditModal.classList.remove('show');
+};
+
 
 /* ---------- 6. Usuarios ---------- */
 let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
@@ -1233,101 +1301,6 @@ const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-l
 document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
 document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; document.getElementById("setlist-message").textContent = ""; };
 document.getElementById("guardar-setlist-config").onclick = async () => { const msg=document.getElementById("setlist-message");msg.textContent="";const n1=document.getElementById("setlist1-name").value.trim(),u1=document.getElementById("setlist1-url").value.trim();const n2=document.getElementById("setlist2-name").value.trim(),raw2=document.getElementById("setlist2-url").value.trim();const nStar=document.getElementById("setlistStar-name").value.trim(),uStar=document.getElementById("setlistStar-url").value.trim();if(!n1||!u1||!n2||!raw2||!nStar||!uStar){msg.className="error-message";msg.textContent="Completa todos los campos.";return} try{setlistConfig.setlist1={name:n1,url:u1};setlistConfig.setlist2={name:n2,url:raw2.startsWith("http")?raw2:`https://www.bandhelper.com/feed/set_list/${raw2}`};setlistConfig.setlistStar={name:nStar,url:uStar};await saveSetlistConfig();await Promise.all([cargarPrimerSetlist(),cargarSegundoSetlist(),cargarStarSetlist()]);document.getElementById("setlist-config-screen").style.display="none"}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
-
-// --- JUKEBOX CONFIG HANDLERS (Modal Individual) ---
-const jukeboxEditModal = document.getElementById('jukebox-edit-modal');
-const jbModalSongName = document.getElementById('jb-modal-songname');
-const jbModalInput = document.getElementById('jb-modal-url-input');
-const jbModalPlayControls = document.getElementById('jb-modal-play-controls');
-const jbModalPlayBtn = document.getElementById('jb-modal-play-btn');
-
-// Function called by the headphones icon
-function openJukeboxEditModal(songName) {
-    // Stop any playing music (site audio)
-    const siteAudio = document.getElementById('site-audio');
-    if(siteAudio && !siteAudio.paused) siteAudio.pause();
-    
-    // Password check only for editing? No, user wants to listen too.
-    // Let's allow opening. Saving might require auth logic if desired, but keep it simple as requested.
-
-    jbModalSongName.textContent = songName;
-    const currentUrl = jukeboxLibrary[songName] || "";
-    jbModalInput.value = currentUrl;
-    
-    if(currentUrl) {
-        jbModalPlayControls.style.display = 'block';
-        jbModalPlayBtn.onclick = () => {
-            openJukeboxPlayer(songName, currentUrl);
-            closeAll(); // Close the edit modal, open the player bar at bottom
-        };
-    } else {
-        jbModalPlayControls.style.display = 'none';
-        jbModalPlayBtn.onclick = null;
-    }
-    
-    jukeboxEditModal.classList.add('show');
-}
-
-document.getElementById('jb-modal-cancel-btn').onclick = () => {
-    jukeboxEditModal.classList.remove('show');
-};
-
-document.getElementById('jb-modal-save-btn').onclick = async () => {
-    // Auth check for editing (Optional, using same password as Config menu)
-    if(!isAuthenticated) {
-         const password = prompt("iDoctor Dice: Contraseña para guardar cambios:");
-         if(password && password.toLowerCase() === PASSWORD.toLowerCase()){
-             isAuthenticated = true;
-         } else {
-             alert("Contraseña incorrecta.");
-             return;
-         }
-    }
-
-    const songName = jbModalSongName.textContent;
-    const url = jbModalInput.value.trim();
-    
-    if(url) {
-        jukeboxLibrary[songName] = url;
-    } else {
-        delete jukeboxLibrary[songName];
-    }
-    
-    try {
-        await saveJukeboxLibrary();
-        // Refresh Setlists to show active/inactive icon
-        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
-        jukeboxEditModal.classList.remove('show');
-    } catch(e) {
-        alert("Error al guardar: " + e.message);
-    }
-};
-
-document.getElementById('jb-modal-delete-btn').onclick = async () => {
-     // Auth check
-    if(!isAuthenticated) {
-         const password = prompt("iDoctor Dice: Contraseña para borrar:");
-         if(password && password.toLowerCase() === PASSWORD.toLowerCase()){
-             isAuthenticated = true;
-         } else {
-             alert("Contraseña incorrecta.");
-             return;
-         }
-    }
-    
-    if(confirm("¿Seguro que quieres quitar el enlace de esta canción?")) {
-        const songName = jbModalSongName.textContent;
-        delete jukeboxLibrary[songName];
-        try {
-            await saveJukeboxLibrary();
-            await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
-            jukeboxEditModal.classList.remove('show');
-        } catch(e) {
-            alert("Error al borrar: " + e.message);
-        }
-    }
-};
-
 document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); openConfigScreen("user-mgmt-screen"); };
 document.getElementById("close-user-mgmt").onclick = () => { document.getElementById("user-mgmt-screen").style.display = "none"; document.getElementById("user-message").textContent = ""; resetUserForm(); };
 document.getElementById("add-user").onclick = async () => { const msg=document.getElementById("user-message");msg.textContent="";const name=document.getElementById("user-name").value.trim(),nickname=document.getElementById("user-nickname").value.trim();const roles=Array.from(document.getElementById("user-role").selectedOptions).map(o=>o.value);if(!name||!nickname||roles.length===0){msg.className="error-message";msg.textContent="Nombre, apodo y rol son obligatorios.";return} try{if(editingUserIndex!==null){const oldName=users[editingUserIndex].name;users[editingUserIndex]={name,nickname,roles};if(oldName!==name){rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance.forEach(a=>{if(a.name===oldName)a.name=name})}});await saveRehearsals()} msg.textContent="Usuario actualizado."}else{users.push({name,nickname,roles});msg.textContent="Usuario añadido."} await saveUsers();msg.className="success-message";resetUserForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
@@ -1885,8 +1858,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateConnectionStatus();
   try {
       console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
-      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), loadJukeboxLibrary()]); // Added loadJukeboxLibrary
-      console.log("[DOMContentLoaded] Configuración, usuarios y ensayos cargados.");
+      // IMPORTANTE: Cargar librería Jukebox antes de los setlists
+      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), loadJukeboxLibrary()]);
+      console.log("[DOMContentLoaded] Configuración, usuarios, ensayos y Jukebox cargados.");
   } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
 
   let items1 = [], items2 = [], itemsStar = [];  
