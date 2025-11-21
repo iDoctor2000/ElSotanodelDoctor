@@ -23,8 +23,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <!-- YouTube API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+  <!-- YouTube API (Cargada dinámicamente en JS para control) -->
 
   <style>
     *,*::before,*::after{box-sizing:border-box}
@@ -254,6 +253,10 @@
     .jukebox-progress-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #0cf; border-radius: 50%; cursor: pointer; }
     .jukebox-close-btn { font-size: 1.5em; color: #aaa; background:none; border:none; cursor:pointer; padding:0 10px; }
     
+    /* Estilos para el modo Iframe (Google Drive) */
+    #jukebox-iframe-container { width: 100%; height: 60px; display: none; margin-top: 5px; }
+    #jukebox-iframe-container iframe { width: 100%; height: 100%; border: none; background: transparent; }
+
     @media(max-width:768px){
       header { height: 55px; padding: 8px 15px; }  
       .logo img.logo-main{ width: 110px; }
@@ -385,7 +388,8 @@
         <span id="jukebox-current-title" class="jukebox-song-title">No hay canción seleccionada</span>
         <button class="jukebox-close-btn" id="jukebox-close-player" title="Cerrar Player">✕</button>
     </div>
-    <div class="jukebox-controls">
+    <!-- CONTROLES ESTÁNDAR (YouTube / HTML5) -->
+    <div class="jukebox-controls" id="jukebox-std-controls">
         <button class="jukebox-control-btn" id="jb-rewind">
            <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
         </button>
@@ -400,11 +404,17 @@
            <svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
         </button>
     </div>
-    <div class="jukebox-progress-container">
+    <div class="jukebox-progress-container" id="jukebox-std-progress">
         <span id="jb-current-time">0:00</span>
         <input type="range" id="jb-progress" class="jukebox-progress-bar" value="0" min="0" max="100" step="0.1">
         <span id="jb-total-time">0:00</span>
     </div>
+    
+    <!-- IFRAME CONTAINER (Google Drive) -->
+    <div id="jukebox-iframe-container">
+        <iframe id="jb-iframe" src="" allow="autoplay"></iframe>
+    </div>
+
     <!-- Hidden elements for logic -->
     <audio id="jukebox-audio-element" style="display:none;"></audio>
     <div id="youtube-player-placeholder" style="position:absolute; top:-9999px; left:-9999px;"></div>
@@ -473,7 +483,8 @@
 
          <label for="jb-modal-url-input">Enlace de Audio (YouTube, MP3, Drive):</label>
          <input type="text" id="jb-modal-url-input" placeholder="Pegar URL aquí para activar el audio...">
-         
+         <p style="font-size:0.8em; color:#888; margin-top:5px;">* Soporta YouTube y Google Drive (modo vista previa)</p>
+
          <div style="margin-top:20px; display: flex; justify-content: space-between; align-items: center;">
             <button id="jb-modal-delete-btn" style="background:#ff3333; color:#fff;">Borrar Enlace</button>
             <div>
@@ -611,8 +622,9 @@ async function saveJukeboxLibrary() {
     } catch (e) { console.error("Error guardando Jukebox:", e); return false; }
 }
 
-// YouTube API
-function onYouTubeIframeAPIReady() {
+// Definir callback global para YouTube
+window.onYouTubeIframeAPIReady = function() {
+    console.log("YouTube API Ready");
     ytPlayer = new YT.Player('youtube-player-placeholder', {
         height: '0', width: '0',
         playerVars: { 'playsinline': 1 },
@@ -621,7 +633,15 @@ function onYouTubeIframeAPIReady() {
             'onError': onPlayerError
         }
     });
-}
+};
+
+// Cargar script de YouTube manualmente para asegurar el orden
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+const firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+
 function onPlayerError(event) { console.error("YouTube Player Error:", event.data); stopJukebox(); alert("Error reproduciendo video de YouTube."); }
 function onPlayerStateChange(event) {
     const btnPlay = document.getElementById('icon-play');
@@ -638,37 +658,17 @@ function onPlayerStateChange(event) {
 }
 
 /* Player Controls Logic */
-let currentJukeboxType = null; // 'youtube' or 'html5'
-let currentAudioObj = null; // HTML5 Audio element reference
-
-// Helper para enlaces de Google Drive
-function convertGoogleDriveLink(url) {
-    url = url.trim();
-    // Detectar ID de Google Drive
-    let id = null;
-    // Patrón 1: .../d/ID/...
-    const parts = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if (parts && parts[1]) {
-        id = parts[1];
-    } else {
-        // Patrón 2: id=ID
-        const parts2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-        if (parts2 && parts2[1]) {
-            id = parts2[1];
-        }
-    }
-
-    if (id) {
-        // Usar docs.google.com en lugar de drive.google.com a veces ayuda con las cookies
-        return `https://docs.google.com/uc?export=download&id=${id}`;
-    }
-    return url;
-}
+let currentJukeboxType = null; // 'youtube', 'html5', or 'drive-iframe'
+let currentAudioObj = null; 
 
 function openJukeboxPlayer(title, rawUrl) {
     const playerBar = document.getElementById('jukebox-player-bar');
     const titleEl = document.getElementById('jukebox-current-title');
-    
+    const stdControls = document.getElementById('jukebox-std-controls');
+    const stdProgress = document.getElementById('jukebox-std-progress');
+    const iframeContainer = document.getElementById('jukebox-iframe-container');
+    const iframeEl = document.getElementById('jb-iframe');
+
     // Pausar música de fondo si suena
     const siteAudio = document.getElementById('site-audio');
     if(siteAudio && !siteAudio.paused) siteAudio.pause();
@@ -679,56 +679,86 @@ function openJukeboxPlayer(title, rawUrl) {
     playerBar.classList.add('visible');
     titleEl.textContent = title;
     
-    // Convertir URL si es necesario (Drive)
-    const url = convertGoogleDriveLink(rawUrl);
+    const url = rawUrl.trim();
 
-    // Detect Type
-    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    // 1. Detect Google Drive (NUEVO MODO IFRAME)
+    if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+         currentJukeboxType = 'drive-iframe';
+         
+         // Extract ID
+         let id = null;
+         const parts = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+         if (parts && parts[1]) id = parts[1];
+         else {
+            const parts2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (parts2 && parts2[1]) id = parts2[1];
+         }
+
+         if(id) {
+             // Usar modo PREVIEW en Iframe (Funciona siempre)
+             const previewUrl = `https://drive.google.com/file/d/${id}/preview`;
+             iframeEl.src = previewUrl;
+             
+             // Mostrar iframe, ocultar controles estándar
+             stdControls.style.display = 'none';
+             stdProgress.style.display = 'none';
+             iframeContainer.style.display = 'block';
+         } else {
+             alert("Enlace de Drive no válido.");
+             stopJukebox();
+         }
+
+    // 2. Detect YouTube
+    } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
         currentJukeboxType = 'youtube';
+        
+        // Restaurar controles estándar
+        stdControls.style.display = 'flex';
+        stdProgress.style.display = 'flex';
+        iframeContainer.style.display = 'none';
+
         let videoId = "";
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
         const match = url.match(regExp);
         if (match && match[2].length == 11) { videoId = match[2]; }
         else { alert("Link de YouTube no válido"); return; }
 
+        // Check API Ready
         if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
             ytPlayer.loadVideoById(videoId);
             ytPlayer.playVideo();
         } else {
-            alert("API de YouTube aún no cargada. Espera un segundo.");
+            // Reintentar un par de veces si la API carga lento
+            let attempts = 0;
+            const checkInt = setInterval(() => {
+                attempts++;
+                if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+                    clearInterval(checkInt);
+                    ytPlayer.loadVideoById(videoId);
+                    ytPlayer.playVideo();
+                } else if (attempts > 10) {
+                    clearInterval(checkInt);
+                    alert("La API de YouTube no responde. Recarga la página.");
+                }
+            }, 500);
         }
 
+    // 3. Detect Generic HTML5 (MP3, Dropbox, etc)
     } else {
         currentJukeboxType = 'html5';
-        currentAudioObj = document.getElementById('jukebox-audio-element');
         
-        // Detener y limpiar completamente
+        // Restaurar controles estándar
+        stdControls.style.display = 'flex';
+        stdProgress.style.display = 'flex';
+        iframeContainer.style.display = 'none';
+
+        currentAudioObj = document.getElementById('jukebox-audio-element');
         currentAudioObj.pause();
         currentAudioObj.removeAttribute('src');
         currentAudioObj.load(); 
-
-        // Reset error handler
-        currentAudioObj.onerror = null; 
         currentAudioObj.src = url;
-        
-        // New error handler
-        currentAudioObj.onerror = () => {
-            const err = currentAudioObj.error;
-            let msg = "Error desconocido al cargar audio.";
-            if (err && err.code === 4) msg = "Archivo no soportado o no encontrado.";
-            if (url.includes('google.com')) {
-                msg += "\n\nIMPORTANTE: Para Google Drive, asegúrate de que el archivo tenga permisos 'Cualquier persona con el enlace' (Lector). Si es privado, no sonará.";
-            }
-            alert(msg);
-            stopJukebox();
-        };
-
-        // Importante: .load() para resetear el buffer
         currentAudioObj.load(); 
-
-        currentAudioObj.play().catch(e => {
-            console.warn("Play catch:", e);
-        });
+        currentAudioObj.play().catch(e => { console.warn("Play catch:", e); });
 
         currentAudioObj.onplay = () => { 
              document.getElementById('icon-play').style.display = 'none'; 
@@ -750,6 +780,9 @@ function stopJukebox() {
     if (currentJukeboxType === 'html5' && currentAudioObj) {
         currentAudioObj.pause();
         currentAudioObj.currentTime = 0;
+    }
+    if (currentJukeboxType === 'drive-iframe') {
+        document.getElementById('jb-iframe').src = ""; // Matar iframe
     }
     stopJukeboxProgressLoop();
     document.getElementById('jb-progress').value = 0;
