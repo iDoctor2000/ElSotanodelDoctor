@@ -1037,7 +1037,8 @@ function renderJukeboxMgmtTable() {
     const tbody = document.getElementById('jukebox-mgmt-body');
     tbody.innerHTML = "";
     
-    const keys = Object.keys(jukeboxLibrary);
+    const keys = Object.keys(jukeboxLibrary).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
     if (keys.length === 0) {
         tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay canciones con enlace.</td></tr>";
         return;
