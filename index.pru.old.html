@@ -618,9 +618,6 @@ async function loadDoc(collection, docId, fallback) { try { const snap = await d
 async function saveDoc(collection, docId, data, merge = false) { try { console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge); await db.collection(collection).doc(docId).set(data, { merge: merge }); console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`); return true; } catch (e) { console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); throw e; } }
 
 
-
-
-    
 /* ---------- 3. Configuración Setlists ---------- */
 let setlistConfig = {setlist1:{name:"Setlist Predeterminado Ensayo",url:"URL_POR_CONFIGURAR_1"},setlist2:{name:"Setlist Predeterminado Próximo Concierto",url:"URL_POR_CONFIGURAR_2"},setlistStar:{name:"Setlist Predeterminado Concierto Estrella",url:"URL_POR_CONFIGURAR_STAR"}};
 function updateDynamicSetlistTitles(){document.getElementById("setlist1-dynamic-name").textContent=setlistConfig.setlist1.name;document.getElementById("second-setlist-dynamic-name").textContent=setlistConfig.setlist2.name;document.getElementById("star-setlist-dynamic-name").textContent=setlistConfig.setlistStar.name}
@@ -629,149 +626,171 @@ async function saveSetlistConfig(){updateDynamicSetlistTitles();return await wit
 
 
 async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
-    const CACHE_KEY = `cache_setlist_${tbodyId}`;
-    let rawData = null;
-    let usedCache = false;
+    const CACHE_KEY = `cache_setlist_${tbodyId}`;
+    let rawData = null;
+    let usedCache = false;
 
-    // 1. Cargamos los links de audio de Firebase si aún no están cargados
+    // 1. Aseguramos que los links de audio estén cargados
     if(Object.keys(globalAudioLinks).length === 0) {
         await loadAudioLinks(); 
     }
     
-    try {
-        if (!configEntry.url || configEntry.url.startsWith("URL_POR_CONFIGURAR")) { throw new Error("URL no configurada."); }
-        const response = await fetch(configEntry.url);
-        if (!response.ok) throw new Error(`Error API (${response.status})`);
-        rawData = await response.json();
-        localStorage.setItem(CACHE_KEY, JSON.stringify(rawData));
-    } catch (networkError) {
-        console.warn(`[Offline Mode] Falló la descarga para ${tbodyId}. Intentando caché...`, networkError);
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        if (cachedData) {
-            rawData = JSON.parse(cachedData);
-            usedCache = true;
-            const titleEl = document.getElementById(totalTimeId).previousElementSibling.previousElementSibling;
-            if(titleEl) titleEl.innerHTML += " <span style='color:orange; font-size:0.8em;'>(⚠️ Modo Offline)</span>";
-        } else {
-            console.error(`[cargarSetlistGenerico] Error fatal: ${defaultErrorMessage}`, networkError);
-            const tbody = document.getElementById(tbodyId);
-            if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="color:red;">${defaultErrorMessage}. Sin conexión y sin caché.</td></tr>`;
-            const totalTimeElem = document.getElementById(totalTimeId);
-            if (totalTimeElem) totalTimeElem.textContent = "Error de conexión.";
-            return [];
-        }
-    }
-
-    const dataToProcess = Array.isArray(rawData) ? rawData : rawData.items || [];
-    const processedItems = dataToProcess.map(item => {
-        if (!item || item.type !== "song" && item.type !== "set") { return null }
-        let rawDurationValue = parseFloat(item.duration);
-        let durationIsInvalidOrMissing = isNaN(rawDurationValue) || rawDurationValue === 0;
-        if (isNaN(rawDurationValue)) { rawDurationValue = 0; durationIsInvalidOrMissing = true }
-        let durationInSeconds;
-        const itemName = item.name || item.title || (item.type === "song" ? "Canción sin título" : "Set sin nombre");
-        const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);
-        item.isSong = false; item.isBreak = false; item.isSetHeader = false;
-        if (item.type === "song") { durationInSeconds = rawDurationValue; item.isSong = true; } 
-        else if (item.type === "set") {
-            if (isBreakByName) { item.isBreak = true; if (durationIsInvalidOrMissing) { durationInSeconds = 3 * 60 } else { durationInSeconds = rawDurationValue * 60 } } 
-            else { item.isSetHeader = true; durationInSeconds = rawDurationValue * 60 }
-        } else { durationInSeconds = 0 }
-        item.calculatedDurationSeconds = durationInSeconds;
-        item.displayName = decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : item.isBreak ? "Pausa" : "Set"));
-        item.originalJSONDuration = item.duration;
-        
-        // NUEVA LÓGICA DE AUDIO: Toma el link del campo de Firebase (link_audio)
-        const songKey = sanitizeFirebaseKey(item.displayName);
-        item.link_audio = globalAudioLinks[songKey] || null; 
-        
-        return item
-    }).filter(item => item !== null);
-
-    const tbody = document.getElementById(tbodyId);
-    // **SOLUCIÓN PARA EL ENCABEZADO:** Borramos y recreamos el THEAD para asegurar el orden.
-    const table = tbody.closest('table');
-    if (table && table.tHead) {
-        // Obtenemos las filas del encabezado existente
-        const existingRow = table.tHead.rows[0];
-        
-        // Solo si la columna no existe, la añadimos. Esto previene duplicados.
-        if (existingRow && existingRow.cells.length < 6) {
-            
-            // Recreamos el THEAD con la columna Jukebox en la posición 3 (índice 2)
-            const isSongTitle = existingRow.cells[1].textContent.toLowerCase().includes("canción");
-            const newHead = isSongTitle ? 
-                `<tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th>Time</th></tr>` :
-                `<tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th>Time</th></tr>`;
-            
-            table.tHead.innerHTML = newHead;
-
-            // Ajuste CSS (si es necesario por el media query)
-            const nthChildIndex = 4; // Key es el 4to TH (índice 3), Tempo es el 5to (índice 4)...
-            const existingStyles = document.querySelectorAll(`#${table.closest('section').id} table th:nth-child(${nthChildIndex}), #${table.closest('section').id} table td:nth-child(${nthChildIndex}), #${table.closest('section').id} table th:nth-child(${nthChildIndex+1}), #${table.closest('section').id} table td:nth-child(${nthChildIndex+1}), #${table.closest('section').id} table th:nth-child(${nthChildIndex+2}), #${table.closest('section').id} table td:nth-child(${nthChildIndex+2})`);
-            
-            // Esto es solo un ajuste visual defensivo para asegurar la alineación de las últimas 3 columnas
-            if (existingStyles.length > 0) {
-                 // Nota: En la versión final, estos estilos ya están en el CSS global y se ajustan al nuevo colspan.
-            }
+    try {
+        if (!configEntry.url || configEntry.url.startsWith("URL_POR_CONFIGURAR")) { throw new Error("URL no configurada."); }
+        const response = await fetch(configEntry.url);
+        if (!response.ok) throw new Error(`Error API (${response.status})`);
+        rawData = await response.json();
+        localStorage.setItem(CACHE_KEY, JSON.stringify(rawData));
+    } catch (networkError) {
+        console.warn(`[Offline Mode] Falló la descarga para ${tbodyId}. Intentando caché...`, networkError);
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        if (cachedData) {
+            rawData = JSON.parse(cachedData);
+            usedCache = true;
+            const titleEl = document.getElementById(totalTimeId).previousElementSibling.previousElementSibling;
+            if(titleEl && !titleEl.innerHTML.includes("Offline")) titleEl.innerHTML += " <span style='color:orange; font-size:0.8em;'>(⚠️ Modo Offline)</span>";
+        } else {
+            console.error(`[cargarSetlistGenerico] Error fatal: ${defaultErrorMessage}`, networkError);
+            const tbody = document.getElementById(tbodyId);
+            if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="color:red;">${defaultErrorMessage}. Sin conexión y sin caché.</td></tr>`;
+            const totalTimeElem = document.getElementById(totalTimeId);
+            if (totalTimeElem) totalTimeElem.textContent = "Error de conexión.";
+            return [];
         }
     }
 
+    const dataToProcess = Array.isArray(rawData) ? rawData : rawData.items || [];
+    const processedItems = dataToProcess.map(item => {
+        if (!item || item.type !== "song" && item.type !== "set") { return null }
+        let rawDurationValue = parseFloat(item.duration);
+        let durationIsInvalidOrMissing = isNaN(rawDurationValue) || rawDurationValue === 0;
+        if (isNaN(rawDurationValue)) { rawDurationValue = 0; durationIsInvalidOrMissing = true }
+        let durationInSeconds;
+        const itemName = item.name || item.title || (item.type === "song" ? "Canción sin título" : "Set sin nombre");
+        const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);
+        item.isSong = false; item.isBreak = false; item.isSetHeader = false;
+        if (item.type === "song") { durationInSeconds = rawDurationValue; item.isSong = true; } 
+        else if (item.type === "set") {
+            if (isBreakByName) { item.isBreak = true; if (durationIsInvalidOrMissing) { durationInSeconds = 3 * 60 } else { durationInSeconds = rawDurationValue * 60 } } 
+            else { item.isSetHeader = true; durationInSeconds = rawDurationValue * 60 }
+        } else { durationInSeconds = 0 }
+        item.calculatedDurationSeconds = durationInSeconds;
+        item.displayName = decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : item.isBreak ? "Pausa" : "Set"));
+        item.originalJSONDuration = item.duration;
+        
+        // Mapping de Audio Link
+        const songKey = sanitizeFirebaseKey(item.displayName);
+        item.link_audio = globalAudioLinks[songKey] || null; 
+        
+        return item
+    }).filter(item => item !== null);
 
-    tbody.innerHTML = "";
-    let songCount = 0;
-    const setlistStructure = [];
-    let currentSet = null;
+    const tbody = document.getElementById(tbodyId);
+    const table = tbody.closest('table');
 
-    processedItems.forEach(item => {
-        if (item.isSetHeader) {
-            if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet) }
-            currentSet = { ...item, songs: [], calculatedBlockDurationSeconds: 0 }
-        } else if (item.isBreak) {
-            if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet); currentSet = null }
-            setlistStructure.push(item)
-        } else if (item.isSong) {
-            if (!currentSet) { currentSet = { isSetHeader: true, displayName: "Set General", calculatedDurationSeconds: 0, songs: [], calculatedBlockDurationSeconds: 0 } }
-            currentSet.songs.push(item)
-        }
-    });
-    if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet) }
+    // *** CORRECCIÓN SENIOR: FORZAR SIEMPRE LA ESTRUCTURA DEL HEADER ***
+    // Eliminamos la condición 'if (cells.length < 6)' para evitar desincronización.
+    // Reescribimos el thead siempre para garantizar que coincida con el body.
+    if (table && table.tHead) {
+        // Detectamos si preferimos "Título" o "Canción" basándonos en lo que había antes o por defecto
+        let headerTitle = "Título";
+        const existingRow = table.tHead.rows[0];
+        if(existingRow && existingRow.cells[1] && existingRow.cells[1].textContent.includes("Canción")) {
+            headerTitle = "Canción";
+        }
 
-    let totalSecondsOverall = 0;
-    setlistStructure.forEach(blockOrItem => {
-        if (blockOrItem.isSetHeader) {
-            const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
-            tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="6">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
-            totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
-            blockOrItem.songs.forEach(song => {
-                songCount++;
-                const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
-                // Columna Jukebox: Si hay link_audio, el botón está activo y tiene onclick
+        // Inyectamos el HTML limpio y forzamos las 6 columnas
+        table.tHead.innerHTML = `
+            <tr>
+                <th style="width:30px; text-align:center;">#</th>
+                <th>${headerTitle}</th>
+                <th class="jukebox-col-header" style="width:40px; text-align:center;">🎧</th>
+                <th style="text-align:center;">Key</th>
+                <th style="text-align:center;">Tempo</th>
+                <th style="text-align:center;">Time</th>
+            </tr>`;
+    }
+
+    tbody.innerHTML = "";
+    let songCount = 0;
+    const setlistStructure = [];
+    let currentSet = null;
+
+    processedItems.forEach(item => {
+        if (item.isSetHeader) {
+            if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet) }
+            currentSet = { ...item, songs: [], calculatedBlockDurationSeconds: 0 }
+        } else if (item.isBreak) {
+            if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet); currentSet = null }
+            setlistStructure.push(item)
+        } else if (item.isSong) {
+            if (!currentSet) { currentSet = { isSetHeader: true, displayName: "Set General", calculatedDurationSeconds: 0, songs: [], calculatedBlockDurationSeconds: 0 } }
+            currentSet.songs.push(item)
+        }
+    });
+    if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet) }
+
+    let totalSecondsOverall = 0;
+    setlistStructure.forEach(blockOrItem => {
+        if (blockOrItem.isSetHeader) {
+            const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
+            // IMPORTANTE: colspan="6" para que ocupe todo el ancho incluyendo la nueva columna
+            tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="6">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
+            totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
+            blockOrItem.songs.forEach(song => {
+                songCount++;
+                const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
                 const hasAudio = !!song.link_audio;
-                const jukeboxButton = `<td class="jukebox-col">${hasAudio ? `<button class="jukebox-btn active" title="Escuchar: ${song.displayName}" onclick="openJukeboxPlayer('${encodeURIComponent(song.link_audio)}', '${song.displayName}')"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9c-.55 0-1 .45-1 1v2c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2c0-.55-.45-1-1-1h-2zm-3.5 1.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S4 9.17 4 10s.67 1.5 1.5 1.5zm13 0c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S17 9.17 17 10s.67 1.5 1.5 1.5z"/></svg></button>` : `<button class="jukebox-btn muted" title="Sin archivo de audio"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9c-.55 0-1 .45-1 1v2c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2c0-.55-.45-1-1-1h-2zm-3.5 1.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S4 9.17 4 10s.67 1.5 1.5 1.5zm13 0c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S17 9.17 17 10s.67 1.5 1.5 1.5z"/></svg></button>`}</td>`;
-                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxButton}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
-            })
-        } else if (blockOrItem.isBreak) {
-            const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
-            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-            tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
-        } else if (blockOrItem.isSong) {
-            songCount++;
-            const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
-            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-            // Columna Jukebox: Si hay link_audio, el botón está activo y tiene onclick
+                
+                // Botón Jukebox
+                const jukeboxButton = `<td class="jukebox-col" style="text-align:center;">
+                    ${hasAudio ? 
+                        `<button class="jukebox-btn active" title="Escuchar: ${song.displayName}" onclick="openJukeboxPlayer('${encodeURIComponent(song.link_audio)}', '${song.displayName}')">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9c-.55 0-1 .45-1 1v2c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2c0-.55-.45-1-1-1h-2zm-3.5 1.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S4 9.17 4 10s.67 1.5 1.5 1.5zm13 0c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S17 9.17 17 10s.67 1.5 1.5 1.5z"/></svg>
+                        </button>` : 
+                        `<button class="jukebox-btn muted" title="Sin archivo de audio" onclick="alert('No hay audio linkeado para esta canción. Ve a Configuración -> Gestión de Audio Links para añadir uno.')">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9c-.55 0-1 .45-1 1v2c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2c0-.55-.45-1-1-1h-2zm-3.5 1.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S4 9.17 4 10s.67 1.5 1.5 1.5zm13 0c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S17 9.17 17 10s.67 1.5 1.5 1.5z"/></svg>
+                        </button>`
+                    }
+                </td>`;
+                
+                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxButton}<td style="text-align:center;">${decodeHtmlEntities(song.key || "-")}</td><td style="text-align:center;">${decodeHtmlEntities(song.tempo || "-")}</td><td style="text-align:center;">${songFormattedTime}</td></tr>`)
+            })
+        } else if (blockOrItem.isBreak) {
+            const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
+            // IMPORTANTE: colspan="6" en breaks también
+            tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="text-align:center;">-</td><td style="text-align:center;">-</td><td style="text-align:center;">${breakFormattedTime}</td></tr>`)
+        } else if (blockOrItem.isSong) {
+            songCount++;
+            const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
             const hasAudio = !!blockOrItem.link_audio;
-            const jukeboxButton = `<td class="jukebox-col">${hasAudio ? `<button class="jukebox-btn active" title="Escuchar: ${blockOrItem.displayName}" onclick="openJukeboxPlayer('${encodeURIComponent(blockOrItem.link_audio)}', '${blockOrItem.displayName}')"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9c-.55 0-1 .45-1 1v2c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2c0-.55-.45-1-1-1h-2zm-3.5 1.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S4 9.17 4 10s.67 1.5 1.5 1.5zm13 0c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S17 9.17 17 10s.67 1.5 1.5 1.5z"/></svg></button>` : `<button class="jukebox-btn muted" title="Sin archivo de audio"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9c-.55 0-1 .45-1 1v2c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2c0-.55-.45-1-1-1h-2zm-3.5 1.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S4 9.17 4 10s.67 1.5 1.5 1.5zm13 0c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S17 9.17 17 10s.67 1.5 1.5 1.5z"/></svg></button>`}</td>`;
-            tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxButton}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
-        }
-    });
-    
-    let timeText = "Tiempo total del set: " + toHHMM(totalSecondsOverall);
-    if(usedCache) timeText += " (Datos guardados)";
-    
-    document.getElementById(totalTimeId).textContent = timeText;
-    return setlistStructure;
+            
+            const jukeboxButton = `<td class="jukebox-col" style="text-align:center;">
+                    ${hasAudio ? 
+                        `<button class="jukebox-btn active" title="Escuchar: ${blockOrItem.displayName}" onclick="openJukeboxPlayer('${encodeURIComponent(blockOrItem.link_audio)}', '${blockOrItem.displayName}')">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9c-.55 0-1 .45-1 1v2c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2c0-.55-.45-1-1-1h-2zm-3.5 1.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S4 9.17 4 10s.67 1.5 1.5 1.5zm13 0c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S17 9.17 17 10s.67 1.5 1.5 1.5z"/></svg>
+                        </button>` : 
+                        `<button class="jukebox-btn muted" title="Sin archivo de audio" onclick="alert('No hay audio linkeado para esta canción. Ve a Configuración -> Gestión de Audio Links para añadir uno.')">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9c-.55 0-1 .45-1 1v2c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2c0-.55-.45-1-1-1h-2zm-3.5 1.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S4 9.17 4 10s.67 1.5 1.5 1.5zm13 0c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S17 9.17 17 10s.67 1.5 1.5 1.5z"/></svg>
+                        </button>`
+                    }
+                </td>`;
+
+            tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxButton}<td style="text-align:center;">${decodeHtmlEntities(blockOrItem.key || "-")}</td><td style="text-align:center;">${decodeHtmlEntities(blockOrItem.tempo || "-")}</td><td style="text-align:center;">${songFormattedTime}</td></tr>`)
+        }
+    });
+    
+    let timeText = "Tiempo total del set: " + toHHMM(totalSecondsOverall);
+    if(usedCache) timeText += " (Datos guardados)";
+    
+    document.getElementById(totalTimeId).textContent = timeText;
+    return setlistStructure;
 }
+
+    
+
 // El resto del código JS queda igual que en la respuesta anterior.
 // Ya no es necesario que te pase el archivo completo de nuevo, solo esta sección es suficiente.
 // ...
