@@ -36,7 +36,7 @@
         background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
         background-attachment: fixed;
         color:#fff;
-        padding-bottom: 80px; /* Espacio para el player */
+        padding-bottom: 180px; /* Espacio extra para el player + controles loop */
         
         /* PWA Full Screen & Anti-Bounce */
         width: 100vw;
@@ -217,6 +217,7 @@
     .jukebox-btn.inactive:hover {
         opacity: 1; border-color: #666; color: #999;
     }
+    /* SVG de Auriculares */
     .jukebox-btn svg { width: 20px; height: 20px; fill: currentColor; }
 
     .break-row td { font-style: italic; color: #ccc; background-color: #161616; }
@@ -267,37 +268,6 @@
     .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
     #firebase-critical-error-banner { background-color: red; color: white; padding: 15px; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 100001; font-weight: bold; }
 
-    /* --- JUKEBOX PLAYER BAR --- */
-    #jukebox-player-bar {
-        position: fixed; bottom: 0; left: 0; width: 100%;
-        background: rgba(10, 10, 10, 0.95); border-top: 1px solid #0cf;
-        padding: 10px; z-index: 11000; display: none;
-        flex-direction: column; align-items: center;
-        box-shadow: 0 -5px 20px rgba(0,204,255,0.2);
-        backdrop-filter: blur(10px);
-    }
-    #jukebox-player-bar.visible { display: flex; }
-    .jukebox-info { display: flex; align-items: center; width: 100%; justify-content: space-between; margin-bottom: 5px; }
-    .jukebox-song-title { color: #fff; font-weight: bold; font-size: 1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
-    .jukebox-controls { display: flex; gap: 15px; align-items: center; }
-    .jukebox-control-btn { background: none; border: none; color: #0cf; cursor: pointer; padding: 5px; }
-    .jukebox-control-btn:hover { color: #fff; transform: scale(1.1); }
-    .jukebox-control-btn svg { width: 24px; height: 24px; fill: currentColor; }
-    .jukebox-progress-container { width: 100%; display: flex; align-items: center; gap: 10px; color: #aaa; font-size: 0.8em; }
-    .jukebox-progress-bar { flex-grow: 1; cursor: pointer; -webkit-appearance: none; height: 4px; background: #333; border-radius: 2px; }
-    .jukebox-progress-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #0cf; border-radius: 50%; cursor: pointer; }
-    .jukebox-close-btn { font-size: 1.5em; color: #aaa; background:none; border:none; cursor:pointer; padding:0 10px; }
-    
-    /* Iframe Container */
-    #jukebox-iframe-container { width: 100%; height: 60px; display: none; margin-top: 5px; border-radius: 5px; overflow: hidden; }
-    #jukebox-iframe-container iframe { width: 100%; height: 100%; border: none; background: #000; }
-    
-    /* Lista gestión jukebox */
-    .jukebox-mgmt-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0; }
-    .jukebox-mgmt-name { color: #fff; font-weight: bold; }
-    .jukebox-mgmt-link { color: #aaa; font-size: 0.8em; display: block; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .jukebox-mgmt-actions button { padding: 5px 10px; margin-left: 5px; font-size: 0.8em; }
-
     @media(max-width:768px){
       header { height: 55px; padding: 8px 15px; }  
       .logo img.logo-main{ width: 110px; }
@@ -317,12 +287,43 @@
       .table-wrapper { overflow-x: hidden; }  
       table { width: 100%; min-width: unset; font-size: 0.85em; }
       th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
-      th.calendar-col-header, td.calendar-col, th.details-col-header, th.jukebox-col-header, td.jukebox-col { width: 40px; padding: 8px 2px;}  
+      th.calendar-col-header, td.calendar-col, th.details-col-header { width: 40px; padding: 8px 2px;}  
       #second-setlist .table-wrapper table, #star-setlist .table-wrapper table { min-width: unset; }
       .stats-table table { font-size: 0.85em; }
       .modal-content { width: 95%; padding: 15px; }  
       .modal-field-group { flex-direction: column; }  
     }
+    
+    /* JUKEBOX PLAYER */
+    #jukebox-player {
+        position: fixed; bottom: 0; left: 0; width: 100%; 
+        background: #000; border-top: 1px solid #333;
+        padding: 10px; z-index: 99999; display: none; 
+        flex-direction: column; gap: 10px;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
+    }
+    #jukebox-player.show { display: flex; }
+    .jukebox-header { display: flex; justify-content: space-between; align-items: center; }
+    .jukebox-title { color: #0cf; font-weight: bold; font-size: 1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; }
+    .jukebox-close { background: none; border: none; color: #aaa; font-size: 1.5em; cursor: pointer; }
+    
+    /* LOOP CONTROLS */
+    .loop-controls {
+        display: flex; gap: 10px; justify-content: center; align-items: center;
+        margin-bottom: 5px;
+    }
+    .loop-btn {
+        background: #222; border: 1px solid #0cf; color: #0cf;
+        padding: 4px 10px; border-radius: 4px; cursor: pointer;
+        font-size: 0.8em; transition: all 0.2s;
+    }
+    .loop-btn:hover { background: #0cf; color: #000; }
+    .loop-btn.active { background: #0cf; color: #000; font-weight: bold; box-shadow: 0 0 5px #0cf; }
+    .loop-display { color: #0cf; font-size: 0.8em; font-family: monospace; margin-left: 5px; }
+
+    /* Native Audio & Iframe */
+    #jukebox-audio-native { width: 100%; height: 40px; border-radius: 20px; }
+    #jukebox-youtube-iframe { width: 100%; height: 200px; border: none; display: none; }
 
     #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
     .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #fff; }
@@ -463,53 +464,47 @@
     <a href="#" id="menu-config">Configuración</a>
     <div class="submenu" id="config-submenu" style="display: none;">
       <a href="#" id="menu-setlist-config">Configurar Setlists</a>
+      <a href="#" id="menu-jukebox-mgmt">Gestión Jukebox</a> <!-- NUEVO ITEM -->
       <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
       <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
       <a href="#" id="menu-admin-suggestions">Gestión de Propuestas</a>
-      <a href="#" id="menu-jukebox-management">Gestión Jukebox</a>
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
 
-  <!-- Jukebox Player -->
-  <div id="jukebox-player-bar">
-    <div class="jukebox-info">
-      <span id="jukebox-current-title" class="jukebox-song-title">Selecciona una canción</span>
-      <button id="jukebox-close-btn" class="jukebox-close-btn">✕</button>
-    </div>
-    <!-- Contenedor Iframe para Google Drive / Embeds -->
-    <div id="jukebox-iframe-container">
-        <iframe id="jukebox-iframe" src="about:blank"></iframe>
-    </div>
-    <!-- Controles estándar para YouTube / MP3 -->
-    <div class="jukebox-controls" id="jukebox-standard-controls">
-       <!-- Play/Pause manejado internamente por el tipo de reproductor -->
-    </div>
-    <!-- Audio Tag Oculto para MP3 directos -->
-    <audio id="jukebox-audio-tag" style="display:none;"></audio>
-    <!-- Youtube API Container invisible (usado para audio) -->
-    <div id="youtube-player-container" style="display:none;"></div>
-  </div>
-
-  <!-- Modal EDICIÓN JUKEBOX (Añadir Link) -->
+  <!-- POPUP EDITAR JUKEBOX INDIVIDUAL -->
   <div id="jukebox-edit-modal" class="modal-backdrop">
-      <div class="modal-content">
-          <h3>Jukebox: <span id="jukebox-edit-title" style="color:#fff;"></span></h3>
-          <label>Enlace de Audio (YouTube, Drive, MP3):</label>
-          <input type="url" id="jukebox-link-input" placeholder="Pega aquí el enlace...">
-          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:15px;">
-            <button id="jukebox-save-link">Guardar Link</button>
-            <button class="modal-close-btn" onclick="document.getElementById('jukebox-edit-modal').classList.remove('show')">Cancelar</button>
-          </div>
-      </div>
-  </div>
+    <div class="modal-content" style="max-width: 500px;">
+        <h3>Jukebox: <span id="jukebox-edit-title">Canción</span></h3>
+        <p style="color: #ccc; font-size: 0.9em;">Pega aquí un enlace de YouTube, Google Drive o MP3 directo.</p>
+        
+        <label for="jukebox-url-input">Enlace de Audio:</label>
+        <input type="url" id="jukebox-url-input" placeholder="https://...">
 
-  <!-- Modal GESTIÓN JUKEBOX (Lista Alfabética) -->
-  <div id="jukebox-management-screen" class="config-screen">
-      <button class="close-btn" id="close-jukebox-mgmt">Cerrar</button>
-      <h2>Gestión Jukebox</h2>
-      <p style="text-align:center; color:#aaa; margin-bottom:20px;">Aquí puedes ver, editar y eliminar los enlaces de las canciones.</p>
-      <div id="jukebox-mgmt-list"></div>
+        <div style="display:flex; gap:10px; justify-content: flex-end; margin-top:20px;">
+             <button id="jukebox-save-btn">Guardar y Activar</button>
+             <button id="jukebox-cancel-btn" class="modal-close-btn">Cancelar</button>
+        </div>
+    </div>
+  </div>
+  
+  <!-- PANTALLA GESTIÓN MASIVA JUKEBOX -->
+  <div id="jukebox-mgmt-screen" class="config-screen">
+    <button class="close-btn" id="close-jukebox-mgmt">Cerrar</button>
+    <h2>Gestión Jukebox</h2>
+    <p style="text-align:center; color:#aaa; font-size:0.9em;">Lista de canciones con enlace activo. Puedes borrar o editar.</p>
+    <div class="table-wrapper">
+        <table id="jukebox-mgmt-table">
+            <thead>
+                <tr>
+                    <th>Canción</th>
+                    <th>Enlace</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="jukebox-mgmt-body"></tbody>
+        </table>
+    </div>
   </div>
 
   <div id="concert-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Detalles del Concierto</h3><h4 id="concert-detail-title-display"></h4><input type="hidden" id="concert-detail-id"><label for="concert-detail-location">Detalles adicionales de la ubicación:</label><textarea id="concert-detail-location"></textarea><label for="concert-detail-gmaps-link">Enlace de Google Maps (Lugar Evento):</label><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;"><input type="url" id="concert-detail-gmaps-link" placeholder="https://maps.app.goo.gl/example" style="flex-grow: 1; margin-bottom: 0;"><button id="open-gmaps-link-btn" style="display:none; padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; line-height: 1.5;">Abrir Mapa</button></div><div class="modal-field-group"><div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div><div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div></div><div class="modal-field-group"><div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div><div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div></div><label for="concert-detail-notes">Notas generales:</label><textarea id="concert-detail-notes"></textarea><label for="concert-detail-sound-company">Empresa de Sonorización:</label><input type="text" id="concert-detail-sound-company" placeholder="Nombre de la empresa o técnico externo"><h4>Músicos Asistentes</h4><div id="musicians-attendance-list"></div><h4>Técnicos Responsables</h4><div id="technicians-attendance-list" style="border: 1px solid #333; padding: 10px; margin-bottom:15px;"></div><button id="save-concert-details">Guardar Detalles</button><button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button><p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
@@ -518,7 +513,7 @@
   <div id="user-mgmt-screen" class="config-screen"><button class="close-btn" id="close-user-mgmt">Cerrar</button><h2>Gestión de Usuarios</h2><label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label><select id="user-role" multiple><option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option><option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option><option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option><option value="Coros">Coros</option><option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option><option value="Técnico de Luces">Técnico de Luces</option><option value="Montador">Montador</option><option value="Road Manager">Road Manager</option><option value="Backliner">Backliner</option></select><button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button><p id="user-message" class="error-message"></p><table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table></div>
   <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha</label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
   <div id="admin-suggestions-screen" class="config-screen"><button class="close-btn" id="close-admin-suggestions">Cerrar</button><h2>Gestión de Propuestas (Admin)</h2><p style="color:#aaa; text-align:center;">Aquí puedes ver el historial y eliminar propuestas inadecuadas.</p><div class="table-wrapper"><table id="admin-suggestions-table"><thead><tr><th>Canción</th><th>Propuesta por</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="admin-suggestions-body"></tbody></table></div></div>
-  <div id="suggestions-screen" class="config-screen"><button class="close-btn" id="close-suggestions">Cerrar</button><h2>Propuestas de Canciones</h2><div style="text-align:center; margin-bottom:20px;"><label for="user-identity-selector" style="color:#0cf; font-weight:bold; display:block; margin-bottom:5px;">¿Quién eres? (Necesario para proponer y votar)</label><select id="user-identity-selector"><option value="" disabled selected>-- Selecciona tu nombre --</option></select></div><div class="suggestion-form"><h4 style="color:#fff; margin-top:0;">Nueva Propuesta</h4><div class="suggestion-form-row"><input type="text" id="suggestion-title" placeholder="Título de la canción"><input type="text" id="suggestion-artist" placeholder="Artista / Banda original"></div><div class="suggestion-form-row"><input type="url" id="suggestion-link" placeholder="Enlace (Spotify/Youtube) - Opcional"><button id="add-suggestion-btn" style="width:auto; flex:0 0 150px;">Proponer</button></div><p id="suggestion-message" class="error-message" style="text-align:left; margin:0;"></p></div><div class="suggestions-grid" id="suggestions-container"></div></div>
+  <div id="suggestions-screen" class="config-screen"><button class="close-btn" id="close-suggestions">Cerrar</button><h2>Propuestas de Canciones</h2><div style="text-align:center; margin-bottom:20px;"><label for="user-identity-selector" style="color:#0cf; font-weight:bold; display:block; margin-bottom:5px;">¿Quién eres? (Necesario para proponer y votar)</label><select id="user-identity-selector"><option value="" disabled selected>-- Selecciona tu nombre --</option></select></div><div class="suggestion-form"><h4 style="color:#fff; margin-top:0;">Nueva Propuesta</h4><div class="suggestion-form-row"><input type="text" id="suggestion-title" placeholder="Título de la canción"><input type="text" id="suggestion-artist" placeholder="Artista / Banda original"></div><div class="suggestion-form-row"><input type="url" id="suggestion-link" placeholder="Enlace (Spotify/Youtube) - Opcional"><button id="add-suggestion-btn" style="width:auto; flex:0 1 150px;">Proponer</button></div><p id="suggestion-message" class="error-message" style="text-align:left; margin:0;"></p></div><div class="suggestions-grid" id="suggestions-container"></div></div>
   <div id="stats-screen" class="config-screen"><button class="close-btn" id="close-stats">Cerrar</button><h2>Estadísticas</h2><div class="stats-filter"><label>Filtrar por mes:</label><select id="stats-month-filter"><option value="all">Todos los meses</option></select></div><div class="stats-table"><h3>Tiempo Ensayado por Mes</h3><table id="time-per-month-table"><thead><tr><th>Mes</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-month-body"></tbody></table></div><div class="stats-table"><h3>Tiempo Ensayado por Usuario</h3><table id="time-per-user-table"><thead><tr><th>Usuario</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-user-body"></tbody></table></div><div class="stats-table"><h3>Ensayos Pasados</h3><div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Asistencias</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div></div></div>
   <div id="user-list-screen" class="config-screen"><button class="close-btn" id="close-user-list-screen">Cerrar</button><h2>Usuarios Registrados</h2><div class="table-wrapper" style="padding: 0 10px;"><table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table></div></div>
 
@@ -579,26 +574,41 @@
     <source src="" type="audio/mpeg">
     Tu navegador no soporta el elemento de audio.
   </audio>
+  
+  <!-- PLAYER FIJO ABAJO -->
+  <div id="jukebox-player">
+    <div class="jukebox-header">
+        <div class="jukebox-title" id="jukebox-current-title">Selecciona una canción...</div>
+        <button class="jukebox-close" onclick="closeJukeboxPlayer()">✕</button>
+    </div>
+    
+    <!-- CONTROLES LOOP (Solo para MP3/Native, no funciona en Iframe) -->
+    <div class="loop-controls" id="jukebox-loop-controls">
+        <button class="loop-btn" id="loop-a-btn" onclick="setLoopA()">[A] Inicio</button>
+        <button class="loop-btn" id="loop-b-btn" onclick="setLoopB()">[B] Fin</button>
+        <button class="loop-btn" id="loop-clear-btn" onclick="clearLoop()">[X] Borrar</button>
+        <span class="loop-display" id="loop-status-display"></span>
+    </div>
+
+    <!-- Reproductor Nativo (MP3, Direct Links) -->
+    <audio id="jukebox-audio-native" controls controlsList="nodownload"></audio>
+    
+    <!-- Reproductor YouTube Iframe (Oculto por defecto) -->
+    <div id="jukebox-youtube-container" style="display:none; width:100%; position:relative;">
+        <div id="youtube-player-placeholder"></div>
+    </div>
+  </div>
 
 <script>
-/* --- SCRIPT BLOQUEO ZOOM IOS (AGRESIVO) --- */
-// 1. Bloquear "pinch to zoom"
-document.addEventListener('touchmove', function(event) {
-    if (event.scale !== 1) { 
-        event.preventDefault(); 
-    }
-}, { passive: false });
-
-// 2. Bloquear doble tap (zoom rápido)
+/* ---------- ANTI-ZOOM IOS / PWA AGRESIVO ---------- */
+document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });
 let lastTouchEnd = 0;
-document.addEventListener('touchend', function(event) {
-    const now = (new Date()).getTime();
-    if (now - lastTouchEnd <= 300) {
-        event.preventDefault();
-    }
-    lastTouchEnd = now;
-}, false);
-
+document.addEventListener('touchend', function (event) {
+  const now = (new Date()).getTime();
+  if (now - lastTouchEnd <= 300) { event.preventDefault(); }
+  lastTouchEnd = now;
+}, { passive: false });
 
 /* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
@@ -617,25 +627,59 @@ let globalItems1 = [];
 let globalItems2 = [];
 let globalItemsStar = [];
 
-/* --- JUKEBOX VARS --- */
-let jukeboxDB = {}; // Almacen local { "Nombre Canción": "URL" }
-let playerState = { isPlaying: false, type: null }; // 'youtube', 'drive', 'audio'
+// Variables Jukebox Loop
+let loopStart = null;
+let loopEnd = null;
+let isLooping = false;
+const audioNative = document.getElementById('jukebox-audio-native');
 
-/* --- CARGA API YOUTUBE --- */
-var tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-var firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-var youtubePlayer;
-function onYouTubeIframeAPIReady() {
-  youtubePlayer = new YT.Player('youtube-player-container', {
-    height: '0', width: '0',
-    events: { 'onStateChange': onPlayerStateChange }
-  });
+// Lógica Loop
+audioNative.addEventListener('timeupdate', () => {
+    if (isLooping && loopEnd !== null && loopStart !== null) {
+        if (audioNative.currentTime >= loopEnd) {
+            audioNative.currentTime = loopStart;
+            audioNative.play();
+        }
+    }
+});
+
+function setLoopA() {
+    loopStart = audioNative.currentTime;
+    document.getElementById('loop-a-btn').classList.add('active');
+    updateLoopDisplay();
 }
-function onPlayerStateChange(event) {
-    // Lógica adicional si se necesitara
+
+function setLoopB() {
+    if (loopStart === null) { alert("Primero marca el inicio (A)"); return; }
+    loopEnd = audioNative.currentTime;
+    if (loopEnd <= loopStart) { alert("El final debe ser posterior al inicio."); return; }
+    isLooping = true;
+    document.getElementById('loop-b-btn').classList.add('active');
+    audioNative.currentTime = loopStart; // Saltar al inicio para probar
+    audioNative.play();
+    updateLoopDisplay();
 }
+
+function clearLoop() {
+    loopStart = null;
+    loopEnd = null;
+    isLooping = false;
+    document.getElementById('loop-a-btn').classList.remove('active');
+    document.getElementById('loop-b-btn').classList.remove('active');
+    updateLoopDisplay();
+}
+
+function updateLoopDisplay() {
+    const display = document.getElementById('loop-status-display');
+    if (isLooping) {
+        display.textContent = `🔄 ${toMMSS(loopStart)} <-> ${toMMSS(loopEnd)}`;
+    } else if (loopStart !== null) {
+        display.textContent = `A: ${toMMSS(loopStart)} ... esperando B`;
+    } else {
+        display.textContent = "";
+    }
+}
+
 
 const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
 const toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
@@ -659,162 +703,85 @@ async function withRetry(fn, maxRetries = 3, delay = 2000) { for (let i = 0; i <
 async function loadDoc(collection, docId, fallback) { try { const snap = await db.collection(collection).doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); return fallback; } }
 async function saveDoc(collection, docId, data, merge = false) { try { console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge); await db.collection(collection).doc(docId).set(data, { merge: merge }); console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`); return true; } catch (e) { console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); throw e; } }
 
-/* --- CARGAR/GUARDAR LINKS JUKEBOX --- */
-async function loadJukeboxLinks() {
-    try {
-        const snapshot = await db.collection('jukebox_links').get();
-        jukeboxDB = {};
-        snapshot.forEach(doc => { jukeboxDB[doc.id] = doc.data().url; });
-        console.log("Jukebox DB cargada:", Object.keys(jukeboxDB).length, "canciones.");
-    } catch (e) { console.error("Error cargando Jukebox links:", e); }
-}
-async function saveJukeboxLink(songName, url) {
-    try {
-        const cleanName = songName.trim(); // Usamos el nombre como ID (con caracteres válidos para doc ID si fuera necesario, pero Firestore acepta la mayoría)
-        // Para seguridad, podemos usar sanitize si hay caracteres muy raros, pero idealmente nombre directo
-        await db.collection('jukebox_links').doc(cleanName).set({ url: url, updatedAt: new Date().toISOString() });
-        jukeboxDB[cleanName] = url;
-        // Re-renderizar iconos
-        document.querySelectorAll('.jukebox-btn').forEach(btn => {
-            if (btn.dataset.song === cleanName) {
-                btn.classList.remove('inactive');
-                btn.classList.add('active');
-            }
-        });
-        return true;
-    } catch(e) { console.error(e); throw e; }
-}
-async function deleteJukeboxLink(songName) {
-    try {
-        await db.collection('jukebox_links').doc(songName).delete();
-        delete jukeboxDB[songName];
-        // Re-renderizar iconos
-        document.querySelectorAll('.jukebox-btn').forEach(btn => {
-            if (btn.dataset.song === songName) {
-                btn.classList.remove('active');
-                btn.classList.add('inactive');
-            }
-        });
-        renderJukeboxManagement(); // Actualizar lista gestión
-    } catch(e) { console.error(e); alert("Error al eliminar: " + e.message); }
-}
-
-
 /* ---------- 3. Configuración Setlists ---------- */
 let setlistConfig = {setlist1:{name:"Setlist Predeterminado Ensayo",url:"URL_POR_CONFIGURAR_1"},setlist2:{name:"Setlist Predeterminado Próximo Concierto",url:"URL_POR_CONFIGURAR_2"},setlistStar:{name:"Setlist Predeterminado Concierto Estrella",url:"URL_POR_CONFIGURAR_STAR"}};
 function updateDynamicSetlistTitles(){document.getElementById("setlist1-dynamic-name").textContent=setlistConfig.setlist1.name;document.getElementById("second-setlist-dynamic-name").textContent=setlistConfig.setlist2.name;document.getElementById("star-setlist-dynamic-name").textContent=setlistConfig.setlistStar.name}
 async function loadSetlistConfig(){try{const data=await withRetry(()=>loadDoc("intranet","setlists",{config:setlistConfig}));setlistConfig={setlist1:data.config?.setlist1||setlistConfig.setlist1,setlist2:data.config?.setlist2||setlistConfig.setlist2,setlistStar:data.config?.setlistStar||setlistConfig.setlistStar};updateDynamicSetlistTitles()}catch(e){console.error("Error al cargar la configuración de setlists:",e);updateDynamicSetlistTitles()}}
 async function saveSetlistConfig(){updateDynamicSetlistTitles();return await withRetry(()=>saveDoc("intranet","setlists",{config:setlistConfig}))}
 
-/* --- RENDER JUKEBOX COLUMN --- */
-function getJukeboxCell(songName) {
-    const hasLink = jukeboxDB.hasOwnProperty(songName);
-    const activeClass = hasLink ? 'active' : 'inactive';
-    // NUEVO ICONO: Auriculares (Path SVG)
-    return `<td class="jukebox-col">
-        <button class="jukebox-btn ${activeClass}" data-song="${songName}" onclick="handleJukeboxClick('${songName}')">
-            <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7c0-4.97-4.03-9-9-9z"/></svg>
-        </button>
-    </td>`;
+// --- JUKEBOX LOGIC ---
+let jukeboxLinks = {}; // { "Nombre Cancion": "URL" }
+
+async function loadJukeboxLinks() {
+    try {
+        const data = await withRetry(() => loadDoc("intranet", "jukebox_links", { links: {} }));
+        jukeboxLinks = data.links || {};
+    } catch (e) {
+        console.error("Error loading jukebox links:", e);
+    }
 }
 
-/* --- LOGICA CLICK JUKEBOX --- */
-function handleJukeboxClick(songName) {
-    if (jukeboxDB[songName]) {
-        // Si tiene link, reproduce directo
-        openJukeboxPlayer(jukeboxDB[songName], songName);
+async function saveJukeboxLinks() {
+    try {
+        await withRetry(() => saveDoc("intranet", "jukebox_links", { links: jukeboxLinks }));
+        // Recargar tablas para actualizar iconos
+        cargarPrimerSetlist();
+        cargarSegundoSetlist();
+        cargarStarSetlist();
+    } catch (e) {
+        console.error("Error saving jukebox links:", e);
+    }
+}
+
+// --- NUEVA LÓGICA DIRECTA ---
+function handleJukeboxClick(songNameRaw) {
+    const songName = decodeHtmlEntities(songNameRaw);
+    const url = jukeboxLinks[songName];
+
+    if (url && url.trim() !== "") {
+        // Si YA tiene URL, reproducir directamente
+        openJukeboxPlayer(songName, url);
     } else {
-        // Si NO tiene link, abre modal para editar
+        // Si NO tiene URL, abrir modal para editar
         openJukeboxEditModal(songName);
     }
 }
 
-function openJukeboxEditModal(songName) {
+// Modal Edición Individual
+const jukeboxEditModal = document.getElementById('jukebox-edit-modal');
+let currentEditingSong = null;
+
+function openJukeboxEditModal(songNameRaw) {
+    const songName = decodeHtmlEntities(songNameRaw);
+    currentEditingSong = songName;
     document.getElementById('jukebox-edit-title').textContent = songName;
-    document.getElementById('jukebox-link-input').value = "";
-    document.getElementById('jukebox-edit-modal').classList.add('show');
-    
-    // Handler para guardar
-    document.getElementById('jukebox-save-link').onclick = async () => {
-        const url = document.getElementById('jukebox-link-input').value.trim();
-        if (!url) return;
-        try {
-            await saveJukeboxLink(songName, url);
-            document.getElementById('jukebox-edit-modal').classList.remove('show');
-            // Opcional: reproducir automáticamente tras guardar
-            // openJukeboxPlayer(url, songName);
-        } catch(e) { alert("Error guardando link"); }
-    };
+    document.getElementById('jukebox-url-input').value = jukeboxLinks[songName] || "";
+    jukeboxEditModal.classList.add('show');
 }
 
-
-/* --- LOGICA REPRODUCTOR HÍBRIDO (Iframe Drive / YouTube API / Audio) --- */
-function openJukeboxPlayer(url, title) {
-    const playerBar = document.getElementById('jukebox-player-bar');
-    const titleEl = document.getElementById('jukebox-current-title');
-    const iframeContainer = document.getElementById('jukebox-iframe-container');
-    const iframe = document.getElementById('jukebox-iframe');
-    const controls = document.getElementById('jukebox-standard-controls');
-    const audioTag = document.getElementById('jukebox-audio-tag');
-
-    // Reset
-    iframe.src = "about:blank";
-    iframeContainer.style.display = 'none';
-    controls.style.display = 'none'; // Ocultamos controles estándar por defecto
-    audioTag.pause();
-    if(youtubePlayer && typeof youtubePlayer.stopVideo === 'function') youtubePlayer.stopVideo();
-
-    titleEl.textContent = title;
-    playerBar.classList.add('visible');
-
-    // DETECCIÓN
-    if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
-        // MODO DRIVE (IFRAME)
-        let embedUrl = url;
-        if (url.includes('/view')) embedUrl = url.replace('/view', '/preview');
-        else if (url.includes('/edit')) embedUrl = url.replace('/edit', '/preview');
-        
-        iframe.src = embedUrl;
-        iframeContainer.style.display = 'block'; // Mostramos el iframe DEBAJO del título
-        playerState.type = 'drive';
-
-    } else if (url.includes('youtu')) {
-        // MODO YOUTUBE
-        let videoId = "";
-        if (url.includes('v=')) videoId = url.split('v=')[1].split('&')[0];
-        else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
-
-        if (youtubePlayer && typeof youtubePlayer.loadVideoById === 'function') {
-            youtubePlayer.loadVideoById(videoId);
-            // Controles mínimos si se desea, o dejar invisible
-        } else {
-            // Fallback si API no carga rápido
-            setTimeout(() => { 
-                 if(youtubePlayer) youtubePlayer.loadVideoById(videoId); 
-            }, 1000);
-        }
-        playerState.type = 'youtube';
-        // Podríamos mostrar controles Play/Pause propios mapeados a la API, 
-        // pero por simplicidad, YouTube audio suena de fondo.
-        
-    } else {
-        // MODO DIRECTO (MP3/Dropbox dl=1)
-        audioTag.src = url;
-        audioTag.load();
-        audioTag.play().catch(e => alert("Error reproduciendo audio directo: " + e.message));
-        playerState.type = 'audio';
-        controls.style.display = 'flex'; // Mostrar controles (pause/play si implementados)
-    }
-}
-
-document.getElementById('jukebox-close-btn').onclick = () => {
-    const playerBar = document.getElementById('jukebox-player-bar');
-    playerBar.classList.remove('visible');
-    const iframe = document.getElementById('jukebox-iframe');
-    iframe.src = "about:blank";
-    document.getElementById('jukebox-audio-tag').pause();
-    if(youtubePlayer && typeof youtubePlayer.stopVideo === 'function') youtubePlayer.stopVideo();
+document.getElementById('jukebox-cancel-btn').onclick = () => {
+    jukeboxEditModal.classList.remove('show');
+    currentEditingSong = null;
 };
+
+document.getElementById('jukebox-save-btn').onclick = async () => {
+    const url = document.getElementById('jukebox-url-input').value.trim();
+    if (currentEditingSong) {
+        if (url) {
+            jukeboxLinks[currentEditingSong] = url;
+        } else {
+            delete jukeboxLinks[currentEditingSong];
+        }
+        await saveJukeboxLinks(); // Guarda y refresca tablas
+        jukeboxEditModal.classList.remove('show');
+        
+        // Si se guardó URL, reproducir automáticamente para feedback instantáneo
+        if(url) {
+            openJukeboxPlayer(currentEditingSong, url);
+        }
+    }
+};
+
 
 async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
     const CACHE_KEY = `cache_setlist_${tbodyId}`;
@@ -836,8 +803,11 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
             const titleEl = document.getElementById(totalTimeId).previousElementSibling.previousElementSibling;
             if(titleEl) titleEl.innerHTML += " <span style='color:orange; font-size:0.8em;'>(⚠️ Modo Offline)</span>";
         } else {
+            console.error(`[cargarSetlistGenerico] Error fatal: ${defaultErrorMessage}`, networkError);
             const tbody = document.getElementById(tbodyId);
             if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="color:red;">${defaultErrorMessage}. Sin conexión y sin caché.</td></tr>`;
+            const totalTimeElem = document.getElementById(totalTimeId);
+            if (totalTimeElem) totalTimeElem.textContent = "Error de conexión.";
             return [];
         }
     }
@@ -846,14 +816,21 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     const processedItems = dataToProcess.map(item => {
         if (!item || item.type !== "song" && item.type !== "set") { return null }
         let rawDurationValue = parseFloat(item.duration);
-        if (isNaN(rawDurationValue)) rawDurationValue = 0;
-        let durationInSeconds = (item.type === "set") ? rawDurationValue * 60 : rawDurationValue;
+        let durationIsInvalidOrMissing = isNaN(rawDurationValue) || rawDurationValue === 0;
+        if (isNaN(rawDurationValue)) { rawDurationValue = 0; durationIsInvalidOrMissing = true }
+        let durationInSeconds;
+        const itemName = item.name || item.title || (item.type === "song" ? "Canción sin título" : "Set sin nombre");
+        const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);
+        item.isSong = false; item.isBreak = false; item.isSetHeader = false;
+        if (item.type === "song") { durationInSeconds = rawDurationValue; item.isSong = true; } 
+        else if (item.type === "set") {
+            if (isBreakByName) { item.isBreak = true; if (durationIsInvalidOrMissing) { durationInSeconds = 3 * 60 } else { durationInSeconds = rawDurationValue * 60 } } 
+            else { item.isSetHeader = true; durationInSeconds = rawDurationValue * 60 }
+        } else { durationInSeconds = 0 }
         item.calculatedDurationSeconds = durationInSeconds;
-        item.displayName = decodeHtmlEntities(item.title || item.name || (item.type === "song" ? "Canción sin título" : "Set"));
-        item.isSong = item.type === "song";
-        item.isSetHeader = item.type === "set" && !/break|descanso|intermedio/i.test(item.displayName);
-        item.isBreak = item.type === "set" && /break|descanso|intermedio/i.test(item.displayName);
-        return item;
+        item.displayName = decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : item.isBreak ? "Pausa" : "Set"));
+        item.originalJSONDuration = item.duration;
+        return item
     }).filter(item => item !== null);
 
     const tbody = document.getElementById(tbodyId);
@@ -885,25 +862,61 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
             blockOrItem.songs.forEach(song => {
                 songCount++;
                 const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
-                // INYECTAR COLUMNA JUKEBOX
-                const jukeboxCell = getJukeboxCell(song.displayName);
-                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
+                const hasLink = jukeboxLinks[song.displayName] && jukeboxLinks[song.displayName].trim() !== "";
+                const iconClass = hasLink ? "active" : "inactive";
+                
+                // Escapar el nombre de la canción para usarlo en onclick
+                const safeName = song.displayName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                
+                tbody.insertAdjacentHTML("beforeend", `
+                    <tr>
+                        <td>${songCount}</td>
+                        <td>${song.displayName}</td>
+                        <td class="jukebox-col">
+                            <button class="jukebox-btn ${iconClass}" onclick="handleJukeboxClick('${safeName}')">
+                                <svg viewBox="0 0 24 24">
+                                   <path d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7c0-4.97-4.03-9-9-9z"/>
+                                </svg>
+                            </button>
+                        </td>
+                        <td>${decodeHtmlEntities(song.key || "-")}</td>
+                        <td>${decodeHtmlEntities(song.tempo || "-")}</td>
+                        <td>${songFormattedTime}</td>
+                    </tr>`)
             })
         } else if (blockOrItem.isBreak) {
             const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
             totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-            tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td>-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
+            tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td></td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
         } else if (blockOrItem.isSong) {
             songCount++;
             const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
             totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-            const jukeboxCell = getJukeboxCell(blockOrItem.displayName);
-            tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
+            const hasLink = jukeboxLinks[blockOrItem.displayName] && jukeboxLinks[blockOrItem.displayName].trim() !== "";
+            const iconClass = hasLink ? "active" : "inactive";
+            const safeName = blockOrItem.displayName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
+            tbody.insertAdjacentHTML("beforeend", `
+                <tr>
+                    <td>${songCount}</td>
+                    <td>${blockOrItem.displayName}</td>
+                    <td class="jukebox-col">
+                         <button class="jukebox-btn ${iconClass}" onclick="handleJukeboxClick('${safeName}')">
+                            <svg viewBox="0 0 24 24">
+                               <path d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7c0-4.97-4.03-9-9-9z"/>
+                            </svg>
+                        </button>
+                    </td>
+                    <td>${decodeHtmlEntities(blockOrItem.key || "-")}</td>
+                    <td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td>
+                    <td>${songFormattedTime}</td>
+                </tr>`)
         }
     });
     
     let timeText = "Tiempo total del set: " + toHHMM(totalSecondsOverall);
     if(usedCache) timeText += " (Datos guardados)";
+    
     document.getElementById(totalTimeId).textContent = timeText;
     return setlistStructure;
 }
@@ -911,6 +924,127 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 const cargarPrimerSetlist = async () => { globalItems1 = await cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo"); return globalItems1; };
 const cargarSegundoSetlist = async () => { globalItems2 = await cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto"); return globalItems2; };
 const cargarStarSetlist = async () => { globalItemsStar = await cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella"); return globalItemsStar; };
+
+/* --- YOUTUBE API --- */
+let youtubePlayer;
+let isYouTubeIframeAPIReady = false;
+
+function onYouTubeIframeAPIReady() {
+    isYouTubeIframeAPIReady = true;
+}
+
+/* --- PLAYER CONTROL --- */
+function openJukeboxPlayer(title, url) {
+    const playerDiv = document.getElementById('jukebox-player');
+    const titleDiv = document.getElementById('jukebox-current-title');
+    
+    // Reset previous state
+    clearLoop(); // Limpiar loop anterior
+    const nativeAudio = document.getElementById('jukebox-audio-native');
+    const ytContainer = document.getElementById('jukebox-youtube-container');
+    const loopControls = document.getElementById('jukebox-loop-controls'); // Contenedor botones loop
+
+    nativeAudio.pause();
+    nativeAudio.src = "";
+    nativeAudio.style.display = 'none';
+    ytContainer.style.display = 'none';
+    loopControls.style.display = 'flex'; // Por defecto visible (native)
+
+    titleDiv.textContent = `Reproduciendo: ${title}`;
+    playerDiv.classList.add('show');
+
+    // 1. YouTube
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        loopControls.style.display = 'none'; // Ocultar loops para YouTube (demasiado complejo sincronizar iframe)
+        ytContainer.style.display = 'block';
+        let videoId = "";
+        if (url.includes('v=')) videoId = url.split('v=')[1].split('&')[0];
+        else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
+
+        if (videoId) {
+            if (!isYouTubeIframeAPIReady) {
+                // Cargar API si no estaba
+                var tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                var firstScriptTag = document.getElementsByTagName('script')[0];
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                
+                // Esperar un poco y reintentar
+                setTimeout(() => openJukeboxPlayer(title, url), 1000);
+                return;
+            }
+
+            if (youtubePlayer) {
+                youtubePlayer.loadVideoById(videoId);
+            } else {
+                youtubePlayer = new YT.Player('youtube-player-placeholder', {
+                    height: '200',
+                    width: '100%',
+                    videoId: videoId,
+                    events: { 'onReady': (event) => event.target.playVideo() }
+                });
+            }
+        }
+    }
+    // 2. Google Drive (Direct Link Hack)
+    else if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+        let fileId = "";
+        const patterns = [
+            /\/file\/d\/([^/]+)/,
+            /id=([^&]+)/,
+            /\/d\/([^/]+)/
+        ];
+
+        for (let p of patterns) {
+            const match = url.match(p);
+            if (match && match[1]) {
+                fileId = match[1];
+                break;
+            }
+        }
+
+        if (fileId) {
+            // URL mágica de descarga directa para tratarlo como MP3
+            const directLink = `https://docs.google.com/uc?export=download&id=${fileId}`;
+            nativeAudio.src = directLink;
+            nativeAudio.style.display = 'block';
+            // Loop controls se mantienen visibles porque usamos audio nativo
+            nativeAudio.load();
+            nativeAudio.play().catch(e => {
+                console.error("Error autoplay drive direct:", e);
+                alert("Google Drive requiere que inicies sesión en este navegador para reproducir el archivo. Si falla, verifica permisos.");
+            });
+        } else {
+             alert("Enlace de Drive no reconocido.");
+        }
+    }
+    // 3. MP3 Directo (Dropbox, servidor propio, etc)
+    else {
+        // Modificación Dropbox para audio directo
+        if (url.includes('dropbox.com')) {
+            url = url.replace('dl=0', 'dl=1');
+        }
+        nativeAudio.src = url;
+        nativeAudio.style.display = 'block';
+        // Loop controls visibles
+        nativeAudio.load();
+        nativeAudio.play().catch(e => console.error("Error autoplay native:", e));
+    }
+}
+
+function closeJukeboxPlayer() {
+    const playerDiv = document.getElementById('jukebox-player');
+    const nativeAudio = document.getElementById('jukebox-audio-native');
+    
+    nativeAudio.pause();
+    nativeAudio.src = "";
+    
+    if (youtubePlayer && youtubePlayer.stopVideo) {
+        youtubePlayer.stopVideo();
+    }
+    
+    playerDiv.classList.remove('show');
+}
 
 /* ---------- 6. Usuarios ---------- */
 let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
@@ -1241,43 +1375,53 @@ document.getElementById("stats-month-filter").addEventListener("change", renderS
 document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); openConfigScreen("user-list-screen"); };
 document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
 
-/* --- MENU GESTIÓN JUKEBOX --- */
-document.getElementById("menu-jukebox-management").onclick = e => {
+// --- GESTIÓN MASIVA JUKEBOX ---
+document.getElementById("menu-jukebox-mgmt").onclick = e => {
     e.preventDefault();
-    openConfigScreen("jukebox-management-screen");
-    renderJukeboxManagement();
+    if(openConfigScreen("jukebox-mgmt-screen")) {
+        renderJukeboxMgmt();
+    }
 };
+
 document.getElementById("close-jukebox-mgmt").onclick = () => {
-    document.getElementById("jukebox-management-screen").style.display = "none";
+    document.getElementById("jukebox-mgmt-screen").style.display = "none";
 };
-function renderJukeboxManagement() {
-    const container = document.getElementById("jukebox-mgmt-list");
-    container.innerHTML = "";
-    
-    // Ordenar alfabéticamente por nombre de canción
-    const sortedKeys = Object.keys(jukeboxDB).sort((a, b) => a.localeCompare(b));
-    
-    if (sortedKeys.length === 0) {
-        container.innerHTML = "<p style='text-align:center; color:#888;'>No hay canciones con enlace.</p>";
+
+function renderJukeboxMgmt() {
+    const tbody = document.getElementById('jukebox-mgmt-body');
+    tbody.innerHTML = "";
+
+    const entries = Object.entries(jukeboxLinks);
+    if (entries.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay canciones con enlace.</td></tr>";
         return;
     }
 
-    sortedKeys.forEach(song => {
-        const url = jukeboxDB[song];
-        const div = document.createElement('div');
-        div.className = 'jukebox-mgmt-item';
-        div.innerHTML = `
-            <div>
-                <div class="jukebox-mgmt-name">${song}</div>
-                <a href="${url}" target="_blank" class="jukebox-mgmt-link">${url}</a>
-            </div>
-            <div class="jukebox-mgmt-actions">
-                <button onclick="openJukeboxEditModal('${song.replace(/'/g, "\\'")}')">Editar</button>
-                <button onclick="deleteJukeboxLink('${song.replace(/'/g, "\\'")}')" style="background:#f00; color:#fff;">Borrar</button>
-            </div>
-        `;
-        container.appendChild(div);
+    // ORDENAR ALFABÉTICAMENTE
+    entries.sort((a, b) => a[0].localeCompare(b[0]));
+
+    entries.forEach(([songName, url]) => {
+        const safeName = songName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+                <td>${songName}</td>
+                <td style="font-size:0.8em; color:#aaa; word-break:break-all;">${url}</td>
+                <td>
+                    <button class="edit-user" onclick="openJukeboxEditModal('${safeName}')">Editar</button>
+                    <button class="delete-user" onclick="deleteJukeboxLink('${safeName}')">Borrar</button>
+                </td>
+            </tr>
+        `);
     });
+}
+
+
+async function deleteJukeboxLink(songName) {
+    if(confirm(`¿Borrar enlace de "${songName}"?`)) {
+        delete jukeboxLinks[songName];
+        await saveJukeboxLinks();
+        renderJukeboxMgmt();
+    }
 }
 
 // --- GESTIÓN DE PROPUESTAS (SUGGESTIONS) ---
@@ -2129,4 +2273,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 </script>
 </body>
-</html>
+</html>   
