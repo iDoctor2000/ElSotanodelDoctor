@@ -92,7 +92,6 @@ window.convertDriveToDirectLink = function(url) {
     
     if (id) {
         // Usamos un proxy de google docs que suele ir mejor para streaming que drive.google.com
-        // Aún así, Drive es inestable para audio directo.
         return `https://docs.google.com/uc?export=download&id=${id}`;
     }
     return null;
@@ -246,10 +245,6 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false) {
 
 // Fallback para Drive: Si falla el audio directo, usamos el iframe visual
 window.switchToDriveIframeMode = function() {
-    const title = document.getElementById('jukebox-current-title').textContent;
-    // Recuperar ID del src fallido o del título no es fácil aquí sin pasar parámetros extra.
-    // Simplificación: Si falla, mostramos mensaje al usuario de que el Loop no va.
-    
     // Vamos a intentar extraer el ID de la URL fallida (src)
     const failedUrl = currentAudioObj.src;
     let id = null;
