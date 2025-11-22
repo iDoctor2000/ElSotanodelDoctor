@@ -17,7 +17,6 @@
   <meta property="og:title"        content="El Sótano del Doctor – Intranet">
   <meta property="og:description"  content="Banda de rock y versiones. Intranet de gestión.">
   <meta property="og:image"        content="assets/logo_negro copia.jpg">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -36,6 +35,10 @@
         background-attachment: fixed;
         color:#fff;
         padding-bottom: 80px; /* Espacio para el player */
+        
+        /* BLOQUEO DE ZOOM EN MÓVILES */
+        touch-action: pan-x pan-y; /* Solo permite scroll, no zoom */
+        -webkit-text-size-adjust: 100%; /* Evita ajuste de texto automático */
     }
     
     /* ---------- Splash Screen ---------- */
