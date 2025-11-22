@@ -1,7 +1,7 @@
 
 /* 
    JUKEBOX.JS
-   Lógica separada para el reproductor de audio, YouTube API y Google Drive
+   Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
 */
 
 // Variables Globales del Jukebox
@@ -24,8 +24,6 @@ window.jukeboxLibrary = jukeboxLibrary;
 // Cargar librería
 window.loadJukeboxLibrary = async function() {
     try {
-        // Asume que 'loadDoc' y 'withRetry' están definidos en index.html o son globales
-        // Si loadDoc no está disponible aún cuando carga esto, se llamará desde index.html
         if (typeof window.loadDoc === 'function') {
             const data = await window.withRetry(() => window.loadDoc("intranet", "jukebox_library", { mapping: {} }));
             window.jukeboxLibrary = data.mapping || {};
@@ -46,7 +44,6 @@ window.saveJukeboxLibrary = async function() {
 
 /* --- 2. YOUTUBE API --- */
 
-// Definir callback global para YouTube
 window.onYouTubeIframeAPIReady = function() {
     console.log("YouTube API Ready");
     ytPlayer = new YT.Player('youtube-player-placeholder', {
@@ -83,11 +80,8 @@ function onPlayerStateChange(event) {
 
 /* --- 3. LOGICA DEL REPRODUCTOR --- */
 
-// Convertir enlace de Drive a Directo
+// Helper: Convertir enlace de Drive a Directo (Intento)
 window.convertDriveToDirectLink = function(url) {
-    // Intenta extraer el ID de varios formatos
-    // Formato 1: /file/d/EL_ID/view
-    // Formato 2: id=EL_ID
     let id = null;
     const parts = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (parts && parts[1]) {
@@ -98,9 +92,18 @@ window.convertDriveToDirectLink = function(url) {
     }
     
     if (id) {
-        // Usamos la URL de exportación. 
-        // NOTA: Esto puede fallar si el archivo es privado o muy grande (virus scan warning).
-        return `https://drive.google.com/uc?export=download&id=${id}`;
+        // Usamos un proxy de google docs que suele ir mejor para streaming que drive.google.com
+        // Aún así, Drive es inestable para audio directo.
+        return `https://docs.google.com/uc?export=download&id=${id}`;
+    }
+    return null;
+};
+
+// Helper: Convertir enlace de Dropbox a Directo (NUEVO)
+window.convertDropboxLink = function(url) {
+    // Reemplaza dl=0 por raw=1 para streaming directo
+    if (url.includes('dropbox.com')) {
+        return url.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
     }
     return null;
 };
@@ -112,6 +115,7 @@ window.openJukeboxPlayer = function(title, rawUrl) {
     const stdProgress = document.getElementById('jukebox-std-progress');
     const iframeContainer = document.getElementById('jukebox-iframe-container');
     const loopControls = document.querySelector('.jukebox-loop-area');
+    const iframeEl = document.getElementById('jb-iframe');
 
     // Pausar música de fondo del sitio si suena
     const siteAudio = document.getElementById('site-audio');
@@ -126,10 +130,11 @@ window.openJukeboxPlayer = function(title, rawUrl) {
     
     const url = rawUrl.trim();
     let driveDirectLink = window.convertDriveToDirectLink(url);
+    let dropboxLink = window.convertDropboxLink(url);
 
-    // 1. Detect Google Drive (MODO HTML5 DIRECTO PARA LOOP)
-    if (driveDirectLink) {
-         console.log("Drive Link detectado. ID extraído. Intentando carga directa HTML5:", driveDirectLink);
+    // 1. Detect DROPBOX (LA MEJOR OPCIÓN PARA LOOP)
+    if (dropboxLink) {
+         console.log("Dropbox Link detectado:", dropboxLink);
          currentJukeboxType = 'html5';
          
          stdControls.style.display = 'flex';
@@ -137,16 +142,30 @@ window.openJukeboxPlayer = function(title, rawUrl) {
          iframeContainer.style.display = 'none';
          if(loopControls) loopControls.style.display = 'flex';
 
-         window.setupHtml5Audio(driveDirectLink);
+         window.setupHtml5Audio(dropboxLink);
 
-    // 2. Detect YouTube
+    // 2. Detect Google Drive
+    } else if (driveDirectLink) {
+         console.log("Drive Link detectado. Intentando modo híbrido.");
+         // Intentamos cargar en HTML5 primero para que funcione el Loop.
+         // Si falla, el 'onerror' del audio cambiará al modo Iframe.
+         currentJukeboxType = 'html5';
+         
+         stdControls.style.display = 'flex';
+         stdProgress.style.display = 'flex';
+         iframeContainer.style.display = 'none';
+         if(loopControls) loopControls.style.display = 'flex';
+
+         window.setupHtml5Audio(driveDirectLink, true); // 'true' activa el fallback a iframe
+
+    // 3. Detect YouTube
     } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
         currentJukeboxType = 'youtube';
         
         stdControls.style.display = 'flex';
         stdProgress.style.display = 'flex';
         iframeContainer.style.display = 'none';
-        if(loopControls) loopControls.style.display = 'none'; // No loops para YT iframe simple
+        if(loopControls) loopControls.style.display = 'none'; // No loops para YT
 
         let videoId = "";
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -158,18 +177,15 @@ window.openJukeboxPlayer = function(title, rawUrl) {
             ytPlayer.loadVideoById(videoId);
             ytPlayer.playVideo();
         } else {
-            // Retry simple
             setTimeout(() => {
                 if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
                     ytPlayer.loadVideoById(videoId);
                     ytPlayer.playVideo();
-                } else {
-                    alert("YouTube API no lista. Espera un momento.");
-                }
+                } else { alert("YouTube API no lista."); }
             }, 1000);
         }
 
-    // 3. Detect Generic HTML5 (MP3, etc)
+    // 4. Detect Generic HTML5 (MP3 hosting propio)
     } else {
         currentJukeboxType = 'html5';
         
@@ -182,11 +198,10 @@ window.openJukeboxPlayer = function(title, rawUrl) {
     }
 };
 
-window.setupHtml5Audio = function(srcUrl) {
+window.setupHtml5Audio = function(srcUrl, isDriveFallback = false) {
     currentAudioObj = document.getElementById('jukebox-audio-element');
     if(!currentAudioObj) return;
 
-    // Reset total
     currentAudioObj.pause();
     currentAudioObj.removeAttribute('src');
     currentAudioObj.load(); 
@@ -197,16 +212,21 @@ window.setupHtml5Audio = function(srcUrl) {
     const playPromise = currentAudioObj.play();
     if (playPromise !== undefined) {
         playPromise.catch(error => {
-            console.warn("Auto-play falló o fue bloqueado:", error);
-            // Si falla, suele ser por bloqueo de navegador o enlace roto (403)
+            console.warn("Auto-play HTML5 falló:", error);
         });
     }
 
-    // Manejo de errores de carga (común en Drive si el archivo es privado)
+    // Manejo de errores de carga (Crucial para Drive)
     currentAudioObj.onerror = function() {
         console.error("Error cargando audio HTML5:", currentAudioObj.error);
-        alert("Error al cargar el archivo de audio. \n\nPosibles causas:\n1. El archivo de Drive es privado.\n2. El archivo es muy grande (virus scan).\n3. El enlace está roto.");
-        window.stopJukebox();
+        
+        if (isDriveFallback) {
+            console.warn("Fallo carga directa Drive. Cambiando a modo Iframe (seguro).");
+            window.switchToDriveIframeMode();
+        } else {
+            alert("Error al cargar el audio. Verifica el enlace.");
+            window.stopJukebox();
+        }
     };
 
     currentAudioObj.onplay = () => { 
@@ -225,6 +245,45 @@ window.setupHtml5Audio = function(srcUrl) {
     currentAudioObj.onended = () => { window.stopJukeboxProgressLoop(); };
 };
 
+// Fallback para Drive: Si falla el audio directo, usamos el iframe visual
+window.switchToDriveIframeMode = function() {
+    const title = document.getElementById('jukebox-current-title').textContent;
+    // Recuperar ID del src fallido o del título no es fácil aquí sin pasar parámetros extra.
+    // Simplificación: Si falla, mostramos mensaje al usuario de que el Loop no va.
+    
+    // Vamos a intentar extraer el ID de la URL fallida (src)
+    const failedUrl = currentAudioObj.src;
+    let id = null;
+    if (failedUrl.includes('id=')) {
+        id = failedUrl.split('id=')[1];
+    }
+
+    if (id) {
+        currentJukeboxType = 'drive-iframe';
+        const previewUrl = `https://drive.google.com/file/d/${id}/preview`;
+        
+        const stdControls = document.getElementById('jukebox-std-controls');
+        const stdProgress = document.getElementById('jukebox-std-progress');
+        const iframeContainer = document.getElementById('jukebox-iframe-container');
+        const loopControls = document.querySelector('.jukebox-loop-area');
+        const iframeEl = document.getElementById('jb-iframe');
+
+        stdControls.style.display = 'none';
+        stdProgress.style.display = 'none';
+        if(loopControls) loopControls.style.display = 'none';
+        
+        iframeContainer.style.display = 'block';
+        iframeEl.src = previewUrl;
+        
+        // Aviso visual
+        const titleEl = document.getElementById('jukebox-current-title');
+        titleEl.innerHTML += " <span style='color:orange; font-size:0.7em;'>(Modo Compatible - Sin Bucle)</span>";
+    } else {
+        alert("El archivo de Drive no se puede reproducir. Intenta usar Dropbox.");
+        window.stopJukebox();
+    }
+};
+
 window.stopJukebox = function() {
     if (currentJukeboxType === 'youtube' && ytPlayer && typeof ytPlayer.stopVideo === 'function') {
         ytPlayer.stopVideo();
@@ -232,12 +291,14 @@ window.stopJukebox = function() {
     if (currentJukeboxType === 'html5' && currentAudioObj) {
         currentAudioObj.pause();
         currentAudioObj.currentTime = 0;
-        // Remove src to stop downloading
         currentAudioObj.removeAttribute('src');
+    }
+    if (currentJukeboxType === 'drive-iframe') {
+        document.getElementById('jb-iframe').src = "";
     }
     
     window.stopJukeboxProgressLoop();
-    window.clearLoop(); // Resetear loop
+    window.clearLoop(); 
     
     const prog = document.getElementById('jb-progress');
     if(prog) prog.value = 0;
@@ -285,7 +346,6 @@ window.setLoopA = function() {
         if(btnA) btnA.classList.add('active');
         if(btnB) btnB.disabled = false;
         
-        // Reset B si es anterior a A o si ya existía
         if (jukeboxLoopB !== null && jukeboxLoopB <= jukeboxLoopA) {
             jukeboxLoopB = null;
             if(btnB) btnB.classList.remove('active');
@@ -309,7 +369,7 @@ window.setLoopB = function() {
             
             window.updateLoopDisplay();
             
-            // Saltar inmediatamente al inicio (A) para confirmar visualmente que el loop funciona
+            // Feedback: Saltar al inicio del bucle
             currentAudioObj.currentTime = jukeboxLoopA;
             if(currentAudioObj.paused) currentAudioObj.play();
         } else {
@@ -340,7 +400,6 @@ window.updateLoopDisplay = function() {
     const display = document.getElementById('jb-loop-status');
     if(!display) return;
 
-    // Función interna segura para formatear
     const fmt = (s) => {
         if (isNaN(s) || s === null) return "0:00";
         const m = Math.floor(s / 60);
@@ -350,10 +409,13 @@ window.updateLoopDisplay = function() {
 
     if (jukeboxLoopA !== null && jukeboxLoopB !== null) {
         display.textContent = `${fmt(jukeboxLoopA)} <-> ${fmt(jukeboxLoopB)}`;
+        display.style.display = 'inline-block';
     } else if (jukeboxLoopA !== null) {
         display.textContent = `${fmt(jukeboxLoopA)} -> ...`;
+        display.style.display = 'inline-block';
     } else {
         display.textContent = "";
+        display.style.display = 'none';
     }
 };
 
@@ -362,22 +424,18 @@ window.updateLoopDisplay = function() {
 window.startJukeboxProgressLoop = function() {
     if (jukeboxCheckInterval) clearInterval(jukeboxCheckInterval);
     
-    // Intervalo más rápido para precisión en el loop (100ms)
+    // Intervalo rápido para bucle preciso
     jukeboxCheckInterval = setInterval(() => {
         let curr = 0, total = 0;
         
         if (currentJukeboxType === 'youtube' && ytPlayer && ytPlayer.getCurrentTime) {
-            try {
-                curr = ytPlayer.getCurrentTime();
-                total = ytPlayer.getDuration();
-            } catch(e) { /* ignore */ }
+            try { curr = ytPlayer.getCurrentTime(); total = ytPlayer.getDuration(); } catch(e) {}
         } else if (currentJukeboxType === 'html5' && currentAudioObj) {
             curr = currentAudioObj.currentTime;
             total = currentAudioObj.duration;
 
             // CHEQUEO DE BUCLE A-B
             if (jukeboxLoopA !== null && jukeboxLoopB !== null) {
-                // Si nos pasamos de B, volvemos a A
                 if (curr >= jukeboxLoopB) {
                     currentAudioObj.currentTime = jukeboxLoopA;
                     curr = jukeboxLoopA; 
@@ -392,8 +450,6 @@ window.startJukeboxProgressLoop = function() {
             const curT = document.getElementById('jb-current-time');
             const totT = document.getElementById('jb-total-time');
             
-            // Actualizar UI solo si existe
-            // Función toMMSS duplicada aquí por seguridad si no es global
             const toTime = (s) => {
                  const ts = Math.round(s); 
                  return `${Math.floor(ts / 60)}:${String(ts % 60).padStart(2, "0")}`;
@@ -410,9 +466,7 @@ window.stopJukeboxProgressLoop = function() {
     if (jukeboxCheckInterval) clearInterval(jukeboxCheckInterval);
 };
 
-// Event Listeners Iniciales (cuando carga el script)
 document.addEventListener("DOMContentLoaded", () => {
-    // Asignar eventos a los botones estáticos del HTML
     const closeBtn = document.getElementById('jukebox-close-player');
     if(closeBtn) closeBtn.onclick = () => {
         window.stopJukebox();
@@ -440,7 +494,6 @@ document.addEventListener("DOMContentLoaded", () => {
         window.seekJukebox(val + 5); 
     };
 
-    // Loop Listeners
     const btnLoopA = document.getElementById('jb-loop-a');
     if(btnLoopA) btnLoopA.onclick = window.setLoopA;
 
