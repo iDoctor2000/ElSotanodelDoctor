@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -40,7 +40,7 @@
         background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
         background-attachment: fixed;
         color:#fff;
-        padding-bottom: 80px; /* Espacio para el player */
+        /* padding-bottom eliminado para aprovechar toda la pantalla */
         
         /* PROPIEDADES PARA SENSACIÓN APP NATIVA */
         touch-action: manipulation; /* Mejora respuesta táctil y evita zoom doble tap */
@@ -242,37 +242,50 @@
     .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
     #firebase-critical-error-banner { background-color: red; color: white; padding: 15px; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 100001; font-weight: bold; }
 
-    /* --- JUKEBOX PLAYER BAR --- */
+    /* --- JUKEBOX POPUP (POPUP FLOTANTE) --- */
     #jukebox-player-bar {
-        position: fixed; bottom: 0; left: 0; width: 100%;
-        background: rgba(10, 10, 10, 0.95); border-top: 1px solid #0cf;
-        padding: 10px; z-index: 11000; display: none; /* Hidden by default */
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+        width: 95%; max-width: 450px;
+        background: rgba(20, 20, 20, 0.98); 
+        border: 1px solid #0cf;
+        border-radius: 12px;
+        padding: 20px; 
+        z-index: 11000; 
+        display: flex; 
+        opacity: 0; visibility: hidden; pointer-events: none; /* Hidden logic */
         flex-direction: column; align-items: center;
-        box-shadow: 0 -5px 20px rgba(0,204,255,0.2);
+        box-shadow: 0 0 50px rgba(0,0,0,0.8), 0 0 15px rgba(0,204,255,0.3);
         backdrop-filter: blur(10px);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    #jukebox-player-bar.visible { display: flex; }
-    .jukebox-info { display: flex; align-items: center; width: 100%; justify-content: space-between; margin-bottom: 5px; }
-    .jukebox-song-title { color: #fff; font-weight: bold; font-size: 1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
-    .jukebox-controls { display: flex; gap: 15px; align-items: center; }
-    .jukebox-control-btn { background: none; border: none; color: #0cf; cursor: pointer; padding: 5px; }
-    .jukebox-control-btn:hover { color: #fff; transform: scale(1.1); }
-    .jukebox-control-btn svg { width: 24px; height: 24px; fill: currentColor; }
-    .jukebox-progress-container { width: 100%; display: flex; align-items: center; gap: 10px; color: #aaa; font-size: 0.8em; }
-    .jukebox-progress-bar { flex-grow: 1; cursor: pointer; -webkit-appearance: none; height: 4px; background: #333; border-radius: 2px; }
-    .jukebox-progress-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #0cf; border-radius: 50%; cursor: pointer; }
-    .jukebox-close-btn { font-size: 1.5em; color: #aaa; background:none; border:none; cursor:pointer; padding:0 10px; }
+    #jukebox-player-bar.visible { 
+        opacity: 1; visibility: visible; pointer-events: all;
+        transform: translate(-50%, -50%) scale(1);
+    }
     
-    /* LOOP CONTROLS (NUEVO) */
-    .jukebox-loop-area { display: flex; align-items: center; gap: 8px; margin-right: 15px; padding-right: 15px; border-right: 1px solid #333; }
-    .jukebox-loop-display { font-size: 0.75em; font-family: monospace; color: #0cf; min-width: 60px; text-align: center; white-space: nowrap; }
-    .loop-btn { background: transparent; border: 1px solid #555; color: #555; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 3px; }
-    .loop-btn.active { border-color: #0cf; color: #0cf; background: rgba(0,204,255,0.1); }
-    .loop-btn svg { width: 14px; height: 14px; fill: currentColor; }
-    .loop-btn:hover { color: #fff; border-color: #777; }
+    .jukebox-info { display: flex; align-items: center; width: 100%; justify-content: space-between; margin-bottom: 15px; }
+    .jukebox-song-title { color: #fff; font-weight: bold; font-size: 1.1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; text-shadow: 0 0 5px rgba(0,204,255,0.5); }
+    .jukebox-controls { display: flex; gap: 20px; align-items: center; }
+    .jukebox-control-btn { background: none; border: none; color: #0cf; cursor: pointer; padding: 5px; }
+    .jukebox-control-btn:hover { color: #fff; transform: scale(1.2); }
+    .jukebox-control-btn svg { width: 32px; height: 32px; fill: currentColor; }
+    .jukebox-progress-container { width: 100%; display: flex; align-items: center; gap: 10px; color: #aaa; font-size: 0.9em; margin-top: 15px; }
+    .jukebox-progress-bar { flex-grow: 1; cursor: pointer; -webkit-appearance: none; height: 6px; background: #333; border-radius: 3px; }
+    .jukebox-progress-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #0cf; border-radius: 50%; cursor: pointer; box-shadow: 0 0 5px #0cf; }
+    .jukebox-close-btn { font-size: 1.5em; color: #aaa; background:none; border:none; cursor:pointer; padding:0 5px; }
+    .jukebox-close-btn:hover { color: #fff; }
+
+    /* LOOP CONTROLS POPUP */
+    .jukebox-loop-area { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; width: 100%; justify-content: center; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; }
+    .jukebox-loop-display { font-size: 0.9em; font-family: monospace; color: #0cf; min-width: 70px; text-align: center; white-space: nowrap; }
+    .loop-btn { background: #111; border: 1px solid #555; color: #aaa; padding: 5px 10px; border-radius: 6px; font-size: 0.9em; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: all 0.2s; }
+    .loop-btn.active { border-color: #0cf; color: #0cf; background: rgba(0,204,255,0.1); box-shadow: 0 0 8px rgba(0,204,255,0.3); }
+    .loop-btn svg { width: 16px; height: 16px; fill: currentColor; }
+    .loop-btn:hover { color: #fff; border-color: #777; background: #222; }
+    .loop-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
     /* Estilos para el modo Iframe (Google Drive) */
-    #jukebox-iframe-container { width: 100%; height: 60px; display: none; margin-top: 5px; }
+    #jukebox-iframe-container { width: 100%; height: 80px; display: none; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
     #jukebox-iframe-container iframe { width: 100%; height: 100%; border: none; background: transparent; }
 
     @media(max-width:768px){
@@ -299,10 +312,11 @@
       .stats-table table { font-size: 0.85em; }
       .modal-content { width: 95%; padding: 15px; }  
       .modal-field-group { flex-direction: column; }  
-      /* Ajuste Loop en móvil */
-      .jukebox-loop-area { flex-direction: row; margin-right: 5px; padding-right: 5px; }
-      .jukebox-loop-display { font-size: 0.65em; min-width: 40px; display: none; } /* Ocultar tiempo en móviles muy peques si hace falta */
-      .loop-btn { padding: 4px; }
+      
+      /* Ajustes Popup en móvil */
+      #jukebox-player-bar { width: 95%; padding: 15px; max-width: none; }
+      .jukebox-loop-area { flex-wrap: wrap; }
+      .jukebox-control-btn svg { width: 28px; height: 28px; }
     }
 
     #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
@@ -414,46 +428,42 @@
       </div>
   </div>
 
-  <!-- JUKEBOX PLAYER BAR (Modificado con Loop A-B) -->
+  <!-- JUKEBOX PLAYER BAR (POPUP) -->
   <div id="jukebox-player-bar">
     <div class="jukebox-info">
         <span id="jukebox-current-title" class="jukebox-song-title">No hay canción seleccionada</span>
         <button class="jukebox-close-btn" id="jukebox-close-player" title="Cerrar Player">✕</button>
     </div>
     
-    <!-- CONTENEDOR PRINCIPAL CONTROLES -->
-    <div style="display:flex; width:100%; justify-content:center; align-items:center; gap:10px;">
-        
-        <!-- NUEVO: CONTROLES DE BUCLE A-B -->
-        <div class="jukebox-loop-area">
-            <button class="loop-btn" id="jb-loop-a" title="Marcar Inicio (A)">
-                <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
-                A
-            </button>
-            <button class="loop-btn" id="jb-loop-b" title="Marcar Fin (B)" disabled>
-                <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" transform="scale(-1,1) translate(-24,0)"/></svg>
-                B
-            </button>
-            <button class="loop-btn" id="jb-loop-clear" title="Borrar Bucle" style="border-color:#f55; color:#f55; display:none;">✕</button>
-            <span class="jukebox-loop-display" id="jb-loop-status"></span>
-        </div>
+    <!-- NUEVO: CONTROLES DE BUCLE A-B (Arriba de los controles principales) -->
+    <div class="jukebox-loop-area">
+        <button class="loop-btn" id="jb-loop-a" title="Marcar Inicio (A)">
+            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+            A
+        </button>
+        <span class="jukebox-loop-display" id="jb-loop-status"></span>
+        <button class="loop-btn" id="jb-loop-b" title="Marcar Fin (B)" disabled>
+            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" transform="scale(-1,1) translate(-24,0)"/></svg>
+            B
+        </button>
+        <button class="loop-btn" id="jb-loop-clear" title="Borrar Bucle" style="border-color:#f55; color:#f55; display:none;">✕</button>
+    </div>
 
-        <!-- CONTROLES ESTÁNDAR (YouTube / HTML5) -->
-        <div class="jukebox-controls" id="jukebox-std-controls">
-            <button class="jukebox-control-btn" id="jb-rewind">
-            <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
-            </button>
-            <button class="jukebox-control-btn" id="jb-play-pause">
-                <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                <svg id="icon-pause" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-            </button>
-            <button class="jukebox-control-btn" id="jb-stop">
-                <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
-            </button>
-            <button class="jukebox-control-btn" id="jb-forward">
-            <svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
-            </button>
-        </div>
+    <!-- CONTROLES ESTÁNDAR (YouTube / HTML5) -->
+    <div class="jukebox-controls" id="jukebox-std-controls">
+        <button class="jukebox-control-btn" id="jb-rewind">
+        <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+        </button>
+        <button class="jukebox-control-btn" id="jb-play-pause">
+            <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="icon-pause" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </button>
+        <button class="jukebox-control-btn" id="jb-stop">
+            <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+        </button>
+        <button class="jukebox-control-btn" id="jb-forward">
+        <svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+        </button>
     </div>
 
     <div class="jukebox-progress-container" id="jukebox-std-progress">
