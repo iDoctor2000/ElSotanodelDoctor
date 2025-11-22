@@ -8,7 +8,7 @@
    
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <!-- VIEWPORT ESTRICTO: user-scalable=no es vital -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta charset="UTF-8" />
   <title>El Sótano del Doctor – Intranet</title>
 
@@ -37,11 +37,16 @@
         color:#fff;
         padding-bottom: 80px; /* Espacio para el player */
         
-        /* BLOQUEO DE ZOOM AGRESIVO */
-        touch-action: pan-x pan-y; /* Permite scroll pero BLOQUEA pinch-zoom y doble tap */
+        /* BLOQUEO DE ZOOM AGRESIVO (NUEVO MÉTODO) */
+        touch-action: manipulation; /* Esta propiedad deshabilita ESPECÍFICAMENTE el doble toque para zoom */
         -webkit-text-size-adjust: 100%; 
         -ms-content-zooming: none;
         overscroll-behavior-y: none; /* Evita el rebote elástico en iOS */
+    }
+
+    /* Aplicar bloqueo de gestos de zoom a todos los elementos interactivos */
+    button, a, input, select, textarea {
+        touch-action: manipulation;
     }
     
     /* FIX CRÍTICO PARA IOS: Evita zoom al pulsar inputs */
@@ -595,7 +600,7 @@ document.addEventListener('touchend', function(event) {
         event.preventDefault();
     }
     lastTouchEnd = now;
-}, false);
+}, { passive: false });
 
 /* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
