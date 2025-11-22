@@ -711,17 +711,36 @@ async function saveSetlistConfig(){updateDynamicSetlistTitles();return await wit
 
 // --- JUKEBOX LOGIC ---
 let jukeboxLinks = {}; // { "Nombre Cancion": "URL" }
+let isJukeboxLoaded = false; // SAFETY FLAG
 
 async function loadJukeboxLinks() {
     try {
-        const data = await withRetry(() => loadDoc("intranet", "jukebox_links", { links: {} }));
-        jukeboxLinks = data.links || {};
+        // Intentar cargar. Si falla o no existe, loadDoc devuelve el fallback.
+        // Pero necesitamos saber si FALLÓ la red o si simplemente estaba vacío.
+        // Por eso, aquí usaremos loadDoc pero controlaremos el error.
+        const data = await withRetry(() => loadDoc("intranet", "jukebox_links", null));
+        
+        if (data) {
+            jukeboxLinks = data.links || {};
+        } else {
+            // Si devuelve null es que el documento no existe (primera vez) o error controlado
+            jukeboxLinks = {};
+        }
+        isJukeboxLoaded = true; // Carga exitosa (aunque esté vacío)
+        console.log("Jukebox links loaded:", Object.keys(jukeboxLinks).length);
     } catch (e) {
-        console.error("Error loading jukebox links:", e);
+        console.error("CRITICAL ERROR loading jukebox links:", e);
+        alert("Error crítico: No se pudieron cargar los enlaces del Jukebox. La función de guardado se ha desactivado para evitar pérdidas de datos. Recarga la página.");
+        isJukeboxLoaded = false; // Bloquear guardado
     }
 }
 
 async function saveJukeboxLinks() {
+    if (!isJukeboxLoaded) {
+        alert("Protección de datos: No se han cargado los enlaces originales, por lo que no se puede guardar para evitar sobrescribir datos. Por favor, recarga la página.");
+        return;
+    }
+
     try {
         await withRetry(() => saveDoc("intranet", "jukebox_links", { links: jukeboxLinks }));
         // Recargar tablas para actualizar iconos
@@ -730,6 +749,7 @@ async function saveJukeboxLinks() {
         cargarStarSetlist();
     } catch (e) {
         console.error("Error saving jukebox links:", e);
+        alert("Error al guardar en la nube. Verifica tu conexión.");
     }
 }
 
@@ -2273,4 +2293,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 </script>
 </body>
-</html>   
+</html>
