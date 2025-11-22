@@ -7,6 +7,7 @@
   <link rel="manifest" href="manifest.json">
    
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <!-- VIEWPORT ESTRICTO: user-scalable=no es vital -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta charset="UTF-8" />
   <title>El Sótano del Doctor – Intranet</title>
@@ -37,10 +38,17 @@
         padding-bottom: 80px; /* Espacio para el player */
         
         /* BLOQUEO DE ZOOM AGRESIVO */
-        touch-action: manipulation; /* Desactiva doble tap zoom en navegadores modernos */
-        -webkit-text-size-adjust: 100%; /* Evita ajuste de texto automático */
+        touch-action: pan-x pan-y; /* Permite scroll pero BLOQUEA pinch-zoom y doble tap */
+        -webkit-text-size-adjust: 100%; 
         -ms-content-zooming: none;
-        overflow-y: scroll; /* Mantiene scroll nativo suave */
+        overscroll-behavior-y: none; /* Evita el rebote elástico en iOS */
+    }
+    
+    /* FIX CRÍTICO PARA IOS: Evita zoom al pulsar inputs */
+    @media screen and (max-width: 768px) {
+        input, select, textarea {
+            font-size: 16px !important; /* 16px evita que iOS haga zoom al enfocar */
+        }
     }
     
     /* ---------- Splash Screen ---------- */
@@ -579,6 +587,15 @@
 document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
 document.addEventListener('gesturechange', function(e) { e.preventDefault(); }); 
 document.addEventListener('gestureend', function(e) { e.preventDefault(); });
+// NUEVO: Bloqueo de doble tap
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function(event) {
+    const now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+    }
+    lastTouchEnd = now;
+}, false);
 
 /* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
