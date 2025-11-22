@@ -24,7 +24,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <!-- YouTube API (Cargada dinámicamente en JS para control) -->
+  <!-- YouTube API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
 
   <style>
     *,*::before,*::after{box-sizing:border-box}
@@ -558,7 +559,7 @@
   <div id="user-mgmt-screen" class="config-screen"><button class="close-btn" id="close-user-mgmt">Cerrar</button><h2>Gestión de Usuarios</h2><label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label><select id="user-role" multiple><option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option><option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option><option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option><option value="Coros">Coros</option><option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option><option value="Técnico de Luces">Técnico de Luces</option><option value="Montador">Montador</option><option value="Road Manager">Road Manager</option><option value="Backliner">Backliner</option></select><button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button><p id="user-message" class="error-message"></p><table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table></div>
   <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha</label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
   <div id="admin-suggestions-screen" class="config-screen"><button class="close-btn" id="close-admin-suggestions">Cerrar</button><h2>Gestión de Propuestas (Admin)</h2><p style="color:#aaa; text-align:center;">Aquí puedes ver el historial y eliminar propuestas inadecuadas.</p><div class="table-wrapper"><table id="admin-suggestions-table"><thead><tr><th>Canción</th><th>Propuesta por</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="admin-suggestions-body"></tbody></table></div></div>
-  <div id="suggestions-screen" class="config-screen"><button class="close-btn" id="close-suggestions">Cerrar</button><h2>Propuestas de Canciones</h2><div style="text-align:center; margin-bottom:20px;"><label for="user-identity-selector" style="color:#0cf; font-weight:bold; display:block; margin-bottom:5px;">¿Quién eres? (Necesario para proponer y votar)</label><select id="user-identity-selector"><option value="" disabled selected>-- Selecciona tu nombre --</option></select></div><div class="suggestion-form"><h4 style="color:#fff; margin-top:0;">Nueva Propuesta</h4><div class="suggestion-form-row"><input type="text" id="suggestion-title" placeholder="Título de la canción"><input type="text" id="suggestion-artist" placeholder="Artista / Banda original"></div><div class="suggestion-form-row"><input type="url" id="suggestion-link" placeholder="Enlace (Spotify/Youtube) - Opcional"><button id="add-suggestion-btn" style="width:auto; flex:0 150px;">Proponer</button></div><p id="suggestion-message" class="error-message" style="text-align:left; margin:0;"></p></div><div class="suggestions-grid" id="suggestions-container"></div></div>
+  <div id="suggestions-screen" class="config-screen"><button class="close-btn" id="close-suggestions">Cerrar</button><h2>Propuestas de Canciones</h2><div style="text-align:center; margin-bottom:20px;"><label for="user-identity-selector" style="color:#0cf; font-weight:bold; display:block; margin-bottom:5px;">¿Quién eres? (Necesario para proponer y votar)</label><select id="user-identity-selector"><option value="" disabled selected>-- Selecciona tu nombre --</option></select></div><div class="suggestion-form"><h4 style="color:#fff; margin-top:0;">Nueva Propuesta</h4><div class="suggestion-form-row"><input type="text" id="suggestion-title" placeholder="Título de la canción"><input type="text" id="suggestion-artist" placeholder="Artista / Banda original"></div><div class="suggestion-form-row"><input type="url" id="suggestion-link" placeholder="Enlace (Spotify/Youtube) - Opcional"><button id="add-suggestion-btn" style="width:auto; flex:0 0 150px;">Proponer</button></div><p id="suggestion-message" class="error-message" style="text-align:left; margin:0;"></p></div><div class="suggestions-grid" id="suggestions-container"></div></div>
   <div id="stats-screen" class="config-screen"><button class="close-btn" id="close-stats">Cerrar</button><h2>Estadísticas</h2><div class="stats-filter"><label>Filtrar por mes:</label><select id="stats-month-filter"><option value="all">Todos los meses</option></select></div><div class="stats-table"><h3>Tiempo Ensayado por Mes</h3><table id="time-per-month-table"><thead><tr><th>Mes</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-month-body"></tbody></table></div><div class="stats-table"><h3>Tiempo Ensayado por Usuario</h3><table id="time-per-user-table"><thead><tr><th>Usuario</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-user-body"></tbody></table></div><div class="stats-table"><h3>Ensayos Pasados</h3><div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Asistencias</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div></div></div>
   <div id="user-list-screen" class="config-screen"><button class="close-btn" id="close-user-list-screen">Cerrar</button><h2>Usuarios Registrados</h2><div class="table-wrapper" style="padding: 0 10px;"><table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table></div></div>
 
@@ -620,6 +621,9 @@
     Tu navegador no soporta el elemento de audio.
   </audio>
 
+  <!-- Jukebox Logic (Separated) -->
+  <script src="jukebox.js"></script>
+
 <script>
 /* ---------- 0. Firebase ---------- */
 const firebaseConfig = {
@@ -654,355 +658,17 @@ const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|#
 const connectionStatus = document.getElementById("connection-status"); let isOnline = navigator.onLine; 
 function updateConnectionStatus() { isOnline = navigator.onLine; if (!isOnline) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión: Mostrando datos en caché"; connectionStatus.style.display = "block"; } else { connectionStatus.style.display = "none"; } } 
 window.addEventListener("online", updateConnectionStatus); window.addEventListener("offline", updateConnectionStatus); 
-async function withRetry(fn, maxRetries = 3, delay = 2000) { for (let i = 0; i < maxRetries; i++) { try { if (!navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión. Operación podría fallar o usar caché."; connectionStatus.style.display = "block"; } return await fn(); } catch (e) { console.error(`Intento ${i+1} fallido:`, e); if (i === maxRetries - 1 || !navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Error: Operación fallida. " + e.message; connectionStatus.style.display = "block"; throw e; } connectionStatus.className = "retrying"; connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`; connectionStatus.style.display = "block"; await new Promise(resolve => setTimeout(resolve, delay)); } } }
+window.withRetry = async function(fn, maxRetries = 3, delay = 2000) { for (let i = 0; i < maxRetries; i++) { try { if (!navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión. Operación podría fallar o usar caché."; connectionStatus.style.display = "block"; } return await fn(); } catch (e) { console.error(`Intento ${i+1} fallido:`, e); if (i === maxRetries - 1 || !navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Error: Operación fallida. " + e.message; connectionStatus.style.display = "block"; throw e; } connectionStatus.className = "retrying"; connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`; connectionStatus.style.display = "block"; await new Promise(resolve => setTimeout(resolve, delay)); } } }
 
 /* ---------- 2. Acceso Firestore ---------- */
-async function loadDoc(collection, docId, fallback) { try { const snap = await db.collection(collection).doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); return fallback; } }
-async function saveDoc(collection, docId, data, merge = false) { try { console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge); await db.collection(collection).doc(docId).set(data, { merge: merge }); console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`); return true; } catch (e) { console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); throw e; } }
-
-/* ---------- 2.5. Jukebox Logic (Firestore & Player) ---------- */
-let jukeboxLibrary = {}; 
-let ytPlayer = null;
-let isJukeboxPlaying = false;
-let jukeboxCheckInterval = null;
-
-// --- VARIABLES BUCLE A-B ---
-let jukeboxLoopA = null;
-let jukeboxLoopB = null;
-
-// Cargar librería de links desde Firestore
-async function loadJukeboxLibrary() {
-    try {
-        const data = await withRetry(() => loadDoc("intranet", "jukebox_library", { mapping: {} }));
-        jukeboxLibrary = data.mapping || {};
-    } catch (e) { console.error("Error cargando Jukebox Library:", e); }
-}
-
-// Guardar librería
-async function saveJukeboxLibrary() {
-    try {
-        await withRetry(() => saveDoc("intranet", "jukebox_library", { mapping: jukeboxLibrary }));
-        return true;
-    } catch (e) { console.error("Error guardando Jukebox:", e); return false; }
-}
-
-// Definir callback global para YouTube
-window.onYouTubeIframeAPIReady = function() {
-    console.log("YouTube API Ready");
-    ytPlayer = new YT.Player('youtube-player-placeholder', {
-        height: '0', width: '0',
-        playerVars: { 'playsinline': 1 },
-        events: {
-            'onStateChange': onPlayerStateChange,
-            'onError': onPlayerError
-        }
-    });
-};
-
-// Cargar script de YouTube manualmente para asegurar el orden
-const tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-const firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-
-function onPlayerError(event) { console.error("YouTube Player Error:", event.data); stopJukebox(); alert("Error reproduciendo video de YouTube."); }
-function onPlayerStateChange(event) {
-    const btnPlay = document.getElementById('icon-play');
-    const btnPause = document.getElementById('icon-pause');
-    if (event.data == YT.PlayerState.PLAYING) {
-        isJukeboxPlaying = true;
-        btnPlay.style.display = 'none'; btnPause.style.display = 'block';
-        startJukeboxProgressLoop();
-    } else {
-        isJukeboxPlaying = false;
-        btnPlay.style.display = 'block'; btnPause.style.display = 'none';
-        if (event.data == YT.PlayerState.ENDED) stopJukeboxProgressLoop();
-    }
-}
-
-/* Player Controls Logic */
-let currentJukeboxType = null; // 'youtube', 'html5', or 'drive-iframe'
-let currentAudioObj = null; 
-
-// --- FUNCIÓN AUXILIAR CONVERTIR DRIVE A DIRECTO ---
-function convertDriveToDirectLink(url) {
-    // Regex para detectar URL de drive y extraer ID
-    const parts = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    let id = null;
-    
-    if (parts && parts[1]) id = parts[1];
-    else {
-        const parts2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-        if (parts2 && parts2[1]) id = parts2[1];
-    }
-    
-    if (id) {
-        // Retorna el enlace de descarga directa para usar en <audio> HTML5
-        return `https://drive.google.com/uc?export=download&id=${id}`;
-    }
-    return null;
-}
-
-function openJukeboxPlayer(title, rawUrl) {
-    const playerBar = document.getElementById('jukebox-player-bar');
-    const titleEl = document.getElementById('jukebox-current-title');
-    const stdControls = document.getElementById('jukebox-std-controls');
-    const stdProgress = document.getElementById('jukebox-std-progress');
-    const iframeContainer = document.getElementById('jukebox-iframe-container');
-    const iframeEl = document.getElementById('jb-iframe');
-    const loopControls = document.querySelector('.jukebox-loop-area');
-
-    // Pausar música de fondo si suena
-    const siteAudio = document.getElementById('site-audio');
-    if(siteAudio && !siteAudio.paused) siteAudio.pause();
-
-    // Reset previous
-    stopJukebox();
-    clearLoop(); // Limpiar loops anteriores
-
-    playerBar.classList.add('visible');
-    titleEl.textContent = title;
-    
-    const url = rawUrl.trim();
-    let driveDirectLink = convertDriveToDirectLink(url);
-
-    // 1. Detect Google Drive (NUEVA LÓGICA: FORZAR MODO DIRECTO PARA LOOP)
-    if (driveDirectLink) {
-         console.log("Drive Link detectado. Usando modo directo para permitir Loop.");
-         currentJukeboxType = 'html5';
-         
-         // Restaurar controles estándar + Loop
-         stdControls.style.display = 'flex';
-         stdProgress.style.display = 'flex';
-         iframeContainer.style.display = 'none';
-         if(loopControls) loopControls.style.display = 'flex';
-
-         setupHtml5Audio(driveDirectLink);
-
-    // 2. Detect YouTube
-    } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        currentJukeboxType = 'youtube';
-        
-        // Restaurar controles estándar
-        stdControls.style.display = 'flex';
-        stdProgress.style.display = 'flex';
-        iframeContainer.style.display = 'none';
-        if(loopControls) loopControls.style.display = 'none'; // Loop no soportado en YT iframe API fácilmente
-
-        let videoId = "";
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        if (match && match[2].length == 11) { videoId = match[2]; }
-        else { alert("Link de YouTube no válido"); return; }
-
-        // Check API Ready
-        if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-            ytPlayer.loadVideoById(videoId);
-            ytPlayer.playVideo();
-        } else {
-            // Reintentar un par de veces si la API carga lento
-            let attempts = 0;
-            const checkInt = setInterval(() => {
-                attempts++;
-                if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-                    clearInterval(checkInt);
-                    ytPlayer.loadVideoById(videoId);
-                    ytPlayer.playVideo();
-                } else if (attempts > 10) {
-                    clearInterval(checkInt);
-                    alert("La API de YouTube no responde. Recarga la página.");
-                }
-            }, 500);
-        }
-
-    // 3. Detect Generic HTML5 (MP3, Dropbox, etc)
-    } else {
-        currentJukeboxType = 'html5';
-        
-        // Restaurar controles estándar
-        stdControls.style.display = 'flex';
-        stdProgress.style.display = 'flex';
-        iframeContainer.style.display = 'none';
-        if(loopControls) loopControls.style.display = 'flex';
-
-        setupHtml5Audio(url);
-    }
-}
-
-function setupHtml5Audio(srcUrl) {
-    currentAudioObj = document.getElementById('jukebox-audio-element');
-    currentAudioObj.pause();
-    currentAudioObj.removeAttribute('src');
-    currentAudioObj.load(); 
-    currentAudioObj.src = srcUrl;
-    currentAudioObj.load(); 
-    currentAudioObj.play().catch(e => { console.warn("Play catch:", e); });
-
-    currentAudioObj.onplay = () => { 
-            document.getElementById('icon-play').style.display = 'none'; 
-            document.getElementById('icon-pause').style.display = 'block';
-            startJukeboxProgressLoop();
-    };
-    currentAudioObj.onpause = () => {
-            document.getElementById('icon-play').style.display = 'block'; 
-            document.getElementById('icon-pause').style.display = 'none';
-    };
-    currentAudioObj.onended = () => { stopJukeboxProgressLoop(); };
-}
-
-function stopJukebox() {
-    if (currentJukeboxType === 'youtube' && ytPlayer && typeof ytPlayer.stopVideo === 'function') {
-        ytPlayer.stopVideo();
-    }
-    if (currentJukeboxType === 'html5' && currentAudioObj) {
-        currentAudioObj.pause();
-        currentAudioObj.currentTime = 0;
-    }
-    if (currentJukeboxType === 'drive-iframe') {
-        document.getElementById('jb-iframe').src = ""; // Matar iframe
-    }
-    stopJukeboxProgressLoop();
-    clearLoop(); // Resetear loop al cerrar
-    document.getElementById('jb-progress').value = 0;
-    document.getElementById('jb-current-time').textContent = "0:00";
-    document.getElementById('icon-play').style.display = 'block';
-    document.getElementById('icon-pause').style.display = 'none';
-}
-
-function togglePlayPauseJukebox() {
-    if (currentJukeboxType === 'youtube' && ytPlayer) {
-        const state = ytPlayer.getPlayerState();
-        if (state === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
-        else ytPlayer.playVideo();
-    } else if (currentJukeboxType === 'html5' && currentAudioObj) {
-        if (currentAudioObj.paused) currentAudioObj.play();
-        else currentAudioObj.pause();
-    }
-}
-
-function seekJukebox(percent) {
-    if (currentJukeboxType === 'youtube' && ytPlayer) {
-        const duration = ytPlayer.getDuration();
-        const seekTo = duration * (percent / 100);
-        ytPlayer.seekTo(seekTo, true);
-    } else if (currentJukeboxType === 'html5' && currentAudioObj) {
-        const duration = currentAudioObj.duration;
-        if(duration) currentAudioObj.currentTime = duration * (percent / 100);
-    }
-}
-
-// --- LÓGICA DE BUCLE (LOOP) ---
-function setLoopA() {
-    if (currentJukeboxType === 'html5' && currentAudioObj) {
-        jukeboxLoopA = currentAudioObj.currentTime;
-        document.getElementById('jb-loop-a').classList.add('active');
-        document.getElementById('jb-loop-b').disabled = false;
-        
-        // Reset B si es anterior a A
-        if (jukeboxLoopB !== null && jukeboxLoopB <= jukeboxLoopA) {
-            jukeboxLoopB = null;
-            document.getElementById('jb-loop-b').classList.remove('active');
-        }
-        updateLoopDisplay();
-    }
-}
-
-function setLoopB() {
-    if (currentJukeboxType === 'html5' && currentAudioObj) {
-        if (jukeboxLoopA === null) return;
-        if (currentAudioObj.currentTime > jukeboxLoopA) {
-            jukeboxLoopB = currentAudioObj.currentTime;
-            document.getElementById('jb-loop-b').classList.add('active');
-            document.getElementById('jb-loop-clear').style.display = 'inline-block';
-            updateLoopDisplay();
-            
-            // Saltar inmediatamente al inicio para confirmar
-            currentAudioObj.currentTime = jukeboxLoopA;
-            currentAudioObj.play();
-        } else {
-            alert("El punto B debe ser posterior al punto A");
-        }
-    }
-}
-
-function clearLoop() {
-    jukeboxLoopA = null;
-    jukeboxLoopB = null;
-    document.getElementById('jb-loop-a').classList.remove('active');
-    document.getElementById('jb-loop-b').classList.remove('active');
-    document.getElementById('jb-loop-b').disabled = true;
-    document.getElementById('jb-loop-clear').style.display = 'none';
-    updateLoopDisplay();
-}
-
-function updateLoopDisplay() {
-    const display = document.getElementById('jb-loop-status');
-    if (jukeboxLoopA !== null && jukeboxLoopB !== null) {
-        display.textContent = `${toMMSS(jukeboxLoopA)} <-> ${toMMSS(jukeboxLoopB)}`;
-    } else if (jukeboxLoopA !== null) {
-        display.textContent = `${toMMSS(jukeboxLoopA)} -> ...`;
-    } else {
-        display.textContent = "";
-    }
-}
-
-function startJukeboxProgressLoop() {
-    if (jukeboxCheckInterval) clearInterval(jukeboxCheckInterval);
-    jukeboxCheckInterval = setInterval(() => {
-        let curr = 0, total = 0;
-        if (currentJukeboxType === 'youtube' && ytPlayer && ytPlayer.getCurrentTime) {
-            curr = ytPlayer.getCurrentTime();
-            total = ytPlayer.getDuration();
-        } else if (currentJukeboxType === 'html5' && currentAudioObj) {
-            curr = currentAudioObj.currentTime;
-            total = currentAudioObj.duration;
-
-            // --- CHEQUEO DEL BUCLE EN TIEMPO REAL ---
-            if (jukeboxLoopA !== null && jukeboxLoopB !== null) {
-                if (curr >= jukeboxLoopB) {
-                    currentAudioObj.currentTime = jukeboxLoopA;
-                    // Pequeño ajuste visual
-                    curr = jukeboxLoopA; 
-                    if(currentAudioObj.paused) currentAudioObj.play();
-                }
-            }
-        }
-
-        if (total > 0) {
-            const pct = (curr / total) * 100;
-            document.getElementById('jb-progress').value = pct;
-            document.getElementById('jb-current-time').textContent = toMMSS(curr);
-            document.getElementById('jb-total-time').textContent = toMMSS(total);
-        }
-    }, 200); // Aumentada frecuencia para mejor loop
-}
-
-function stopJukeboxProgressLoop() {
-    if (jukeboxCheckInterval) clearInterval(jukeboxCheckInterval);
-}
-
-// Event Listeners Player Bar
-document.getElementById('jukebox-close-player').onclick = () => {
-    stopJukebox();
-    document.getElementById('jukebox-player-bar').classList.remove('visible');
-};
-document.getElementById('jb-play-pause').onclick = togglePlayPauseJukebox;
-document.getElementById('jb-stop').onclick = stopJukebox;
-document.getElementById('jb-progress').oninput = (e) => seekJukebox(e.target.value);
-document.getElementById('jb-rewind').onclick = () => { seekJukebox(parseFloat(document.getElementById('jb-progress').value) - 5); }; // Aprox rewind
-document.getElementById('jb-forward').onclick = () => { seekJukebox(parseFloat(document.getElementById('jb-progress').value) + 5); };
-
-// Listeners Bucle
-document.getElementById('jb-loop-a').onclick = setLoopA;
-document.getElementById('jb-loop-b').onclick = setLoopB;
-document.getElementById('jb-loop-clear').onclick = clearLoop;
+window.loadDoc = async function(collection, docId, fallback) { try { const snap = await db.collection(collection).doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); return fallback; } }
+window.saveDoc = async function(collection, docId, data, merge = false) { try { console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge); await db.collection(collection).doc(docId).set(data, { merge: merge }); console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`); return true; } catch (e) { console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); throw e; } }
 
 /* ---------- 3. Configuración Setlists ---------- */
 let setlistConfig = {setlist1:{name:"Setlist Predeterminado Ensayo",url:"URL_POR_CONFIGURAR_1"},setlist2:{name:"Setlist Predeterminado Próximo Concierto",url:"URL_POR_CONFIGURAR_2"},setlistStar:{name:"Setlist Predeterminado Concierto Estrella",url:"URL_POR_CONFIGURAR_STAR"}};
 function updateDynamicSetlistTitles(){document.getElementById("setlist1-dynamic-name").textContent=setlistConfig.setlist1.name;document.getElementById("second-setlist-dynamic-name").textContent=setlistConfig.setlist2.name;document.getElementById("star-setlist-dynamic-name").textContent=setlistConfig.setlistStar.name}
-async function loadSetlistConfig(){try{const data=await withRetry(()=>loadDoc("intranet","setlists",{config:setlistConfig}));setlistConfig={setlist1:data.config?.setlist1||setlistConfig.setlist1,setlist2:data.config?.setlist2||setlistConfig.setlist2,setlistStar:data.config?.setlistStar||setlistConfig.setlistStar};updateDynamicSetlistTitles()}catch(e){console.error("Error al cargar la configuración de setlists:",e);updateDynamicSetlistTitles()}}
-async function saveSetlistConfig(){updateDynamicSetlistTitles();return await withRetry(()=>saveDoc("intranet","setlists",{config:setlistConfig}))}
+async function loadSetlistConfig(){try{const data=await window.withRetry(()=>window.loadDoc("intranet","setlists",{config:setlistConfig}));setlistConfig={setlist1:data.config?.setlist1||setlistConfig.setlist1,setlist2:data.config?.setlist2||setlistConfig.setlist2,setlistStar:data.config?.setlistStar||setlistConfig.setlistStar};updateDynamicSetlistTitles()}catch(e){console.error("Error al cargar la configuración de setlists:",e);updateDynamicSetlistTitles()}}
+async function saveSetlistConfig(){updateDynamicSetlistTitles();return await window.withRetry(()=>window.saveDoc("intranet","setlists",{config:setlistConfig}))}
 async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
     const CACHE_KEY = `cache_setlist_${tbodyId}`;
     let rawData = null;
@@ -1078,14 +744,14 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     // Helper for Jukebox Cell (NUEVO ICONO AURICULARES + LÓGICA DIRECTA)
     const createJukeboxCell = (songName) => {
         const cleanName = sanitizeFirebaseKey(songName);
-        const url = jukeboxLibrary[cleanName];
+        // Acceso global a jukeboxLibrary definido en jukebox.js
+        const url = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : null;
         const hasLink = !!url;
         const statusClass = hasLink ? 'active' : 'inactive';
         const safeName = songName.replace(/'/g, "\\'");
         
-        // Si tiene link, reproduce directo. Si no, abre modal editar.
         const clickAction = hasLink 
-            ? `openJukeboxPlayer('${safeName}', '${url}')` 
+            ? `window.openJukeboxPlayer('${safeName}', '${url}')` 
             : `openJukeboxEditModal('${safeName}')`;
 
         return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
@@ -1133,10 +799,10 @@ const jukeboxEditModal = document.getElementById('jukebox-edit-modal');
 function openJukeboxEditModal(songName) {
     currentEditingSongName = songName;
     const cleanName = sanitizeFirebaseKey(songName);
-    const currentLink = jukeboxLibrary[cleanName] || "";
+    const currentLink = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : "";
     
     document.getElementById('jb-modal-songname').textContent = songName;
-    document.getElementById('jb-modal-url-input').value = currentLink;
+    document.getElementById('jb-modal-url-input').value = currentLink || "";
     
     jukeboxEditModal.classList.add('show');
 }
@@ -1146,16 +812,18 @@ document.getElementById('jb-modal-save-btn').onclick = async () => {
     const url = document.getElementById('jb-modal-url-input').value.trim();
     const cleanName = sanitizeFirebaseKey(currentEditingSongName);
     
-    if (url) {
-        jukeboxLibrary[cleanName] = url;
-    } else {
-        delete jukeboxLibrary[cleanName];
+    if (window.jukeboxLibrary) {
+        if (url) {
+            window.jukeboxLibrary[cleanName] = url;
+        } else {
+            delete window.jukeboxLibrary[cleanName];
+        }
+        
+        await window.saveJukeboxLibrary();
+        
+        // Recargar tablas para actualizar colores y lógica
+        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
     }
-    
-    await saveJukeboxLibrary();
-    
-    // Recargar tablas para actualizar colores y lógica
-    await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
     jukeboxEditModal.classList.remove('show');
 };
 
@@ -1177,7 +845,9 @@ function renderJukeboxMgmtTable() {
     const tbody = document.getElementById('jukebox-mgmt-body');
     tbody.innerHTML = "";
     
-    const keys = Object.keys(jukeboxLibrary).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    if(!window.jukeboxLibrary) return;
+
+    const keys = Object.keys(window.jukeboxLibrary).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 
     if (keys.length === 0) {
         tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay canciones con enlace.</td></tr>";
@@ -1185,7 +855,7 @@ function renderJukeboxMgmtTable() {
     }
 
     keys.forEach(key => {
-        const url = jukeboxLibrary[key];
+        const url = window.jukeboxLibrary[key];
         // Intentamos 'adivinar' el nombre real reemplazando _ por espacio, 
         // aunque lo ideal sería guardar el nombre real. Para admin, esto sirve.
         const displayName = key.replace(/_/g, " "); 
@@ -1203,10 +873,10 @@ function renderJukeboxMgmtTable() {
     });
 }
 
-async function deleteJukeboxLink(cleanKey) {
+window.deleteJukeboxLink = async function(cleanKey) {
     if(confirm("¿Eliminar el enlace de esta canción?")) {
-        delete jukeboxLibrary[cleanKey];
-        await saveJukeboxLibrary();
+        delete window.jukeboxLibrary[cleanKey];
+        await window.saveJukeboxLibrary();
         renderJukeboxMgmtTable(); // Refrescar tabla admin
         // Refrescar setlists principales para apagar el icono
         await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
@@ -1217,8 +887,8 @@ async function deleteJukeboxLink(cleanKey) {
 /* ---------- 6. Usuarios ---------- */
 let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
 function renderUsers() { const tbodyMgmt=document.getElementById("user-table-body");const tbodyDisplay=document.getElementById("users-body");if(tbodyMgmt)tbodyMgmt.innerHTML="";if(tbodyDisplay)tbodyDisplay.innerHTML="";if(!Array.isArray(users)||users.length===0){const emptyMsgMgmt='<tr><td colspan="4">No hay usuarios registrados.</td></tr>';const emptyMsgDisplay='<tr><td colspan="3">No hay usuarios registrados.</td></tr>';if(tbodyMgmt)tbodyMgmt.innerHTML=emptyMsgMgmt;if(tbodyDisplay)tbodyDisplay.innerHTML=emptyMsgDisplay;return} users.forEach((u,i)=>{if(!u||typeof u!=='object'||!u.name||!u.nickname||!Array.isArray(u.roles)){console.warn(`Usuario inválido en la posición ${i}:`,u);return} const rolesDisplay=u.roles.join(", ");if(tbodyMgmt){tbodyMgmt.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`)} if(tbodyDisplay){tbodyDisplay.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`)}});if(tbodyMgmt){tbodyMgmt.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{const userIndex=parseInt(btn.dataset.i,10);const userToDelete=users[userIndex];if(confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)){rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance=r.attendance.filter(a=>a.name!==userToDelete.name)}});users.splice(userIndex,1);await saveUsers();await saveRehearsals();renderStats()}});tbodyMgmt.querySelectorAll(".edit-user").forEach(btn=>btn.onclick=()=>{editingUserIndex=parseInt(btn.dataset.i,10);const user=users[editingUserIndex];document.getElementById("user-name").value=user.name;document.getElementById("user-nickname").value=user.nickname;const roleSelect=document.getElementById("user-role");Array.from(roleSelect.options).forEach(option=>{option.selected=user.roles.includes(option.value)});document.getElementById("add-user").textContent="Guardar Cambios";document.getElementById("cancel-edit-user").style.display="inline-block"})}}
-async function loadUsers() { try { const data = await withRetry(() => loadDoc("intranet", "users", { users: [] })); users = Array.isArray(data.users) ? data.users : []; users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles)); renderUsers(); populateIdentitySelector(); } catch (e) { console.error("Error al cargar usuarios:", e); } }
-async function saveUsers() { try { await withRetry(() => saveDoc("intranet", "users", { users })); renderUsers(); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar usuarios:", e); throw e; } }
+async function loadUsers() { try { const data = await window.withRetry(() => window.loadDoc("intranet", "users", { users: [] })); users = Array.isArray(data.users) ? data.users : []; users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles)); renderUsers(); populateIdentitySelector(); } catch (e) { console.error("Error al cargar usuarios:", e); } }
+async function saveUsers() { try { await window.withRetry(() => window.saveDoc("intranet", "users", { users })); renderUsers(); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar usuarios:", e); throw e; } }
 function resetUserForm() { document.getElementById("user-name").value = ""; document.getElementById("user-nickname").value = ""; const roleSelect = document.getElementById("user-role"); Array.from(roleSelect.options).forEach(option => option.selected = false); document.getElementById("add-user").textContent = "Añadir Usuario"; document.getElementById("cancel-edit-user").style.display = "none"; editingUserIndex = null; }
 
 function populateIdentitySelector() {
@@ -1320,8 +990,8 @@ document.getElementById('save-rehearsal-details').onclick = async () => {
     }
 };
 
-async function loadRehearsals() { try { const data = await withRetry(() => loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); } catch (e) { console.error("Error al cargar ensayos:", e); } }
-async function saveRehearsals() { try { await withRetry(() => saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar ensayos:", e); throw e; } }
+async function loadRehearsals() { try { const data = await window.withRetry(() => window.loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); } catch (e) { console.error("Error al cargar ensayos:", e); } }
+async function saveRehearsals() { try { await window.withRetry(() => window.saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar ensayos:", e); throw e; } }
 function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; }
 
 /* ---------- 8. Estadísticas ---------- */
@@ -1409,7 +1079,7 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     }
 
     try {
-        const details = await withRetry(() => loadDoc('concert_details', concertId, {}));
+        const details = await window.withRetry(() => window.loadDoc('concert_details', concertId, {}));
         if (details && Object.keys(details).length > 0) {
             document.getElementById('concert-detail-location').value = details.locationDetails || '';
             document.getElementById('concert-detail-sound-company').value = details.soundCompany || ''; 
@@ -1481,7 +1151,7 @@ document.getElementById('save-concert-details').onclick = async () => {
     };
     
     try {
-        await withRetry(() => saveDoc('concert_details', concertId, concertData, true));
+        await window.withRetry(() => window.saveDoc('concert_details', concertId, concertData, true));
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente.";
         
@@ -2086,8 +1756,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateConnectionStatus();
   try {
       console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
-      // IMPORTANTE: Cargar librería Jukebox antes de los setlists
-      await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), loadJukeboxLibrary()]);
+      // IMPORTANTE: Cargar librería Jukebox
+      if(window.loadJukeboxLibrary) {
+          await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary()]);
+      } else {
+          // Fallback si el script tarda en cargar
+          setTimeout(() => { 
+              if(window.loadJukeboxLibrary) window.loadJukeboxLibrary();
+          }, 1000);
+          await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
+      }
       console.log("[DOMContentLoaded] Configuración, usuarios, ensayos y Jukebox cargados.");
   } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
 
