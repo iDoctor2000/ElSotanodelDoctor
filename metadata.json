@@ -1,0 +1,7 @@
+{
+  "name": "El Sótano del Doctor - Intranet DEF",
+  "description": "Intranet de gestión para la banda El Sótano del Doctor, incluyendo setlists, calendario y herramientas de gestión.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
