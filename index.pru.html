@@ -537,6 +537,53 @@
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
 
+  <!-- CRITICAL UI SCRIPT: Makes menu interactive immediately while heavy scripts load below -->
+  <script id="critical-ui-script">
+      (function() {
+          var sidebar = document.getElementById("sidebar-menu");
+          var overlay = document.getElementById("overlay");
+          var hamburger = document.getElementById("hamburger-btn");
+          var closeBtn = document.getElementById("menu-cerrar");
+          var calendarBtn = document.getElementById("header-calendar-btn");
+          
+          function closeMenu() {
+              sidebar.classList.remove("show");
+              overlay.classList.remove("show");
+              document.querySelectorAll(".config-screen").forEach(function(s){s.style.display="none"});
+              document.querySelectorAll(".modal-backdrop").forEach(function(s){s.classList.remove("show")});
+              document.body.style.overflow = '';
+          }
+
+          if(hamburger) {
+              hamburger.onclick = function() {
+                  sidebar.classList.add("show");
+                  overlay.classList.add("show");
+              };
+          }
+          if(closeBtn) {
+              closeBtn.onclick = function(e) {
+                  e.preventDefault();
+                  closeMenu();
+              };
+          }
+          if(overlay) {
+              overlay.onclick = closeMenu;
+          }
+          if(calendarBtn) {
+              calendarBtn.onclick = function() {
+                   closeMenu();
+                   var target = document.getElementById('vista-calendario-mensual');
+                   if(target) { 
+                       var headerOffset = 60; 
+                       var elementPosition = target.getBoundingClientRect().top; 
+                       var offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; 
+                       window.scrollTo({top: offsetPosition, behavior: "smooth"}); 
+                   }
+              };
+          }
+      })();
+  </script>
+
   <div id="concert-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Detalles del Concierto</h3><h4 id="concert-detail-title-display"></h4><input type="hidden" id="concert-detail-id"><label for="concert-detail-location">Detalles adicionales de la ubicación:</label><textarea id="concert-detail-location"></textarea><label for="concert-detail-gmaps-link">Enlace de Google Maps (Lugar Evento):</label><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;"><input type="url" id="concert-detail-gmaps-link" placeholder="https://maps.app.goo.gl/example" style="flex-grow: 1; margin-bottom: 0;"><button id="open-gmaps-link-btn" style="display:none; padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; line-height: 1.5;">Abrir Mapa</button></div><div class="modal-field-group"><div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div><div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div></div><div class="modal-field-group"><div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div><div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div></div><label for="concert-detail-notes">Notas generales:</label><textarea id="concert-detail-notes"></textarea><label for="concert-detail-sound-company">Empresa de Sonorización:</label><input type="text" id="concert-detail-sound-company" placeholder="Nombre de la empresa o técnico externo"><h4>Músicos Asistentes</h4><div id="musicians-attendance-list"></div><h4>Técnicos Responsables</h4><div id="technicians-attendance-list" style="border: 1px solid #333; padding: 10px; margin-bottom:15px;"></div><button id="save-concert-details">Guardar Detalles</button><button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button><p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="rehearsal-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Información del Ensayo</h3><h4 id="rehearsal-detail-title-display"></h4><input type="hidden" id="rehearsal-detail-index"><label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label><textarea id="rehearsal-notes" style="min-height: 400px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea><button id="save-rehearsal-details">Guardar Información</button><button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button><p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="setlist-config-screen" class="config-screen"><button class="close-btn" id="close-setlist-config">Cerrar</button><h2>Configuración de Setlists</h2><h3>Setlist Próximo Ensayo</h3><label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025"><label>ID/URL feed</label><input id="setlist1-url" placeholder="URL"><h3>Setlist Próximo Concierto</h3><label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad"><label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa"><h3>Setlist Concierto Estrella</h3><label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025"><label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL"><button id="guardar-setlist-config">Guardar Configuración</button><p id="setlist-message" class="error-message"></p></div>
@@ -619,9 +666,9 @@
       <p id="total-time-star"></p>
     </section>
     <section id="calendario"> <h2>Próximos Conciertos</h2> 
-        <!-- OPTIMIZACIÓN: Contenedor vacío. El script se inyecta via JS para no bloquear la carga inicial -->
+        <!-- RESTAURADO: Script síncrono para asegurar la carga de la tabla -->
         <div id="bandhelper-concerts-container"> 
-             <p id="bandhelper-loading-message" style="display:none; color:#aaa; font-size:0.9em;">Cargando conciertos...</p>
+             <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script>
         </div> 
     </section>
 
@@ -657,7 +704,6 @@ const firebaseConfig = {
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
 if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { const banner = document.getElementById('firebase-critical-error-banner'); if (banner) banner.style.display = 'block'; console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");}
-// Firebase initialization moved to DOMContentLoaded for safety with deferred scripts
 
 /* ---------- 1. Utilidades y Variables Globales ---------- */
 let globalItems1 = [];
@@ -683,7 +729,7 @@ window.addEventListener("online", updateConnectionStatus); window.addEventListen
 window.withRetry = async function(fn, maxRetries = 3, delay = 2000) { for (let i = 0; i < maxRetries; i++) { try { if (!navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión. Operación podría fallar o usar caché."; connectionStatus.style.display = "block"; } return await fn(); } catch (e) { console.error(`Intento ${i+1} fallido:`, e); if (i === maxRetries - 1 || !navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Error: Operación fallida. " + e.message; connectionStatus.style.display = "block"; throw e; } connectionStatus.className = "retrying"; connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`; connectionStatus.style.display = "block"; await new Promise(resolve => setTimeout(resolve, delay)); } } }
 
 /* ---------- 2. Acceso Firestore ---------- */
-let db; // Defined globally, initialized in DOMContentLoaded
+let db; 
 window.loadDoc = async function(collection, docId, fallback) { try { const snap = await db.collection(collection).doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); return fallback; } }
 window.saveDoc = async function(collection, docId, data, merge = false) { try { console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge); await db.collection(collection).doc(docId).set(data, { merge: merge }); console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`); return true; } catch (e) { console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); throw e; } }
 
@@ -712,7 +758,6 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
             const titleEl = document.getElementById(totalTimeId).previousElementSibling.previousElementSibling;
             if(titleEl) titleEl.innerHTML += " <span style='color:orange; font-size:0.8em;'>(⚠️ Modo Offline)</span>";
         } else {
-            // Quiet fail if initial load and no internet
             return [];
         }
     }
@@ -765,7 +810,6 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     // Helper for Jukebox Cell (NUEVO ICONO AURICULARES + LÓGICA DIRECTA)
     const createJukeboxCell = (songName) => {
         const cleanName = sanitizeFirebaseKey(songName);
-        // Acceso global a jukeboxLibrary definido en jukebox.js
         const url = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : null;
         const hasLink = !!url;
         const statusClass = hasLink ? 'active' : 'inactive';
@@ -1613,41 +1657,8 @@ document.getElementById('live-content-area').onclick = (e) => {
 /* ---------- 12. Carga inicial & Lógica Audio Global y Splash ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
   
-  /* --- OPTIMIZACIÓN: Inyectar Widget BandHelper de forma diferida --- */
-  // Esto evita que la carga del widget bloquee la UI inicial
-  setTimeout(() => {
-      console.log("Inyectando Widget BandHelper diferido...");
-      const container = document.getElementById('bandhelper-concerts-container');
-      if(container) {
-          const loading = document.getElementById('bandhelper-loading-message');
-          if(loading) loading.style.display = 'block';
-          
-          const script = document.createElement('script');
-          script.src = "https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6";
-          script.async = true;
-          script.onload = () => { if(loading) loading.style.display = 'none'; };
-          container.appendChild(script);
-      }
-  }, 100);
-
-  /* --- OPTIMIZACIÓN: Bind Event Listeners INMEDIATAMENTE --- */
-  // Esto asegura que los botones funcionen antes de que Firebase o los datos carguen
-  document.getElementById("hamburger-btn").onclick = () => { 
-      document.getElementById("sidebar-menu").classList.add("show"); 
-      document.getElementById("overlay").classList.add("show"); 
-  };
+  // Clean previous optimization attempt that failed
   
-  document.getElementById('header-calendar-btn').onclick = () => {
-     const target = document.getElementById('vista-calendario-mensual');
-     closeAll();
-     if(target) { 
-         const headerOffset = 60; 
-         const elementPosition = target.getBoundingClientRect().top; 
-         const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; 
-         window.scrollTo({top: offsetPosition, behavior: "smooth"}); 
-     }
-  };
-
   /* --- Inicialización de Firebase Diferida --- */
   try {
       if (typeof firebase !== 'undefined') {
@@ -1932,7 +1943,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       setTimeout(() => { 
           processBandHelperTable(); 
           renderVisualCalendar();
-      }, 3000);
+      }, 1000);
   }
 
 /* ---------- 13. Lógica Calendario Visual (INTERACTIVO) ---------- */
