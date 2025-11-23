@@ -410,6 +410,90 @@
         .live-song-title { font-size: 2.2em; }
         .live-song-meta { font-size: 1.5em; flex-direction: column; gap: 10px; }
     }
+
+    /* --- ESTILOS AFINADOR (TUNER) --- */
+    .tuner-content {
+        background: #111;
+        border: 2px solid #333;
+        box-shadow: 0 0 30px rgba(0,0,0,0.9), inset 0 0 50px #000;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .tuner-display {
+        margin: 20px 0;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .tuner-note {
+        font-size: 5em;
+        font-weight: bold;
+        color: #f00;
+        text-shadow: 0 0 20px rgba(255,0,0,0.5);
+        font-family: monospace;
+        line-height: 1;
+        margin-bottom: 10px;
+        min-height: 1em;
+    }
+    .tuner-freq {
+        font-size: 1.2em;
+        color: #777;
+        font-family: monospace;
+        margin-bottom: 20px;
+    }
+    .tuner-gauge {
+        width: 250px;
+        height: 15px;
+        background: #222;
+        border-radius: 10px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 0 10px #000;
+        border: 1px solid #444;
+    }
+    .tuner-center-marker {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        background: #555;
+        transform: translateX(-50%);
+        z-index: 1;
+    }
+    .tuner-needle {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        width: 4px;
+        height: 100%;
+        background: #fff;
+        box-shadow: 0 0 10px #fff;
+        transform: translateX(-50%);
+        transition: transform 0.1s ease-out;
+        z-index: 2;
+    }
+    #tuner-status-text {
+        margin-top: 10px;
+        color: #777;
+        font-size: 0.9em;
+        font-style: italic;
+        min-height: 1.2em;
+    }
+    #close-tuner-btn {
+        background: #333;
+        color: #aaa;
+        margin-top: 20px;
+        width: 100%;
+        border: 1px solid #444;
+    }
+    #close-tuner-btn:hover {
+        background: #444;
+        color: #fff;
+    }
   </style>
 <script type="importmap">
 {
@@ -522,6 +606,15 @@
     </div>
     <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
     <div class="header-controls-right">
+        <!-- BOTÓN AFINADOR -->
+        <button id="header-tuner-btn" class="header-icon-btn" title="Afinador">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3h-1V2h-2v1H8V2H6v1H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10v5h2v-5H9zm4 0v5h2v-5h-2z"/>
+                <!-- Icono más parecido a diapasón -->
+                <path d="M15 2H9v2H7v6h2v12h2V10h2V2zM9 4h6v4H9V4z" transform="translate(0, 2)"/> 
+            </svg>
+        </button>
+
         <button id="site-audio-control-button" class="header-icon-btn" title="Activar sonido"> 
             <svg class="icon-muted" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/>
@@ -660,6 +753,22 @@
       </div>
   </div>
 
+  <!-- TUNER MODAL (NUEVO) -->
+  <div id="tuner-modal" class="modal-backdrop" style="z-index: 13000;">
+      <div class="modal-content tuner-content" style="max-width: 400px;">
+          <div class="tuner-display">
+              <div id="tuner-note" class="tuner-note">-</div>
+              <div id="tuner-freq" class="tuner-freq">0 Hz</div>
+              <div class="tuner-gauge">
+                  <div id="tuner-needle" class="tuner-needle"></div>
+                  <div class="tuner-center-marker"></div>
+              </div>
+              <div id="tuner-status-text"></div>
+          </div>
+          <button id="close-tuner-btn">Apagar Afinador</button>
+      </div>
+  </div>
+
   <div id="user-mgmt-screen" class="config-screen"><button class="close-btn" id="close-user-mgmt">Cerrar</button><h2>Gestión de Usuarios</h2><label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label><select id="user-role" multiple><option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option><option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option><option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option><option value="Coros">Coros</option><option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option><option value="Técnico de Luces">Técnico de Luces</option><option value="Montador">Montador</option><option value="Road Manager">Road Manager</option><option value="Backliner">Backliner</option></select><button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button><p id="user-message" class="error-message"></p><table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table></div>
   <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha</label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
   <div id="admin-suggestions-screen" class="config-screen"><button class="close-btn" id="close-admin-suggestions">Cerrar</button><h2>Gestión de Propuestas (Admin)</h2><p style="color:#aaa; text-align:center;">Aquí puedes ver el historial y eliminar propuestas inadecuadas.</p><div class="table-wrapper"><table id="admin-suggestions-table"><thead><tr><th>Canción</th><th>Propuesta por</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="admin-suggestions-body"></tbody></table></div></div>
@@ -730,7 +839,9 @@
   </audio>
 
   <!-- Jukebox Logic (Separated) -->
-  <script src="jukebox.js"></script>
+  <script src="jukebox.js" defer></script>
+  <!-- Tuner Logic (Separated) -->
+  <script src="tuner.js" defer></script>
 
 <script>
 /* ---------- 0. Firebase ---------- */
