@@ -2,17 +2,19 @@
    JUKEBOX.JS
    Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
    + Funcionalidad de Marcadores
+   + Inyección UI (Velocidad, Minimizar, Start Offset) sin tocar HTML
 */
 
 // Variables Globales del Jukebox
 let jukeboxLibrary = {}; 
-let jukeboxMarkers = {}; // NUEVA VARIABLE PARA MARCADORES
+let jukeboxMarkers = {}; 
+let jukeboxOffsets = {}; // NUEVO: Offset de inicio
 let ytPlayer = null;
 let isJukeboxPlaying = false;
 let jukeboxCheckInterval = null;
-let currentJukeboxType = null; // 'youtube', 'html5', or 'drive-iframe'
+let currentJukeboxType = null; 
 let currentAudioObj = null; 
-let currentSongKey = null; // Para saber a qué canción asociar el marcador
+let currentSongKey = null; 
 
 // Variables Bucle A-B
 let jukeboxLoopA = null;
@@ -21,34 +23,141 @@ let jukeboxLoopB = null;
 // Variable de estado para el nuevo marcador (modal)
 let pendingMarkerState = null;
 
-// Helper para sanitize (copiado aquí para evitar dependencias)
+// Variables nuevas funcionalidades
+let currentSpeed = 1.0;
+let isMinimized = false;
+
+// Helper para sanitize
 const sanitizeJukeboxKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
 
-// Exponer funciones al objeto window para que funcionen los onclick del HTML
+// Exponer funciones al objeto window
 window.jukeboxLibrary = jukeboxLibrary;
+
+/* --- 0. INYECCIÓN DE ESTILOS Y UI (NO TOCAR INDEX.HTML) --- */
+
+window.injectJukeboxStyles = function() {
+    const styleId = 'jukebox-extra-styles';
+    if (document.getElementById(styleId)) return;
+
+    const css = `
+        /* Botones Extra (Velocidad y Offset) */
+        .jukebox-extra-btn {
+            font-size: 0.8em; font-weight: bold; color: #0cf; 
+            border: 1px solid #0cf; background: rgba(0,0,0,0.3);
+            border-radius: 4px; padding: 4px 6px; cursor: pointer;
+            text-align: center; margin-left: 8px; min-width: 35px;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+        }
+        .jukebox-extra-btn:hover { background: #0cf; color: #000; }
+        .jukebox-extra-btn.active { background: #0cf; color: #000; box-shadow: 0 0 8px #0cf; }
+
+        /* Botón Minimizar */
+        .jukebox-minimize-btn {
+            background: none; border: none; color: #aaa; cursor: pointer; 
+            font-size: 1.2em; padding: 0 8px; line-height: 1;
+        }
+        .jukebox-minimize-btn:hover { color: #fff; }
+
+        /* Estilos Modo Minimizado */
+        #jukebox-player-bar.minimized {
+            top: auto !important; bottom: 0 !important; left: 0 !important;
+            transform: none !important;
+            width: 100% !important; max-width: 100% !important;
+            border-radius: 0 !important;
+            border-top: 1px solid #0cf; border-bottom: none; border-left: none; border-right: none;
+            padding: 10px 20px !important;
+            flex-direction: row; flex-wrap: wrap; justify-content: space-between;
+        }
+        
+        #jukebox-player-bar.minimized .jukebox-info {
+            width: auto; margin-bottom: 0; flex: 1; margin-right: 10px;
+        }
+        
+        #jukebox-player-bar.minimized .jukebox-loop-area,
+        #jukebox-player-bar.minimized .jukebox-markers-area,
+        #jukebox-player-bar.minimized .jukebox-progress-container {
+            display: none !important; 
+        }
+        
+        #jukebox-player-bar.minimized .jukebox-controls {
+            gap: 10px;
+        }
+        
+        @media(max-width: 768px) {
+            #jukebox-player-bar.minimized { padding: 10px !important; }
+            #jukebox-player-bar.minimized .jukebox-song-title { font-size: 0.9em; max-width: 150px; }
+        }
+    `;
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.innerHTML = css;
+    document.head.appendChild(style);
+};
+
+window.injectExtraControls = function() {
+    // 1. Botón Minimizar
+    const infoArea = document.querySelector('#jukebox-player-bar .jukebox-info');
+    const closeBtn = document.getElementById('jukebox-close-player');
+    
+    if (infoArea && closeBtn && !document.getElementById('jb-minimize-btn')) {
+        const minBtn = document.createElement('button');
+        minBtn.id = 'jb-minimize-btn';
+        minBtn.className = 'jukebox-minimize-btn';
+        minBtn.innerHTML = '&#95;'; 
+        minBtn.title = "Minimizar / Restaurar";
+        minBtn.onclick = window.toggleMinimize;
+        infoArea.insertBefore(minBtn, closeBtn);
+    }
+
+    // 2. Botones Velocidad y Offset en controles
+    const controlsArea = document.getElementById('jukebox-std-controls');
+    if (controlsArea) {
+        // Botón Start Offset
+        if (!document.getElementById('jb-offset-btn')) {
+            const offsetBtn = document.createElement('button');
+            offsetBtn.id = 'jb-offset-btn';
+            offsetBtn.className = 'jukebox-extra-btn';
+            offsetBtn.innerHTML = '⏱'; 
+            offsetBtn.title = "Fijar inicio aquí (Start Offset)";
+            offsetBtn.onclick = window.setStartOffset;
+            controlsArea.appendChild(offsetBtn);
+        }
+
+        // Botón Velocidad
+        if (!document.getElementById('jb-speed-btn')) {
+            const speedBtn = document.createElement('button');
+            speedBtn.id = 'jb-speed-btn';
+            speedBtn.className = 'jukebox-extra-btn';
+            speedBtn.textContent = '1.0x';
+            speedBtn.title = "Cambiar Velocidad";
+            speedBtn.onclick = window.cycleSpeed;
+            controlsArea.appendChild(speedBtn);
+        }
+    }
+};
 
 /* --- 1. GESTIÓN DE LIBRERÍA (FIRESTORE) --- */
 
-// Cargar librería
 window.loadJukeboxLibrary = async function() {
     try {
         if (typeof window.loadDoc === 'function') {
-            const data = await window.withRetry(() => window.loadDoc("intranet", "jukebox_library", { mapping: {}, markers: {} }));
+            const data = await window.withRetry(() => window.loadDoc("intranet", "jukebox_library", { mapping: {}, markers: {}, offsets: {} }));
             window.jukeboxLibrary = data.mapping || {};
-            jukeboxMarkers = data.markers || {}; // Cargamos marcadores
-            console.log("Jukebox Library cargada:", Object.keys(window.jukeboxLibrary).length, "canciones.");
+            jukeboxMarkers = data.markers || {};
+            jukeboxOffsets = data.offsets || {}; // Cargar offsets
+            console.log("Jukebox Library cargada.");
         }
     } catch (e) { console.error("Error cargando Jukebox Library:", e); }
 };
 
-// Guardar librería
 window.saveJukeboxLibrary = async function() {
     try {
         if (typeof window.saveDoc === 'function') {
-            // Guardamos ambos objetos
             await window.withRetry(() => window.saveDoc("intranet", "jukebox_library", { 
                 mapping: window.jukeboxLibrary,
-                markers: jukeboxMarkers 
+                markers: jukeboxMarkers,
+                offsets: jukeboxOffsets // Guardar offsets
             }));
             return true;
         }
@@ -93,7 +202,6 @@ function onPlayerStateChange(event) {
 
 /* --- 3. LOGICA DEL REPRODUCTOR --- */
 
-// Helper: Convertir enlace de Drive a Directo (Intento)
 window.convertDriveToDirectLink = function(url) {
     let id = null;
     const parts = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -105,15 +213,12 @@ window.convertDriveToDirectLink = function(url) {
     }
     
     if (id) {
-        // Usamos un proxy de google docs que suele ir mejor para streaming que drive.google.com
         return `https://docs.google.com/uc?export=download&id=${id}`;
     }
     return null;
 };
 
-// Helper: Convertir enlace de Dropbox a Directo (NUEVO)
 window.convertDropboxLink = function(url) {
-    // Reemplaza dl=0 por raw=1 para streaming directo
     if (url.includes('dropbox.com')) {
         return url.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
     }
@@ -121,7 +226,7 @@ window.convertDropboxLink = function(url) {
 };
 
 window.openJukeboxPlayer = function(title, rawUrl) {
-    currentSongKey = sanitizeJukeboxKey(title); // Guardar referencia para marcadores
+    currentSongKey = sanitizeJukeboxKey(title);
 
     const playerBar = document.getElementById('jukebox-player-bar');
     const titleEl = document.getElementById('jukebox-current-title');
@@ -130,63 +235,70 @@ window.openJukeboxPlayer = function(title, rawUrl) {
     const iframeContainer = document.getElementById('jukebox-iframe-container');
     const loopControls = document.querySelector('.jukebox-loop-area');
     const markersArea = document.getElementById('jukebox-markers-area');
-    const iframeEl = document.getElementById('jb-iframe');
+    
+    // Reset Speed UI
+    currentSpeed = 1.0;
+    const speedBtn = document.getElementById('jb-speed-btn');
+    if(speedBtn) speedBtn.textContent = '1.0x';
 
-    // Pausar música de fondo del sitio si suena
+    // Update Offset UI
+    const offsetBtn = document.getElementById('jb-offset-btn');
+    if(offsetBtn) {
+        const savedOffset = jukeboxOffsets[currentSongKey];
+        if(savedOffset && savedOffset > 0) {
+            offsetBtn.classList.add('active');
+            offsetBtn.innerHTML = '⏱ ' + Math.floor(savedOffset) + 's';
+        } else {
+            offsetBtn.classList.remove('active');
+            offsetBtn.innerHTML = '⏱';
+        }
+    }
+
+    // Pausar música de fondo del sitio
     const siteAudio = document.getElementById('site-audio');
     if(siteAudio && !siteAudio.paused) siteAudio.pause();
 
-    // Reset previous
     window.stopJukebox();
     window.clearLoop(); 
-    
-    // Renderizar marcadores de la canción actual
     window.renderMarkers();
 
     playerBar.classList.add('visible');
     titleEl.textContent = title;
     
     const url = rawUrl.trim();
+    const savedOffset = jukeboxOffsets[currentSongKey] || 0; // Obtener offset guardado
+
     let driveDirectLink = window.convertDriveToDirectLink(url);
     let dropboxLink = window.convertDropboxLink(url);
 
-    // 1. Detect DROPBOX (LA MEJOR OPCIÓN PARA LOOP)
+    // 1. DROPBOX
     if (dropboxLink) {
-         console.log("Dropbox Link detectado:", dropboxLink);
          currentJukeboxType = 'html5';
-         
          stdControls.style.display = 'flex';
          stdProgress.style.display = 'flex';
          iframeContainer.style.display = 'none';
          if(loopControls) loopControls.style.display = 'flex';
          if(markersArea) markersArea.style.display = 'block';
+         window.setupHtml5Audio(dropboxLink, false, savedOffset);
 
-         window.setupHtml5Audio(dropboxLink);
-
-    // 2. Detect Google Drive
+    // 2. DRIVE
     } else if (driveDirectLink) {
-         console.log("Drive Link detectado. Intentando modo híbrido.");
-         // Intentamos cargar en HTML5 primero para que funcione el Loop.
-         // Si falla, el 'onerror' del audio cambiará al modo Iframe.
          currentJukeboxType = 'html5';
-         
          stdControls.style.display = 'flex';
          stdProgress.style.display = 'flex';
          iframeContainer.style.display = 'none';
          if(loopControls) loopControls.style.display = 'flex';
          if(markersArea) markersArea.style.display = 'block';
+         window.setupHtml5Audio(driveDirectLink, true, savedOffset); 
 
-         window.setupHtml5Audio(driveDirectLink, true); // 'true' activa el fallback a iframe
-
-    // 3. Detect YouTube
+    // 3. YOUTUBE
     } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
         currentJukeboxType = 'youtube';
-        
         stdControls.style.display = 'flex';
         stdProgress.style.display = 'flex';
         iframeContainer.style.display = 'none';
-        if(loopControls) loopControls.style.display = 'none'; // No loops para YT
-        if(markersArea) markersArea.style.display = 'block'; // Marcadores sí en YT
+        if(loopControls) loopControls.style.display = 'none'; 
+        if(markersArea) markersArea.style.display = 'block';
 
         let videoId = "";
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -194,56 +306,72 @@ window.openJukeboxPlayer = function(title, rawUrl) {
         if (match && match[2].length == 11) { videoId = match[2]; }
         else { alert("Link de YouTube no válido"); return; }
 
+        const ytConfig = { videoId: videoId };
+        if (savedOffset > 0) ytConfig.startSeconds = savedOffset; // INYECTAR OFFSET A YOUTUBE
+
         if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-            ytPlayer.loadVideoById(videoId);
+            ytPlayer.loadVideoById(ytConfig);
             ytPlayer.playVideo();
+            ytPlayer.setPlaybackRate(1.0);
         } else {
             setTimeout(() => {
                 if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-                    ytPlayer.loadVideoById(videoId);
+                    ytPlayer.loadVideoById(ytConfig);
                     ytPlayer.playVideo();
+                    ytPlayer.setPlaybackRate(1.0);
                 } else { alert("YouTube API no lista."); }
             }, 1000);
         }
 
-    // 4. Detect Generic HTML5 (MP3 hosting propio)
+    // 4. HTML5 GENERIC
     } else {
         currentJukeboxType = 'html5';
-        
         stdControls.style.display = 'flex';
         stdProgress.style.display = 'flex';
         iframeContainer.style.display = 'none';
         if(loopControls) loopControls.style.display = 'flex';
         if(markersArea) markersArea.style.display = 'block';
-
-        window.setupHtml5Audio(url);
+        window.setupHtml5Audio(url, false, savedOffset);
     }
 };
 
-window.setupHtml5Audio = function(srcUrl, isDriveFallback = false) {
+window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0) {
     currentAudioObj = document.getElementById('jukebox-audio-element');
     if(!currentAudioObj) return;
 
     currentAudioObj.pause();
     currentAudioObj.removeAttribute('src');
-    currentAudioObj.load(); 
-    
+    // Eliminar listeners antiguos para evitar duplicados en onloadedmetadata
+    const newAudio = currentAudioObj.cloneNode(true);
+    currentAudioObj.parentNode.replaceChild(newAudio, currentAudioObj);
+    currentAudioObj = newAudio;
+
     currentAudioObj.src = srcUrl;
+    currentAudioObj.playbackRate = 1.0;
+    
+    // LOGICA OFFSET HTML5
+    if(startTime > 0) {
+        currentAudioObj.currentTime = startTime;
+    }
+    
     currentAudioObj.load(); 
     
     const playPromise = currentAudioObj.play();
     if (playPromise !== undefined) {
-        playPromise.catch(error => {
-            console.warn("Auto-play HTML5 falló:", error);
-        });
+        playPromise.catch(error => { console.warn("Auto-play HTML5 falló:", error); });
     }
 
-    // Manejo de errores de carga (Crucial para Drive)
+    // Listener crucial para aplicar el offset si la carga inicial falló en setear currentTime
+    currentAudioObj.onloadedmetadata = function() {
+        if(startTime > 0 && currentAudioObj.currentTime < startTime) {
+            currentAudioObj.currentTime = startTime;
+        }
+    };
+
     currentAudioObj.onerror = function() {
         console.error("Error cargando audio HTML5:", currentAudioObj.error);
-        
         if (isDriveFallback) {
-            console.warn("Fallo carga directa Drive. Cambiando a modo Iframe (seguro).");
+            console.warn("Fallo carga directa Drive. Cambiando a modo Iframe.");
             window.switchToDriveIframeMode();
         } else {
             alert("Error al cargar el audio. Verifica el enlace.");
@@ -267,9 +395,7 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false) {
     currentAudioObj.onended = () => { window.stopJukeboxProgressLoop(); };
 };
 
-// Fallback para Drive: Si falla el audio directo, usamos el iframe visual
 window.switchToDriveIframeMode = function() {
-    // Vamos a intentar extraer el ID de la URL fallida (src)
     const failedUrl = currentAudioObj.src;
     let id = null;
     if (failedUrl.includes('id=')) {
@@ -290,16 +416,15 @@ window.switchToDriveIframeMode = function() {
         stdControls.style.display = 'none';
         stdProgress.style.display = 'none';
         if(loopControls) loopControls.style.display = 'none';
-        if(markersArea) markersArea.style.display = 'none'; // Iframe no soporta tiempo exacto
+        if(markersArea) markersArea.style.display = 'none'; 
         
         iframeContainer.style.display = 'block';
         iframeEl.src = previewUrl;
         
-        // Aviso visual
         const titleEl = document.getElementById('jukebox-current-title');
         titleEl.innerHTML += " <span style='color:orange; font-size:0.7em;'>(Modo Compatible - Sin Extras)</span>";
     } else {
-        alert("El archivo de Drive no se puede reproducir. Intenta usar Dropbox.");
+        alert("El archivo de Drive no se puede reproducir.");
         window.stopJukebox();
     }
 };
@@ -354,18 +479,78 @@ window.seekJukebox = function(percent) {
     }
 };
 
+/* --- NUEVAS FUNCIONES: VELOCIDAD, MINIMIZAR Y OFFSET --- */
+
+window.cycleSpeed = function() {
+    const speeds = [1.0, 0.75, 0.5, 1.25];
+    const currentIndex = speeds.indexOf(currentSpeed);
+    const nextIndex = (currentIndex + 1) % speeds.length;
+    currentSpeed = speeds[nextIndex];
+
+    if (currentJukeboxType === 'html5' && currentAudioObj) {
+        currentAudioObj.playbackRate = currentSpeed;
+    }
+    if (currentJukeboxType === 'youtube' && ytPlayer && typeof ytPlayer.setPlaybackRate === 'function') {
+        ytPlayer.setPlaybackRate(currentSpeed);
+    }
+
+    const btn = document.getElementById('jb-speed-btn');
+    if(btn) btn.textContent = currentSpeed + 'x';
+};
+
+window.toggleMinimize = function() {
+    const bar = document.getElementById('jukebox-player-bar');
+    const btn = document.getElementById('jb-minimize-btn');
+    if(!bar) return;
+
+    isMinimized = !isMinimized;
+    
+    if(isMinimized) {
+        bar.classList.add('minimized');
+        if(btn) btn.innerHTML = '&#9633;'; 
+    } else {
+        bar.classList.remove('minimized');
+        if(btn) btn.innerHTML = '&#95;'; 
+    }
+};
+
+window.setStartOffset = function() {
+    if(!currentSongKey) return;
+    const time = window.getCurrentTime();
+    const btn = document.getElementById('jb-offset-btn');
+
+    if (time < 1.0) {
+        // Si está al principio, resetear offset
+        if (jukeboxOffsets[currentSongKey]) {
+            delete jukeboxOffsets[currentSongKey];
+            window.saveJukeboxLibrary();
+            alert("Inicio restablecido a 0:00");
+            if(btn) {
+                btn.classList.remove('active');
+                btn.innerHTML = '⏱';
+            }
+        }
+    } else {
+        // Guardar nuevo offset
+        jukeboxOffsets[currentSongKey] = time;
+        window.saveJukeboxLibrary();
+        alert(`Inicio fijado en ${window.formatTime(time)}.\nLa próxima vez empezará aquí.`);
+        if(btn) {
+            btn.classList.add('active');
+            btn.innerHTML = '⏱ ' + Math.floor(time) + 's';
+        }
+    }
+};
+
 /* --- 4. LÓGICA DE BUCLE (LOOP A-B) --- */
 
 window.setLoopA = function() {
     if (currentJukeboxType === 'html5' && currentAudioObj) {
         jukeboxLoopA = currentAudioObj.currentTime;
-        
         const btnA = document.getElementById('jb-loop-a');
         const btnB = document.getElementById('jb-loop-b');
-        
         if(btnA) btnA.classList.add('active');
         if(btnB) btnB.disabled = false;
-        
         if (jukeboxLoopB !== null && jukeboxLoopB <= jukeboxLoopA) {
             jukeboxLoopB = null;
             if(btnB) btnB.classList.remove('active');
@@ -377,19 +562,13 @@ window.setLoopA = function() {
 window.setLoopB = function() {
     if (currentJukeboxType === 'html5' && currentAudioObj) {
         if (jukeboxLoopA === null) return;
-        
         if (currentAudioObj.currentTime > jukeboxLoopA) {
             jukeboxLoopB = currentAudioObj.currentTime;
-            
             const btnB = document.getElementById('jb-loop-b');
             const btnClear = document.getElementById('jb-loop-clear');
-
             if(btnB) btnB.classList.add('active');
             if(btnClear) btnClear.style.display = 'inline-block';
-            
             window.updateLoopDisplay();
-            
-            // Feedback: Saltar al inicio del bucle
             currentAudioObj.currentTime = jukeboxLoopA;
             if(currentAudioObj.paused) currentAudioObj.play();
         } else {
@@ -401,32 +580,27 @@ window.setLoopB = function() {
 window.clearLoop = function() {
     jukeboxLoopA = null;
     jukeboxLoopB = null;
-    
     const btnA = document.getElementById('jb-loop-a');
     const btnB = document.getElementById('jb-loop-b');
     const btnClear = document.getElementById('jb-loop-clear');
-
     if(btnA) btnA.classList.remove('active');
     if(btnB) {
         btnB.classList.remove('active');
         btnB.disabled = true;
     }
     if(btnClear) btnClear.style.display = 'none';
-    
     window.updateLoopDisplay();
 };
 
 window.updateLoopDisplay = function() {
     const display = document.getElementById('jb-loop-status');
     if(!display) return;
-
     const fmt = (s) => {
         if (isNaN(s) || s === null) return "0:00";
         const m = Math.floor(s / 60);
         const sec = Math.floor(s % 60);
         return `${m}:${String(sec).padStart(2, "0")}`;
     };
-
     if (jukeboxLoopA !== null && jukeboxLoopB !== null) {
         display.textContent = `${fmt(jukeboxLoopA)} <-> ${fmt(jukeboxLoopB)}`;
         display.style.display = 'inline-block';
@@ -451,72 +625,47 @@ window.getCurrentTime = function() {
     return 0;
 };
 
-// --- NUEVA FUNCIÓN CON MODAL ---
 window.addMarker = function() {
     if (!currentSongKey) return;
-    
-    // Pausar automáticamente para mejorar UX
     const wasPlaying = isJukeboxPlaying || (currentAudioObj && !currentAudioObj.paused);
     if (wasPlaying) window.togglePlayPauseJukebox();
 
     const time = window.getCurrentTime();
-    
-    // Guardamos el estado en una variable para usarla al confirmar el modal
-    pendingMarkerState = {
-        time: time,
-        wasPlaying: wasPlaying
-    };
+    pendingMarkerState = { time: time, wasPlaying: wasPlaying };
 
-    // Mostrar el modal
     const modal = document.getElementById('marker-input-modal');
     const input = document.getElementById('marker-name-input');
-    
     if (modal && input) {
         input.value = `Marcador en ${window.formatTime(time)}`;
         modal.classList.add('show');
         input.focus();
-        // Intentar seleccionar todo el texto para fácil edición
         input.select();
     }
 };
 
-// Función interna para cerrar modal y limpiar
 window.closeMarkerModal = function() {
     const modal = document.getElementById('marker-input-modal');
     if (modal) modal.classList.remove('show');
-    
-    // Si estaba reproduciendo, reanudar
     if (pendingMarkerState && pendingMarkerState.wasPlaying) {
         window.togglePlayPauseJukebox();
     }
     pendingMarkerState = null;
 };
 
-// Función para guardar (llamada desde el botón del modal)
 window.confirmAddMarker = function() {
     const input = document.getElementById('marker-name-input');
     const label = input ? input.value.trim() : "Marcador";
-    
     if (pendingMarkerState && currentSongKey) {
         if (!jukeboxMarkers[currentSongKey]) jukeboxMarkers[currentSongKey] = [];
         jukeboxMarkers[currentSongKey].push({ time: pendingMarkerState.time, label: label });
-        // Ordenar por tiempo
         jukeboxMarkers[currentSongKey].sort((a, b) => a.time - b.time);
-        
-        window.saveJukeboxLibrary(); // Guardar en DB
+        window.saveJukeboxLibrary(); 
         window.renderMarkers();
     }
-    
-    // Cerramos el modal PERO modificamos el estado pendiente para que closeMarkerModal
-    // sepa que debe reanudar la reproducción (si estaba activa).
     const wasPlaying = pendingMarkerState ? pendingMarkerState.wasPlaying : false;
-    
     const modal = document.getElementById('marker-input-modal');
     if (modal) modal.classList.remove('show');
-    
-    if (wasPlaying) {
-        window.togglePlayPauseJukebox();
-    }
+    if (wasPlaying) window.togglePlayPauseJukebox();
     pendingMarkerState = null;
 };
 
@@ -540,7 +689,6 @@ window.jumpToMarker = function(time) {
 window.renderMarkers = function() {
     const list = document.getElementById('jb-markers-list');
     if (!list) return;
-    
     list.innerHTML = "";
     
     if (!currentSongKey || !jukeboxMarkers[currentSongKey] || jukeboxMarkers[currentSongKey].length === 0) {
@@ -565,10 +713,7 @@ window.renderMarkers = function() {
         delBtn.className = 'marker-del-btn';
         delBtn.innerHTML = '×';
         delBtn.title = "Borrar";
-        delBtn.onclick = (e) => {
-            e.stopPropagation();
-            window.deleteMarker(idx);
-        };
+        delBtn.onclick = (e) => { e.stopPropagation(); window.deleteMarker(idx); };
 
         item.appendChild(info);
         item.appendChild(delBtn);
@@ -587,18 +732,13 @@ window.formatTime = function(s) {
 
 window.startJukeboxProgressLoop = function() {
     if (jukeboxCheckInterval) clearInterval(jukeboxCheckInterval);
-    
-    // Intervalo rápido para bucle preciso
     jukeboxCheckInterval = setInterval(() => {
         let curr = 0, total = 0;
-        
         if (currentJukeboxType === 'youtube' && ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
             try { curr = ytPlayer.getCurrentTime(); total = ytPlayer.getDuration(); } catch(e) {}
         } else if (currentJukeboxType === 'html5' && currentAudioObj) {
             curr = currentAudioObj.currentTime;
             total = currentAudioObj.duration;
-
-            // CHEQUEO DE BUCLE A-B
             if (jukeboxLoopA !== null && jukeboxLoopB !== null) {
                 if (curr >= jukeboxLoopB) {
                     currentAudioObj.currentTime = jukeboxLoopA;
@@ -607,13 +747,11 @@ window.startJukeboxProgressLoop = function() {
                 }
             }
         }
-
         if (total > 0) {
             const pct = (curr / total) * 100;
             const prog = document.getElementById('jb-progress');
             const curT = document.getElementById('jb-current-time');
             const totT = document.getElementById('jb-total-time');
-            
             if(prog) prog.value = pct;
             if(curT) curT.textContent = window.formatTime(curr);
             if(totT) totT.textContent = window.formatTime(total);
@@ -626,50 +764,41 @@ window.stopJukeboxProgressLoop = function() {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+    // INYECTAR UI Y ESTILOS DINÁMICOS
+    window.injectJukeboxStyles();
+    window.injectExtraControls();
+
     const closeBtn = document.getElementById('jukebox-close-player');
     if(closeBtn) closeBtn.onclick = () => {
         window.stopJukebox();
         document.getElementById('jukebox-player-bar').classList.remove('visible');
     };
-
     const playBtn = document.getElementById('jb-play-pause');
     if(playBtn) playBtn.onclick = window.togglePlayPauseJukebox;
-
     const stopBtn = document.getElementById('jb-stop');
     if(stopBtn) stopBtn.onclick = window.stopJukebox;
-
     const progBar = document.getElementById('jb-progress');
     if(progBar) progBar.oninput = (e) => window.seekJukebox(e.target.value);
-
     const rewindBtn = document.getElementById('jb-rewind');
     if(rewindBtn) rewindBtn.onclick = () => { 
         const val = parseFloat(document.getElementById('jb-progress').value) || 0;
         window.seekJukebox(val - 5); 
     };
-
     const fwdBtn = document.getElementById('jb-forward');
     if(fwdBtn) fwdBtn.onclick = () => { 
         const val = parseFloat(document.getElementById('jb-progress').value) || 0;
         window.seekJukebox(val + 5); 
     };
-
     const btnLoopA = document.getElementById('jb-loop-a');
     if(btnLoopA) btnLoopA.onclick = window.setLoopA;
-
     const btnLoopB = document.getElementById('jb-loop-b');
     if(btnLoopB) btnLoopB.onclick = window.setLoopB;
-
     const btnLoopClear = document.getElementById('jb-loop-clear');
     if(btnLoopClear) btnLoopClear.onclick = window.clearLoop;
-
-    // Marcadores Botón +
     const btnAddMarker = document.getElementById('jb-add-marker');
     if(btnAddMarker) btnAddMarker.onclick = window.addMarker;
-
-    // Listeners del Modal de Marcadores
     const btnCancelMarker = document.getElementById('cancel-marker-btn');
     if(btnCancelMarker) btnCancelMarker.onclick = window.closeMarkerModal;
-
     const btnConfirmMarker = document.getElementById('confirm-marker-btn');
     if(btnConfirmMarker) btnConfirmMarker.onclick = window.confirmAddMarker;
 });
