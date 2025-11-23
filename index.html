@@ -8,7 +8,7 @@
    
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   
-  <!-- VIEWPORT CORREGIDO: Una sola etiqueta para bloquear zoom totalmente -->
+  <!-- VIEWPORT CORREGIDO: Bloqueo de zoom y ajuste fit -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   
   <meta charset="UTF-8" />
@@ -20,12 +20,19 @@
   <meta property="og:description"  content="Banda de rock y versiones. Intranet de gestión.">
   <meta property="og:image"        content="assets/logo_negro copia.jpg">
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- OPTIMIZACIÓN: Preconectar a dominios externos para acelerar la carga -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  <link rel="preconnect" href="https://www.youtube.com">
+  <link rel="preconnect" href="https://www.bandhelper.com">
+
+  <!-- OPTIMIZACIÓN: 'defer' permite que el HTML se muestre sin esperar a los scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" defer></script>
   <!-- YouTube API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="https://www.youtube.com/iframe_api" defer></script>
 
   <style>
     *,*::before,*::after{box-sizing:border-box}
@@ -35,16 +42,18 @@
         margin:0; padding:0; 
         overflow-x:hidden; /* Evita scroll lateral */
         width: 100%;
-        min-height: 100vh; /* FIX: Cambiado de height:100% a min-height para evitar problemas de scroll en iOS */
+        /* FIX iOS: Usar min-height en lugar de height fixed evita rebotes y bloqueos */
+        min-height: 100vh;
+        min-height: 100dvh;
         font-family:Arial,Helvetica,sans-serif; 
         background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
         background-attachment: fixed;
         color:#fff;
         
         /* PROPIEDADES PARA SENSACIÓN APP NATIVA */
-        touch-action: manipulation; /* Mejora respuesta táctil y evita zoom doble tap */
-        overscroll-behavior-y: none; /* Evita el efecto rebote en iOS/Android al llegar al tope */
-        -webkit-tap-highlight-color: transparent; /* Elimina el flash gris al tocar botones */
+        touch-action: manipulation;
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
     }
     
     /* ---------- Splash Screen ---------- */
@@ -52,16 +61,15 @@
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background-color: #000000; display: flex; justify-content: center; align-items: center;
       z-index: 200000; opacity: 1; visibility: visible;
-      transition: opacity 0.8s ease-out, transform 0.8s ease-out, visibility 0.8s linear; 
-      transform: scale(1);
+      transition: opacity 0.5s ease-out, visibility 0.5s linear; /* Transición más rápida */
     }
     #splash-screen img {
       max-width: 60%; max-height: 60%; opacity: 0;
       transform: scale(0.85) translateY(15px); 
-      animation: splash-image-entry 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: splash-image-entry 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
     @keyframes splash-image-entry { to { opacity: 1; transform: scale(1) translateY(0); } }
-    #splash-screen.hidden { opacity: 0; transform: scale(0.95); visibility: hidden; pointer-events: none; }
+    #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
     header{
         background: rgba(17, 17, 17, 0.95); padding:10px 20px; display:flex; align-items:center;
@@ -529,6 +537,53 @@
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
 
+  <!-- CRITICAL UI SCRIPT: Makes menu interactive immediately while heavy scripts load below -->
+  <script id="critical-ui-script">
+      (function() {
+          var sidebar = document.getElementById("sidebar-menu");
+          var overlay = document.getElementById("overlay");
+          var hamburger = document.getElementById("hamburger-btn");
+          var closeBtn = document.getElementById("menu-cerrar");
+          var calendarBtn = document.getElementById("header-calendar-btn");
+          
+          function closeMenu() {
+              sidebar.classList.remove("show");
+              overlay.classList.remove("show");
+              document.querySelectorAll(".config-screen").forEach(function(s){s.style.display="none"});
+              document.querySelectorAll(".modal-backdrop").forEach(function(s){s.classList.remove("show")});
+              document.body.style.overflow = '';
+          }
+
+          if(hamburger) {
+              hamburger.onclick = function() {
+                  sidebar.classList.add("show");
+                  overlay.classList.add("show");
+              };
+          }
+          if(closeBtn) {
+              closeBtn.onclick = function(e) {
+                  e.preventDefault();
+                  closeMenu();
+              };
+          }
+          if(overlay) {
+              overlay.onclick = closeMenu;
+          }
+          if(calendarBtn) {
+              calendarBtn.onclick = function() {
+                   closeMenu();
+                   var target = document.getElementById('vista-calendario-mensual');
+                   if(target) { 
+                       var headerOffset = 60; 
+                       var elementPosition = target.getBoundingClientRect().top; 
+                       var offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; 
+                       window.scrollTo({top: offsetPosition, behavior: "smooth"}); 
+                   }
+              };
+          }
+      })();
+  </script>
+
   <div id="concert-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Detalles del Concierto</h3><h4 id="concert-detail-title-display"></h4><input type="hidden" id="concert-detail-id"><label for="concert-detail-location">Detalles adicionales de la ubicación:</label><textarea id="concert-detail-location"></textarea><label for="concert-detail-gmaps-link">Enlace de Google Maps (Lugar Evento):</label><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;"><input type="url" id="concert-detail-gmaps-link" placeholder="https://maps.app.goo.gl/example" style="flex-grow: 1; margin-bottom: 0;"><button id="open-gmaps-link-btn" style="display:none; padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; line-height: 1.5;">Abrir Mapa</button></div><div class="modal-field-group"><div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div><div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div></div><div class="modal-field-group"><div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div><div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div></div><label for="concert-detail-notes">Notas generales:</label><textarea id="concert-detail-notes"></textarea><label for="concert-detail-sound-company">Empresa de Sonorización:</label><input type="text" id="concert-detail-sound-company" placeholder="Nombre de la empresa o técnico externo"><h4>Músicos Asistentes</h4><div id="musicians-attendance-list"></div><h4>Técnicos Responsables</h4><div id="technicians-attendance-list" style="border: 1px solid #333; padding: 10px; margin-bottom:15px;"></div><button id="save-concert-details">Guardar Detalles</button><button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button><p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="rehearsal-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Información del Ensayo</h3><h4 id="rehearsal-detail-title-display"></h4><input type="hidden" id="rehearsal-detail-index"><label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label><textarea id="rehearsal-notes" style="min-height: 400px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea><button id="save-rehearsal-details">Guardar Información</button><button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button><p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="setlist-config-screen" class="config-screen"><button class="close-btn" id="close-setlist-config">Cerrar</button><h2>Configuración de Setlists</h2><h3>Setlist Próximo Ensayo</h3><label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025"><label>ID/URL feed</label><input id="setlist1-url" placeholder="URL"><h3>Setlist Próximo Concierto</h3><label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad"><label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa"><h3>Setlist Concierto Estrella</h3><label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025"><label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL"><button id="guardar-setlist-config">Guardar Configuración</button><p id="setlist-message" class="error-message"></p></div>
@@ -610,7 +665,11 @@
       </div>
       <p id="total-time-star"></p>
     </section>
-    <section id="calendario"> <h2>Próximos Conciertos</h2> <div id="bandhelper-concerts-container"> <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"></script> <p id="bandhelper-loading-message" style="display:none;">Procesando conciertos...</p> </div> </section>
+    <section id="calendario"> <h2>Próximos Conciertos</h2> 
+        <div id="bandhelper-concerts-container"> 
+             <p id="bandhelper-loading-message" style="color:#aaa; text-align:center;">Cargando conciertos...</p>
+        </div> 
+    </section>
 
     <section id="vista-calendario-mensual">
       <h2>Calendario Mensual</h2>
@@ -644,7 +703,6 @@ const firebaseConfig = {
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
 if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { const banner = document.getElementById('firebase-critical-error-banner'); if (banner) banner.style.display = 'block'; console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");}
-firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => { console.warn("Persistencia Firestore no habilitada:", err.code === 'failed-precondition' ? 'Múltiples pestañas.' : err.message); });
 
 /* ---------- 1. Utilidades y Variables Globales ---------- */
 let globalItems1 = [];
@@ -670,6 +728,7 @@ window.addEventListener("online", updateConnectionStatus); window.addEventListen
 window.withRetry = async function(fn, maxRetries = 3, delay = 2000) { for (let i = 0; i < maxRetries; i++) { try { if (!navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión. Operación podría fallar o usar caché."; connectionStatus.style.display = "block"; } return await fn(); } catch (e) { console.error(`Intento ${i+1} fallido:`, e); if (i === maxRetries - 1 || !navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Error: Operación fallida. " + e.message; connectionStatus.style.display = "block"; throw e; } connectionStatus.className = "retrying"; connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`; connectionStatus.style.display = "block"; await new Promise(resolve => setTimeout(resolve, delay)); } } }
 
 /* ---------- 2. Acceso Firestore ---------- */
+let db; 
 window.loadDoc = async function(collection, docId, fallback) { try { const snap = await db.collection(collection).doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); return fallback; } }
 window.saveDoc = async function(collection, docId, data, merge = false) { try { console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge); await db.collection(collection).doc(docId).set(data, { merge: merge }); console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`); return true; } catch (e) { console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); throw e; } }
 
@@ -698,14 +757,11 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
             const titleEl = document.getElementById(totalTimeId).previousElementSibling.previousElementSibling;
             if(titleEl) titleEl.innerHTML += " <span style='color:orange; font-size:0.8em;'>(⚠️ Modo Offline)</span>";
         } else {
-            console.error(`[cargarSetlistGenerico] Error fatal: ${defaultErrorMessage}`, networkError);
-            const tbody = document.getElementById(tbodyId);
-            if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="color:red;">${defaultErrorMessage}. Sin conexión y sin caché.</td></tr>`;
-            const totalTimeElem = document.getElementById(totalTimeId);
-            if (totalTimeElem) totalTimeElem.textContent = "Error de conexión.";
             return [];
         }
     }
+
+    if (!rawData) return [];
 
     const dataToProcess = Array.isArray(rawData) ? rawData : rawData.items || [];
     const processedItems = dataToProcess.map(item => {
@@ -729,7 +785,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     }).filter(item => item !== null);
 
     const tbody = document.getElementById(tbodyId);
-    tbody.innerHTML = "";
+    if(tbody) tbody.innerHTML = "";
     let songCount = 0;
     const setlistStructure = [];
     let currentSet = null;
@@ -753,7 +809,6 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     // Helper for Jukebox Cell (NUEVO ICONO AURICULARES + LÓGICA DIRECTA)
     const createJukeboxCell = (songName) => {
         const cleanName = sanitizeFirebaseKey(songName);
-        // Acceso global a jukeboxLibrary definido en jukebox.js
         const url = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : null;
         const hasLink = !!url;
         const statusClass = hasLink ? 'active' : 'inactive';
@@ -766,34 +821,37 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
         return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
     };
 
-    setlistStructure.forEach(blockOrItem => {
-        if (blockOrItem.isSetHeader) {
-            const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
-            tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="6">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
-            totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
-            blockOrItem.songs.forEach(song => {
+    if (tbody) {
+        setlistStructure.forEach(blockOrItem => {
+            if (blockOrItem.isSetHeader) {
+                const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
+                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="6">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
+                totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
+                blockOrItem.songs.forEach(song => {
+                    songCount++;
+                    const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
+                    const jukeboxCell = createJukeboxCell(song.displayName);
+                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
+                })
+            } else if (blockOrItem.isBreak) {
+                const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+                totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
+                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
+            } else if (blockOrItem.isSong) {
                 songCount++;
-                const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
-                const jukeboxCell = createJukeboxCell(song.displayName);
-                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
-            })
-        } else if (blockOrItem.isBreak) {
-            const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
-            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-            tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
-        } else if (blockOrItem.isSong) {
-            songCount++;
-            const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
-            totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-            const jukeboxCell = createJukeboxCell(blockOrItem.displayName);
-            tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
-        }
-    });
+                const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+                totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
+                const jukeboxCell = createJukeboxCell(blockOrItem.displayName);
+                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
+            }
+        });
+    }
     
     let timeText = "Tiempo total del set: " + toHHMM(totalSecondsOverall);
     if(usedCache) timeText += " (Datos guardados)";
     
-    document.getElementById(totalTimeId).textContent = timeText;
+    const timeElem = document.getElementById(totalTimeId);
+    if(timeElem) timeElem.textContent = timeText;
     return setlistStructure;
 }
 
@@ -865,8 +923,6 @@ function renderJukeboxMgmtTable() {
 
     keys.forEach(key => {
         const url = window.jukeboxLibrary[key];
-        // Intentamos 'adivinar' el nombre real reemplazando _ por espacio, 
-        // aunque lo ideal sería guardar el nombre real. Para admin, esto sirve.
         const displayName = key.replace(/_/g, " "); 
         
         const row = `
@@ -1018,9 +1074,88 @@ async function genPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){con
 async function genBasicPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const itemTitleFontSize=14;const setHeaderFontSize=16;const itemLineHeight=itemTitleFontSize*1.6;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{if(currentY+itemLineHeight*2.5>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=itemLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderFontSize*1.6;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+itemLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=itemLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(itemTitleFontSize-1>8?itemTitleFontSize-1:8);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=(itemTitleFontSize-1>8?itemTitleFontSize-1:8)*1.6;if(idx<setlistStructure.length-1)currentY+=itemLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight}});doc.save(`${cleanFileName}_Basico.pdf`)}
 async function genPersonalPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf,songTitleFontSizeParam){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const songTitleFontSize=parseInt(songTitleFontSizeParam,10)||14;const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF Personal:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S')} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const setHeaderFontSize=16;const breakTextFontSize=Math.max(8,songTitleFontSize-2);const songTitleLineHeight=songTitleFontSize*1.5;const setHeaderLineHeight=setHeaderFontSize*1.5;const breakTextLineHeight=breakTextFontSize*1.5;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{let estimatedBlockHeight=songTitleLineHeight;if(blockOrItem.isSetHeader)estimatedBlockHeight=setHeaderLineHeight+(blockOrItem.songs?blockOrItem.songs.length*songTitleLineHeight:0);else if(blockOrItem.isBreak)estimatedBlockHeight=breakTextLineHeight;if(currentY+estimatedBlockHeight>pageHeight-contentMarginBottom&&idx>0){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=songTitleLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderLineHeight;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+songTitleLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=songTitleLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(breakTextFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=breakTextLineHeight;if(idx<setlistStructure.length-1)currentY+=songTitleLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight}});doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`)}
 
-/* ---------- 10. BandHelper & Detalles Concierto ---------- */
-let processTableAttempts = 0; const MAX_PROCESS_ATTEMPTS = 20;  
-function processBandHelperTable() { const container=document.getElementById('bandhelper-concerts-container');if(!container){console.error("processBandHelperTable: Contenedor 'bandhelper-concerts-container' no encontrado.");return} const table=container.querySelector("table");const loadingMessage=document.getElementById("bandhelper-loading-message");if(!table){processTableAttempts++;if(processTableAttempts<MAX_PROCESS_ATTEMPTS){setTimeout(processBandHelperTable,500)}else{console.error("processBandHelperTable: Tabla de BandHelper NO encontrada después de",MAX_PROCESS_ATTEMPTS,"intentos.");if(loadingMessage){loadingMessage.textContent="No se pudieron mostrar los conciertos (tabla no generada por BandHelper).";loadingMessage.style.display="block"}}}else{if(loadingMessage)loadingMessage.style.display="none";if(table.dataset.processed==="true"){return} table.dataset.processed="true";let headerRow=table.querySelector("thead tr");const desiredHeaders=["Fecha/Hora","Evento","Lugar","Cal","Info"];if(!table.tHead){table.createTHead()} headerRow=table.tHead.rows[0]||table.tHead.insertRow(0);headerRow.innerHTML='';desiredHeaders.forEach(text=>{const th=document.createElement('th');th.textContent=text;if(text==="Cal")th.classList.add("calendar-col-header");if(text==="Info")th.classList.add("details-col-header");headerRow.appendChild(th)});const dataRowsSource=table.querySelector("tbody")?Array.from(table.querySelectorAll("tbody tr")):[];dataRowsSource.forEach(row=>{const originalCells=Array.from(row.cells);row.innerHTML='';const dateCellFullText=originalCells[0]?.textContent.trim()||"";const eventTitleFromCell=originalCells[1]?.textContent.trim().split('\n')[0].trim()||"Evento Sin Título";const locationText=originalCells[3]?.textContent.trim().split('\n')[0].trim()||originalCells[2]?.textContent.trim().split('\n')[0].trim()||"";row.insertCell().textContent=dateCellFullText;row.insertCell().textContent=eventTitleFromCell;row.insertCell().textContent=locationText;const calendarDisplayCell=row.insertCell();calendarDisplayCell.className="calendar-col";calendarDisplayCell.style.textAlign="center";const detailDisplayCell=row.insertCell();detailDisplayCell.className="details-col-header";detailDisplayCell.style.textAlign="center";const dateForId=dateCellFullText.split(',')[0].trim();const concertId=sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);const detailsBtn=document.createElement("button");detailsBtn.className="details-btn";detailsBtn.innerHTML="➡️";detailsBtn.title="Ver/Editar Detalles del Concierto";detailsBtn.onclick=()=>openConcertDetailModal(concertId,dateCellFullText,eventTitleFromCell,locationText);detailDisplayCell.appendChild(detailsBtn);let icsDate=new Date().toISOString().split('T')[0];let startTimeForICS="20:00";let durationSecondsForICS=2*3600;const dateMatch=dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(dateMatch){let year=parseInt(dateMatch[3],10);year+=(year<70?2000:1900);icsDate=`${year}-${dateMatch[2]}-${dateMatch[1]}`} const timeRangeMatch=dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/);const singleTimeMatch=dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/);if(timeRangeMatch){startTimeForICS=timeRangeMatch[1];durationSecondsForICS=calculateDuration(timeRangeMatch[1],timeRangeMatch[2]);if(durationSecondsForICS<=0)durationSecondsForICS=2*3600}else if(singleTimeMatch){startTimeForICS=singleTimeMatch[1]} const locationForICS=locationText||eventTitleFromCell;const descriptionForICS=`Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;const calendarBtn=document.createElement('button');calendarBtn.className='calendar-btn';calendarBtn.title='Añadir a mi calendario';calendarBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';calendarBtn.onclick=()=>generateICS(`Concierto: ${eventTitleFromCell}`,icsDate,startTimeForICS,locationForICS,descriptionForICS,durationSecondsForICS);calendarDisplayCell.appendChild(calendarBtn)})}}
+/* ---------- 10. BandHelper & Detalles Concierto (REPARADO Y OPTIMIZADO) ---------- */
+function loadBandHelperWidget() {
+    const container = document.getElementById('bandhelper-concerts-container');
+    const loadingMessage = document.getElementById('bandhelper-loading-message');
+    if (!container) return;
+    
+    // Crear iframe invisible para sandboxing de document.write
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+        <head></head>
+        <body>
+            <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"><\/script>
+        </body>
+    `);
+    doc.close();
+
+    // Polling para detectar la tabla dentro del iframe
+    let attempts = 0;
+    const maxAttempts = 50; // 25 segundos max
+    const interval = setInterval(() => {
+        attempts++;
+        const table = doc.querySelector('table');
+        if (table) {
+            clearInterval(interval);
+            // Mover estilos y tabla al documento principal
+            const styles = doc.querySelectorAll('style');
+            styles.forEach(s => document.head.appendChild(s.cloneNode(true)));
+            
+            // Limpiar loader y poner tabla
+            container.innerHTML = ""; 
+            container.appendChild(table.cloneNode(true));
+            
+            // Limpieza
+            document.body.removeChild(iframe);
+            
+            console.log("BandHelper cargado exitosamente vía Proxy Iframe.");
+            processBandHelperTable(); // Procesar la tabla ahora que existe
+            renderVisualCalendar();
+        } else if (attempts >= maxAttempts) {
+            clearInterval(interval);
+            console.error("Timeout cargando BandHelper en iframe.");
+            if(loadingMessage) loadingMessage.textContent = "Error: No se pudieron cargar los conciertos externos.";
+            // Eliminar iframe aunque falló
+            document.body.removeChild(iframe);
+        }
+    }, 500);
+}
+
+// Inicializar la carga del widget
+document.addEventListener("DOMContentLoaded", () => {
+    // Retrasar ligeramente para priorizar UI crítica
+    setTimeout(loadBandHelperWidget, 100);
+});
+
+let processTableAttempts = 0; 
+function processBandHelperTable() { 
+    const container = document.getElementById('bandhelper-concerts-container');
+    if(!container) return; 
+    
+    const table = container.querySelector("table");
+    
+    // Si no hay tabla, no hacemos nada (ya se encarga el loader de arriba)
+    if(!table) return;
+
+    if(table.dataset.processed==="true"){return} 
+    table.dataset.processed="true";
+    
+    let headerRow=table.querySelector("thead tr");
+    const desiredHeaders=["Fecha/Hora","Evento","Lugar","Cal","Info"];
+    if(!table.tHead){table.createTHead()} 
+    headerRow=table.tHead.rows[0]||table.tHead.insertRow(0);
+    headerRow.innerHTML='';
+    desiredHeaders.forEach(text=>{const th=document.createElement('th');th.textContent=text;if(text==="Cal")th.classList.add("calendar-col-header");if(text==="Info")th.classList.add("details-col-header");headerRow.appendChild(th)});
+    const dataRowsSource=table.querySelector("tbody")?Array.from(table.querySelectorAll("tbody tr")):[];
+    dataRowsSource.forEach(row=>{const originalCells=Array.from(row.cells);row.innerHTML='';const dateCellFullText=originalCells[0]?.textContent.trim()||"";const eventTitleFromCell=originalCells[1]?.textContent.trim().split('\n')[0].trim()||"Evento Sin Título";const locationText=originalCells[3]?.textContent.trim().split('\n')[0].trim()||originalCells[2]?.textContent.trim().split('\n')[0].trim()||"";row.insertCell().textContent=dateCellFullText;row.insertCell().textContent=eventTitleFromCell;row.insertCell().textContent=locationText;const calendarDisplayCell=row.insertCell();calendarDisplayCell.className="calendar-col";calendarDisplayCell.style.textAlign="center";const detailDisplayCell=row.insertCell();detailDisplayCell.className="details-col-header";detailDisplayCell.style.textAlign="center";const dateForId=dateCellFullText.split(',')[0].trim();const concertId=sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);const detailsBtn=document.createElement("button");detailsBtn.className="details-btn";detailsBtn.innerHTML="➡️";detailsBtn.title="Ver/Editar Detalles del Concierto";detailsBtn.onclick=()=>openConcertDetailModal(concertId,dateCellFullText,eventTitleFromCell,locationText);detailDisplayCell.appendChild(detailsBtn);let icsDate=new Date().toISOString().split('T')[0];let startTimeForICS="20:00";let durationSecondsForICS=2*3600;const dateMatch=dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(dateMatch){let year=parseInt(dateMatch[3],10);year+=(year<70?2000:1900);icsDate=`${year}-${dateMatch[2]}-${dateMatch[1]}`} const timeRangeMatch=dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/);const singleTimeMatch=dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/);if(timeRangeMatch){startTimeForICS=timeRangeMatch[1];durationSecondsForICS=calculateDuration(timeRangeMatch[1],timeRangeMatch[2]);if(durationSecondsForICS<=0)durationSecondsForICS=2*3600}else if(singleTimeMatch){startTimeForICS=singleTimeMatch[1]} const locationForICS=locationText||eventTitleFromCell;const descriptionForICS=`Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;const calendarBtn=document.createElement('button');calendarBtn.className='calendar-btn';calendarBtn.title='Añadir a mi calendario';calendarBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';calendarBtn.onclick=()=>generateICS(`Concierto: ${eventTitleFromCell}`,icsDate,startTimeForICS,locationForICS,descriptionForICS,durationSecondsForICS);calendarDisplayCell.appendChild(calendarBtn)})
+}
+
 const concertDetailModal = document.getElementById('concert-details-modal'); const concertDetailMessage = document.getElementById('concert-detail-message');
 async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
     const concertDetailMessage = document.getElementById('concert-detail-message');
@@ -1186,28 +1321,13 @@ document.getElementById('close-concert-details-modal').onclick = () => { closeAl
 /* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
 function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
-document.getElementById("hamburger-btn").onclick = () => { sidebar.classList.add("show"); overlay.classList.add("show"); };
+// Listener moved to DOMContentLoaded
+// document.getElementById("hamburger-btn").onclick = ...
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
 setupMenuLink("menu-suggestions", "suggestions");
-
-// FIX: Mover el event listener del botón de calendario del header aquí para asegurar que funcione incluso si el script de carga tarda
-const headerCalBtn = document.getElementById('header-calendar-btn');
-if(headerCalBtn) {
-    headerCalBtn.onclick = () => {
-         const target = document.getElementById('vista-calendario-mensual');
-         closeAll();
-         if(target) { 
-             const headerOffset = 60; 
-             const elementPosition = target.getBoundingClientRect().top; 
-             const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; 
-             window.scrollTo({top: offsetPosition, behavior: "smooth"}); 
-         }
-    };
-}
-
 
 // --- CONFIGURACIÓN MENÚ SUGGESTIONS ---
 document.getElementById("menu-suggestions").onclick = e => { 
@@ -1241,16 +1361,18 @@ document.getElementById("close-user-list-screen").onclick = () => { document.get
 // --- GESTIÓN DE PROPUESTAS (SUGGESTIONS) ---
 let suggestions = [];
 
-// Listener de Firestore para propuestas (incluye eliminadas)
-if (typeof db !== 'undefined') {
-    db.collection('suggestions').onSnapshot(snapshot => {
-        suggestions = [];
-        snapshot.forEach(doc => {
-            suggestions.push({ id: doc.id, ...doc.data() });
+// Listener will be attached after DB init
+function attachSuggestionsListener() {
+    if (typeof db !== 'undefined') {
+        db.collection('suggestions').onSnapshot(snapshot => {
+            suggestions = [];
+            snapshot.forEach(doc => {
+                suggestions.push({ id: doc.id, ...doc.data() });
+            });
+            renderSuggestions();
+            renderAdminSuggestions(); // También actualiza la tabla de admin
         });
-        renderSuggestions();
-        renderAdminSuggestions(); // También actualiza la tabla de admin
-    });
+    }
 }
 
 document.getElementById("add-suggestion-btn").onclick = async () => {
@@ -1607,304 +1729,25 @@ document.getElementById('live-content-area').onclick = (e) => {
         }
     }
 };
-  
 
+/* ---------- 12. Lógica Calendario Visual (GLOBAL SCOPE FIX) ---------- */
+let currentCalDate = new Date();
+let globalConcertDetails = {}; 
 
-/* ---------- 12. Carga inicial & Lógica Audio Global y Splash ---------- */
-document.addEventListener("DOMContentLoaded", async () => {
-  
-  // --- Lógica de Audio Global START ---
-  const siteAudioElement = document.getElementById('site-audio');
-  const siteAudioControlButton = document.getElementById('site-audio-control-button'); 
-  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; // TUS CANCIONES
-  let currentSiteSongIndex = -1; 
-  let siteAudioFadeInterval = null;
-  const SITE_AUDIO_FADE_DURATION = 500; 
-  const SITE_AUDIO_TARGET_VOLUME = 0.8; 
-
-  function stopSiteAudioFade() {
-    if (siteAudioFadeInterval) {
-      clearInterval(siteAudioFadeInterval);
-      siteAudioFadeInterval = null;
+function attachConcertDetailsListener() {
+    if (typeof db !== 'undefined') {
+        try {
+            db.collection('concert_details').onSnapshot(snapshot => {
+                snapshot.forEach(doc => {
+                    globalConcertDetails[doc.id] = doc.data();
+                });
+                renderVisualCalendar(); 
+            });
+        } catch(e) { console.warn("Error attaching concert listener:", e); }
     }
-  }
+}
 
-  function fadeInSiteAudio(audio, duration, targetVolume) {
-    stopSiteAudioFade();
-    if (!audio) return; 
-    if (audio.muted) { 
-      audio.volume = 0; 
-      audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio (muted):", e));
-      return;
-    }
-    audio.volume = 0;
-    if (audio.paused) { // Solo llama a play si está pausado
-        audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio:", e));
-    }
-    
-    let step = targetVolume / (duration / 50);
-    let currentVolume = 0;
-    siteAudioFadeInterval = setInterval(() => {
-      currentVolume += step;
-      if (currentVolume >= targetVolume) {
-        if(audio) audio.volume = targetVolume; 
-        stopSiteAudioFade();
-      } else if (audio) { 
-        audio.volume = currentVolume;
-      } else { 
-        stopSiteAudioFade();
-      }
-    }, 50);
-  }
-
-  function fadeOutSiteAudio(audio, duration, callback) {
-    stopSiteAudioFade();
-    if (!audio) { if (callback) callback(); return; }
-
-    if (audio.paused || audio.volume < 0.01) { 
-      if (!audio.paused) audio.pause();
-      audio.volume = 0; 
-      if (callback) callback();
-      return;
-    }
-    
-    let currentVolume = audio.volume;
-    let step = currentVolume / (duration / 50);
-    siteAudioFadeInterval = setInterval(() => {
-      currentVolume -= step;
-      if (currentVolume <= 0.01) { 
-        if (audio) {
-            audio.volume = 0;
-            audio.pause();
-        }
-        stopSiteAudioFade();
-        if (callback) callback();
-      } else if (audio) {
-        audio.volume = currentVolume;
-      } else {
-        stopSiteAudioFade();
-      }
-    }, 50);
-  }
-
-  function playNextSiteSong(audioElement) {
-    if (!audioElement || siteAudioSongs.length === 0) return;
-    currentSiteSongIndex = (currentSiteSongIndex + 1) % siteAudioSongs.length;
-    audioElement.src = siteAudioSongs[currentSiteSongIndex];
-    audioElement.load();
-
-    const eventName = 'canplaythrough';
-    
-    // Eliminamos cualquier listener previo para 'canplaythrough' para evitar duplicados
-    const playWhenReadyHandler = () => {
-      if (audioElement) { 
-        fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME);
-      }
-    };
-    audioElement.addEventListener(eventName, playWhenReadyHandler, { once: true });
-  }
-
-  if (siteAudioElement && siteAudioControlButton) {
-    const iconMuted = siteAudioControlButton.querySelector('.icon-muted');
-    const iconUnmuted = siteAudioControlButton.querySelector('.icon-unmuted');
-
-    const updateSiteAudioMuteButton = () => {
-      if (!siteAudioElement || !iconMuted || !iconUnmuted || !siteAudioControlButton) return;
-      if (siteAudioElement.muted) {
-        iconMuted.style.display = 'inline';
-        iconUnmuted.style.display = 'none';
-        siteAudioControlButton.title = "Activar sonido";
-      } else {
-        iconMuted.style.display = 'none';
-        iconUnmuted.style.display = 'inline';
-        siteAudioControlButton.title = "Desactivar sonido";
-      }
-    };
-
-    siteAudioElement.muted = true; 
-    siteAudioElement.loop = false; 
-    updateSiteAudioMuteButton();
-    siteAudioControlButton.style.display = 'flex'; 
-
-    currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length);
-    siteAudioElement.src = siteAudioSongs[currentSiteSongIndex];
-    siteAudioElement.load(); 
-    
-    siteAudioElement.addEventListener('ended', () => {
-      fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => {
-        playNextSiteSong(siteAudioElement);
-      });
-    });
-
-    siteAudioControlButton.addEventListener('click', () => {
-      if (!siteAudioElement) return;
-      const wasMuted = siteAudioElement.muted;
-      siteAudioElement.muted = !siteAudioElement.muted;
-      updateSiteAudioMuteButton();
-
-      if (!siteAudioElement.muted) { 
-          if (siteAudioElement.paused || wasMuted) { 
-              if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused){
-                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
-              } else { 
-                  siteAudioElement.volume = 0; 
-                  fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); 
-              }
-          }
-      } else { 
-        stopSiteAudioFade(); 
-      }
-    });
-  }
-  // --- Lógica de Audio Global END ---
-
-
-  // --- Splash Screen Visual Logic START ---
-  const splashScreen = document.getElementById('splash-screen');
-  if (splashScreen) {
-    const visibleDuration = 1000; 
-    const exitAnimationDuration = 800; 
-
-    setTimeout(() => {
-      splashScreen.classList.add('hidden');
-      // La música NO se detiene aquí.
-      setTimeout(() => {
-        if (splashScreen.parentNode) {
-           splashScreen.style.display = 'none';
-        }
-      }, exitAnimationDuration);
-    }, visibleDuration);
-  }
-  // --- Splash Screen Visual Logic END ---
-
-  console.log("[DOMContentLoaded] Iniciando carga de la aplicación.");
-  updateConnectionStatus();
-  try {
-      console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
-      // IMPORTANTE: Cargar librería Jukebox
-      if(window.loadJukeboxLibrary) {
-          await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary()]);
-      } else {
-          // Fallback si el script tarda en cargar
-          setTimeout(() => { 
-              if(window.loadJukeboxLibrary) window.loadJukeboxLibrary();
-          }, 1000);
-          await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
-      }
-      console.log("[DOMContentLoaded] Configuración, usuarios, ensayos y Jukebox cargados.");
-  } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
-
-  let items1 = [], items2 = [], itemsStar = [];  
-  try {  
-    console.log("[DOMContentLoaded] Cargando primer setlist...");
-    items1 = await cargarPrimerSetlist();  
-    console.log("[DOMContentLoaded] Primer setlist cargado:", items1 ? items1.length : 0, "bloques/items.");
-  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Ensayo:", e); }
-  
-  try {  
-    console.log("[DOMContentLoaded] Cargando segundo setlist...");
-    items2 = await cargarSegundoSetlist();  
-    console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "bloques/items.");
-  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Próx. Concierto:", e); }
-  
-  try {  
-    console.log("[DOMContentLoaded] Cargando setlist estrella...");
-    itemsStar = await cargarStarSetlist();  
-    console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "bloques/items.");
-  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Estrella:", e); }
-
-  document.getElementById("download-btn").onclick = () => { if (items1 && items1.length > 0) genPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
-  document.getElementById("download-basic-btn").onclick = () => { if (items1 && items1.length > 0) genBasicPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
-  
-  document.getElementById("download-btn-2").onclick = () => { if (items2 && items2.length > 0) genPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
-  document.getElementById("download-basic-btn-2").onclick = () => { if (items2 && items2.length > 0) genBasicPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
-  
-  document.getElementById("download-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
-  document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
-  
-  document.getElementById("download-personal-btn").onclick = () => {
-      if (items1 && items1.length > 0) {
-          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
-          if (fontSizeInput) {
-              const fontSize = parseInt(fontSizeInput, 10);
-              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) { 
-                  genPersonalPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name, fontSize);
-              } else {
-                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
-              }
-          }
-      } else {
-          alert("No hay elementos en Setlist Ensayo para generar un PDF personal.");
-      }
-  };
-  document.getElementById("download-personal-btn-2").onclick = () => {
-      if (items2 && items2.length > 0) {
-          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
-          if (fontSizeInput) {
-              const fontSize = parseInt(fontSizeInput, 10);
-              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
-                  genPersonalPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name, fontSize);
-              } else {
-                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
-              }
-          }
-      } else {
-          alert("No hay elementos en Setlist Próximo Concierto para generar un PDF personal.");
-      }
-  };
-  document.getElementById("download-personal-btn-star").onclick = () => {
-      if (itemsStar && itemsStar.length > 0) {
-          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
-          if (fontSizeInput) {
-              const fontSize = parseInt(fontSizeInput, 10);
-              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
-                  genPersonalPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name, fontSize);
-              } else {
-                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
-              }
-          }
-      } else {
-          alert("No hay elementos en Setlist Estrella para generar un PDF personal.");
-      }
-  };
-
-  console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
-  // --- MutationObserver (REEMPLAZA A SETTIMEOUT) ---
-  const bhContainer = document.getElementById('bandhelper-concerts-container');
-  if (bhContainer) {
-      const observer = new MutationObserver((mutations, obs) => {
-          const table = bhContainer.querySelector('table');
-          if (table) {
-              console.log("BandHelper tabla detectada por MutationObserver.");
-              processBandHelperTable();
-              renderVisualCalendar(); // Actualizamos calendario
-              obs.disconnect(); // Dejamos de observar
-          }
-      });
-      observer.observe(bhContainer, { childList: true, subtree: true });
-      
-      // Fallback por si acaso
-      setTimeout(() => { 
-          processBandHelperTable(); 
-          renderVisualCalendar();
-      }, 3000);
-  }
-
-/* ---------- 13. Lógica Calendario Visual (INTERACTIVO) ---------- */
-  let currentCalDate = new Date();
-  let globalConcertDetails = {}; 
-
-  // Escuchar base de datos en tiempo real
-  if (typeof db !== 'undefined') {
-      db.collection('concert_details').onSnapshot(snapshot => {
-          snapshot.forEach(doc => {
-              globalConcertDetails[doc.id] = doc.data();
-          });
-          renderVisualCalendar(); 
-      });
-  }
-
-  function renderVisualCalendar() {
+function renderVisualCalendar() {
     const grid = document.getElementById('calendar-grid-container');
     const monthDisplay = document.getElementById('calendar-month-display');
     
@@ -2061,6 +1904,279 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+
+/* ---------- 13. Carga inicial & Lógica Audio Global y Splash ---------- */
+document.addEventListener("DOMContentLoaded", async () => {
+  
+  // Clean previous optimization attempt that failed
+  
+  /* --- Inicialización de Firebase Diferida --- */
+  try {
+      if (typeof firebase !== 'undefined') {
+          firebase.initializeApp(firebaseConfig); 
+          db = firebase.firestore(); 
+          firebase.firestore().enablePersistence().catch(err => console.warn(err));
+          attachSuggestionsListener(); // Attach listener now that DB is ready
+          attachConcertDetailsListener(); // NEW: Attach concert listener
+      } else {
+          // If firebase script hasn't loaded yet due to defer, wait a bit
+          const checkFirebase = setInterval(() => {
+              if (typeof firebase !== 'undefined') {
+                  clearInterval(checkFirebase);
+                  firebase.initializeApp(firebaseConfig);
+                  db = firebase.firestore();
+                  firebase.firestore().enablePersistence().catch(err => console.warn(err));
+                  attachSuggestionsListener();
+                  attachConcertDetailsListener(); // NEW
+                  // Trigger data load
+                  loadAllData();
+              }
+          }, 100);
+      }
+  } catch(e) { console.error("Firebase init error:", e); }
+
+  // --- Lógica de Audio Global START ---
+  const siteAudioElement = document.getElementById('site-audio');
+  const siteAudioControlButton = document.getElementById('site-audio-control-button'); 
+  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; // TUS CANCIONES
+  let currentSiteSongIndex = -1; 
+  let siteAudioFadeInterval = null;
+  const SITE_AUDIO_FADE_DURATION = 500; 
+  const SITE_AUDIO_TARGET_VOLUME = 0.8; 
+
+  function stopSiteAudioFade() {
+    if (siteAudioFadeInterval) {
+      clearInterval(siteAudioFadeInterval);
+      siteAudioFadeInterval = null;
+    }
+  }
+
+  function fadeInSiteAudio(audio, duration, targetVolume) {
+    stopSiteAudioFade();
+    if (!audio) return; 
+    if (audio.muted) { 
+      audio.volume = 0; 
+      audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio (muted):", e));
+      return;
+    }
+    audio.volume = 0;
+    if (audio.paused) { // Solo llama a play si está pausado
+        audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio:", e));
+    }
+    
+    let step = targetVolume / (duration / 50);
+    let currentVolume = 0;
+    siteAudioFadeInterval = setInterval(() => {
+      currentVolume += step;
+      if (currentVolume >= targetVolume) {
+        if(audio) audio.volume = targetVolume; 
+        stopSiteAudioFade();
+      } else if (audio) { 
+        audio.volume = currentVolume;
+      } else { 
+        stopSiteAudioFade();
+      }
+    }, 50);
+  }
+
+  function fadeOutSiteAudio(audio, duration, callback) {
+    stopSiteAudioFade();
+    if (!audio) { if (callback) callback(); return; }
+
+    if (audio.paused || audio.volume < 0.01) { 
+      if (!audio.paused) audio.pause();
+      audio.volume = 0; 
+      if (callback) callback();
+      return;
+    }
+    
+    let currentVolume = audio.volume;
+    let step = currentVolume / (duration / 50);
+    siteAudioFadeInterval = setInterval(() => {
+      currentVolume -= step;
+      if (currentVolume <= 0.01) { 
+        if (audio) {
+            audio.volume = 0;
+            audio.pause();
+        }
+        stopSiteAudioFade();
+        if (callback) callback();
+      } else if (audio) {
+        audio.volume = currentVolume;
+      } else {
+        stopSiteAudioFade();
+      }
+    }, 50);
+  }
+
+  function playNextSiteSong(audioElement) {
+    if (!audioElement || siteAudioSongs.length === 0) return;
+    currentSiteSongIndex = (currentSiteSongIndex + 1) % siteAudioSongs.length;
+    audioElement.src = siteAudioSongs[currentSiteSongIndex];
+    audioElement.load();
+
+    const eventName = 'canplaythrough';
+    
+    // Eliminamos cualquier listener previo para 'canplaythrough' para evitar duplicados
+    const playWhenReadyHandler = () => {
+      if (audioElement) { 
+        fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME);
+      }
+    };
+    audioElement.addEventListener(eventName, playWhenReadyHandler, { once: true });
+  }
+
+  if (siteAudioElement && siteAudioControlButton) {
+    const iconMuted = siteAudioControlButton.querySelector('.icon-muted');
+    const iconUnmuted = siteAudioControlButton.querySelector('.icon-unmuted');
+
+    const updateSiteAudioMuteButton = () => {
+      if (!siteAudioElement || !iconMuted || !iconUnmuted || !siteAudioControlButton) return;
+      if (siteAudioElement.muted) {
+        iconMuted.style.display = 'inline';
+        iconUnmuted.style.display = 'none';
+        siteAudioControlButton.title = "Activar sonido";
+      } else {
+        iconMuted.style.display = 'none';
+        iconUnmuted.style.display = 'inline';
+        siteAudioControlButton.title = "Desactivar sonido";
+      }
+    };
+
+    siteAudioElement.muted = true; 
+    siteAudioElement.loop = false; 
+    updateSiteAudioMuteButton();
+    siteAudioControlButton.style.display = 'flex'; 
+
+    currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length);
+    siteAudioElement.src = siteAudioSongs[currentSiteSongIndex];
+    siteAudioElement.load(); 
+    
+    siteAudioElement.addEventListener('ended', () => {
+      fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => {
+        playNextSiteSong(siteAudioElement);
+      });
+    });
+
+    siteAudioControlButton.addEventListener('click', () => {
+      if (!siteAudioElement) return;
+      const wasMuted = siteAudioElement.muted;
+      siteAudioElement.muted = !siteAudioElement.muted;
+      updateSiteAudioMuteButton();
+
+      if (!siteAudioElement.muted) { 
+          if (siteAudioElement.paused || wasMuted) { 
+              if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused){
+                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
+              } else { 
+                  siteAudioElement.volume = 0; 
+                  fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); 
+              }
+          }
+      } else { 
+        stopSiteAudioFade(); 
+      }
+    });
+  }
+  // --- Lógica de Audio Global END ---
+
+
+  // --- Splash Screen Visual Logic START ---
+  const splashScreen = document.getElementById('splash-screen');
+  if (splashScreen) {
+    // OPTIMIZACIÓN: Reducir tiempo de splash para sensación de velocidad
+    const visibleDuration = 100; // Casi instantáneo si el navegador está listo
+    const exitAnimationDuration = 500; 
+
+    setTimeout(() => {
+      splashScreen.classList.add('hidden');
+      setTimeout(() => {
+        if (splashScreen.parentNode) {
+           splashScreen.style.display = 'none';
+        }
+      }, exitAnimationDuration);
+    }, visibleDuration);
+  }
+  // --- Splash Screen Visual Logic END ---
+
+  console.log("[DOMContentLoaded] Iniciando carga de la aplicación.");
+  updateConnectionStatus();
+
+  async function loadAllData() {
+      try {
+          console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
+          // IMPORTANTE: Cargar librería Jukebox
+          if(window.loadJukeboxLibrary) {
+              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary()]);
+          } else {
+              // Fallback si el script tarda en cargar
+              setTimeout(() => { 
+                  if(window.loadJukeboxLibrary) window.loadJukeboxLibrary();
+              }, 1000);
+              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
+          }
+          console.log("[DOMContentLoaded] Configuración, usuarios, ensayos y Jukebox cargados.");
+      } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
+
+      let items1 = [], items2 = [], itemsStar = [];  
+      try {  
+        console.log("[DOMContentLoaded] Cargando primer setlist...");
+        items1 = await cargarPrimerSetlist();  
+        console.log("[DOMContentLoaded] Primer setlist cargado:", items1 ? items1.length : 0, "bloques/items.");
+      } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Ensayo:", e); }
+      
+      try {  
+        console.log("[DOMContentLoaded] Cargando segundo setlist...");
+        items2 = await cargarSegundoSetlist();  
+        console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "bloques/items.");
+      } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Próx. Concierto:", e); }
+      
+      try {  
+        console.log("[DOMContentLoaded] Cargando setlist estrella...");
+        itemsStar = await cargarStarSetlist();  
+        console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "bloques/items.");
+      } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Estrella:", e); }
+
+      // Setup download buttons once data is likely ready
+      document.getElementById("download-btn").onclick = () => { if (items1 && items1.length > 0) genPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
+      document.getElementById("download-basic-btn").onclick = () => { if (items1 && items1.length > 0) genBasicPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
+      
+      document.getElementById("download-btn-2").onclick = () => { if (items2 && items2.length > 0) genPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
+      document.getElementById("download-basic-btn-2").onclick = () => { if (items2 && items2.length > 0) genBasicPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
+      
+      document.getElementById("download-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
+      document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
+
+      // Setup personal PDF buttons
+      const setupPersonalPdfBtn = (btnId, items, name) => {
+          const btn = document.getElementById(btnId);
+          if(btn) btn.onclick = () => {
+              if (items && items.length > 0) {
+                  const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+                  if (fontSizeInput) {
+                      const fontSize = parseInt(fontSizeInput, 10);
+                      if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
+                          genPersonalPDF(items, name, name, fontSize);
+                      } else {
+                          alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
+                      }
+                  }
+              } else {
+                  alert("No hay elementos para generar un PDF personal.");
+              }
+          };
+      };
+      
+      setupPersonalPdfBtn("download-personal-btn", items1, setlistConfig.setlist1.name);
+      setupPersonalPdfBtn("download-personal-btn-2", items2, setlistConfig.setlist2.name);
+      setupPersonalPdfBtn("download-personal-btn-star", itemsStar, setlistConfig.setlistStar.name);
+  }
+  
+  // Si Firebase ya estaba cargado por cache, iniciamos. Si no, el interval de arriba lo hará.
+  if (typeof firebase !== 'undefined') {
+      loadAllData();
+  }
+
   const prevBtn = document.getElementById('prev-month-btn');
   const nextBtn = document.getElementById('next-month-btn');
   
@@ -2081,12 +2197,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderVisualCalendar();
       });
   }
-
-  document.getElementById('header-calendar-btn').onclick = () => {
-     const target = document.getElementById('vista-calendario-mensual');
-     closeAll();
-     if(target) { const headerOffset = 60; const elementPosition = target.getBoundingClientRect().top; const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; window.scrollTo({top: offsetPosition, behavior: "smooth"}); }
-  };
 
   renderVisualCalendar(); 
   setTimeout(renderVisualCalendar, 2000); 
