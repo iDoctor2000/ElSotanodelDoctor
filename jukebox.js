@@ -1,19 +1,25 @@
 /* 
    JUKEBOX.JS
    Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
+   + Funcionalidad de Marcadores
 */
 
 // Variables Globales del Jukebox
 let jukeboxLibrary = {}; 
+let jukeboxMarkers = {}; // NUEVA VARIABLE PARA MARCADORES
 let ytPlayer = null;
 let isJukeboxPlaying = false;
 let jukeboxCheckInterval = null;
 let currentJukeboxType = null; // 'youtube', 'html5', or 'drive-iframe'
 let currentAudioObj = null; 
+let currentSongKey = null; // Para saber a qué canción asociar el marcador
 
 // Variables Bucle A-B
 let jukeboxLoopA = null;
 let jukeboxLoopB = null;
+
+// Helper para sanitize (copiado aquí para evitar dependencias)
+const sanitizeJukeboxKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
 
 // Exponer funciones al objeto window para que funcionen los onclick del HTML
 window.jukeboxLibrary = jukeboxLibrary;
@@ -24,8 +30,9 @@ window.jukeboxLibrary = jukeboxLibrary;
 window.loadJukeboxLibrary = async function() {
     try {
         if (typeof window.loadDoc === 'function') {
-            const data = await window.withRetry(() => window.loadDoc("intranet", "jukebox_library", { mapping: {} }));
+            const data = await window.withRetry(() => window.loadDoc("intranet", "jukebox_library", { mapping: {}, markers: {} }));
             window.jukeboxLibrary = data.mapping || {};
+            jukeboxMarkers = data.markers || {}; // Cargamos marcadores
             console.log("Jukebox Library cargada:", Object.keys(window.jukeboxLibrary).length, "canciones.");
         }
     } catch (e) { console.error("Error cargando Jukebox Library:", e); }
@@ -35,7 +42,11 @@ window.loadJukeboxLibrary = async function() {
 window.saveJukeboxLibrary = async function() {
     try {
         if (typeof window.saveDoc === 'function') {
-            await window.withRetry(() => window.saveDoc("intranet", "jukebox_library", { mapping: window.jukeboxLibrary }));
+            // Guardamos ambos objetos
+            await window.withRetry(() => window.saveDoc("intranet", "jukebox_library", { 
+                mapping: window.jukeboxLibrary,
+                markers: jukeboxMarkers 
+            }));
             return true;
         }
     } catch (e) { console.error("Error guardando Jukebox:", e); return false; }
@@ -107,12 +118,15 @@ window.convertDropboxLink = function(url) {
 };
 
 window.openJukeboxPlayer = function(title, rawUrl) {
+    currentSongKey = sanitizeJukeboxKey(title); // Guardar referencia para marcadores
+
     const playerBar = document.getElementById('jukebox-player-bar');
     const titleEl = document.getElementById('jukebox-current-title');
     const stdControls = document.getElementById('jukebox-std-controls');
     const stdProgress = document.getElementById('jukebox-std-progress');
     const iframeContainer = document.getElementById('jukebox-iframe-container');
     const loopControls = document.querySelector('.jukebox-loop-area');
+    const markersArea = document.getElementById('jukebox-markers-area');
     const iframeEl = document.getElementById('jb-iframe');
 
     // Pausar música de fondo del sitio si suena
@@ -122,6 +136,9 @@ window.openJukeboxPlayer = function(title, rawUrl) {
     // Reset previous
     window.stopJukebox();
     window.clearLoop(); 
+    
+    // Renderizar marcadores de la canción actual
+    window.renderMarkers();
 
     playerBar.classList.add('visible');
     titleEl.textContent = title;
@@ -139,6 +156,7 @@ window.openJukeboxPlayer = function(title, rawUrl) {
          stdProgress.style.display = 'flex';
          iframeContainer.style.display = 'none';
          if(loopControls) loopControls.style.display = 'flex';
+         if(markersArea) markersArea.style.display = 'block';
 
          window.setupHtml5Audio(dropboxLink);
 
@@ -153,6 +171,7 @@ window.openJukeboxPlayer = function(title, rawUrl) {
          stdProgress.style.display = 'flex';
          iframeContainer.style.display = 'none';
          if(loopControls) loopControls.style.display = 'flex';
+         if(markersArea) markersArea.style.display = 'block';
 
          window.setupHtml5Audio(driveDirectLink, true); // 'true' activa el fallback a iframe
 
@@ -164,6 +183,7 @@ window.openJukeboxPlayer = function(title, rawUrl) {
         stdProgress.style.display = 'flex';
         iframeContainer.style.display = 'none';
         if(loopControls) loopControls.style.display = 'none'; // No loops para YT
+        if(markersArea) markersArea.style.display = 'block'; // Marcadores sí en YT
 
         let videoId = "";
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -191,6 +211,7 @@ window.openJukeboxPlayer = function(title, rawUrl) {
         stdProgress.style.display = 'flex';
         iframeContainer.style.display = 'none';
         if(loopControls) loopControls.style.display = 'flex';
+        if(markersArea) markersArea.style.display = 'block';
 
         window.setupHtml5Audio(url);
     }
@@ -260,18 +281,20 @@ window.switchToDriveIframeMode = function() {
         const stdProgress = document.getElementById('jukebox-std-progress');
         const iframeContainer = document.getElementById('jukebox-iframe-container');
         const loopControls = document.querySelector('.jukebox-loop-area');
+        const markersArea = document.getElementById('jukebox-markers-area');
         const iframeEl = document.getElementById('jb-iframe');
 
         stdControls.style.display = 'none';
         stdProgress.style.display = 'none';
         if(loopControls) loopControls.style.display = 'none';
+        if(markersArea) markersArea.style.display = 'none'; // Iframe no soporta tiempo exacto
         
         iframeContainer.style.display = 'block';
         iframeEl.src = previewUrl;
         
         // Aviso visual
         const titleEl = document.getElementById('jukebox-current-title');
-        titleEl.innerHTML += " <span style='color:orange; font-size:0.7em;'>(Modo Compatible - Sin Bucle)</span>";
+        titleEl.innerHTML += " <span style='color:orange; font-size:0.7em;'>(Modo Compatible - Sin Extras)</span>";
     } else {
         alert("El archivo de Drive no se puede reproducir. Intenta usar Dropbox.");
         window.stopJukebox();
@@ -413,7 +436,106 @@ window.updateLoopDisplay = function() {
     }
 };
 
-/* --- 5. LOOP DE PROGRESO --- */
+/* --- 5. LOGICA DE MARCADORES (BOOKMARKS) --- */
+
+window.getCurrentTime = function() {
+    if (currentJukeboxType === 'youtube' && ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+        return ytPlayer.getCurrentTime();
+    }
+    if (currentJukeboxType === 'html5' && currentAudioObj) {
+        return currentAudioObj.currentTime;
+    }
+    return 0;
+};
+
+window.addMarker = function() {
+    if (!currentSongKey) return;
+    
+    // Pausar automáticamente para mejorar UX
+    const wasPlaying = isJukeboxPlaying || (currentAudioObj && !currentAudioObj.paused);
+    if (wasPlaying) window.togglePlayPauseJukebox();
+
+    const time = window.getCurrentTime();
+    const label = prompt(`Añadir marcador en ${window.formatTime(time)}. \nNombre del marcador (ej: Solo Guitarra):`);
+    
+    if (label) {
+        if (!jukeboxMarkers[currentSongKey]) jukeboxMarkers[currentSongKey] = [];
+        jukeboxMarkers[currentSongKey].push({ time: time, label: label });
+        // Ordenar por tiempo
+        jukeboxMarkers[currentSongKey].sort((a, b) => a.time - b.time);
+        
+        window.saveJukeboxLibrary(); // Guardar en DB
+        window.renderMarkers();
+    }
+
+    // Reanudar si estaba tocando
+    if (wasPlaying) window.togglePlayPauseJukebox();
+};
+
+window.deleteMarker = function(index) {
+    if (!currentSongKey || !jukeboxMarkers[currentSongKey]) return;
+    if (confirm("¿Borrar marcador?")) {
+        jukeboxMarkers[currentSongKey].splice(index, 1);
+        window.saveJukeboxLibrary();
+        window.renderMarkers();
+    }
+};
+
+window.jumpToMarker = function(time) {
+    if (currentJukeboxType === 'youtube' && ytPlayer) {
+        ytPlayer.seekTo(time, true);
+    } else if (currentJukeboxType === 'html5' && currentAudioObj) {
+        currentAudioObj.currentTime = time;
+    }
+};
+
+window.renderMarkers = function() {
+    const list = document.getElementById('jb-markers-list');
+    if (!list) return;
+    
+    list.innerHTML = "";
+    
+    if (!currentSongKey || !jukeboxMarkers[currentSongKey] || jukeboxMarkers[currentSongKey].length === 0) {
+        list.innerHTML = "<div style='color:#666; font-size:0.8em; text-align:center; padding:5px;'>Sin marcadores</div>";
+        return;
+    }
+
+    jukeboxMarkers[currentSongKey].forEach((m, idx) => {
+        const item = document.createElement('div');
+        item.className = 'marker-item';
+        
+        const info = document.createElement('div');
+        info.className = 'marker-info';
+        info.onclick = () => window.jumpToMarker(m.time);
+        
+        info.innerHTML = `
+            <span class="marker-time">${window.formatTime(m.time)}</span>
+            <span class="marker-label" title="${m.label}">${m.label}</span>
+        `;
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'marker-del-btn';
+        delBtn.innerHTML = '×';
+        delBtn.title = "Borrar";
+        delBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.deleteMarker(idx);
+        };
+
+        item.appendChild(info);
+        item.appendChild(delBtn);
+        list.appendChild(item);
+    });
+};
+
+window.formatTime = function(s) {
+    if (isNaN(s)) return "0:00";
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${String(sec).padStart(2, "0")}`;
+};
+
+/* --- 6. LOOP DE PROGRESO --- */
 
 window.startJukeboxProgressLoop = function() {
     if (jukeboxCheckInterval) clearInterval(jukeboxCheckInterval);
@@ -422,7 +544,7 @@ window.startJukeboxProgressLoop = function() {
     jukeboxCheckInterval = setInterval(() => {
         let curr = 0, total = 0;
         
-        if (currentJukeboxType === 'youtube' && ytPlayer && ytPlayer.getCurrentTime) {
+        if (currentJukeboxType === 'youtube' && ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
             try { curr = ytPlayer.getCurrentTime(); total = ytPlayer.getDuration(); } catch(e) {}
         } else if (currentJukeboxType === 'html5' && currentAudioObj) {
             curr = currentAudioObj.currentTime;
@@ -444,14 +566,9 @@ window.startJukeboxProgressLoop = function() {
             const curT = document.getElementById('jb-current-time');
             const totT = document.getElementById('jb-total-time');
             
-            const toTime = (s) => {
-                 const ts = Math.round(s); 
-                 return `${Math.floor(ts / 60)}:${String(ts % 60).padStart(2, "0")}`;
-            };
-
             if(prog) prog.value = pct;
-            if(curT) curT.textContent = toTime(curr);
-            if(totT) totT.textContent = toTime(total);
+            if(curT) curT.textContent = window.formatTime(curr);
+            if(totT) totT.textContent = window.formatTime(total);
         }
     }, 100); 
 };
@@ -496,4 +613,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const btnLoopClear = document.getElementById('jb-loop-clear');
     if(btnLoopClear) btnLoopClear.onclick = window.clearLoop;
+
+    // Marcadores
+    const btnAddMarker = document.getElementById('jb-add-marker');
+    if(btnAddMarker) btnAddMarker.onclick = window.addMarker;
 });
