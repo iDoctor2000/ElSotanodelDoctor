@@ -18,6 +18,9 @@ let currentSongKey = null; // Para saber a qué canción asociar el marcador
 let jukeboxLoopA = null;
 let jukeboxLoopB = null;
 
+// Variable de estado para el nuevo marcador (modal)
+let pendingMarkerState = null;
+
 // Helper para sanitize (copiado aquí para evitar dependencias)
 const sanitizeJukeboxKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
 
@@ -448,6 +451,7 @@ window.getCurrentTime = function() {
     return 0;
 };
 
+// --- NUEVA FUNCIÓN CON MODAL ---
 window.addMarker = function() {
     if (!currentSongKey) return;
     
@@ -456,20 +460,64 @@ window.addMarker = function() {
     if (wasPlaying) window.togglePlayPauseJukebox();
 
     const time = window.getCurrentTime();
-    const label = prompt(`Añadir marcador en ${window.formatTime(time)}. \nNombre del marcador (ej: Solo Guitarra):`);
     
-    if (label) {
+    // Guardamos el estado en una variable para usarla al confirmar el modal
+    pendingMarkerState = {
+        time: time,
+        wasPlaying: wasPlaying
+    };
+
+    // Mostrar el modal
+    const modal = document.getElementById('marker-input-modal');
+    const input = document.getElementById('marker-name-input');
+    
+    if (modal && input) {
+        input.value = `Marcador en ${window.formatTime(time)}`;
+        modal.classList.add('show');
+        input.focus();
+        // Intentar seleccionar todo el texto para fácil edición
+        input.select();
+    }
+};
+
+// Función interna para cerrar modal y limpiar
+window.closeMarkerModal = function() {
+    const modal = document.getElementById('marker-input-modal');
+    if (modal) modal.classList.remove('show');
+    
+    // Si estaba reproduciendo, reanudar
+    if (pendingMarkerState && pendingMarkerState.wasPlaying) {
+        window.togglePlayPauseJukebox();
+    }
+    pendingMarkerState = null;
+};
+
+// Función para guardar (llamada desde el botón del modal)
+window.confirmAddMarker = function() {
+    const input = document.getElementById('marker-name-input');
+    const label = input ? input.value.trim() : "Marcador";
+    
+    if (pendingMarkerState && currentSongKey) {
         if (!jukeboxMarkers[currentSongKey]) jukeboxMarkers[currentSongKey] = [];
-        jukeboxMarkers[currentSongKey].push({ time: time, label: label });
+        jukeboxMarkers[currentSongKey].push({ time: pendingMarkerState.time, label: label });
         // Ordenar por tiempo
         jukeboxMarkers[currentSongKey].sort((a, b) => a.time - b.time);
         
         window.saveJukeboxLibrary(); // Guardar en DB
         window.renderMarkers();
     }
-
-    // Reanudar si estaba tocando
-    if (wasPlaying) window.togglePlayPauseJukebox();
+    
+    // Cerramos el modal PERO modificamos el estado pendiente para que closeMarkerModal
+    // sepa que debe reanudar la reproducción (si estaba activa).
+    const wasPlaying = pendingMarkerState ? pendingMarkerState.wasPlaying : false;
+    
+    const modal = document.getElementById('marker-input-modal');
+    if (modal) modal.classList.remove('show');
+    
+    if (wasPlaying) {
+        window.togglePlayPauseJukebox();
+    }
+    pendingMarkerState = null;
 };
 
 window.deleteMarker = function(index) {
@@ -614,7 +662,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnLoopClear = document.getElementById('jb-loop-clear');
     if(btnLoopClear) btnLoopClear.onclick = window.clearLoop;
 
-    // Marcadores
+    // Marcadores Botón +
     const btnAddMarker = document.getElementById('jb-add-marker');
     if(btnAddMarker) btnAddMarker.onclick = window.addMarker;
+
+    // Listeners del Modal de Marcadores
+    const btnCancelMarker = document.getElementById('cancel-marker-btn');
+    if(btnCancelMarker) btnCancelMarker.onclick = window.closeMarkerModal;
+
+    const btnConfirmMarker = document.getElementById('confirm-marker-btn');
+    if(btnConfirmMarker) btnConfirmMarker.onclick = window.confirmAddMarker;
 });
