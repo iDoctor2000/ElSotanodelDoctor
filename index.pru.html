@@ -606,15 +606,16 @@
     </div>
     <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
     <div class="header-controls-right">
-        <!-- BOTÓN AFINADOR -->
+      
+        <div class="header-controls-right">
+        <!-- 1. AFINADOR (El primero para salir a la izquierda) -->
         <button id="header-tuner-btn" class="header-icon-btn" title="Afinador">
             <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 3h-1V2h-2v1H8V2H6v1H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10v5h2v-5H9zm4 0v5h2v-5h-2z"/>
-                <!-- Icono más parecido a diapasón -->
-                <path d="M15 2H9v2H7v6h2v12h2V10h2V2zM9 4h6v4H9V4z" transform="translate(0, 2)"/> 
+                <path d="M15 2H9v2H7v6h2v12h2V10h2V2zM9 4h6v4H9V4z"/> 
             </svg>
         </button>
 
+        <!-- 2. RESTO DE BOTONES -->
         <button id="site-audio-control-button" class="header-icon-btn" title="Activar sonido"> 
             <svg class="icon-muted" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/>
@@ -632,7 +633,6 @@
         
         <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
     </div>
-  </header>
 
   <div id="overlay"></div>
   <nav class="sidebar" id="sidebar-menu">
