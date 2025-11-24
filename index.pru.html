@@ -77,7 +77,20 @@
         border-bottom: 1px solid #222; height: 60px; backdrop-filter: blur(5px);
     }
     .logo img.logo-main{ width: 135px; height:auto; vertical-align: middle; }
-    .logo-intranet{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); height:45px; width:auto; }
+ /* Hacemos que el contenedor .logo alinee sus imágenes en fila */
+    .logo { 
+        display: flex; 
+        align-items: center; 
+        gap: 15px; /* Separación entre el logo del sótano y el de intranet */
+    }
+
+    /* Quitamos la posición absoluta para que fluya natural al lado del otro */
+    .logo-intranet { 
+        position: static; 
+        transform: none; 
+        height: 35px; /* Un poco más pequeño para que quede elegante al lado */
+        width: auto; 
+    }
     
     .header-controls-right { display: flex; align-items: center; gap: 10px; }
 
@@ -603,9 +616,12 @@
   <header>
     <div class="logo">
       <img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main">
+      <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
     </div>
-    <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
+    
     <div class="header-controls-right">
+      ...
+      
         <!-- BOTÓN AFINADOR -->
         <button id="header-tuner-btn" class="header-icon-btn" title="Afinador">
             <svg viewBox="0 0 24 24" fill="currentColor">
