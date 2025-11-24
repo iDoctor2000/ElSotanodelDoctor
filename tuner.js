@@ -1,8 +1,8 @@
 /*
   TUNER.JS
   Afinador Cromático "All-in-One".
-  Inyecta su propia interfaz (Visualizador, Metrónomo, Gestor de Afinaciones) 
-  dentro del modal existente sin requerir cambios en el HTML principal.
+  Versión Robusta: Usa MutationObserver para inyectar la interfaz 
+  en cuanto el modal aparece en el DOM.
 */
 
 (function() {
@@ -50,28 +50,28 @@
     let customTunings = {};
     const noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
-    // --- 1. INYECCIÓN DE ESTILOS Y HTML ---
+    // --- 1. INYECCIÓN DE ESTILOS ---
 
     function injectTunerStyles() {
         if(document.getElementById('tuner-injected-styles')) return;
         const css = `
             /* Visualizador */
-            #tuner-visualizer { width: 100%; height: 60px; background: #000; border: 1px solid #333; border-radius: 6px; margin-bottom: 10px; }
+            #tuner-visualizer { width: 100%; height: 60px; background: #000; border: 1px solid #333; border-radius: 6px; margin-bottom: 10px; display: block; }
             
             /* Secciones */
-            .tuner-section { margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; width: 100%; }
+            .tuner-section { margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; width: 100%; box-sizing: border-box; }
             .tuner-section h4 { margin: 0 0 10px 0; color: #0cf; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
 
             /* Botones de Cuerda */
             #string-buttons-container { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 10px; }
-            .string-btn { background: #222; color: #aaa; border: 1px solid #444; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; font-size: 0.8em; transition: all 0.2s; }
+            .string-btn { background: #222; color: #aaa; border: 1px solid #444; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; font-size: 0.8em; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
             .string-btn:hover { border-color: #fff; color: #fff; }
             .string-btn.active { background: #0cf; color: #000; border-color: #0cf; font-weight: bold; box-shadow: 0 0 10px rgba(0, 204, 255, 0.4); }
 
             /* Controles Afinación */
             .tuning-controls { display: flex; gap: 5px; justify-content: center; margin-bottom: 10px; }
             #tuning-select { background: #111; color: #fff; border: 1px solid #333; padding: 5px; border-radius: 4px; font-size: 0.9em; max-width: 200px; }
-            .icon-btn { background: #333; border: none; color: #fff; width: 30px; height: 30px; border-radius: 4px; cursor: pointer; }
+            .icon-btn { background: #333; border: none; color: #fff; width: 30px; height: 30px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
             .icon-btn:hover { background: #444; }
 
             /* Metrónomo */
@@ -82,7 +82,7 @@
             .metro-slider { flex-grow: 1; accent-color: #0cf; cursor: pointer; }
             .metro-play-btn { background: #0cf; color: #000; border: none; border-radius: 4px; padding: 5px 15px; font-weight: bold; cursor: pointer; min-width: 60px; }
             .metro-play-btn.playing { background: #ff3333; color: #fff; animation: pulse 1s infinite; }
-            .metro-adj-btn { background: #222; border: 1px solid #444; color: #fff; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
+            .metro-adj-btn { background: #222; border: 1px solid #444; color: #fff; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
             @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
@@ -91,10 +91,11 @@
                 display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
                 background: rgba(10,10,10,0.98); z-index: 10; padding: 20px; 
                 flex-direction: column; align-items: center; justify-content: center; 
+                box-sizing: border-box;
             }
             #custom-tuning-editor.show { display: flex; }
             .custom-editor-content { width: 100%; max-width: 300px; text-align: center; }
-            .custom-editor-content input { width: 100%; padding: 8px; margin: 5px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; }
+            .custom-editor-content input { width: 100%; padding: 8px; margin: 5px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; }
             .custom-note-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin: 15px 0; }
             .custom-actions { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
             .action-btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
@@ -105,32 +106,46 @@
         style.id = 'tuner-injected-styles';
         style.innerHTML = css;
         document.head.appendChild(style);
+        console.log("Estilos del afinador inyectados.");
     }
+
+    // --- 2. INYECCIÓN HTML (CON DETECCIÓN DE DOM) ---
 
     function injectTunerHTML() {
         tunerModal = document.getElementById('tuner-modal');
-        if(!tunerModal) return false;
+        if(!tunerModal) {
+            console.log("Tuner modal no encontrado aún.");
+            return false;
+        }
 
-        const contentDiv = tunerModal.querySelector('.tuner-content');
+        // Buscamos el contenedor interno
+        const contentDiv = tunerModal.querySelector('.modal-content'); // Cambiado a .modal-content para mayor precisión
         if(!contentDiv) return false;
 
-        // 1. Inyectar Visualizador (Canvas) dentro de tuner-display
+        console.log("Inyectando interfaz del afinador...");
+
+        // 1. Inyectar Visualizador (Canvas)
+        // Buscamos tuner-display, si existe lo ponemos ahí, si no, al principio de contentDiv
         const displayDiv = contentDiv.querySelector('.tuner-display');
-        if(displayDiv && !document.getElementById('tuner-visualizer')) {
+        const targetForVisualizer = displayDiv || contentDiv;
+        
+        if(!document.getElementById('tuner-visualizer')) {
             const cvs = document.createElement('canvas');
             cvs.id = 'tuner-visualizer';
             cvs.width = 300; 
             cvs.height = 60;
-            displayDiv.insertBefore(cvs, displayDiv.firstChild);
+            if(displayDiv) {
+                displayDiv.insertBefore(cvs, displayDiv.firstChild);
+            } else {
+                contentDiv.insertBefore(cvs, contentDiv.firstChild);
+            }
         }
 
-        // Identificar dónde insertar las nuevas secciones (antes del botón cerrar)
+        // 2. Inyectar Secciones de Control
+        // Buscamos el botón de cerrar para insertar antes
         const closeBtn = document.getElementById('close-tuner-btn');
-        
-        // Wrapper para insertar cosas
-        const insertBeforeTarget = closeBtn;
+        const insertTarget = closeBtn || contentDiv.lastChild;
 
-        // 2. Sección Cuerdas y Presets
         if(!document.getElementById('tuning-manager-section')) {
             const div = document.createElement('div');
             div.id = 'tuning-manager-section';
@@ -143,10 +158,9 @@
                 </div>
                 <div id="string-buttons-container"></div>
             `;
-            contentDiv.insertBefore(div, insertBeforeTarget);
+            contentDiv.insertBefore(div, insertTarget);
         }
 
-        // 3. Sección Metrónomo
         if(!document.getElementById('metronome-section')) {
             const div = document.createElement('div');
             div.id = 'metronome-section';
@@ -165,10 +179,10 @@
                     <button id="metro-play" class="metro-play-btn">PLAY</button>
                 </div>
             `;
-            contentDiv.insertBefore(div, insertBeforeTarget);
+            contentDiv.insertBefore(div, insertTarget);
         }
 
-        // 4. Editor Overlay (Sub-modal)
+        // 3. Editor Overlay
         if(!document.getElementById('custom-tuning-editor')) {
             const overlay = document.createElement('div');
             overlay.id = 'custom-tuning-editor';
@@ -191,29 +205,53 @@
                     </div>
                 </div>
             `;
-            // Se añade directamente al modal content para que se superponga pero dentro del contexto
             contentDiv.appendChild(overlay);
         }
 
+        // Una vez inyectado, bindeamos eventos
+        bindDynamicEvents();
         return true;
     }
 
-    // --- 2. INICIALIZACIÓN ---
-
-    function initTunerUI() {
+    function initTunerSystem() {
         injectTunerStyles();
         
-        // Listener global para el botón del header
-        const openBtn = document.getElementById('header-tuner-btn');
-        if(openBtn) openBtn.onclick = startTuner;
+        // Intentar inyectar inmediatamente
+        const injected = injectTunerHTML();
 
-        // Los elementos internos se bindean cuando se abre el afinador por primera vez
-        // o si ya existen.
+        // Si no se pudo inyectar (DOM no listo), usamos MutationObserver
+        if(!injected) {
+            console.log("Observando DOM para inyección del afinador...");
+            const observer = new MutationObserver((mutations, obs) => {
+                const modal = document.getElementById('tuner-modal');
+                if(modal) {
+                    const success = injectTunerHTML();
+                    if(success) {
+                        console.log("Afinador inyectado tras detección de DOM.");
+                        obs.disconnect(); // Dejar de observar una vez inyectado
+                    }
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
+
+        // Listener global para abrir
+        const openBtn = document.getElementById('header-tuner-btn');
+        if(openBtn) {
+            openBtn.onclick = startTuner;
+        } else {
+            // Si el botón está dentro de un menú que también se carga tarde
+            document.addEventListener('click', (e) => {
+                const btn = e.target.closest('#header-tuner-btn');
+                if(btn) {
+                    startTuner();
+                }
+            });
+        }
     }
 
-    // Bind events AFTER elements exist
     function bindDynamicEvents() {
-        // Elementos básicos
+        // Referencias
         noteElem = document.getElementById('tuner-note');
         freqElem = document.getElementById('tuner-freq');
         needleElem = document.getElementById('tuner-needle');
@@ -223,8 +261,14 @@
         if(canvas) canvasCtx = canvas.getContext('2d');
         stringContainer = document.getElementById('string-buttons-container');
 
+        // Botón Cerrar
         const closeBtn = document.getElementById('close-tuner-btn');
-        if(closeBtn) closeBtn.onclick = stopAll;
+        if(closeBtn) {
+            // Clonamos para eliminar listeners anteriores y evitar duplicados
+            const newClose = closeBtn.cloneNode(true);
+            closeBtn.parentNode.replaceChild(newClose, closeBtn);
+            newClose.onclick = stopAll;
+        }
 
         // Tuning Manager
         const select = document.getElementById('tuning-select');
@@ -258,7 +302,7 @@
             updateMetroDisplay();
         };
 
-        // Inicializar datos
+        // Cargar datos
         loadCustomTunings();
         populateTuningSelect();
         renderStringButtons();
@@ -269,14 +313,14 @@
         if(isMetroPlaying) toggleMetronome();
     }
 
-    // --- 3. LÓGICA AFINADOR ---
+    // --- 3. LÓGICA DE AUDIO (AFINADOR) ---
 
     async function startTuner() {
-        // Asegurar que la UI está inyectada
+        // Reintentar inyección por si acaso el DOM cambió
         injectTunerHTML();
-        bindDynamicEvents();
-
+        
         if(isTuning) return;
+        tunerModal = document.getElementById('tuner-modal');
         if(tunerModal) tunerModal.classList.add('show');
         
         const siteAudio = document.getElementById('site-audio');
@@ -285,6 +329,8 @@
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioContext = new AudioContext();
+            
+            // Resume context si está suspendido (requisito navegador)
             if (audioContext.state === 'suspended') await audioContext.resume();
 
             const stream = await navigator.mediaDevices.getUserMedia({ audio: {
@@ -304,12 +350,12 @@
             
             isTuning = true;
             if(statusText) statusText.textContent = "Toca una cuerda...";
-            drawVisualizer();
+            
             updatePitch();
 
         } catch (err) {
-            console.error(err);
-            alert("No se pudo acceder al micrófono.");
+            console.error("Error micrófono:", err);
+            alert("Error al acceder al micrófono. Verifica permisos y conexión segura (HTTPS/Localhost).");
             stopTuner();
         }
     }
@@ -321,13 +367,15 @@
             mediaStreamSource.mediaStream.getTracks().forEach(track => track.stop());
             mediaStreamSource.disconnect();
         }
-        if (audioContext) audioContext.close();
-        audioContext = null;
+        if (audioContext) {
+            audioContext.close();
+            audioContext = null;
+        }
         if(tunerModal) tunerModal.classList.remove('show');
     }
 
     function drawVisualizer() {
-        if (!isTuning || !canvasCtx || !analyser) return;
+        if (!isTuning || !canvasCtx || !analyser || !canvas) return;
         const bufferLength = analyser.fftSize;
         const dataArray = new Uint8Array(bufferLength);
         analyser.getByteTimeDomainData(dataArray);
@@ -353,14 +401,16 @@
 
     function updatePitch() {
         if(!isTuning) return;
+        
         drawVisualizer();
         analyser.getFloatTimeDomainData(buf);
         const ac = autoCorrelate(buf, audioContext.sampleRate);
 
         if (ac === -1) {
-            if(needleElem) needleElem.style.transform = "translateX(-50%) rotate(0deg)";
+            // Sin señal clara
         } else {
             let pitch = ac;
+            // Suavizado
             if (smoothedPitch === 0) smoothedPitch = pitch;
             smoothedPitch += (pitch - smoothedPitch) * 0.15;
 
@@ -369,7 +419,9 @@
 
             if (targetNoteMode !== "AUTO") {
                 const targetFreq = strings[targetNoteMode];
+                // Calcular cents de diferencia con la nota objetivo
                 detune = 1200 * Math.log2(smoothedPitch / targetFreq);
+                // Clamp visual
                 if (detune > 50) detune = 50; 
                 if (detune < -50) detune = -50;
                 noteName = targetNoteMode;
@@ -379,7 +431,7 @@
                 detune = centsOffFromPitch(smoothedPitch, note);
             }
 
-            if(noteElem) noteElem.textContent = noteName.replace(/[0-9]/g, ''); // Quitamos octava visualmente
+            if(noteElem) noteElem.textContent = noteName.replace(/[0-9]/g, ''); 
             if(freqElem) freqElem.textContent = Math.round(smoothedPitch) + " Hz";
 
             let angle = detune * 0.9;
@@ -398,7 +450,7 @@
         rafID = window.requestAnimationFrame(updatePitch);
     }
 
-    // Algoritmos Audio
+    // --- ALGORITMOS AUDIO ---
     function autoCorrelate(buf, sampleRate) {
         let size = buf.length, rms = 0;
         for (let i = 0; i < size; i++) rms += buf[i] * buf[i];
@@ -424,7 +476,8 @@
     function frequencyFromNoteNumber(note) { return 440 * Math.pow(2, (note - 69) / 12); }
     function centsOffFromPitch(f, note) { return Math.floor(1200 * Math.log(f / frequencyFromNoteNumber(note)) / Math.log(2)); }
 
-    // --- 4. GESTOR DE AFINACIONES ---
+
+    // --- 4. GESTIÓN DE DATOS Y UI ---
 
     function loadCustomTunings() {
         try {
@@ -476,7 +529,7 @@
         Object.keys(strings).forEach(k => {
             const btn = document.createElement('button');
             btn.className = `string-btn ${targetNoteMode === k ? 'active' : ''}`;
-            btn.textContent = k.replace(/[0-9]/, ''); // Solo nombre nota
+            btn.textContent = k.replace(/[0-9]/, ''); 
             btn.onclick = () => { targetNoteMode = k; renderStringButtons(); };
             stringContainer.appendChild(btn);
         });
@@ -512,6 +565,7 @@
     }
 
     function parseNoteToFreq(n) {
+        // Regex simple ej: E2, C#3
         const m = n.match(/^([A-G][#b]?)([0-9])$/);
         if(!m) return 0;
         const noteMap = {"C":0,"C#":1,"Db":1,"D":2,"D#":3,"Eb":3,"E":4,"F":5,"F#":6,"Gb":6,"G":7,"G#":8,"Ab":8,"A":9,"A#":10,"Bb":10,"B":11};
@@ -534,7 +588,7 @@
 
     function updateDeleteButton() {
         const btn = document.getElementById('tuning-delete-btn');
-        if(btn) btn.style.display = customTunings[currentTuningKey] ? 'inline-block' : 'none';
+        if(btn) btn.style.display = customTunings[currentTuningKey] ? 'flex' : 'none';
     }
 
     // --- 5. METRÓNOMO ---
@@ -586,8 +640,11 @@
         if(slid) slid.value = metroBpm;
     }
 
-    // Init
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initTunerUI);
-    else initTunerUI();
+    // --- ARRANQUE ---
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTunerSystem);
+    } else {
+        initTunerSystem();
+    }
 
 })();
