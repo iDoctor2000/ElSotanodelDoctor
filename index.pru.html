@@ -1882,6 +1882,34 @@ document.getElementById('live-content-area').onclick = (e) => {
 /* ---------- 12. Carga inicial & Lógica Audio Global y Splash ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
   
+  // --- INICIALIZACIÓN FIREBASE (CRÍTICO) ---
+  // Movido aquí para asegurar que los scripts 'defer' ya están cargados.
+  try {
+      if (typeof firebase !== 'undefined') {
+          firebase.initializeApp(firebaseConfig);
+          db = firebase.firestore();
+          // Habilitar persistencia
+          db.enablePersistence({ synchronizeTabs: true })
+            .catch(err => {
+                if (err.code == 'failed-precondition') {
+                    console.warn("Persistencia falló: multiples pestañas abiertas.");
+                } else if (err.code == 'unimplemented') {
+                    console.warn("El navegador no soporta persistencia.");
+                }
+            });
+          console.log("Firebase inicializado correctamente.");
+      } else {
+          console.error("Firebase SDK no cargado.");
+      }
+  } catch (e) {
+      console.error("Error inicializando Firebase:", e);
+      const banner = document.getElementById('firebase-critical-error-banner');
+      if (banner) {
+          banner.style.display = 'block';
+          banner.textContent = "Error de conexión con base de datos: " + e.message;
+      }
+  }
+
   // --- Lógica de Audio Global START ---
   const siteAudioElement = document.getElementById('site-audio');
   const siteAudioControlButton = document.getElementById('site-audio-control-button'); 
@@ -2329,7 +2357,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       grid.appendChild(div);
     }
-  };
+  }
 
   const prevBtn = document.getElementById('prev-month-btn');
   const nextBtn = document.getElementById('next-month-btn');
