@@ -119,28 +119,31 @@ window.injectJukeboxStyles = function() {
         .jb-mute-btn:hover { color: #fff; }
         .jb-mute-btn.muted { color: #f55; }
         
-        /* ESTILO SLIDER VOLUMEN MEJORADO */
+        /* ESTILO SLIDER VOLUMEN MEJORADO PARA MÓVIL */
         .jb-volume-slider {
             -webkit-appearance: none;
-            width: 140px; /* Más ancha */
-            height: 6px;  /* Más visible */
+            width: 140px; 
+            height: 6px;
             background: #444;
             border-radius: 3px;
             outline: none;
             cursor: pointer;
+            /* CLAVE PARA MÓVIL: Evita el scroll de la página al mover el slider */
+            touch-action: none; 
         }
         .jb-volume-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 16px;
-            height: 16px;
+            width: 20px; /* Más grande para el dedo */
+            height: 20px; /* Más grande para el dedo */
             background: #0cf;
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 0 8px rgba(0,204,255,0.6);
             transition: transform 0.1s;
+            margin-top: -2px; /* Ajuste visual */
         }
-        .jb-volume-slider::-webkit-slider-thumb:hover {
+        .jb-volume-slider::-webkit-slider-thumb:hover, .jb-volume-slider::-webkit-slider-thumb:active {
             transform: scale(1.2);
             background: #fff;
         }
@@ -196,7 +199,7 @@ window.injectJukeboxStyles = function() {
             #jukebox-player-bar.minimized .jukebox-song-title { font-size: 0.9em; max-width: 140px; }
             #jukebox-tools-row { gap: 8px; justify-content: space-around; }
             .jukebox-tool-btn { padding: 6px 8px; font-size: 0.8em; }
-            .jb-volume-slider { width: 80px; } /* En móvil un poco menos ancho */
+            .jb-volume-slider { width: 100px; } /* Un poco más pequeña para caber en pantallas muy estrechas */
         }
     `;
 
@@ -310,7 +313,12 @@ window.injectExtraControls = function() {
             const muteBtn = document.getElementById('jb-mute-btn');
             
             if (slider) {
-                slider.oninput = (e) => window.setJukeboxVolume(e.target.value);
+                // SOPORTE MEJORADO PARA MÓVIL
+                // 'input' cubre la mayoría de casos modernos
+                slider.addEventListener('input', (e) => window.setJukeboxVolume(e.target.value));
+                // 'change' como fallback
+                slider.addEventListener('change', (e) => window.setJukeboxVolume(e.target.value));
+                
                 // Restaurar valor visual por si acaso
                 slider.value = currentVolume;
             }
@@ -597,7 +605,8 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0
     currentAudioObj.webkitPreservesPitch = false;
 
     currentAudioObj.src = srcUrl;
-    currentAudioObj.volume = currentVolume / 100; // Apply Volume
+    // IMPORTANTE: setVolume gestiona el volumen actual, applyPlaybackRate la velocidad
+    window.setJukeboxVolume(currentVolume);
     window.applyPlaybackRate();
 
     if(startTime > 0) {
@@ -799,7 +808,7 @@ window.toggleNotesPanel = function() {
 window.setJukeboxVolume = function(val) {
     currentVolume = parseInt(val, 10);
     
-    // Asegurar actualización visual del slider si se llama programáticamente (e.g. desde Mute)
+    // Asegurar actualización visual del slider si se llama programáticamente
     const slider = document.getElementById('jb-volume-slider');
     if(slider && parseInt(slider.value, 10) !== currentVolume) {
         slider.value = currentVolume;
@@ -815,10 +824,11 @@ window.setJukeboxVolume = function(val) {
         window.updateMuteIcon();
     }
 
-    // Aplicar a HTML5
+    // Aplicar a HTML5 (con check de rango para evitar errores)
     if (currentJukeboxType === 'html5' && currentAudioObj) {
         try {
-            currentAudioObj.volume = currentVolume / 100;
+            const vol = Math.max(0, Math.min(1, currentVolume / 100));
+            if (isFinite(vol)) currentAudioObj.volume = vol;
         } catch(e) { console.warn("Error setting HTML5 volume", e); }
     }
     
