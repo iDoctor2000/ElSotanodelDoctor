@@ -76,8 +76,12 @@
         justify-content:space-between; position:fixed; top:0; left:0; width:100%; z-index:1000;  
         border-bottom: 1px solid #222; height: 60px; backdrop-filter: blur(5px);
     }
+    
+    /* NUEVO LAYOUT HEADER */
+    .header-left { display: flex; align-items: center; gap: 15px; }
     .logo img.logo-main{ width: 135px; height:auto; vertical-align: middle; }
-    .logo-intranet{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); height:45px; width:auto; }
+    /* Ajuste para que el logo intranet ya no esté absoluto en el centro, sino relativo a la izquierda */
+    .logo-intranet{ height:35px; width:auto; opacity: 0.9; }
     
     .header-controls-right { display: flex; align-items: center; gap: 10px; }
 
@@ -88,6 +92,10 @@
     }
     .header-icon-btn:hover { background: #333; transform: scale(1.05); }
     .header-icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+    
+    /* Icono Metrónomo (SVG stroke) */
+    #metronome-toggle-btn svg { fill: none; stroke: currentColor; stroke-width: 2; }
+    
     #site-audio-control-button { display: none; } 
 
     .hamburger{
@@ -174,8 +182,13 @@
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
     
     /* Ajustes columnas setlist */
-    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5) { text-align: center; }
-    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5) { text-align: center; }
+    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6),
+    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #second-setlist table th:nth-child(6),
+    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5), #star-setlist table th:nth-child(6) { text-align: center; }
+    
+    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6),
+    #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6),
+    #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6) { text-align: center; }
     
     /* JUKEBOX COLUMNS */
     th.jukebox-col-header, td.jukebox-col { width: 40px; text-align: center; padding: 5px; }
@@ -200,6 +213,41 @@
         opacity: 1; border-color: #666; color: #999;
     }
     .jukebox-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* METRONOME COLUMN & BUTTON (ACTUALIZADO) */
+    th.metronome-col-header, td.metronome-col { width: 40px; text-align: center; padding: 5px; }
+    
+    /* Estilo base (Gris/Apagado - No hay tempo) */
+    .metronome-table-btn {
+        background: transparent; border: 1px solid #333; color: #555;
+        border-radius: 50%; width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto; 
+        cursor: default; /* No clicable por defecto si no hay tempo */
+        transition: all 0.3s;
+    }
+    .metronome-table-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+    /* Estado: Tiene tempo (Azul - Como auriculares) */
+    .metronome-table-btn.has-tempo {
+        border-color: #0cf; color: #0cf;
+        cursor: pointer; /* Clicable */
+        box-shadow: 0 0 5px rgba(0, 204, 255, 0.3);
+    }
+    .metronome-table-btn.has-tempo:hover {
+        background: rgba(0, 204, 255, 0.1); transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(0, 204, 255, 0.6);
+    }
+
+    /* Estado: Reproduciendo (Rojo pulsante) - Sobrescribe el azul */
+    .metronome-table-btn.active-metronome {
+        background: rgba(255, 85, 85, 0.2); border-color: #ff5555 !important; color: #ff5555 !important;
+        box-shadow: 0 0 8px rgba(255, 85, 85, 0.6);
+        animation: pulse-metro 1s infinite;
+        cursor: pointer;
+    }
+    @keyframes pulse-metro { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
 
     .break-row td { font-style: italic; color: #ccc; background-color: #161616; }
     .break-row td:first-child { color: #777; text-align: center; }
@@ -311,12 +359,63 @@
     #jukebox-iframe-container { width: 100%; height: 80px; display: none; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
     #jukebox-iframe-container iframe { width: 100%; height: 100%; border: none; background: transparent; }
 
+    /* --- METRÓNOMO POPUP --- */
+    #metronome-popup {
+        position: fixed; top: 70px; right: 20px; width: 260px;
+        background: rgba(20, 20, 20, 0.95); 
+        border: 1px solid #0cf; border-radius: 12px;
+        padding: 15px; z-index: 2000;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        display: none; flex-direction: column; align-items: center; gap: 10px;
+        backdrop-filter: blur(10px);
+        transform-origin: top right;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    #metronome-popup.visible { display: flex; }
+    
+    .metronome-bpm-display { font-size: 2.5em; font-weight: bold; color: #fff; font-family: monospace; }
+    .metronome-bpm-label { font-size: 0.8em; color: #aaa; margin-top: -5px; }
+    .metronome-slider { width: 100%; margin: 10px 0; -webkit-appearance: none; background: #333; height: 5px; border-radius: 3px; }
+    .metronome-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; background: #0cf; border-radius: 50%; cursor: pointer; }
+    
+    .metronome-controls { display: flex; gap: 15px; width: 100%; justify-content: center; align-items: center; }
+    .metronome-btn-circle { width: 35px; height: 35px; border-radius: 50%; border: 1px solid #444; background: #222; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .metronome-btn-circle:hover { background: #333; border-color: #666; }
+    .metronome-play-btn { width: 50px; height: 50px; border-radius: 50%; background: #0cf; border: none; color: #000; font-size: 1.2em; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0,204,255,0.4); }
+    .metronome-play-btn:hover { background: #fff; transform: scale(1.05); }
+    .metronome-play-btn.playing { background: #ff3333; color: #fff; animation: pulse-red 1s infinite; }
+    
+    /* BOTÓN TAP (NUEVO) */
+    .metronome-tap-btn {
+        margin-top: 5px;
+        width: 60px;
+        height: 60px;
+        background: #0cf; /* Azul corporativo */
+        border: none;
+        border-radius: 8px;
+        color: #000;
+        font-weight: bold;
+        font-size: 1.1em;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0,204,255,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.1s, background 0.1s;
+    }
+    .metronome-tap-btn:active {
+        transform: scale(0.95);
+        background: #fff;
+    }
+
+    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
+
     @media(max-width:768px){
-      header { height: 55px; padding: 8px 15px; }  
+      header { height: 55px; padding: 8px 10px; }  
       .logo img.logo-main{ width: 110px; }
-      .logo-intranet{height:35px}
-      .header-audio-control { margin-right: 10px; width: 35px; height: 35px; }
-      .header-audio-control svg { width: 18px; height: 18px; }
+      /* Ajuste logo intranet móvil */
+      .logo-intranet{ height:25px; margin-left: 5px; }
+      .header-icon-btn { width: 35px; height: 35px; padding: 6px; }
       .hamburger { width: 35px; height: 35px; }
       .hamburger div{width:20px;}
       .sidebar{ width:260px; padding-top: calc(55px + 15px); }
@@ -340,6 +439,9 @@
       #jukebox-player-bar { width: 95%; padding: 15px; max-width: none; }
       .jukebox-loop-area { flex-wrap: wrap; }
       .jukebox-control-btn svg { width: 28px; height: 28px; }
+      
+      /* Metrónomo móvil */
+      #metronome-popup { right: 10px; left: 10px; width: auto; top: 65px; }
     }
 
     #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
@@ -417,7 +519,8 @@
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
   }
 }
 </script>
@@ -517,11 +620,24 @@
   </div>
 
   <header>
-    <div class="logo">
-      <img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main">
+    <!-- ZONA IZQUIERDA: LOGOS AGRUPADOS -->
+    <div class="header-left">
+        <div class="logo">
+          <img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main">
+        </div>
+        <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
     </div>
-    <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
+
+    <!-- ZONA DERECHA: BOTONES -->
     <div class="header-controls-right">
+        <!-- BOTÓN METRÓNOMO (NUEVO) -->
+        <button id="metronome-toggle-btn" class="header-icon-btn" title="Metrónomo">
+            <!-- Icono sencillo tipo triángulo -->
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/> 
+            </svg>
+        </button>
+
         <button id="site-audio-control-button" class="header-icon-btn" title="Activar sonido"> 
             <svg class="icon-muted" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/>
@@ -540,6 +656,29 @@
         <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
     </div>
   </header>
+
+  <!-- POPUP DEL METRÓNOMO (Oculto por defecto) -->
+  <div id="metronome-popup">
+     <div class="metronome-bpm-display"><span id="metro-bpm-val">120</span> <span style="font-size:0.4em; color:#aaa;">BPM</span></div>
+     <!-- Slider BPM -->
+     <input type="range" id="metro-bpm-slider" class="metronome-slider" min="40" max="240" value="120">
+     
+     <div class="metronome-controls">
+         <button class="metronome-btn-circle" id="metro-minus">-</button>
+         
+         <button class="metronome-play-btn" id="metro-play-btn">
+             <!-- Icono Play -->
+             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" id="metro-icon-play"><path d="M8 5v14l11-7z"/></svg>
+             <!-- Icono Stop -->
+             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" id="metro-icon-stop" style="display:none;"><path d="M6 6h12v12H6z"/></svg>
+         </button>
+         
+         <button class="metronome-btn-circle" id="metro-plus">+</button>
+     </div>
+     
+     <!-- BOTÓN TAP (NUEVO) -->
+     <button id="metro-tap-btn" class="metronome-tap-btn">TAP</button>
+  </div>
 
   <div id="overlay"></div>
   <nav class="sidebar" id="sidebar-menu">
@@ -671,7 +810,7 @@
     <section id="setlists">
       <h2>Setlist Próximo Ensayo</h2>
       <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
@@ -684,7 +823,7 @@
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
+      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-2">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
@@ -696,7 +835,7 @@
     <section id="star-setlist">
       <h2>Setlist Concierto Estrella</h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-star">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
@@ -731,6 +870,8 @@
 
   <!-- Jukebox Logic (Separated) -->
   <script src="jukebox.js"></script>
+  <!-- Metronome Logic (New) -->
+  <script src="metronome.js"></script>
 
 <script>
 /* ---------- 0. Firebase ---------- */
@@ -846,7 +987,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 
     let totalSecondsOverall = 0;
     
-    // Helper for Jukebox Cell (NUEVO ICONO AURICULARES + LÓGICA DIRECTA)
+    // Helper for Jukebox Cell
     const createJukeboxCell = (songName) => {
         const cleanName = sanitizeFirebaseKey(songName);
         const url = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : null;
@@ -861,28 +1002,56 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
         return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
     };
 
+    // Helper for Metronome Cell (MODIFICADO)
+    const createMetronomeCell = (tempo) => {
+        const tempoStr = decodeHtmlEntities(tempo || "-");
+        const match = String(tempoStr).match(/\d+/);
+        
+        // Icono SVG común
+        const svgIcon = `<svg viewBox="0 0 24 24"><path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/></svg>`;
+
+        // Si no hay tempo -> Botón gris apagado (sin onclick)
+        if (!match) {
+            return `<td class="metronome-col">
+                <button class="metronome-table-btn" title="Sin tempo definido">
+                    ${svgIcon}
+                </button>
+            </td>`;
+        }
+        
+        // Si hay tempo -> Botón azul activo (con onclick)
+        const cleanTempo = match[0];
+        return `<td class="metronome-col">
+            <button class="metronome-table-btn has-tempo" title="Tempo: ${cleanTempo} BPM" onclick="window.toggleMetronomeFromTable('${cleanTempo}', this)">
+                ${svgIcon}
+            </button>
+        </td>`;
+    };
+
     if (tbody) {
         setlistStructure.forEach(blockOrItem => {
             if (blockOrItem.isSetHeader) {
                 const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="6">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
+                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="7">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
                 totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
                 blockOrItem.songs.forEach(song => {
                     songCount++;
                     const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
                     const jukeboxCell = createJukeboxCell(song.displayName);
-                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
+                    const metronomeCell = createMetronomeCell(song.tempo);
+                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
                 })
             } else if (blockOrItem.isBreak) {
                 const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
                 totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
+                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
             } else if (blockOrItem.isSong) {
                 songCount++;
                 const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
                 totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
                 const jukeboxCell = createJukeboxCell(blockOrItem.displayName);
-                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
+                const metronomeCell = createMetronomeCell(blockOrItem.tempo);
+                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
             }
         });
     }
@@ -1110,7 +1279,7 @@ const PDF_FONT_NAMES = { bleedingCowboys: "BleedingCowboysCustom", carnevalee: "
 async function loadFontAsBase64(fontPath) { if(fontDataCache[fontPath]){return fontDataCache[fontPath]}try{const response=await fetch(fontPath);if(!response.ok){throw new Error(`No se pudo cargar la fuente: ${response.statusText} (URL: ${fontPath})`)} const blob=await response.blob();return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onloadend=()=>{fontDataCache[fontPath]=reader.result.split(',')[1];resolve(fontDataCache[fontPath])};reader.onerror=(error)=>reject(new Error("Error del FileReader al convertir fuente a Base64: "+error.message));reader.readAsDataURL(blob)})}catch(error){console.error(`Error crítico cargando la fuente ${fontPath}:`,error);fontDataCache[fontPath]=null;return null}}
 async function registerFontWithDoc(doc,fontPath,fontVFSAlias,fontNameInDoc){const fontBase64=await loadFontAsBase64(fontPath);if(fontBase64){try{doc.addFileToVFS(fontVFSAlias,fontBase64);doc.addFont(fontVFSAlias,fontNameInDoc,'normal');console.log(`Fuente ${fontNameInDoc} registrada en jsPDF desde ${fontPath}.`);return true}catch(fontError){console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`,fontError)}}else{console.warn(`No se pudo cargar la fuente ${fontPath} para registrarla.`)} return false}
 async function getBackgroundImageDataURL(){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'))};img.onerror=(err)=>reject(new Error("Error al cargar la imagen de plantilla: "+(err.message||err.toString())));img.src=PDF_BACKGROUND_IMAGE_PATH;if(img.complete){if(img.naturalHeight!==0){const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'))}else if(img.src){reject(new Error("Imagen de plantilla en caché pero inválida."))}}})}
-async function genPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist"; let bleedingCowboysRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.bleedingCowboys,'Bleeding_Cowboys.ttf',PDF_FONT_NAMES.bleedingCowboys);let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S');doc.setFontSize(10);doc.setTextColor(150,0,0);doc.text("Advertencia: No se pudo cargar la plantilla de fondo.",pageWidth/2,pageHeight/2,{align:"center"})} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;doc.setFont(bleedingCowboysRegistered?PDF_FONT_NAMES.bleedingCowboys:"times",'normal');if(!bleedingCowboysRegistered)doc.setFontType("bold");doc.setFontSize(28);doc.text("SETLIST",pageWidth/2,currentY,{align:"center"});currentY+=28+10;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');if(!carnevaleeRegistered)doc.setFontType("bold");doc.setFontSize(22);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=22+5;doc.setFont("times","italic");doc.setFontSize(10); let totalOverallSeconds=0;let totalSongCount=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){totalOverallSeconds+=blockOrItem.calculatedBlockDurationSeconds||0;totalSongCount+=blockOrItem.songs?blockOrItem.songs.length:0}else if(blockOrItem.isBreak){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0}else if(blockOrItem.isSong){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0;totalSongCount++}});const totalItemsText=`${totalSongCount} canciones`;doc.text(`${totalItemsText}  |  Tiempo total: ${toHHMM(totalOverallSeconds)}`,pageWidth/2,currentY,{align:"center"});currentY+=10+20; const tableFont="helvetica";const tableHeadFont="helvetica";let pdfSongNumber=0;const tableBody=[];setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){tableBody.push([{content:`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,colSpan:5,styles:{halign:'center',fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0],fontSize:10}}]);if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{pdfSongNumber++;tableBody.push([pdfSongNumber,song.displayName,decodeHtmlEntities(song.key||"-"),decodeHtmlEntities(song.tempo||"-"),toMMSS(song.calculatedDurationSeconds||0)])})}}else if(blockOrItem.isBreak){tableBody.push([{content:"»",styles:{halign:'center',fontStyle:'italic',textColor:[100,100,100]}},{content:blockOrItem.displayName,styles:{fontStyle:'italic',textColor:[80,80,80]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:toMMSS(blockOrItem.calculatedDurationSeconds||0),styles:{halign:'center',fontStyle:'italic',textColor:[80,80,80]}}])}else if(blockOrItem.isSong){pdfSongNumber++;tableBody.push([pdfSongNumber,blockOrItem.displayName,decodeHtmlEntities(blockOrItem.key||"-"),decodeHtmlEntities(blockOrItem.tempo||"-"),toMMSS(blockOrItem.calculatedDurationSeconds||0)])}}); doc.autoTable({startY:currentY,head:[["#","Título","Key","Tempo","Time"]],body:tableBody,theme:'grid',headStyles:{fillColor:[200,200,200],textColor:[0,0,0],font:tableHeadFont,fontStyle:'bold',halign:'center',fontSize:10},styles:{font:tableFont,fontSize:9,cellPadding:{top:4,right:5,bottom:4,left:5},lineColor:[80,80,80],lineWidth:.5,textColor:[0,0,0]},columnStyles:{0:{halign:'center',cellWidth:25,fontSize:9},1:{halign:'left',cellWidth:'auto',fontSize:10},2:{halign:'center',cellWidth:50,fontSize:9},3:{halign:'center',cellWidth:50,fontSize:9},4:{halign:'center',cellWidth:50,fontSize:9}},margin:{top:contentMarginTop,right:contentMarginSides,bottom:contentMarginBottom,left:contentMarginSides},pageBreak:'auto',didDrawPage:function(data){if(data.pageNumber>1&&backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}}});doc.save(`${cleanFileName}.pdf`)}
+async function genPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let bleedingCowboysRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.bleedingCowboys,'Bleeding_Cowboys.ttf',PDF_FONT_NAMES.bleedingCowboys);let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S');doc.setFontSize(10);doc.setTextColor(150,0,0);doc.text("Advertencia: No se pudo cargar la plantilla de fondo.",pageWidth/2,pageHeight/2,{align:"center"})} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;doc.setFont(bleedingCowboysRegistered?PDF_FONT_NAMES.bleedingCowboys:"times",'normal');if(!bleedingCowboysRegistered)doc.setFontType("bold");doc.setFontSize(28);doc.text("SETLIST",pageWidth/2,currentY,{align:"center"});currentY+=28+10;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');if(!carnevaleeRegistered)doc.setFontType("bold");doc.setFontSize(22);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=22+5;doc.setFont("times","italic");doc.setFontSize(10); let totalOverallSeconds=0;let totalSongCount=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){totalOverallSeconds+=blockOrItem.calculatedBlockDurationSeconds||0;totalSongCount+=blockOrItem.songs?blockOrItem.songs.length:0}else if(blockOrItem.isBreak){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0}else if(blockOrItem.isSong){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0;totalSongCount++}});const totalItemsText=`${totalSongCount} canciones`;doc.text(`${totalItemsText}  |  Tiempo total: ${toHHMM(totalOverallSeconds)}`,pageWidth/2,currentY,{align:"center"});currentY+=10+20; const tableFont="helvetica";const tableHeadFont="helvetica";let pdfSongNumber=0;const tableBody=[];setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){tableBody.push([{content:`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,colSpan:5,styles:{halign:'center',fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0],fontSize:10}}]);if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{pdfSongNumber++;tableBody.push([pdfSongNumber,song.displayName,decodeHtmlEntities(song.key||"-"),decodeHtmlEntities(song.tempo||"-"),toMMSS(song.calculatedDurationSeconds||0)])})}}else if(blockOrItem.isBreak){tableBody.push([{content:"»",styles:{halign:'center',fontStyle:'italic',textColor:[100,100,100]}},{content:blockOrItem.displayName,styles:{fontStyle:'italic',textColor:[80,80,80]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:toMMSS(blockOrItem.calculatedDurationSeconds||0),styles:{halign:'center',fontStyle:'italic',textColor:[80,80,80]}}])}else if(blockOrItem.isSong){pdfSongNumber++;tableBody.push([pdfSongNumber,blockOrItem.displayName,decodeHtmlEntities(blockOrItem.key||"-"),decodeHtmlEntities(blockOrItem.tempo||"-"),toMMSS(blockOrItem.calculatedDurationSeconds||0)])}}); doc.autoTable({startY:currentY,head:[["#","Título","Key","Tempo","Time"]],body:tableBody,theme:'grid',headStyles:{fillColor:[200,200,200],textColor:[0,0,0],font:tableHeadFont,fontStyle:'bold',halign:'center',fontSize:10},styles:{font:tableFont,fontSize:9,cellPadding:{top:4,right:5,bottom:4,left:5},lineColor:[80,80,80],lineWidth:.5,textColor:[0,0,0]},columnStyles:{0:{halign:'center',cellWidth:25,fontSize:9},1:{halign:'left',cellWidth:'auto',fontSize:10},2:{halign:'center',cellWidth:50,fontSize:9},3:{halign:'center',cellWidth:50,fontSize:9},4:{halign:'center',cellWidth:50,fontSize:9}},margin:{top:contentMarginTop,right:contentMarginSides,bottom:contentMarginBottom,left:contentMarginSides},pageBreak:'auto',didDrawPage:function(data){if(data.pageNumber>1&&backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}}});doc.save(`${cleanFileName}.pdf`)}
 async function genBasicPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const itemTitleFontSize=14;const setHeaderFontSize=16;const itemLineHeight=itemTitleFontSize*1.6;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{if(currentY+itemLineHeight*2.5>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=itemLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderFontSize*1.6;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+itemLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=itemLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(itemTitleFontSize-1>8?itemTitleFontSize-1:8);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=(itemTitleFontSize-1>8?itemTitleFontSize-1:8)*1.6;if(idx<setlistStructure.length-1)currentY+=itemLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight}});doc.save(`${cleanFileName}_Basico.pdf`)}
 async function genPersonalPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf,songTitleFontSizeParam){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const songTitleFontSize=parseInt(songTitleFontSizeParam,10)||14;const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF Personal:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S')} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const setHeaderFontSize=16;const breakTextFontSize=Math.max(8,songTitleFontSize-2);const songTitleLineHeight=songTitleFontSize*1.5;const setHeaderLineHeight=setHeaderFontSize*1.5;const breakTextLineHeight=breakTextFontSize*1.5;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{let estimatedBlockHeight=songTitleLineHeight;if(blockOrItem.isSetHeader)estimatedBlockHeight=setHeaderLineHeight+(blockOrItem.songs?blockOrItem.songs.length*songTitleLineHeight:0);else if(blockOrItem.isBreak)estimatedBlockHeight=breakTextLineHeight;if(currentY+estimatedBlockHeight>pageHeight-contentMarginBottom&&idx>0){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=songTitleLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderLineHeight;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+songTitleLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=songTitleLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(breakTextFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=breakTextLineHeight;if(idx<setlistStructure.length-1)currentY+=songTitleLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight}});doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`)}
 
