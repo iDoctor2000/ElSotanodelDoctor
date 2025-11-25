@@ -3,6 +3,7 @@
    METRONOME.JS
    Lógica básica para el metrónomo web usando AudioContext
    Soporta Sample (Click.mp3) y Oscilador (Fallback)
+   Incluye funcionalidad TAP Tempo
 */
 
 const metronomeState = {
@@ -14,7 +15,11 @@ const metronomeState = {
     clickBuffer: null, // Buffer para el sonido MP3
     lookahead: 25.0, // ms
     scheduleAheadTime: 0.1, // s
-    activeTableBtn: null // Referencia al botón de la tabla activo actualmente
+    activeTableBtn: null, // Referencia al botón de la tabla activo actualmente
+    
+    // Variables para TAP Tempo
+    tapTimes: [],
+    tapTimeout: 2000 // 2 segundos para resetear el TAP
 };
 
 function initAudioContext() {
@@ -30,8 +35,8 @@ async function loadClickSound() {
     if (metronomeState.clickBuffer) return; // Ya cargado
 
     try {
-        console.log("Intentando cargar sonido de metrónomo desde ./assets/Click.mp3 ...");
-        const response = await fetch('./assets/Click.mp3');
+        // Intentamos cargar con ruta relativa. Ajustar si es necesario.
+        const response = await fetch('assets/Click.mp3');
         if (!response.ok) {
             throw new Error(`Error HTTP al cargar Click.mp3: ${response.status}`);
         }
@@ -39,7 +44,7 @@ async function loadClickSound() {
         metronomeState.clickBuffer = await metronomeState.audioContext.decodeAudioData(arrayBuffer);
         console.log("¡Sonido Click.mp3 cargado y decodificado correctamente!");
     } catch (error) {
-        console.error("Fallo al cargar Click.mp3. Se usará sonido sintético (bip) como respaldo.", error);
+        console.warn("Fallo al cargar Click.mp3 (verifique ruta 'assets/Click.mp3'). Se usará sonido sintético.", error);
     }
 }
 
@@ -138,8 +143,9 @@ function updateMetronomeUI(isPlaying) {
 function setBPM(val) {
     let newBpm = parseInt(val, 10);
     if (isNaN(newBpm)) return;
-    if (newBpm < 40) newBpm = 40;
-    if (newBpm > 240) newBpm = 240;
+    // Límites razonables
+    if (newBpm < 30) newBpm = 30;
+    if (newBpm > 300) newBpm = 300;
     
     metronomeState.bpm = newBpm;
     
@@ -148,6 +154,48 @@ function setBPM(val) {
     const sliderDisplay = document.getElementById('metro-bpm-slider');
     if(valDisplay) valDisplay.textContent = newBpm;
     if(sliderDisplay) sliderDisplay.value = newBpm;
+}
+
+// --- LÓGICA TAP TEMPO ---
+function handleTapTempo() {
+    const now = Date.now();
+    
+    // Si ha pasado mucho tiempo desde el último tap, reiniciamos
+    if (metronomeState.tapTimes.length > 0 && now - metronomeState.tapTimes[metronomeState.tapTimes.length - 1] > metronomeState.tapTimeout) {
+        metronomeState.tapTimes = [];
+    }
+    
+    metronomeState.tapTimes.push(now);
+    
+    // Mantenemos solo los últimos 5 taps para el promedio (mayor precisión)
+    if (metronomeState.tapTimes.length > 5) {
+        metronomeState.tapTimes.shift();
+    }
+    
+    // Necesitamos al menos 2 taps para calcular intervalo
+    if (metronomeState.tapTimes.length > 1) {
+        let intervals = [];
+        for (let i = 1; i < metronomeState.tapTimes.length; i++) {
+            intervals.push(metronomeState.tapTimes[i] - metronomeState.tapTimes[i-1]);
+        }
+        
+        // Promedio de intervalos
+        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        
+        // Convertir a BPM (60000 ms en 1 minuto)
+        const calculatedBpm = Math.round(60000 / avgInterval);
+        
+        setBPM(calculatedBpm);
+        
+        // Si el metrónomo está sonando, se ajustará automáticamente en el próximo 'nextNote'
+        // Si se quiere reiniciar el tiempo al pulsar TAP, descomentar:
+        /*
+        if (metronomeState.isPlaying) {
+             toggleMetronome(); // Stop
+             setTimeout(toggleMetronome, 50); // Start synced
+        }
+        */
+    }
 }
 
 // --- FUNCIÓN GLOBAL PARA LLAMAR DESDE LA TABLA ---
@@ -231,4 +279,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if(plusBtn) plusBtn.addEventListener('click', () => {
         setBPM(metronomeState.bpm + 1);
     });
+    
+    // Botón TAP
+    const tapBtn = document.getElementById('metro-tap-btn');
+    if(tapBtn) {
+        tapBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Evitar comportamientos extraños en móvil
+            handleTapTempo();
+            
+            // Feedback visual simple (escalar botón)
+            tapBtn.style.transform = "scale(0.9)";
+            setTimeout(() => tapBtn.style.transform = "scale(1)", 100);
+        });
+    }
 });
