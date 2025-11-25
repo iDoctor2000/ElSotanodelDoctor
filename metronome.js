@@ -1,4 +1,4 @@
-
+ 
 /* 
    METRONOME.JS
    Lógica básica para el metrónomo web usando AudioContext
@@ -35,7 +35,7 @@ async function loadClickSound() {
     if (metronomeState.clickBuffer) return; // Ya cargado
 
     try {
-        // Intentamos cargar con ruta relativa. Ajustar si es necesario.
+        // Intentamos cargar con ruta relativa.
         const response = await fetch('assets/Click.mp3');
         if (!response.ok) {
             throw new Error(`Error HTTP al cargar Click.mp3: ${response.status}`);
@@ -156,43 +156,56 @@ function setBPM(val) {
     if(sliderDisplay) sliderDisplay.value = newBpm;
 }
 
-// --- LÓGICA TAP TEMPO ---
-function handleTapTempo() {
+// --- LÓGICA TAP TEMPO OPTIMIZADA ---
+function handleTapTempo(e) {
+    // Evitar doble disparo en móviles (touch + click)
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    // Feedback visual instantáneo
+    const tapBtn = document.getElementById('metro-tap-btn');
+    if(tapBtn) {
+        tapBtn.style.backgroundColor = "#fff";
+        setTimeout(() => { tapBtn.style.backgroundColor = "#0cf"; }, 100);
+    }
+
     const now = Date.now();
     
-    // Si ha pasado mucho tiempo desde el último tap, reiniciamos
+    // Reset si ha pasado mucho tiempo (> 2 seg)
     if (metronomeState.tapTimes.length > 0 && now - metronomeState.tapTimes[metronomeState.tapTimes.length - 1] > metronomeState.tapTimeout) {
         metronomeState.tapTimes = [];
+        console.log("TAP Reset");
     }
     
     metronomeState.tapTimes.push(now);
     
-    // Mantenemos solo los últimos 5 taps para el promedio (mayor precisión)
+    // Mantenemos solo los últimos 5 taps para precisión
     if (metronomeState.tapTimes.length > 5) {
         metronomeState.tapTimes.shift();
     }
     
-    // Necesitamos al menos 2 taps para calcular intervalo
+    // Necesitamos al menos 2 taps
     if (metronomeState.tapTimes.length > 1) {
         let intervals = [];
         for (let i = 1; i < metronomeState.tapTimes.length; i++) {
             intervals.push(metronomeState.tapTimes[i] - metronomeState.tapTimes[i-1]);
         }
         
-        // Promedio de intervalos
+        // Calcular promedio
         const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
         
-        // Convertir a BPM (60000 ms en 1 minuto)
+        // BPM = 60000ms / intervalo promedio
         const calculatedBpm = Math.round(60000 / avgInterval);
         
+        console.log("TAP detectado. Intervalo:", avgInterval, "BPM:", calculatedBpm);
         setBPM(calculatedBpm);
         
-        // Si el metrónomo está sonando, se ajustará automáticamente en el próximo 'nextNote'
-        // Si se quiere reiniciar el tiempo al pulsar TAP, descomentar:
-        /*
+        // (Opcional) Si el metrónomo está sonando, sincronizar el golpe al tap
+        /* 
         if (metronomeState.isPlaying) {
-             toggleMetronome(); // Stop
-             setTimeout(toggleMetronome, 50); // Start synced
+             metronomeState.nextNoteTime = metronomeState.audioContext.currentTime + 0.05;
         }
         */
     }
@@ -208,7 +221,7 @@ window.toggleMetronomeFromTable = function(bpmRaw, btnElement) {
     }
     const targetBpm = parseInt(match[0], 10);
 
-    // Inicializar AudioContext si es la primera vez (crucial para cargar el sonido)
+    // Inicializar AudioContext si es la primera vez
     initAudioContext();
 
     // Si ya está sonando ESTE botón -> Parar
@@ -217,10 +230,10 @@ window.toggleMetronomeFromTable = function(bpmRaw, btnElement) {
         return;
     }
 
-    // Si está sonando OTRO o estaba parado -> Poner BPM y Arrancar (o reiniciar)
+    // Si está sonando OTRO o estaba parado -> Poner BPM y Arrancar
     setBPM(targetBpm);
 
-    // Gestión visual de botones anteriores
+    // Gestión visual
     if (metronomeState.activeTableBtn) {
         metronomeState.activeTableBtn.classList.remove('active-metronome');
     }
@@ -228,7 +241,6 @@ window.toggleMetronomeFromTable = function(bpmRaw, btnElement) {
     btnElement.classList.add('active-metronome');
     metronomeState.activeTableBtn = btnElement;
 
-    // Si no estaba sonando, arrancar. Si ya sonaba, el scheduler coge el nuevo BPM automáticamente
     if (!metronomeState.isPlaying) {
         toggleMetronome();
     }
@@ -243,17 +255,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (toggleBtn && popup) {
         toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Toggle visibilidad del popup
             if (popup.classList.contains('visible')) {
                 popup.classList.remove('visible');
             } else {
                 popup.classList.add('visible');
-                // Intentar cargar el sonido al abrir el popup por si acaso
                 initAudioContext();
             }
         });
         
-        // Cerrar al hacer click fuera
         document.addEventListener('click', (e) => {
             if (!popup.contains(e.target) && !toggleBtn.contains(e.target)) {
                 popup.classList.remove('visible');
@@ -261,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Controles internos del metrónomo
+    // Controles internos
     const playBtn = document.getElementById('metro-play-btn');
     if(playBtn) playBtn.addEventListener('click', toggleMetronome);
     
@@ -280,16 +289,10 @@ document.addEventListener("DOMContentLoaded", () => {
         setBPM(metronomeState.bpm + 1);
     });
     
-    // Botón TAP
+    // Botón TAP - Usamos mousedown y touchstart para respuesta inmediata
     const tapBtn = document.getElementById('metro-tap-btn');
     if(tapBtn) {
-        tapBtn.addEventListener('click', (e) => {
-            e.preventDefault(); // Evitar comportamientos extraños en móvil
-            handleTapTempo();
-            
-            // Feedback visual simple (escalar botón)
-            tapBtn.style.transform = "scale(0.9)";
-            setTimeout(() => tapBtn.style.transform = "scale(1)", 100);
-        });
+        tapBtn.addEventListener('mousedown', handleTapTempo);
+        tapBtn.addEventListener('touchstart', handleTapTempo);
     }
 });
