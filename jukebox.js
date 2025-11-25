@@ -448,9 +448,20 @@ window.convertDriveToDirectLink = function(url) {
     return null;
 };
 
+// MEJORA DROPBOX: Forzar raw=1 siempre para evitar páginas HTML
 window.convertDropboxLink = function(url) {
     if (url.includes('dropbox.com')) {
-        return url.replace('dl=0', 'raw=1').replace('dl=1', 'raw=1');
+        // 1. Reemplazos estándar si existen
+        if (url.includes('dl=0')) return url.replace('dl=0', 'raw=1');
+        if (url.includes('dl=1')) return url.replace('dl=1', 'raw=1');
+        
+        // 2. Si ya tiene raw=1, dejarlo
+        if (url.includes('raw=1')) return url;
+
+        // 3. Si no tiene parámetros conocidos, AGREGAR raw=1
+        // Si tiene ?, agregamos &raw=1, sino ?raw=1
+        const separator = url.includes('?') ? '&' : '?';
+        return url + separator + 'raw=1';
     }
     return null;
 };
