@@ -2,6 +2,7 @@
 /* 
    METRONOME.JS
    Lógica básica para el metrónomo web usando AudioContext
+   Soporta Sample (Click.mp3) y Oscilador (Fallback)
 */
 
 const metronomeState = {
@@ -10,6 +11,7 @@ const metronomeState = {
     nextNoteTime: 0.0,
     timerID: null,
     audioContext: null,
+    clickBuffer: null, // Buffer para el sonido MP3
     lookahead: 25.0, // ms
     scheduleAheadTime: 0.1, // s
     activeTableBtn: null // Referencia al botón de la tabla activo actualmente
@@ -18,6 +20,25 @@ const metronomeState = {
 function initAudioContext() {
     if (!metronomeState.audioContext) {
         metronomeState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // Cargar el sonido del Click al iniciar el contexto
+        loadClickSound();
+    }
+}
+
+// Cargar el archivo de audio assets/Click.mp3
+async function loadClickSound() {
+    if (metronomeState.clickBuffer) return; // Ya cargado
+
+    try {
+        const response = await fetch('assets/Click.mp3');
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar el sonido Click.mp3: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        metronomeState.clickBuffer = await metronomeState.audioContext.decodeAudioData(arrayBuffer);
+        console.log("Sonido de metrónomo cargado correctamente.");
+    } catch (error) {
+        console.warn("Fallo al cargar Click.mp3, se usará sonido sintético de respaldo.", error);
     }
 }
 
@@ -27,21 +48,31 @@ function nextNote() {
 }
 
 function scheduleNote(time) {
-    const osc = metronomeState.audioContext.createOscillator();
-    const envelope = metronomeState.audioContext.createGain();
+    // INTENTO 1: Reproducir Sample (Click.mp3)
+    if (metronomeState.clickBuffer) {
+        const source = metronomeState.audioContext.createBufferSource();
+        source.buffer = metronomeState.clickBuffer;
+        source.connect(metronomeState.audioContext.destination);
+        source.start(time);
+    } 
+    // INTENTO 2: Fallback a Oscilador (si el MP3 falla o no ha cargado)
+    else {
+        const osc = metronomeState.audioContext.createOscillator();
+        const envelope = metronomeState.audioContext.createGain();
 
-    osc.frequency.value = 1000; // Tono (Hz)
-    envelope.gain.value = 1;
-    
-    // Envolvente simple para un "click" corto
-    envelope.gain.exponentialRampToValueAtTime(1, time + 0.001);
-    envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
+        osc.frequency.value = 1000; // Tono (Hz)
+        envelope.gain.value = 1;
+        
+        // Envolvente simple para un "click" corto
+        envelope.gain.exponentialRampToValueAtTime(1, time + 0.001);
+        envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
 
-    osc.connect(envelope);
-    envelope.connect(metronomeState.audioContext.destination);
+        osc.connect(envelope);
+        envelope.connect(metronomeState.audioContext.destination);
 
-    osc.start(time);
-    osc.stop(time + 0.03);
+        osc.start(time);
+        osc.stop(time + 0.03);
+    }
 }
 
 function scheduler() {
