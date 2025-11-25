@@ -76,21 +76,12 @@
         justify-content:space-between; position:fixed; top:0; left:0; width:100%; z-index:1000;  
         border-bottom: 1px solid #222; height: 60px; backdrop-filter: blur(5px);
     }
+    
+    /* NUEVO LAYOUT HEADER */
+    .header-left { display: flex; align-items: center; gap: 15px; }
     .logo img.logo-main{ width: 135px; height:auto; vertical-align: middle; }
- /* Hacemos que el contenedor .logo alinee sus imágenes en fila */
-    .logo { 
-        display: flex; 
-        align-items: center; 
-        gap: 15px; /* Separación entre el logo del sótano y el de intranet */
-    }
-
-    /* Quitamos la posición absoluta para que fluya natural al lado del otro */
-    .logo-intranet { 
-        position: static; 
-        transform: none; 
-        height: 35px; /* Un poco más pequeño para que quede elegante al lado */
-        width: auto; 
-    }
+    /* Ajuste para que el logo intranet ya no esté absoluto en el centro, sino relativo a la izquierda */
+    .logo-intranet{ height:35px; width:auto; opacity: 0.9; }
     
     .header-controls-right { display: flex; align-items: center; gap: 10px; }
 
@@ -101,6 +92,10 @@
     }
     .header-icon-btn:hover { background: #333; transform: scale(1.05); }
     .header-icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+    
+    /* Icono Metrónomo (SVG stroke) */
+    #metronome-toggle-btn svg { fill: none; stroke: currentColor; stroke-width: 2; }
+    
     #site-audio-control-button { display: none; } 
 
     .hamburger{
@@ -324,12 +319,39 @@
     #jukebox-iframe-container { width: 100%; height: 80px; display: none; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
     #jukebox-iframe-container iframe { width: 100%; height: 100%; border: none; background: transparent; }
 
+    /* --- METRÓNOMO POPUP --- */
+    #metronome-popup {
+        position: fixed; top: 70px; right: 20px; width: 260px;
+        background: rgba(20, 20, 20, 0.95); 
+        border: 1px solid #0cf; border-radius: 12px;
+        padding: 15px; z-index: 2000;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        display: none; flex-direction: column; align-items: center; gap: 10px;
+        backdrop-filter: blur(10px);
+        transform-origin: top right;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    #metronome-popup.visible { display: flex; }
+    
+    .metronome-bpm-display { font-size: 2.5em; font-weight: bold; color: #fff; font-family: monospace; }
+    .metronome-bpm-label { font-size: 0.8em; color: #aaa; margin-top: -5px; }
+    .metronome-slider { width: 100%; margin: 10px 0; -webkit-appearance: none; background: #333; height: 5px; border-radius: 3px; }
+    .metronome-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; background: #0cf; border-radius: 50%; cursor: pointer; }
+    
+    .metronome-controls { display: flex; gap: 15px; width: 100%; justify-content: center; align-items: center; }
+    .metronome-btn-circle { width: 35px; height: 35px; border-radius: 50%; border: 1px solid #444; background: #222; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .metronome-btn-circle:hover { background: #333; border-color: #666; }
+    .metronome-play-btn { width: 50px; height: 50px; border-radius: 50%; background: #0cf; border: none; color: #000; font-size: 1.2em; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0,204,255,0.4); }
+    .metronome-play-btn:hover { background: #fff; transform: scale(1.05); }
+    .metronome-play-btn.playing { background: #ff3333; color: #fff; animation: pulse-red 1s infinite; }
+    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
+
     @media(max-width:768px){
-      header { height: 55px; padding: 8px 15px; }  
+      header { height: 55px; padding: 8px 10px; }  
       .logo img.logo-main{ width: 110px; }
-      .logo-intranet{height:35px}
-      .header-audio-control { margin-right: 10px; width: 35px; height: 35px; }
-      .header-audio-control svg { width: 18px; height: 18px; }
+      /* Ajuste logo intranet móvil */
+      .logo-intranet{ height:25px; margin-left: 5px; }
+      .header-icon-btn { width: 35px; height: 35px; padding: 6px; }
       .hamburger { width: 35px; height: 35px; }
       .hamburger div{width:20px;}
       .sidebar{ width:260px; padding-top: calc(55px + 15px); }
@@ -353,6 +375,9 @@
       #jukebox-player-bar { width: 95%; padding: 15px; max-width: none; }
       .jukebox-loop-area { flex-wrap: wrap; }
       .jukebox-control-btn svg { width: 28px; height: 28px; }
+      
+      /* Metrónomo móvil */
+      #metronome-popup { right: 10px; left: 10px; width: auto; top: 65px; }
     }
 
     #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
@@ -422,90 +447,6 @@
     @media(max-width:768px){
         .live-song-title { font-size: 2.2em; }
         .live-song-meta { font-size: 1.5em; flex-direction: column; gap: 10px; }
-    }
-
-    /* --- ESTILOS AFINADOR (TUNER) --- */
-    .tuner-content {
-        background: #111;
-        border: 2px solid #333;
-        box-shadow: 0 0 30px rgba(0,0,0,0.9), inset 0 0 50px #000;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    .tuner-display {
-        margin: 20px 0;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    .tuner-note {
-        font-size: 5em;
-        font-weight: bold;
-        color: #f00;
-        text-shadow: 0 0 20px rgba(255,0,0,0.5);
-        font-family: monospace;
-        line-height: 1;
-        margin-bottom: 10px;
-        min-height: 1em;
-    }
-    .tuner-freq {
-        font-size: 1.2em;
-        color: #777;
-        font-family: monospace;
-        margin-bottom: 20px;
-    }
-    .tuner-gauge {
-        width: 250px;
-        height: 15px;
-        background: #222;
-        border-radius: 10px;
-        position: relative;
-        overflow: hidden;
-        box-shadow: inset 0 0 10px #000;
-        border: 1px solid #444;
-    }
-    .tuner-center-marker {
-        position: absolute;
-        left: 50%;
-        top: 0;
-        width: 2px;
-        height: 100%;
-        background: #555;
-        transform: translateX(-50%);
-        z-index: 1;
-    }
-    .tuner-needle {
-        position: absolute;
-        left: 50%;
-        top: 0;
-        width: 4px;
-        height: 100%;
-        background: #fff;
-        box-shadow: 0 0 10px #fff;
-        transform: translateX(-50%);
-        transition: transform 0.1s ease-out;
-        z-index: 2;
-    }
-    #tuner-status-text {
-        margin-top: 10px;
-        color: #777;
-        font-size: 0.9em;
-        font-style: italic;
-        min-height: 1.2em;
-    }
-    #close-tuner-btn {
-        background: #333;
-        color: #aaa;
-        margin-top: 20px;
-        width: 100%;
-        border: 1px solid #444;
-    }
-    #close-tuner-btn:hover {
-        background: #444;
-        color: #fff;
     }
   </style>
 <script type="importmap">
@@ -614,20 +555,21 @@
   </div>
 
   <header>
-    <div class="logo">
-      <img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main">
-      <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
+    <!-- ZONA IZQUIERDA: LOGOS AGRUPADOS -->
+    <div class="header-left">
+        <div class="logo">
+          <img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main">
+        </div>
+        <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
     </div>
-    
+
+    <!-- ZONA DERECHA: BOTONES -->
     <div class="header-controls-right">
-      ...
-      
-        <!-- BOTÓN AFINADOR -->
-        <button id="header-tuner-btn" class="header-icon-btn" title="Afinador">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 3h-1V2h-2v1H8V2H6v1H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10v5h2v-5H9zm4 0v5h2v-5h-2z"/>
-                <!-- Icono más parecido a diapasón -->
-                <path d="M15 2H9v2H7v6h2v12h2V10h2V2zM9 4h6v4H9V4z" transform="translate(0, 2)"/> 
+        <!-- BOTÓN METRÓNOMO (NUEVO) -->
+        <button id="metronome-toggle-btn" class="header-icon-btn" title="Metrónomo">
+            <!-- Icono sencillo tipo triángulo -->
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/> 
             </svg>
         </button>
 
@@ -649,6 +591,26 @@
         <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
     </div>
   </header>
+
+  <!-- POPUP DEL METRÓNOMO (Oculto por defecto) -->
+  <div id="metronome-popup">
+     <div class="metronome-bpm-display"><span id="metro-bpm-val">120</span> <span style="font-size:0.4em; color:#aaa;">BPM</span></div>
+     <!-- Slider BPM -->
+     <input type="range" id="metro-bpm-slider" class="metronome-slider" min="40" max="240" value="120">
+     
+     <div class="metronome-controls">
+         <button class="metronome-btn-circle" id="metro-minus">-</button>
+         
+         <button class="metronome-play-btn" id="metro-play-btn">
+             <!-- Icono Play -->
+             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" id="metro-icon-play"><path d="M8 5v14l11-7z"/></svg>
+             <!-- Icono Stop -->
+             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" id="metro-icon-stop" style="display:none;"><path d="M6 6h12v12H6z"/></svg>
+         </button>
+         
+         <button class="metronome-btn-circle" id="metro-plus">+</button>
+     </div>
+  </div>
 
   <div id="overlay"></div>
   <nav class="sidebar" id="sidebar-menu">
@@ -769,22 +731,6 @@
       </div>
   </div>
 
-  <!-- TUNER MODAL (NUEVO) -->
-  <div id="tuner-modal" class="modal-backdrop" style="z-index: 13000;">
-      <div class="modal-content tuner-content" style="max-width: 400px;">
-          <div class="tuner-display">
-              <div id="tuner-note" class="tuner-note">-</div>
-              <div id="tuner-freq" class="tuner-freq">0 Hz</div>
-              <div class="tuner-gauge">
-                  <div id="tuner-needle" class="tuner-needle"></div>
-                  <div class="tuner-center-marker"></div>
-              </div>
-              <div id="tuner-status-text"></div>
-          </div>
-          <button id="close-tuner-btn">Apagar Afinador</button>
-      </div>
-  </div>
-
   <div id="user-mgmt-screen" class="config-screen"><button class="close-btn" id="close-user-mgmt">Cerrar</button><h2>Gestión de Usuarios</h2><label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label><select id="user-role" multiple><option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option><option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option><option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option><option value="Coros">Coros</option><option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option><option value="Técnico de Luces">Técnico de Luces</option><option value="Montador">Montador</option><option value="Road Manager">Road Manager</option><option value="Backliner">Backliner</option></select><button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button><p id="user-message" class="error-message"></p><table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table></div>
   <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha</label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
   <div id="admin-suggestions-screen" class="config-screen"><button class="close-btn" id="close-admin-suggestions">Cerrar</button><h2>Gestión de Propuestas (Admin)</h2><p style="color:#aaa; text-align:center;">Aquí puedes ver el historial y eliminar propuestas inadecuadas.</p><div class="table-wrapper"><table id="admin-suggestions-table"><thead><tr><th>Canción</th><th>Propuesta por</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="admin-suggestions-body"></tbody></table></div></div>
@@ -855,9 +801,9 @@
   </audio>
 
   <!-- Jukebox Logic (Separated) -->
-  <script src="jukebox.js" defer></script>
-  <!-- Tuner Logic (Separated) -->
-  <script src="tuner.js" defer></script>
+  <script src="jukebox.js"></script>
+  <!-- Metronome Logic (New) -->
+  <script src="metronome.js"></script>
 
 <script>
 /* ---------- 0. Firebase ---------- */
@@ -1488,6 +1434,8 @@ document.getElementById('close-concert-details-modal').onclick = () => { closeAl
 /* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
 function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
+// Listener moved to DOMContentLoaded
+// document.getElementById("hamburger-btn").onclick = ...
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
@@ -1526,16 +1474,18 @@ document.getElementById("close-user-list-screen").onclick = () => { document.get
 // --- GESTIÓN DE PROPUESTAS (SUGGESTIONS) ---
 let suggestions = [];
 
-// Listener de Firestore para propuestas (incluye eliminadas)
-if (typeof db !== 'undefined') {
-    db.collection('suggestions').onSnapshot(snapshot => {
-        suggestions = [];
-        snapshot.forEach(doc => {
-            suggestions.push({ id: doc.id, ...doc.data() });
+// Listener will be attached after DB init
+function attachSuggestionsListener() {
+    if (typeof db !== 'undefined') {
+        db.collection('suggestions').onSnapshot(snapshot => {
+            suggestions = [];
+            snapshot.forEach(doc => {
+                suggestions.push({ id: doc.id, ...doc.data() });
+            });
+            renderSuggestions();
+            renderAdminSuggestions(); // También actualiza la tabla de admin
         });
-        renderSuggestions();
-        renderAdminSuggestions(); // También actualiza la tabla de admin
-    });
+    }
 }
 
 document.getElementById("add-suggestion-btn").onclick = async () => {
@@ -1892,333 +1842,25 @@ document.getElementById('live-content-area').onclick = (e) => {
         }
     }
 };
-  
 
+/* ---------- 12. Lógica Calendario Visual (GLOBAL SCOPE FIX) ---------- */
+let currentCalDate = new Date();
+let globalConcertDetails = {}; 
 
-/* ---------- 12. Carga inicial & Lógica Audio Global y Splash ---------- */
-document.addEventListener("DOMContentLoaded", async () => {
-  
-  // --- INICIALIZACIÓN FIREBASE (CRÍTICO) ---
-  // Movido aquí para asegurar que los scripts 'defer' ya están cargados.
-  try {
-      if (typeof firebase !== 'undefined') {
-          firebase.initializeApp(firebaseConfig);
-          db = firebase.firestore();
-          // Habilitar persistencia
-          db.enablePersistence({ synchronizeTabs: true })
-            .catch(err => {
-                if (err.code == 'failed-precondition') {
-                    console.warn("Persistencia falló: multiples pestañas abiertas.");
-                } else if (err.code == 'unimplemented') {
-                    console.warn("El navegador no soporta persistencia.");
-                }
+function attachConcertDetailsListener() {
+    if (typeof db !== 'undefined') {
+        try {
+            db.collection('concert_details').onSnapshot(snapshot => {
+                snapshot.forEach(doc => {
+                    globalConcertDetails[doc.id] = doc.data();
+                });
+                renderVisualCalendar(); 
             });
-          console.log("Firebase inicializado correctamente.");
-      } else {
-          console.error("Firebase SDK no cargado.");
-      }
-  } catch (e) {
-      console.error("Error inicializando Firebase:", e);
-      const banner = document.getElementById('firebase-critical-error-banner');
-      if (banner) {
-          banner.style.display = 'block';
-          banner.textContent = "Error de conexión con base de datos: " + e.message;
-      }
-  }
-
-  // --- Lógica de Audio Global START ---
-  const siteAudioElement = document.getElementById('site-audio');
-  const siteAudioControlButton = document.getElementById('site-audio-control-button'); 
-  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; // TUS CANCIONES
-  let currentSiteSongIndex = -1; 
-  let siteAudioFadeInterval = null;
-  const SITE_AUDIO_FADE_DURATION = 500; 
-  const SITE_AUDIO_TARGET_VOLUME = 0.8; 
-
-  function stopSiteAudioFade() {
-    if (siteAudioFadeInterval) {
-      clearInterval(siteAudioFadeInterval);
-      siteAudioFadeInterval = null;
+        } catch(e) { console.warn("Error attaching concert listener:", e); }
     }
-  }
+}
 
-  function fadeInSiteAudio(audio, duration, targetVolume) {
-    stopSiteAudioFade();
-    if (!audio) return; 
-    if (audio.muted) { 
-      audio.volume = 0; 
-      audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio (muted):", e));
-      return;
-    }
-    audio.volume = 0;
-    if (audio.paused) { // Solo llama a play si está pausado
-        audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio:", e));
-    }
-    
-    let step = targetVolume / (duration / 50);
-    let currentVolume = 0;
-    siteAudioFadeInterval = setInterval(() => {
-      currentVolume += step;
-      if (currentVolume >= targetVolume) {
-        if(audio) audio.volume = targetVolume; 
-        stopSiteAudioFade();
-      } else if (audio) { 
-        audio.volume = currentVolume;
-      } else { 
-        stopSiteAudioFade();
-      }
-    }, 50);
-  }
-
-  function fadeOutSiteAudio(audio, duration, callback) {
-    stopSiteAudioFade();
-    if (!audio) { if (callback) callback(); return; }
-
-    if (audio.paused || audio.volume < 0.01) { 
-      if (!audio.paused) audio.pause();
-      audio.volume = 0; 
-      if (callback) callback();
-      return;
-    }
-    
-    let currentVolume = audio.volume;
-    let step = currentVolume / (duration / 50);
-    siteAudioFadeInterval = setInterval(() => {
-      currentVolume -= step;
-      if (currentVolume <= 0.01) { 
-        if (audio) {
-            audio.volume = 0;
-            audio.pause();
-        }
-        stopSiteAudioFade();
-        if (callback) callback();
-      } else if (audio) {
-        audio.volume = currentVolume;
-      } else {
-        stopSiteAudioFade();
-      }
-    }, 50);
-  }
-
-  function playNextSiteSong(audioElement) {
-    if (!audioElement || siteAudioSongs.length === 0) return;
-    currentSiteSongIndex = (currentSiteSongIndex + 1) % siteAudioSongs.length;
-    audioElement.src = siteAudioSongs[currentSiteSongIndex];
-    audioElement.load();
-
-    const eventName = 'canplaythrough';
-    
-    // Eliminamos cualquier listener previo para 'canplaythrough' para evitar duplicados
-    const playWhenReadyHandler = () => {
-      if (audioElement) { 
-        fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME);
-      }
-    };
-    audioElement.addEventListener(eventName, playWhenReadyHandler, { once: true });
-  }
-
-  if (siteAudioElement && siteAudioControlButton) {
-    const iconMuted = siteAudioControlButton.querySelector('.icon-muted');
-    const iconUnmuted = siteAudioControlButton.querySelector('.icon-unmuted');
-
-    const updateSiteAudioMuteButton = () => {
-      if (!siteAudioElement || !iconMuted || !iconUnmuted || !siteAudioControlButton) return;
-      if (siteAudioElement.muted) {
-        iconMuted.style.display = 'inline';
-        iconUnmuted.style.display = 'none';
-        siteAudioControlButton.title = "Activar sonido";
-      } else {
-        iconMuted.style.display = 'none';
-        iconUnmuted.style.display = 'inline';
-        siteAudioControlButton.title = "Desactivar sonido";
-      }
-    };
-
-    siteAudioElement.muted = true; 
-    siteAudioElement.loop = false; 
-    updateSiteAudioMuteButton();
-    siteAudioControlButton.style.display = 'flex'; 
-
-    currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length);
-    siteAudioElement.src = siteAudioSongs[currentSiteSongIndex];
-    siteAudioElement.load(); 
-    
-    siteAudioElement.addEventListener('ended', () => {
-      fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => {
-        playNextSiteSong(siteAudioElement);
-      });
-    });
-
-    siteAudioControlButton.addEventListener('click', () => {
-      if (!siteAudioElement) return;
-      const wasMuted = siteAudioElement.muted;
-      siteAudioElement.muted = !siteAudioElement.muted;
-      updateSiteAudioMuteButton();
-
-      if (!siteAudioElement.muted) { 
-          if (siteAudioElement.paused || wasMuted) { 
-              if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused){
-                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
-              } else { 
-                  siteAudioElement.volume = 0; 
-                  fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); 
-              }
-          }
-      } else { 
-        stopSiteAudioFade(); 
-      }
-    });
-  }
-  // --- Lógica de Audio Global END ---
-
-
-  // --- Splash Screen Visual Logic START ---
-  const splashScreen = document.getElementById('splash-screen');
-  if (splashScreen) {
-    const visibleDuration = 1000; 
-    const exitAnimationDuration = 800; 
-
-    setTimeout(() => {
-      splashScreen.classList.add('hidden');
-      // La música NO se detiene aquí.
-      setTimeout(() => {
-        if (splashScreen.parentNode) {
-           splashScreen.style.display = 'none';
-        }
-      }, exitAnimationDuration);
-    }, visibleDuration);
-  }
-  // --- Splash Screen Visual Logic END ---
-
-  console.log("[DOMContentLoaded] Iniciando carga de la aplicación.");
-  updateConnectionStatus();
-  try {
-      console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
-      // IMPORTANTE: Cargar librería Jukebox
-      if(window.loadJukeboxLibrary) {
-          await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary()]);
-      } else {
-          // Fallback si el script tarda en cargar
-          setTimeout(() => { 
-              if(window.loadJukeboxLibrary) window.loadJukeboxLibrary();
-          }, 1000);
-          await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
-      }
-      console.log("[DOMContentLoaded] Configuración, usuarios, ensayos y Jukebox cargados.");
-  } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
-
-  let items1 = [], items2 = [], itemsStar = [];  
-  try {  
-    console.log("[DOMContentLoaded] Cargando primer setlist...");
-    items1 = await cargarPrimerSetlist();  
-    console.log("[DOMContentLoaded] Primer setlist cargado:", items1 ? items1.length : 0, "bloques/items.");
-  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Ensayo:", e); }
-  
-  try {  
-    console.log("[DOMContentLoaded] Cargando segundo setlist...");
-    items2 = await cargarSegundoSetlist();  
-    console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "bloques/items.");
-  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Próx. Concierto:", e); }
-  
-  try {  
-    console.log("[DOMContentLoaded] Cargando setlist estrella...");
-    itemsStar = await cargarStarSetlist();  
-    console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "bloques/items.");
-  } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Estrella:", e); }
-
-  document.getElementById("download-btn").onclick = () => { if (items1 && items1.length > 0) genPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
-  document.getElementById("download-basic-btn").onclick = () => { if (items1 && items1.length > 0) genBasicPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
-  
-  document.getElementById("download-btn-2").onclick = () => { if (items2 && items2.length > 0) genPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
-  document.getElementById("download-basic-btn-2").onclick = () => { if (items2 && items2.length > 0) genBasicPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
-  
-  document.getElementById("download-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
-  document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
-  
-  document.getElementById("download-personal-btn").onclick = () => {
-      if (items1 && items1.length > 0) {
-          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
-          if (fontSizeInput) {
-              const fontSize = parseInt(fontSizeInput, 10);
-              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) { 
-                  genPersonalPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name, fontSize);
-              } else {
-                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
-              }
-          }
-      } else {
-          alert("No hay elementos en Setlist Ensayo para generar un PDF personal.");
-      }
-  };
-  document.getElementById("download-personal-btn-2").onclick = () => {
-      if (items2 && items2.length > 0) {
-          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
-          if (fontSizeInput) {
-              const fontSize = parseInt(fontSizeInput, 10);
-              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
-                  genPersonalPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name, fontSize);
-              } else {
-                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
-              }
-          }
-      } else {
-          alert("No hay elementos en Setlist Próximo Concierto para generar un PDF personal.");
-      }
-  };
-  document.getElementById("download-personal-btn-star").onclick = () => {
-      if (itemsStar && itemsStar.length > 0) {
-          const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
-          if (fontSizeInput) {
-              const fontSize = parseInt(fontSizeInput, 10);
-              if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
-                  genPersonalPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name, fontSize);
-              } else {
-                  alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
-              }
-          }
-      } else {
-          alert("No hay elementos en Setlist Estrella para generar un PDF personal.");
-      }
-  };
-
-  console.log("[DOMContentLoaded] Iniciando proceso de tabla BandHelper...");
-  // --- MutationObserver (REEMPLAZA A SETTIMEOUT) ---
-  const bhContainer = document.getElementById('bandhelper-concerts-container');
-  if (bhContainer) {
-      const observer = new MutationObserver((mutations, obs) => {
-          const table = bhContainer.querySelector('table');
-          if (table) {
-              console.log("BandHelper tabla detectada por MutationObserver.");
-              processBandHelperTable();
-              renderVisualCalendar(); // Actualizamos calendario
-              obs.disconnect(); // Dejamos de observar
-          }
-      });
-      observer.observe(bhContainer, { childList: true, subtree: true });
-      
-      // Fallback por si acaso
-      setTimeout(() => { 
-          processBandHelperTable(); 
-          renderVisualCalendar();
-      }, 3000);
-  }
-
-/* ---------- 13. Lógica Calendario Visual (INTERACTIVO) ---------- */
-  let currentCalDate = new Date();
-  let globalConcertDetails = {}; 
-
-  // Escuchar base de datos en tiempo real (GLOBAL)
-  // Se escucha dentro de DOMContentLoaded cuando db ya existe
-  if (typeof db !== 'undefined') {
-      db.collection('concert_details').onSnapshot(snapshot => {
-          snapshot.forEach(doc => {
-              globalConcertDetails[doc.id] = doc.data();
-          });
-          renderVisualCalendar(); 
-      });
-  }
-
-  window.renderVisualCalendar = function() {
+function renderVisualCalendar() {
     const grid = document.getElementById('calendar-grid-container');
     const monthDisplay = document.getElementById('calendar-month-display');
     
@@ -2375,6 +2017,279 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+
+/* ---------- 13. Carga inicial & Lógica Audio Global y Splash ---------- */
+document.addEventListener("DOMContentLoaded", async () => {
+  
+  // Clean previous optimization attempt that failed
+  
+  /* --- Inicialización de Firebase Diferida --- */
+  try {
+      if (typeof firebase !== 'undefined') {
+          firebase.initializeApp(firebaseConfig); 
+          db = firebase.firestore(); 
+          firebase.firestore().enablePersistence().catch(err => console.warn(err));
+          attachSuggestionsListener(); // Attach listener now that DB is ready
+          attachConcertDetailsListener(); // NEW: Attach concert listener
+      } else {
+          // If firebase script hasn't loaded yet due to defer, wait a bit
+          const checkFirebase = setInterval(() => {
+              if (typeof firebase !== 'undefined') {
+                  clearInterval(checkFirebase);
+                  firebase.initializeApp(firebaseConfig);
+                  db = firebase.firestore();
+                  firebase.firestore().enablePersistence().catch(err => console.warn(err));
+                  attachSuggestionsListener();
+                  attachConcertDetailsListener(); // NEW
+                  // Trigger data load
+                  loadAllData();
+              }
+          }, 100);
+      }
+  } catch(e) { console.error("Firebase init error:", e); }
+
+  // --- Lógica de Audio Global START ---
+  const siteAudioElement = document.getElementById('site-audio');
+  const siteAudioControlButton = document.getElementById('site-audio-control-button'); 
+  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; // TUS CANCIONES
+  let currentSiteSongIndex = -1; 
+  let siteAudioFadeInterval = null;
+  const SITE_AUDIO_FADE_DURATION = 500; 
+  const SITE_AUDIO_TARGET_VOLUME = 0.8; 
+
+  function stopSiteAudioFade() {
+    if (siteAudioFadeInterval) {
+      clearInterval(siteAudioFadeInterval);
+      siteAudioFadeInterval = null;
+    }
+  }
+
+  function fadeInSiteAudio(audio, duration, targetVolume) {
+    stopSiteAudioFade();
+    if (!audio) return; 
+    if (audio.muted) { 
+      audio.volume = 0; 
+      audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio (muted):", e));
+      return;
+    }
+    audio.volume = 0;
+    if (audio.paused) { // Solo llama a play si está pausado
+        audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio:", e));
+    }
+    
+    let step = targetVolume / (duration / 50);
+    let currentVolume = 0;
+    siteAudioFadeInterval = setInterval(() => {
+      currentVolume += step;
+      if (currentVolume >= targetVolume) {
+        if(audio) audio.volume = targetVolume; 
+        stopSiteAudioFade();
+      } else if (audio) { 
+        audio.volume = currentVolume;
+      } else { 
+        stopSiteAudioFade();
+      }
+    }, 50);
+  }
+
+  function fadeOutSiteAudio(audio, duration, callback) {
+    stopSiteAudioFade();
+    if (!audio) { if (callback) callback(); return; }
+
+    if (audio.paused || audio.volume < 0.01) { 
+      if (!audio.paused) audio.pause();
+      audio.volume = 0; 
+      if (callback) callback();
+      return;
+    }
+    
+    let currentVolume = audio.volume;
+    let step = currentVolume / (duration / 50);
+    siteAudioFadeInterval = setInterval(() => {
+      currentVolume -= step;
+      if (currentVolume <= 0.01) { 
+        if (audio) {
+            audio.volume = 0;
+            audio.pause();
+        }
+        stopSiteAudioFade();
+        if (callback) callback();
+      } else if (audio) {
+        audio.volume = currentVolume;
+      } else {
+        stopSiteAudioFade();
+      }
+    }, 50);
+  }
+
+  function playNextSiteSong(audioElement) {
+    if (!audioElement || siteAudioSongs.length === 0) return;
+    currentSiteSongIndex = (currentSiteSongIndex + 1) % siteAudioSongs.length;
+    audioElement.src = siteAudioSongs[currentSiteSongIndex];
+    audioElement.load();
+
+    const eventName = 'canplaythrough';
+    
+    // Eliminamos cualquier listener previo para 'canplaythrough' para evitar duplicados
+    const playWhenReadyHandler = () => {
+      if (audioElement) { 
+        fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME);
+      }
+    };
+    audioElement.addEventListener(eventName, playWhenReadyHandler, { once: true });
+  }
+
+  if (siteAudioElement && siteAudioControlButton) {
+    const iconMuted = siteAudioControlButton.querySelector('.icon-muted');
+    const iconUnmuted = siteAudioControlButton.querySelector('.icon-unmuted');
+
+    const updateSiteAudioMuteButton = () => {
+      if (!siteAudioElement || !iconMuted || !iconUnmuted || !siteAudioControlButton) return;
+      if (siteAudioElement.muted) {
+        iconMuted.style.display = 'inline';
+        iconUnmuted.style.display = 'none';
+        siteAudioControlButton.title = "Activar sonido";
+      } else {
+        iconMuted.style.display = 'none';
+        iconUnmuted.style.display = 'inline';
+        siteAudioControlButton.title = "Desactivar sonido";
+      }
+    };
+
+    siteAudioElement.muted = true; 
+    siteAudioElement.loop = false; 
+    updateSiteAudioMuteButton();
+    siteAudioControlButton.style.display = 'flex'; 
+
+    currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length);
+    siteAudioElement.src = siteAudioSongs[currentSiteSongIndex];
+    siteAudioElement.load(); 
+    
+    siteAudioElement.addEventListener('ended', () => {
+      fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => {
+        playNextSiteSong(siteAudioElement);
+      });
+    });
+
+    siteAudioControlButton.addEventListener('click', () => {
+      if (!siteAudioElement) return;
+      const wasMuted = siteAudioElement.muted;
+      siteAudioElement.muted = !siteAudioElement.muted;
+      updateSiteAudioMuteButton();
+
+      if (!siteAudioElement.muted) { 
+          if (siteAudioElement.paused || wasMuted) { 
+              if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused){
+                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
+              } else { 
+                  siteAudioElement.volume = 0; 
+                  fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); 
+              }
+          }
+      } else { 
+        stopSiteAudioFade(); 
+      }
+    });
+  }
+  // --- Lógica de Audio Global END ---
+
+
+  // --- Splash Screen Visual Logic START ---
+  const splashScreen = document.getElementById('splash-screen');
+  if (splashScreen) {
+    // OPTIMIZACIÓN: Reducir tiempo de splash para sensación de velocidad
+    const visibleDuration = 100; // Casi instantáneo si el navegador está listo
+    const exitAnimationDuration = 500; 
+
+    setTimeout(() => {
+      splashScreen.classList.add('hidden');
+      setTimeout(() => {
+        if (splashScreen.parentNode) {
+           splashScreen.style.display = 'none';
+        }
+      }, exitAnimationDuration);
+    }, visibleDuration);
+  }
+  // --- Splash Screen Visual Logic END ---
+
+  console.log("[DOMContentLoaded] Iniciando carga de la aplicación.");
+  updateConnectionStatus();
+
+  async function loadAllData() {
+      try {
+          console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
+          // IMPORTANTE: Cargar librería Jukebox
+          if(window.loadJukeboxLibrary) {
+              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary()]);
+          } else {
+              // Fallback si el script tarda en cargar
+              setTimeout(() => { 
+                  if(window.loadJukeboxLibrary) window.loadJukeboxLibrary();
+              }, 1000);
+              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
+          }
+          console.log("[DOMContentLoaded] Configuración, usuarios, ensayos y Jukebox cargados.");
+      } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
+
+      let items1 = [], items2 = [], itemsStar = [];  
+      try {  
+        console.log("[DOMContentLoaded] Cargando primer setlist...");
+        items1 = await cargarPrimerSetlist();  
+        console.log("[DOMContentLoaded] Primer setlist cargado:", items1 ? items1.length : 0, "bloques/items.");
+      } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Ensayo:", e); }
+      
+      try {  
+        console.log("[DOMContentLoaded] Cargando segundo setlist...");
+        items2 = await cargarSegundoSetlist();  
+        console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "bloques/items.");
+      } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Próx. Concierto:", e); }
+      
+      try {  
+        console.log("[DOMContentLoaded] Cargando setlist estrella...");
+        itemsStar = await cargarStarSetlist();  
+        console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "bloques/items.");
+      } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Estrella:", e); }
+
+      // Setup download buttons once data is likely ready
+      document.getElementById("download-btn").onclick = () => { if (items1 && items1.length > 0) genPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
+      document.getElementById("download-basic-btn").onclick = () => { if (items1 && items1.length > 0) genBasicPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
+      
+      document.getElementById("download-btn-2").onclick = () => { if (items2 && items2.length > 0) genPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
+      document.getElementById("download-basic-btn-2").onclick = () => { if (items2 && items2.length > 0) genBasicPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
+      
+      document.getElementById("download-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
+      document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
+
+      // Setup personal PDF buttons
+      const setupPersonalPdfBtn = (btnId, items, name) => {
+          const btn = document.getElementById(btnId);
+          if(btn) btn.onclick = () => {
+              if (items && items.length > 0) {
+                  const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+                  if (fontSizeInput) {
+                      const fontSize = parseInt(fontSizeInput, 10);
+                      if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
+                          genPersonalPDF(items, name, name, fontSize);
+                      } else {
+                          alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
+                      }
+                  }
+              } else {
+                  alert("No hay elementos para generar un PDF personal.");
+              }
+          };
+      };
+      
+      setupPersonalPdfBtn("download-personal-btn", items1, setlistConfig.setlist1.name);
+      setupPersonalPdfBtn("download-personal-btn-2", items2, setlistConfig.setlist2.name);
+      setupPersonalPdfBtn("download-personal-btn-star", itemsStar, setlistConfig.setlistStar.name);
+  }
+  
+  // Si Firebase ya estaba cargado por cache, iniciamos. Si no, el interval de arriba lo hará.
+  if (typeof firebase !== 'undefined') {
+      loadAllData();
+  }
+
   const prevBtn = document.getElementById('prev-month-btn');
   const nextBtn = document.getElementById('next-month-btn');
   
@@ -2395,12 +2310,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderVisualCalendar();
       });
   }
-
-  document.getElementById('header-calendar-btn').onclick = () => {
-     const target = document.getElementById('vista-calendario-mensual');
-     closeAll();
-     if(target) { const headerOffset = 60; const elementPosition = target.getBoundingClientRect().top; const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; window.scrollTo({top: offsetPosition, behavior: "smooth"}); }
-  };
 
   renderVisualCalendar(); 
   setTimeout(renderVisualCalendar, 2000); 
