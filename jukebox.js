@@ -448,20 +448,15 @@ window.convertDriveToDirectLink = function(url) {
     return null;
 };
 
-// MEJORA DROPBOX: Forzar raw=1 siempre para evitar páginas HTML
+// MEJORA CRÍTICA DROPBOX: Usar dominio CDN directo
 window.convertDropboxLink = function(url) {
     if (url.includes('dropbox.com')) {
-        // 1. Reemplazos estándar si existen
-        if (url.includes('dl=0')) return url.replace('dl=0', 'raw=1');
-        if (url.includes('dl=1')) return url.replace('dl=1', 'raw=1');
+        // ESTRATEGIA: Reemplazar el dominio principal por el CDN de contenido
+        // Esto evita la página de previsualización HTML y sirve el binario.
+        let newUrl = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+        newUrl = newUrl.replace(/^https:\/\/dropbox\.com/, 'https://dl.dropboxusercontent.com');
         
-        // 2. Si ya tiene raw=1, dejarlo
-        if (url.includes('raw=1')) return url;
-
-        // 3. Si no tiene parámetros conocidos, AGREGAR raw=1
-        // Si tiene ?, agregamos &raw=1, sino ?raw=1
-        const separator = url.includes('?') ? '&' : '?';
-        return url + separator + 'raw=1';
+        return newUrl;
     }
     return null;
 };
@@ -648,13 +643,25 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0
         }
     };
 
+    // MEJORA DIAGNÓSTICO DE ERRORES
     currentAudioObj.onerror = function() {
-        console.error("Error cargando audio HTML5:", currentAudioObj.error);
+        const err = currentAudioObj.error;
+        console.error("Error cargando audio HTML5:", err);
+        
         if (isDriveFallback) {
             console.warn("Fallo carga directa Drive. Cambiando a modo Iframe.");
             window.switchToDriveIframeMode();
         } else {
-            alert("Error al cargar el audio. Verifica el enlace.");
+            let msg = "Error al reproducir el audio.";
+            let codeInfo = "";
+            
+            if(err) {
+                if(err.code === 3) msg = "Error de decodificación (MEDIA_ERR_DECODE). El archivo de audio está corrupto o el navegador no puede leerlo.";
+                if(err.code === 4) msg = "Formato no soportado (MEDIA_ERR_SRC_NOT_SUPPORTED). Tu navegador no soporta este tipo de archivo de audio.";
+                codeInfo = ` (Código: ${err.code})`;
+            }
+            
+            alert(`${msg}${codeInfo}\n\nEnlace intentado:\n${srcUrl}\n\nSi es un archivo de Dropbox, verifica que sea público.`);
             window.stopJukebox();
         }
     };
