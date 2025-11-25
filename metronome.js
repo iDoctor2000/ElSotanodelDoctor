@@ -30,15 +30,16 @@ async function loadClickSound() {
     if (metronomeState.clickBuffer) return; // Ya cargado
 
     try {
-        const response = await fetch('assets/Click.mp3');
+        console.log("Intentando cargar sonido de metrónomo desde ./assets/Click.mp3 ...");
+        const response = await fetch('./assets/Click.mp3');
         if (!response.ok) {
-            throw new Error(`No se pudo cargar el sonido Click.mp3: ${response.statusText}`);
+            throw new Error(`Error HTTP al cargar Click.mp3: ${response.status}`);
         }
         const arrayBuffer = await response.arrayBuffer();
         metronomeState.clickBuffer = await metronomeState.audioContext.decodeAudioData(arrayBuffer);
-        console.log("Sonido de metrónomo cargado correctamente.");
+        console.log("¡Sonido Click.mp3 cargado y decodificado correctamente!");
     } catch (error) {
-        console.warn("Fallo al cargar Click.mp3, se usará sonido sintético de respaldo.", error);
+        console.error("Fallo al cargar Click.mp3. Se usará sonido sintético (bip) como respaldo.", error);
     }
 }
 
@@ -52,7 +53,14 @@ function scheduleNote(time) {
     if (metronomeState.clickBuffer) {
         const source = metronomeState.audioContext.createBufferSource();
         source.buffer = metronomeState.clickBuffer;
-        source.connect(metronomeState.audioContext.destination);
+        
+        // Crear nodo de ganancia para asegurar volumen
+        const gainNode = metronomeState.audioContext.createGain();
+        gainNode.gain.value = 1.0; // Volumen al 100%
+        
+        source.connect(gainNode);
+        gainNode.connect(metronomeState.audioContext.destination);
+        
         source.start(time);
     } 
     // INTENTO 2: Fallback a Oscilador (si el MP3 falla o no ha cargado)
@@ -152,6 +160,9 @@ window.toggleMetronomeFromTable = function(bpmRaw, btnElement) {
     }
     const targetBpm = parseInt(match[0], 10);
 
+    // Inicializar AudioContext si es la primera vez (crucial para cargar el sonido)
+    initAudioContext();
+
     // Si ya está sonando ESTE botón -> Parar
     if (metronomeState.isPlaying && metronomeState.activeTableBtn === btnElement) {
         toggleMetronome(); // Parar
@@ -189,6 +200,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 popup.classList.remove('visible');
             } else {
                 popup.classList.add('visible');
+                // Intentar cargar el sonido al abrir el popup por si acaso
+                initAudioContext();
             }
         });
         
