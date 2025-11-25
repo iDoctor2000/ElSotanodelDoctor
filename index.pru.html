@@ -182,8 +182,13 @@
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
     
     /* Ajustes columnas setlist */
-    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5) { text-align: center; }
-    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5) { text-align: center; }
+    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6),
+    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #second-setlist table th:nth-child(6),
+    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5), #star-setlist table th:nth-child(6) { text-align: center; }
+    
+    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6),
+    #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6),
+    #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6) { text-align: center; }
     
     /* JUKEBOX COLUMNS */
     th.jukebox-col-header, td.jukebox-col { width: 40px; text-align: center; padding: 5px; }
@@ -208,6 +213,24 @@
         opacity: 1; border-color: #666; color: #999;
     }
     .jukebox-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* METRONOME COLUMN & BUTTON (NUEVO) */
+    th.metronome-col-header, td.metronome-col { width: 40px; text-align: center; padding: 5px; }
+    .metronome-table-btn {
+        background: transparent; border: 1px solid #444; color: #666;
+        border-radius: 50%; width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.3s; margin: 0 auto;
+    }
+    .metronome-table-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+    .metronome-table-btn:hover { border-color: #ff5555; color: #ff5555; }
+    .metronome-table-btn.active-metronome {
+        background: rgba(255, 85, 85, 0.2); border-color: #ff5555; color: #ff5555;
+        box-shadow: 0 0 8px rgba(255, 85, 85, 0.6);
+        animation: pulse-metro 1s infinite;
+    }
+    @keyframes pulse-metro { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
 
     .break-row td { font-style: italic; color: #ccc; background-color: #161616; }
     .break-row td:first-child { color: #777; text-align: center; }
@@ -455,7 +478,8 @@
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
   }
 }
 </script>
@@ -742,7 +766,7 @@
     <section id="setlists">
       <h2>Setlist Próximo Ensayo</h2>
       <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
@@ -755,7 +779,7 @@
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
+      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-2">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
@@ -767,7 +791,7 @@
     <section id="star-setlist">
       <h2>Setlist Concierto Estrella</h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-star">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
@@ -919,7 +943,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 
     let totalSecondsOverall = 0;
     
-    // Helper for Jukebox Cell (NUEVO ICONO AURICULARES + LÓGICA DIRECTA)
+    // Helper for Jukebox Cell
     const createJukeboxCell = (songName) => {
         const cleanName = sanitizeFirebaseKey(songName);
         const url = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : null;
@@ -934,28 +958,51 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
         return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
     };
 
+    // Helper for Metronome Cell (NUEVO)
+    const createMetronomeCell = (tempo) => {
+        // Limpiar tempo (ej: "120 (fast)" -> "120")
+        const tempoStr = decodeHtmlEntities(tempo || "-");
+        const match = String(tempoStr).match(/\d+/);
+        
+        if (!match) {
+            return `<td class="metronome-col"><span style="color:#444;">-</span></td>`;
+        }
+        
+        const cleanTempo = match[0];
+        
+        return `<td class="metronome-col">
+            <button class="metronome-table-btn" onclick="window.toggleMetronomeFromTable('${cleanTempo}', this)">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/> 
+                </svg>
+            </button>
+        </td>`;
+    };
+
     if (tbody) {
         setlistStructure.forEach(blockOrItem => {
             if (blockOrItem.isSetHeader) {
                 const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="6">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
+                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="7">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
                 totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
                 blockOrItem.songs.forEach(song => {
                     songCount++;
                     const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
                     const jukeboxCell = createJukeboxCell(song.displayName);
-                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
+                    const metronomeCell = createMetronomeCell(song.tempo);
+                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
                 })
             } else if (blockOrItem.isBreak) {
                 const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
                 totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
+                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
             } else if (blockOrItem.isSong) {
                 songCount++;
                 const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
                 totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
                 const jukeboxCell = createJukeboxCell(blockOrItem.displayName);
-                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td><td>${songFormattedTime}</td></tr>`)
+                const metronomeCell = createMetronomeCell(blockOrItem.tempo);
+                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
             }
         });
     }
