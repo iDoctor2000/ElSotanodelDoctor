@@ -299,6 +299,17 @@ window.injectExtraControls = function() {
         const volWrapper = document.createElement('div');
         volWrapper.id = 'jb-volume-group';
         volWrapper.className = 'jukebox-volume-group';
+        
+        // DETECCIÓN IOS (iPhone/iPad)
+        // iOS no permite controlar el volumen por HTML5/JS, solo botones físicos.
+        // Ocultamos el control para evitar confusión UX.
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (isIOS) {
+            volWrapper.style.display = 'none';
+        }
+
         volWrapper.innerHTML = `
             <button class="jb-mute-btn" id="jb-mute-btn" title="Mute/Unmute">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
