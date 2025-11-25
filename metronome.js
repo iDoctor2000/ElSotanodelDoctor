@@ -11,7 +11,8 @@ const metronomeState = {
     timerID: null,
     audioContext: null,
     lookahead: 25.0, // ms
-    scheduleAheadTime: 0.1 // s
+    scheduleAheadTime: 0.1, // s
+    activeTableBtn: null // Referencia al botón de la tabla activo actualmente
 };
 
 function initAudioContext() {
@@ -75,28 +76,74 @@ function updateMetronomeUI(isPlaying) {
     const iconPlay = document.getElementById('metro-icon-play');
     const iconStop = document.getElementById('metro-icon-stop');
     
-    if (isPlaying) {
-        btn.classList.add('playing');
-        iconPlay.style.display = 'none';
-        iconStop.style.display = 'block';
-    } else {
-        btn.classList.remove('playing');
-        iconPlay.style.display = 'block';
-        iconStop.style.display = 'none';
+    // Actualizar Popup
+    if (btn && iconPlay && iconStop) {
+        if (isPlaying) {
+            btn.classList.add('playing');
+            iconPlay.style.display = 'none';
+            iconStop.style.display = 'block';
+        } else {
+            btn.classList.remove('playing');
+            iconPlay.style.display = 'block';
+            iconStop.style.display = 'none';
+        }
+    }
+
+    // Actualizar Botones de la Tabla (si se paró globalmente)
+    if (!isPlaying && metronomeState.activeTableBtn) {
+        metronomeState.activeTableBtn.classList.remove('active-metronome');
+        metronomeState.activeTableBtn = null;
     }
 }
 
 function setBPM(val) {
     let newBpm = parseInt(val, 10);
+    if (isNaN(newBpm)) return;
     if (newBpm < 40) newBpm = 40;
     if (newBpm > 240) newBpm = 240;
     
     metronomeState.bpm = newBpm;
     
-    // Actualizar UI
-    document.getElementById('metro-bpm-val').textContent = newBpm;
-    document.getElementById('metro-bpm-slider').value = newBpm;
+    // Actualizar UI Popup
+    const valDisplay = document.getElementById('metro-bpm-val');
+    const sliderDisplay = document.getElementById('metro-bpm-slider');
+    if(valDisplay) valDisplay.textContent = newBpm;
+    if(sliderDisplay) sliderDisplay.value = newBpm;
 }
+
+// --- FUNCIÓN GLOBAL PARA LLAMAR DESDE LA TABLA ---
+window.toggleMetronomeFromTable = function(bpmRaw, btnElement) {
+    // Extraer número del string (ej: "120 bpm" -> 120, "144, 150" -> 144)
+    const match = String(bpmRaw).match(/\d+/);
+    if (!match) {
+        alert("No se encontró un tempo válido.");
+        return;
+    }
+    const targetBpm = parseInt(match[0], 10);
+
+    // Si ya está sonando ESTE botón -> Parar
+    if (metronomeState.isPlaying && metronomeState.activeTableBtn === btnElement) {
+        toggleMetronome(); // Parar
+        return;
+    }
+
+    // Si está sonando OTRO o estaba parado -> Poner BPM y Arrancar (o reiniciar)
+    setBPM(targetBpm);
+
+    // Gestión visual de botones anteriores
+    if (metronomeState.activeTableBtn) {
+        metronomeState.activeTableBtn.classList.remove('active-metronome');
+    }
+    
+    btnElement.classList.add('active-metronome');
+    metronomeState.activeTableBtn = btnElement;
+
+    // Si no estaba sonando, arrancar. Si ya sonaba, el scheduler coge el nuevo BPM automáticamente
+    if (!metronomeState.isPlaying) {
+        toggleMetronome();
+    }
+};
+
 
 // Inicialización de eventos DOM
 document.addEventListener("DOMContentLoaded", () => {
@@ -123,17 +170,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Controles internos del metrónomo
-    document.getElementById('metro-play-btn').addEventListener('click', toggleMetronome);
+    const playBtn = document.getElementById('metro-play-btn');
+    if(playBtn) playBtn.addEventListener('click', toggleMetronome);
     
-    document.getElementById('metro-bpm-slider').addEventListener('input', (e) => {
+    const bpmSlider = document.getElementById('metro-bpm-slider');
+    if(bpmSlider) bpmSlider.addEventListener('input', (e) => {
         setBPM(e.target.value);
     });
 
-    document.getElementById('metro-minus').addEventListener('click', () => {
+    const minusBtn = document.getElementById('metro-minus');
+    if(minusBtn) minusBtn.addEventListener('click', () => {
         setBPM(metronomeState.bpm - 1);
     });
 
-    document.getElementById('metro-plus').addEventListener('click', () => {
+    const plusBtn = document.getElementById('metro-plus');
+    if(plusBtn) plusBtn.addEventListener('click', () => {
         setBPM(metronomeState.bpm + 1);
     });
 });
