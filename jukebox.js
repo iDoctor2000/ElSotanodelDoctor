@@ -522,9 +522,13 @@ window.convertDropboxLink = function(url) {
 window.initializePlaylist = function(startTitle) {
     // Buscar en qué setlist está esta canción para construir la cola
     let itemsToScan = [];
-    if (window.globalItems1 && window.globalItems1.some(i => i.displayName === startTitle)) itemsToScan = window.globalItems1;
-    else if (window.globalItems2 && window.globalItems2.some(i => i.displayName === startTitle)) itemsToScan = window.globalItems2;
-    else if (window.globalItemsStar && window.globalItemsStar.some(i => i.displayName === startTitle)) itemsToScan = window.globalItemsStar;
+    
+    // Helper para comparar nombres flexibles (ignorando acentos)
+    const compareNames = (a, b) => sanitizeJukeboxKey(a) === sanitizeJukeboxKey(b);
+
+    if (window.globalItems1 && window.globalItems1.some(i => compareNames(i.displayName, startTitle))) itemsToScan = window.globalItems1;
+    else if (window.globalItems2 && window.globalItems2.some(i => compareNames(i.displayName, startTitle))) itemsToScan = window.globalItems2;
+    else if (window.globalItemsStar && window.globalItemsStar.some(i => compareNames(i.displayName, startTitle))) itemsToScan = window.globalItemsStar;
     else {
         // Fallback: Crear playlist de 1 solo elemento
         jukeboxPlaylist = [{ title: startTitle, key: sanitizeJukeboxKey(startTitle) }];
@@ -553,14 +557,16 @@ window.initializePlaylist = function(startTitle) {
     }));
 
     // Encontrar índice actual
-    currentPlaylistIndex = jukeboxPlaylist.findIndex(item => item.title === startTitle);
+    currentPlaylistIndex = jukeboxPlaylist.findIndex(item => compareNames(item.title, startTitle));
     
     console.log(`Playlist creada con ${jukeboxPlaylist.length} canciones. Índice actual: ${currentPlaylistIndex}`);
 };
 
 window.openJukeboxPlayer = function(title, rawUrl) {
     // Inicializar Playlist si es una nueva sesión o cambio de contexto
-    if (currentPlaylistIndex === -1 || !jukeboxPlaylist[currentPlaylistIndex] || jukeboxPlaylist[currentPlaylistIndex].title !== title) {
+    // Solo inicializar si no estamos ya en una playlist válida o si cambiamos de contexto drásticamente
+    // Comparamos con sanitize para ser seguros
+    if (currentPlaylistIndex === -1 || !jukeboxPlaylist[currentPlaylistIndex] || sanitizeJukeboxKey(jukeboxPlaylist[currentPlaylistIndex].title) !== sanitizeJukeboxKey(title)) {
         window.initializePlaylist(title);
     }
 
