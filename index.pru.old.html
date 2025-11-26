@@ -408,6 +408,19 @@
         background: #fff;
     }
 
+    /* ESTILOS TABLA LOGS EXPANDIBLE */
+    #access-logs-table .log-row { cursor: pointer; transition: background 0.2s; }
+    #access-logs-table .log-row:hover { background: rgba(255,255,255,0.05); }
+    #access-logs-table .log-details-row { display: none; background: rgba(0,0,0,0.3); }
+    #access-logs-table .log-details-row.show { display: table-row; }
+    .log-details-content { padding: 10px; font-size: 0.9em; color: #ccc; }
+    .log-event-item { border-left: 2px solid #0cf; padding-left: 8px; margin-bottom: 4px; }
+    .expand-btn { 
+        background: none; border: 1px solid #444; color: #0cf; border-radius: 4px; 
+        width: 24px; height: 24px; cursor: pointer; font-weight: bold; display: inline-flex; 
+        align-items: center; justify-content: center; padding: 0; 
+    }
+
     @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
 
     @media(max-width:768px){
@@ -772,10 +785,10 @@
   <div id="access-logs-screen" class="config-screen">
       <button class="close-btn" id="close-access-logs">Cerrar</button>
       <h2>Registro de Accesos</h2>
-      <p style="color:#aaa; text-align:center;">Últimos accesos a la Intranet.</p>
+      <p style="color:#aaa; text-align:center;">Últimos accesos a la Intranet (Expandir + para ver detalle).</p>
       <div class="table-wrapper">
-          <table id="access-logs-table" style="font-size:0.8em;">
-              <thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Dispositivo</th></tr></thead>
+          <table id="access-logs-table" style="font-size:0.8em; width:100%;">
+              <thead><tr><th>Fecha</th><th>Usuario</th><th>Duración</th><th></th></tr></thead>
               <tbody id="access-logs-body"></tbody>
           </table>
       </div>
@@ -874,6 +887,7 @@
     </section>
   </main>
 
+  <!-- FOOTER & SCRIPTS -->
   <footer>© Año 2025 -iDoctor & El Sótano del Doctor- All Rights Reserved.</footer>
 
   <audio id="site-audio">
@@ -881,13 +895,14 @@
     Tu navegador no soporta el elemento de audio.
   </audio>
 
-  <!-- Jukebox Logic -->
   <script src="jukebox.js"></script>
-  <!-- Metronome Logic -->
   <script src="metronome.js"></script>
 
 <script>
-/* ---------- 0. Firebase ---------- */
+// 0. Configuración Global
+const APP_VERSION = "1.2";
+let currentSessionId = null;
+
 const firebaseConfig = {
   apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",  
   authDomain: "sotanointranet.firebaseapp.com",
@@ -896,7 +911,136 @@ const firebaseConfig = {
   messagingSenderId: "756955233128",
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { const banner = document.getElementById('firebase-critical-error-banner'); if (banner) banner.style.display = 'block'; console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");}
+
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI") { 
+    const banner = document.getElementById('firebase-critical-error-banner'); 
+    if (banner) banner.style.display = 'block'; 
+}
+
+// ---------- LOGIC: SESSION TRACKING ----------
+function initSession() {
+    if (typeof db === 'undefined') return;
+    
+    currentSessionId = 'sess_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    const userAgent = navigator.userAgent;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(userAgent) ? 'Móvil' : 'PC';
+    const storedUser = localStorage.getItem('elSotanoCurrentUser') || 'Anónimo';
+    
+    db.collection('access_logs').doc(currentSessionId).set({
+        sessionId: currentSessionId,
+        timestamp: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        userAgent: userAgent,
+        deviceType: isMobile,
+        user: storedUser,
+        version: APP_VERSION,
+        events: [] 
+    }).catch(e => console.warn("Error init session", e));
+    
+    // Track navigation clicks
+    document.querySelectorAll('.sidebar a').forEach(link => {
+        link.addEventListener('click', () => {
+            const sectionName = link.textContent || link.id;
+            logInteraction('NAVEGACION', sectionName);
+        });
+    });
+    
+    // Track downloads
+    document.querySelectorAll('.download-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            logInteraction('DESCARGA', btn.textContent || btn.id);
+        });
+    });
+}
+
+// Global Logging Function
+window.logInteraction = function(type, detail) {
+    if (!currentSessionId || typeof db === 'undefined') return;
+    
+    const eventEntry = {
+        time: new Date().toLocaleTimeString(),
+        type: type,
+        detail: detail
+    };
+    
+    // Update Firestore
+    db.collection('access_logs').doc(currentSessionId).update({
+        lastActive: new Date().toISOString(),
+        events: firebase.firestore.FieldValue.arrayUnion(eventEntry)
+    }).catch(e => console.warn("Log update failed", e));
+};
+
+// Render Admin Logs Table
+function renderAccessLogs() {
+    const tbody = document.getElementById('access-logs-body');
+    tbody.innerHTML = "<tr><td colspan='4'>Cargando logs...</td></tr>";
+    
+    db.collection('access_logs').orderBy('timestamp', 'desc').limit(30).get().then(snapshot => {
+        tbody.innerHTML = "";
+        if(snapshot.empty) {
+            tbody.innerHTML = "<tr><td colspan='4'>No hay registros.</td></tr>";
+            return;
+        }
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const date = new Date(data.timestamp).toLocaleString();
+            let userColor = data.user === 'Anónimo' ? '#aaa' : '#0cf';
+            
+            // Calculate Duration
+            let durationStr = "-";
+            if (data.lastActive && data.timestamp) {
+                const start = new Date(data.timestamp);
+                const end = new Date(data.lastActive);
+                const diffMins = Math.round((end - start) / 60000);
+                durationStr = diffMins < 1 ? "< 1 min" : diffMins + " min";
+            }
+            
+            const hasEvents = data.events && data.events.length > 0;
+            const expandBtn = hasEvents ? `<button class="expand-btn" onclick="toggleLogDetails('${data.sessionId}')">+</button>` : '';
+            
+            // Main Row
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr class="log-row">
+                    <td style="font-size:0.9em;">${date}</td>
+                    <td style="color:${userColor}; font-weight:bold;">${data.user} <br><span style="font-size:0.8em; color:#666; font-weight:normal;">${data.deviceType}</span></td>
+                    <td>${durationStr}</td>
+                    <td>${expandBtn}</td>
+                </tr>
+            `);
+            
+            // Details Row (Hidden)
+            if (hasEvents) {
+                let eventsHtml = data.events.map(e => 
+                    `<div class="log-event-item">
+                        <span style="color:#777;">[${e.time}]</span> 
+                        <strong style="color:#0cf;">${e.type}</strong>: ${e.detail}
+                     </div>`
+                ).join('');
+                
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr id="details-${data.sessionId}" class="log-details-row">
+                        <td colspan="4">
+                            <div class="log-details-content">${eventsHtml}</div>
+                        </td>
+                    </tr>
+                `);
+            }
+        });
+    }).catch(e => {
+        console.error(e);
+        tbody.innerHTML = "<tr><td colspan='4'>Error cargando logs.</td></tr>";
+    });
+}
+
+window.toggleLogDetails = function(id) {
+    const row = document.getElementById('details-' + id);
+    if (row) {
+        row.classList.toggle('show');
+        const btn = document.querySelector(`button[onclick="toggleLogDetails('${id}')"]`);
+        if(btn) btn.textContent = row.classList.contains('show') ? '-' : '+';
+    }
+};
 
 /* ---------- 1. Utilidades y Variables Globales ---------- */
 window.globalItems1 = [];
@@ -2179,8 +2323,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           firebase.firestore().enablePersistence().catch(err => console.warn(err));
           attachSuggestionsListener(); // Attach listener now that DB is ready
           attachConcertDetailsListener(); // NEW: Attach concert listener
-          // Log Access
-          setTimeout(logAccess, 2000); // Wait a bit to ensure DB ready
+          // START SESSION
+          setTimeout(initSession, 1500); // Wait for auth state or just start
       } else {
           // If firebase script hasn't loaded yet due to defer, wait a bit
           const checkFirebase = setInterval(() => {
@@ -2193,7 +2337,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                   attachConcertDetailsListener(); // NEW
                   // Trigger data load
                   loadAllData();
-                  setTimeout(logAccess, 2000);
+                  setTimeout(initSession, 1500);
               }
           }, 100);
       }
