@@ -384,6 +384,30 @@
     .metronome-play-btn { width: 50px; height: 50px; border-radius: 50%; background: #0cf; border: none; color: #000; font-size: 1.2em; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0,204,255,0.4); }
     .metronome-play-btn:hover { background: #fff; transform: scale(1.05); }
     .metronome-play-btn.playing { background: #ff3333; color: #fff; animation: pulse-red 1s infinite; }
+    
+    /* BOTÓN TAP (NUEVO) */
+    .metronome-tap-btn {
+        margin-top: 5px;
+        width: 60px;
+        height: 60px;
+        background: #0cf; /* Azul corporativo */
+        border: none;
+        border-radius: 8px;
+        color: #000;
+        font-weight: bold;
+        font-size: 1.1em;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0,204,255,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.1s, background 0.1s;
+    }
+    .metronome-tap-btn:active {
+        transform: scale(0.95);
+        background: #fff;
+    }
+
     @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
 
     @media(max-width:768px){
@@ -651,6 +675,9 @@
          
          <button class="metronome-btn-circle" id="metro-plus">+</button>
      </div>
+     
+     <!-- BOTÓN TAP (NUEVO) -->
+     <button id="metro-tap-btn" class="metronome-tap-btn">TAP</button>
   </div>
 
   <div id="overlay"></div>
@@ -859,9 +886,9 @@ const firebaseConfig = {
 if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { const banner = document.getElementById('firebase-critical-error-banner'); if (banner) banner.style.display = 'block'; console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");}
 
 /* ---------- 1. Utilidades y Variables Globales ---------- */
-let globalItems1 = [];
-let globalItems2 = [];
-let globalItemsStar = [];
+window.globalItems1 = [];
+window.globalItems2 = [];
+window.globalItemsStar = [];
 
 const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
 const toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
@@ -1037,9 +1064,9 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     return setlistStructure;
 }
 
-const cargarPrimerSetlist = async () => { globalItems1 = await cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo"); return globalItems1; };
-const cargarSegundoSetlist = async () => { globalItems2 = await cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto"); return globalItems2; };
-const cargarStarSetlist = async () => { globalItemsStar = await cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella"); return globalItemsStar; };
+const cargarPrimerSetlist = async () => { window.globalItems1 = await cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo"); return window.globalItems1; };
+const cargarSegundoSetlist = async () => { window.globalItems2 = await cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto"); return window.globalItems2; };
+const cargarStarSetlist = async () => { window.globalItemsStar = await cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella"); return window.globalItemsStar; };
 
 /* ---------- 3.5. Jukebox Edit & Management Logic ---------- */
 let currentEditingSongName = null;
