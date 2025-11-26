@@ -3,8 +3,8 @@
    JUKEBOX.JS
    Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
    + Marcadores (Bookmarks)
-   + Inyección UI: Nueva fila de herramientas (Velocidad, Pitch, Notas, Offset, VOLUMEN, AUTOPLAY)
-   + Playlist Automática (Next/Prev)
+   + Inyección UI: Nueva fila de herramientas (Velocidad, Pitch, Notas, Offset, VOLUMEN, MODOS REPRODUCCION)
+   + Playlist Automática vs Bucle de Canción
 */
 
 // Variables Globales del Jukebox
@@ -29,12 +29,15 @@ let currentVolume = 100; // 0 a 100
 let isMuted = false;
 let preMuteVolume = 100;
 
-// Variables Playlist / Autoplay
+// Variables Playlist / Modos de Reproducción
 let jukeboxPlaylist = []; // Array de {title, url}
 let currentPlaylistIndex = -1;
-let isAutoplayEnabled = false;
 
-// Variables Bucle A-B
+// MODOS EXCLUSIVOS
+let isLoopingTrack = false;      // Repetir la canción actual (respetando offset)
+let isAutoplayPlaylist = false;  // Reproducir la siguiente al terminar
+
+// Variables Bucle Manual A-B (Se mantiene por si acaso)
 let jukeboxLoopA = null;
 let jukeboxLoopB = null;
 
@@ -318,15 +321,28 @@ window.injectExtraControls = function() {
         toolsRow.appendChild(notesBtn);
     }
 
-    // E. Botón AUTOPLAY (NUEVO)
-    if (!document.getElementById('jb-autoplay-btn')) {
-        const autoBtn = document.createElement('button');
-        autoBtn.id = 'jb-autoplay-btn';
-        autoBtn.className = 'jukebox-tool-btn';
-        autoBtn.innerHTML = '<span>🔁</span> Auto'; 
-        autoBtn.title = "Reproducción continua (Lista)";
-        autoBtn.onclick = window.toggleAutoplay;
-        toolsRow.appendChild(autoBtn);
+    // E. Botones de MODO (LOOP TRACK vs PLAYLIST)
+    
+    // E1. Botón Loop Track
+    if (!document.getElementById('jb-looptrack-btn')) {
+        const loopTrackBtn = document.createElement('button');
+        loopTrackBtn.id = 'jb-looptrack-btn';
+        loopTrackBtn.className = 'jukebox-tool-btn';
+        loopTrackBtn.innerHTML = '<span>🔂</span> Bucle'; // Icono loop 1
+        loopTrackBtn.title = "Repetir canción actual (respeta el inicio si está marcado)";
+        loopTrackBtn.onclick = window.toggleLoopTrackMode;
+        toolsRow.appendChild(loopTrackBtn);
+    }
+
+    // E2. Botón Play All
+    if (!document.getElementById('jb-playall-btn')) {
+        const playAllBtn = document.createElement('button');
+        playAllBtn.id = 'jb-playall-btn';
+        playAllBtn.className = 'jukebox-tool-btn';
+        playAllBtn.innerHTML = '<span>⏭️</span> Lista'; // Icono lista
+        playAllBtn.title = "Reproducir setlist completo";
+        playAllBtn.onclick = window.togglePlayAllMode;
+        toolsRow.appendChild(playAllBtn);
     }
 
     // F. Grupo VOLUMEN
@@ -444,6 +460,7 @@ function onPlayerError(event) {
 function onPlayerStateChange(event) {
     const btnPlay = document.getElementById('icon-play');
     const btnPause = document.getElementById('icon-pause');
+    
     if (event.data == YT.PlayerState.PLAYING) {
         isJukeboxPlaying = true;
         if(btnPlay) btnPlay.style.display = 'none'; 
@@ -453,10 +470,20 @@ function onPlayerStateChange(event) {
         isJukeboxPlaying = false;
         if(btnPlay) btnPlay.style.display = 'block'; 
         if(btnPause) btnPause.style.display = 'none';
+        
         if (event.data == YT.PlayerState.ENDED) {
             window.stopJukeboxProgressLoop();
-            // AUTOPLAY LOGIC
-            if(isAutoplayEnabled) {
+            
+            // LÓGICA DE MODOS DE REPRODUCCIÓN
+            if(isLoopingTrack) {
+                // Reiniciar canción (respetando offset)
+                const savedOffset = jukeboxOffsets[currentSongKey] || 0;
+                if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
+                    ytPlayer.seekTo(savedOffset);
+                    ytPlayer.playVideo();
+                }
+            } else if (isAutoplayPlaylist) {
+                // Pasar a siguiente canción
                 window.playNextTrack();
             }
         }
@@ -480,7 +507,6 @@ window.convertDriveToDirectLink = function(url) {
 window.convertDropboxLink = function(url) {
     if (url.includes('dropbox.com')) {
         // Estrategia robusta para Dropbox: usar dl=1 para forzar descarga
-        // y mantener dominio original para soportar rutas nuevas
         let newUrl = url;
         if (newUrl.includes('dl=0')) newUrl = newUrl.replace('dl=0', 'dl=1');
         else if (!newUrl.includes('dl=1')) {
@@ -534,7 +560,6 @@ window.initializePlaylist = function(startTitle) {
 
 window.openJukeboxPlayer = function(title, rawUrl) {
     // Inicializar Playlist si es una nueva sesión o cambio de contexto
-    // Comprobamos si la canción ya está en la playlist actual para no resetear si navegamos
     if (currentPlaylistIndex === -1 || !jukeboxPlaylist[currentPlaylistIndex] || jukeboxPlaylist[currentPlaylistIndex].title !== title) {
         window.initializePlaylist(title);
     }
@@ -596,11 +621,17 @@ window.openJukeboxPlayer = function(title, rawUrl) {
     if(volSlider) volSlider.value = currentVolume;
     window.updateMuteIcon();
 
-    // 6. Update UI Autoplay Btn
-    const autoBtn = document.getElementById('jb-autoplay-btn');
-    if(autoBtn) {
-        if(isAutoplayEnabled) autoBtn.classList.add('active');
-        else autoBtn.classList.remove('active');
+    // 6. UPDATE BUTTONS STATE (EXCLUSIVE MODES)
+    const loopBtn = document.getElementById('jb-looptrack-btn');
+    const playAllBtn = document.getElementById('jb-playall-btn');
+    
+    if (loopBtn) {
+        if(isLoopingTrack) loopBtn.classList.add('active');
+        else loopBtn.classList.remove('active');
+    }
+    if (playAllBtn) {
+        if(isAutoplayPlaylist) playAllBtn.classList.add('active');
+        else playAllBtn.classList.remove('active');
     }
 
     const siteAudio = document.getElementById('site-audio');
@@ -759,8 +790,15 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0
     };
     currentAudioObj.onended = () => { 
         window.stopJukeboxProgressLoop(); 
-        // AUTOPLAY LOGIC
-        if(isAutoplayEnabled) {
+        
+        // LÓGICA DE MODOS DE REPRODUCCIÓN (HTML5)
+        if(isLoopingTrack) {
+            // Reiniciar canción (respetando offset)
+            const savedOffset = jukeboxOffsets[currentSongKey] || 0;
+            currentAudioObj.currentTime = savedOffset;
+            currentAudioObj.play();
+        } else if (isAutoplayPlaylist) {
+            // Pasar a siguiente canción
             window.playNextTrack();
         }
     };
@@ -852,17 +890,36 @@ window.seekJukebox = function(percent) {
     }
 };
 
-/* --- FUNCIONES HERRAMIENTAS (SPEED, PITCH, NOTES, OFFSET, VOLUMEN, AUTOPLAY) --- */
+/* --- FUNCIONES HERRAMIENTAS (SPEED, PITCH, NOTES, OFFSET, VOLUMEN, MODOS) --- */
 
-window.toggleAutoplay = function() {
-    isAutoplayEnabled = !isAutoplayEnabled;
-    const btn = document.getElementById('jb-autoplay-btn');
-    if(btn) {
-        if(isAutoplayEnabled) btn.classList.add('active');
-        else btn.classList.remove('active');
+// GESTIÓN DE MODOS DE REPRODUCCIÓN (EXCLUSIVOS)
+window.toggleLoopTrackMode = function() {
+    isLoopingTrack = !isLoopingTrack;
+    if (isLoopingTrack) {
+        isAutoplayPlaylist = false; // Desactivar el otro modo
     }
+    
+    // Actualizar UI
+    const loopBtn = document.getElementById('jb-looptrack-btn');
+    const playAllBtn = document.getElementById('jb-playall-btn');
+    if(loopBtn) loopBtn.classList.toggle('active', isLoopingTrack);
+    if(playAllBtn) playAllBtn.classList.toggle('active', isAutoplayPlaylist);
 };
 
+window.togglePlayAllMode = function() {
+    isAutoplayPlaylist = !isAutoplayPlaylist;
+    if (isAutoplayPlaylist) {
+        isLoopingTrack = false; // Desactivar el otro modo
+    }
+    
+    // Actualizar UI
+    const loopBtn = document.getElementById('jb-looptrack-btn');
+    const playAllBtn = document.getElementById('jb-playall-btn');
+    if(loopBtn) loopBtn.classList.toggle('active', isLoopingTrack);
+    if(playAllBtn) playAllBtn.classList.toggle('active', isAutoplayPlaylist);
+};
+
+// CONTROL DE PLAYLIST
 window.playNextTrack = function() {
     if (jukeboxPlaylist.length === 0) return;
     
@@ -873,8 +930,6 @@ window.playNextTrack = function() {
         window.openJukeboxPlayer(nextSong.title, nextSong.url);
     } else {
         console.log("Fin de la lista de reproducción.");
-        // Opcional: Volver al principio si es Loop de lista
-        // currentPlaylistIndex = 0; window.openJukeboxPlayer(...)
     }
 };
 
@@ -952,7 +1007,7 @@ window.toggleNotesPanel = function() {
     }
 };
 
-// 4. VOLUMEN (LÓGICA CORREGIDA)
+// 4. VOLUMEN
 window.setJukeboxVolume = function(val) {
     currentVolume = parseInt(val, 10);
     
