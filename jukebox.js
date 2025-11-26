@@ -506,13 +506,20 @@ window.convertDriveToDirectLink = function(url) {
 
 window.convertDropboxLink = function(url) {
     if (url.includes('dropbox.com')) {
-        // Estrategia robusta para Dropbox: usar dl=1 para forzar descarga
+        // Estrategia Robusta iOS: usar raw=1 para streaming inline correcto
+        // dl=1 fuerza "attachment" y falla en <audio> en móviles.
         let newUrl = url;
-        if (newUrl.includes('dl=0')) newUrl = newUrl.replace('dl=0', 'dl=1');
-        else if (!newUrl.includes('dl=1')) {
-            if (newUrl.includes('?')) newUrl += '&dl=1';
-            else newUrl += '?dl=1';
+        
+        // 1. Reemplazar cualquier dl=X por raw=1
+        if (newUrl.match(/dl=[01]/)) {
+            newUrl = newUrl.replace(/dl=[01]/g, 'raw=1');
+        } 
+        // 2. Si no hay ni dl= ni raw=, añadir raw=1
+        else if (!newUrl.includes('raw=1')) {
+            if (newUrl.includes('?')) newUrl += '&raw=1';
+            else newUrl += '?raw=1';
         }
+        
         return newUrl;
     }
     return null;
