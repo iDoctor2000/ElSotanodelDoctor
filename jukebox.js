@@ -3,7 +3,7 @@
    JUKEBOX.JS
    Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
    + Marcadores (Bookmarks)
-   + Inyección UI: Nueva fila de herramientas (Velocidad, Pitch, Notas, Offset, VOLUMEN, MODOS REPRODUCCION)
+   + Inyección UI: Nueva fila de herramientas (Velocidad, Pitch, Notas, Offset, VOLUMEN, MODOS REPRODUCCION, PLAYLIST)
    + Playlist Automática vs Bucle de Canción
 */
 
@@ -62,7 +62,7 @@ window.injectJukeboxStyles = function() {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             width: 100%;
             margin-top: 12px;
             padding-top: 10px;
@@ -115,12 +115,12 @@ window.injectJukeboxStyles = function() {
         .jukebox-volume-group {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             margin-left: 5px;
             background: rgba(0,0,0,0.3);
             border: 1px solid #444;
             border-radius: 6px;
-            padding: 6px 12px;
+            padding: 6px 10px;
         }
         .jb-mute-btn {
             background: none; border: none; color: #0cf; cursor: pointer; font-size: 1.1em; padding: 0; display:flex;
@@ -131,7 +131,7 @@ window.injectJukeboxStyles = function() {
         /* ESTILO SLIDER VOLUMEN MEJORADO PARA MÓVIL */
         .jb-volume-slider {
             -webkit-appearance: none;
-            width: 140px; 
+            width: 100px; 
             height: 6px;
             background: #444;
             border-radius: 3px;
@@ -162,6 +162,21 @@ window.injectJukeboxStyles = function() {
             font-size: 1.2em; padding: 0 8px; line-height: 1; margin-right: 8px;
         }
         .jukebox-minimize-btn:hover { color: #fff; transform: scale(1.1); }
+
+        /* PLAYLIST PANEL (NUEVO) */
+        #jukebox-playlist-panel {
+            width: 100%; margin-top: 10px; display: none;
+            max-height: 200px; overflow-y: auto;
+            background: rgba(0,0,0,0.5); border: 1px solid #333; border-radius: 6px;
+            padding: 5px;
+        }
+        .jb-playlist-item {
+            padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer; color: #aaa; font-size: 0.9em; display: flex; justify-content: space-between;
+        }
+        .jb-playlist-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .jb-playlist-item.active { color: #0cf; font-weight: bold; background: rgba(0, 204, 255, 0.1); border-left: 3px solid #0cf; }
+        .jb-playlist-index { font-size: 0.8em; color: #555; margin-right: 8px; min-width: 20px; }
 
         /* NOTES AREA */
         #jukebox-notes-panel {
@@ -194,6 +209,7 @@ window.injectJukeboxStyles = function() {
         #jukebox-player-bar.minimized .jukebox-markers-area,
         #jukebox-player-bar.minimized .jukebox-progress-container,
         #jukebox-player-bar.minimized #jukebox-notes-panel, 
+        #jukebox-player-bar.minimized #jukebox-playlist-panel,
         #jukebox-player-bar.minimized #jukebox-tools-row {
             display: none !important; 
         }
@@ -204,9 +220,9 @@ window.injectJukeboxStyles = function() {
         @media(max-width: 768px) {
             #jukebox-player-bar.minimized { padding: 10px !important; }
             #jukebox-player-bar.minimized .jukebox-song-title { font-size: 0.9em; max-width: 140px; }
-            #jukebox-tools-row { gap: 8px; justify-content: space-around; }
+            #jukebox-tools-row { gap: 6px; justify-content: space-around; }
             .jukebox-tool-btn { padding: 6px 8px; font-size: 0.8em; }
-            .jb-volume-slider { width: 100px; }
+            .jb-volume-slider { width: 80px; }
         }
     `;
 
@@ -330,14 +346,14 @@ window.injectExtraControls = function() {
         toolsRow.appendChild(loopTrackBtn);
     }
 
-    if (!document.getElementById('jb-playall-btn')) {
-        const playAllBtn = document.createElement('button');
-        playAllBtn.id = 'jb-playall-btn';
-        playAllBtn.className = 'jukebox-tool-btn';
-        playAllBtn.innerHTML = '<span>⏭️</span> Lista';
-        playAllBtn.title = "Reproducir setlist completo";
-        playAllBtn.onclick = window.togglePlayAllMode;
-        toolsRow.appendChild(playAllBtn);
+    if (!document.getElementById('jb-show-playlist-btn')) {
+        const playlistBtn = document.createElement('button');
+        playlistBtn.id = 'jb-show-playlist-btn';
+        playlistBtn.className = 'jukebox-tool-btn';
+        playlistBtn.innerHTML = '<span>≡</span> Lista';
+        playlistBtn.title = "Ver/Ocultar lista de reproducción";
+        playlistBtn.onclick = window.togglePlaylistPanel;
+        toolsRow.appendChild(playlistBtn);
     }
 
     // F. Grupo VOLUMEN
@@ -378,15 +394,28 @@ window.injectExtraControls = function() {
         }, 100);
     }
 
-    // 3. Panel de Notas
+    // 3. Panel de Playlist (INSERCIÓN)
+    if (!document.getElementById('jukebox-playlist-panel')) {
+        const plPanel = document.createElement('div');
+        plPanel.id = 'jukebox-playlist-panel';
+        // Se inserta antes de las notas o después de tools
+        if(toolsRow && toolsRow.nextSibling) {
+            playerBar.insertBefore(plPanel, toolsRow.nextSibling);
+        } else {
+            playerBar.appendChild(plPanel);
+        }
+    }
+
+    // 4. Panel de Notas
     if (!document.getElementById('jukebox-notes-panel')) {
         const notesPanel = document.createElement('div');
         notesPanel.id = 'jukebox-notes-panel';
         notesPanel.innerHTML = `
             <textarea id="jb-song-notes-input" placeholder="Escribe notas privadas sobre este audio (ej: El solo empieza en el 2:30)..."></textarea>
         `;
-        if(toolsRow && toolsRow.nextSibling) {
-            playerBar.insertBefore(notesPanel, toolsRow.nextSibling);
+        const plPanel = document.getElementById('jukebox-playlist-panel');
+        if(plPanel && plPanel.nextSibling) {
+            playerBar.insertBefore(notesPanel, plPanel.nextSibling);
         } else {
             playerBar.appendChild(notesPanel);
         }
@@ -471,14 +500,12 @@ function onPlayerStateChange(event) {
             
             // LÓGICA DE MODOS DE REPRODUCCIÓN
             if(isLoopingTrack) {
-                // Reiniciar canción (respetando offset)
                 const savedOffset = jukeboxOffsets[currentSongKey] || 0;
                 if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
                     ytPlayer.seekTo(savedOffset);
                     ytPlayer.playVideo();
                 }
             } else if (isAutoplayPlaylist) {
-                // Pasar a siguiente canción
                 window.playNextTrack();
             }
         }
@@ -514,23 +541,40 @@ window.convertDropboxLink = function(url) {
     return null;
 };
 
-// LÓGICA DE PLAYLIST Y APERTURA MEJORADA
+// LÓGICA DE PLAYLIST REPARADA
 window.initializePlaylist = function(startTitle) {
     let itemsToScan = [];
     const compareNames = (a, b) => sanitizeJukeboxKey(a) === sanitizeJukeboxKey(b);
 
-    // Buscar en qué lista global está la canción
-    if (window.globalItems1 && window.globalItems1.some(i => compareNames(i.displayName, startTitle))) itemsToScan = window.globalItems1;
-    else if (window.globalItems2 && window.globalItems2.some(i => compareNames(i.displayName, startTitle))) itemsToScan = window.globalItems2;
-    else if (window.globalItemsStar && window.globalItemsStar.some(i => compareNames(i.displayName, startTitle))) itemsToScan = window.globalItemsStar;
+    // Buscar en qué variable global está la canción (buscando DENTRO de los Sets)
+    const findSongInStructure = (structure, title) => {
+        if(!structure) return false;
+        return structure.some(block => {
+            // Si es un bloque con canciones
+            if(block.isSetHeader && block.songs) {
+                return block.songs.some(s => compareNames(s.displayName, title));
+            }
+            // Si es una canción suelta
+            return compareNames(block.displayName, title);
+        });
+    };
+
+    if (findSongInStructure(window.globalItems1, startTitle)) itemsToScan = window.globalItems1;
+    else if (findSongInStructure(window.globalItems2, startTitle)) itemsToScan = window.globalItems2;
+    else if (findSongInStructure(window.globalItemsStar, startTitle)) itemsToScan = window.globalItemsStar;
     else {
         // Fallback
-        jukeboxPlaylist = [{ title: startTitle, key: sanitizeJukeboxKey(startTitle) }];
+        jukeboxPlaylist = [{ 
+            title: startTitle, 
+            key: sanitizeJukeboxKey(startTitle),
+            url: window.jukeboxLibrary[sanitizeJukeboxKey(startTitle)]
+        }];
         currentPlaylistIndex = 0;
+        console.log("Playlist fallback: Canción única");
         return;
     }
 
-    // Aplanar estructura
+    // Aplanar estructura (Sets -> Lista plana)
     let flatList = [];
     itemsToScan.forEach(item => {
         if (item.isSetHeader && item.songs) {
@@ -540,7 +584,7 @@ window.initializePlaylist = function(startTitle) {
         }
     });
 
-    // Construir playlist con SOLO canciones que tengan audio
+    // Construir playlist SOLO con canciones que tengan audio linkeado
     jukeboxPlaylist = flatList.filter(item => {
         const key = sanitizeJukeboxKey(item.displayName);
         return window.jukeboxLibrary && window.jukeboxLibrary[key];
@@ -553,27 +597,85 @@ window.initializePlaylist = function(startTitle) {
     // Encontrar índice actual
     currentPlaylistIndex = jukeboxPlaylist.findIndex(item => compareNames(item.title, startTitle));
     
-    console.log(`Playlist creada con ${jukeboxPlaylist.length} canciones. Índice actual: ${currentPlaylistIndex}`);
+    console.log(`Playlist generada: ${jukeboxPlaylist.length} pistas. Actual: ${currentPlaylistIndex}`);
+    
+    // Actualizar visualizador si está abierto
+    window.renderPlaylist();
+};
+
+window.renderPlaylist = function() {
+    const panel = document.getElementById('jukebox-playlist-panel');
+    if(!panel) return;
+    
+    panel.innerHTML = "";
+    if(jukeboxPlaylist.length === 0) {
+        panel.innerHTML = "<div style='color:#aaa; font-size:0.9em; padding:10px;'>Lista vacía</div>";
+        return;
+    }
+
+    jukeboxPlaylist.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = 'jb-playlist-item';
+        if(idx === currentPlaylistIndex) div.classList.add('active');
+        
+        div.innerHTML = `<span class="jb-playlist-index">${idx + 1}.</span> <span style="flex-grow:1;">${item.title}</span>`;
+        div.onclick = () => {
+            // Saltamos a esa canción
+            currentPlaylistIndex = idx;
+            window.openJukeboxPlayer(item.title, item.url);
+        };
+        
+        panel.appendChild(div);
+    });
+};
+
+window.togglePlaylistPanel = function() {
+    const panel = document.getElementById('jukebox-playlist-panel');
+    const btn = document.getElementById('jb-show-playlist-btn');
+    
+    if(!panel) return;
+    
+    if (panel.style.display === 'block') {
+        panel.style.display = 'none';
+        if(btn) btn.classList.remove('active');
+    } else {
+        // Asegurar que la lista está actualizada
+        window.renderPlaylist();
+        panel.style.display = 'block';
+        if(btn) btn.classList.add('active');
+        
+        // Auto scroll al activo
+        const active = panel.querySelector('.jb-playlist-item.active');
+        if(active) active.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
 };
 
 window.openJukeboxPlayer = function(title, rawUrl) {
-    // CHECK: ¿La canción ya está en la playlist actual?
     const cleanTitle = sanitizeJukeboxKey(title);
     let foundInCurrent = -1;
     
+    // Verificar si la canción ya está en la playlist cargada
     if (jukeboxPlaylist.length > 0) {
         foundInCurrent = jukeboxPlaylist.findIndex(item => item.key === cleanTitle);
     }
 
-    // Si encontramos la canción en la playlist actual, solo actualizamos el índice
     if (foundInCurrent !== -1) {
         currentPlaylistIndex = foundInCurrent;
+        // Si el panel está abierto, refrescar el resaltado
+        window.renderPlaylist();
     } else {
-        // Si no está (o es la primera vez), reconstruimos la playlist basada en el setlist de origen
+        // Si no, regenerar playlist desde cero
         window.initializePlaylist(title);
     }
 
-    // --- INICIO REPRODUCCIÓN NORMAL ---
+    // Por defecto activamos "Lista" si hay más de 1 canción
+    if (jukeboxPlaylist.length > 1 && !isLoopingTrack) {
+        isAutoplayPlaylist = true;
+    } else {
+        isAutoplayPlaylist = false;
+    }
+
+    // --- RESTO LÓGICA NORMAL ---
     currentSongKey = cleanTitle;
 
     const playerBar = document.getElementById('jukebox-player-bar');
@@ -629,10 +731,10 @@ window.openJukeboxPlayer = function(title, rawUrl) {
 
     // Update Mode Buttons
     const loopBtn = document.getElementById('jb-looptrack-btn');
-    const playAllBtn = document.getElementById('jb-playall-btn');
+    const playAllBtn = document.getElementById('jb-show-playlist-btn'); // Reusamos el botón de ver lista como indicador visual? No, mejor el toggle panel.
     
     if (loopBtn) loopBtn.classList.toggle('active', isLoopingTrack);
-    if (playAllBtn) playAllBtn.classList.toggle('active', isAutoplayPlaylist);
+    // El botón de "Lista" ahora abre el panel, no alterna modo. El modo "Autoplay" es implícito si no hay loop.
 
     const siteAudio = document.getElementById('site-audio');
     if(siteAudio && !siteAudio.paused) siteAudio.pause();
@@ -791,15 +893,11 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0
     currentAudioObj.onended = () => { 
         window.stopJukeboxProgressLoop(); 
         
-        // LÓGICA DE MODOS DE REPRODUCCIÓN (HTML5)
         if(isLoopingTrack) {
-            // Reiniciar canción (respetando offset)
             const savedOffset = jukeboxOffsets[currentSongKey] || 0;
             currentAudioObj.currentTime = savedOffset;
             currentAudioObj.play();
         } else if (isAutoplayPlaylist) {
-            // Pasar a siguiente canción
-            console.log("Canción terminada. Saltando a la siguiente...");
             window.playNextTrack();
         }
     };
@@ -897,27 +995,14 @@ window.seekJukebox = function(percent) {
 window.toggleLoopTrackMode = function() {
     isLoopingTrack = !isLoopingTrack;
     if (isLoopingTrack) {
-        isAutoplayPlaylist = false; // Desactivar el otro modo
+        isAutoplayPlaylist = false; // Desactivar Playlist
+    } else {
+        isAutoplayPlaylist = true; // Por defecto volvemos a playlist
     }
     
     // Actualizar UI
     const loopBtn = document.getElementById('jb-looptrack-btn');
-    const playAllBtn = document.getElementById('jb-playall-btn');
     if(loopBtn) loopBtn.classList.toggle('active', isLoopingTrack);
-    if(playAllBtn) playAllBtn.classList.toggle('active', isAutoplayPlaylist);
-};
-
-window.togglePlayAllMode = function() {
-    isAutoplayPlaylist = !isAutoplayPlaylist;
-    if (isAutoplayPlaylist) {
-        isLoopingTrack = false; // Desactivar el otro modo
-    }
-    
-    // Actualizar UI
-    const loopBtn = document.getElementById('jb-looptrack-btn');
-    const playAllBtn = document.getElementById('jb-playall-btn');
-    if(loopBtn) loopBtn.classList.toggle('active', isLoopingTrack);
-    if(playAllBtn) playAllBtn.classList.toggle('active', isAutoplayPlaylist);
 };
 
 // CONTROL DE PLAYLIST
