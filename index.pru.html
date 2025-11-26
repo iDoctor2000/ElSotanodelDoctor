@@ -8,7 +8,6 @@
    
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   
-  <!-- VIEWPORT CORREGIDO: Bloqueo de zoom y ajuste fit -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   
   <meta charset="UTF-8" />
@@ -20,48 +19,40 @@
   <meta property="og:description"  content="Banda de rock y versiones. Intranet de gestión.">
   <meta property="og:image"        content="assets/logo_negro copia.jpg">
 
-  <!-- OPTIMIZACIÓN: Preconectar a dominios externos para acelerar la carga -->
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="preconnect" href="https://www.gstatic.com">
   <link rel="preconnect" href="https://www.youtube.com">
   <link rel="preconnect" href="https://www.bandhelper.com">
 
-  <!-- OPTIMIZACIÓN: 'defer' permite que el HTML se muestre sin esperar a los scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" defer></script>
-  <!-- YouTube API -->
   <script src="https://www.youtube.com/iframe_api" defer></script>
 
   <style>
     *,*::before,*::after{box-sizing:border-box}
     
-    /* FONDO CON PROFUNDIDAD Y BLOQUEO DE SCROLL LATERAL/ZOOM */
     html,body {
         margin:0; padding:0; 
-        overflow-x:hidden; /* Evita scroll lateral */
+        overflow-x:hidden; 
         width: 100%;
-        /* FIX iOS: Usar min-height en lugar de height fixed evita rebotes y bloqueos */
         min-height: 100vh;
         min-height: 100dvh;
         font-family:Arial,Helvetica,sans-serif; 
         background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
         background-attachment: fixed;
         color:#fff;
-        
-        /* PROPIEDADES PARA SENSACIÓN APP NATIVA */
         touch-action: manipulation;
         overscroll-behavior-y: none;
         -webkit-tap-highlight-color: transparent;
     }
     
-    /* ---------- Splash Screen ---------- */
     #splash-screen {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background-color: #000000; display: flex; justify-content: center; align-items: center;
       z-index: 200000; opacity: 1; visibility: visible;
-      transition: opacity 0.5s ease-out, visibility 0.5s linear; /* Transición más rápida */
+      transition: opacity 0.5s ease-out, visibility 0.5s linear;
     }
     #splash-screen img {
       max-width: 60%; max-height: 60%; opacity: 0;
@@ -77,10 +68,8 @@
         border-bottom: 1px solid #222; height: 60px; backdrop-filter: blur(5px);
     }
     
-    /* NUEVO LAYOUT HEADER */
     .header-left { display: flex; align-items: center; gap: 15px; }
     .logo img.logo-main{ width: 135px; height:auto; vertical-align: middle; }
-    /* Ajuste para que el logo intranet ya no esté absoluto en el centro, sino relativo a la izquierda */
     .logo-intranet{ height:35px; width:auto; opacity: 0.9; }
     
     .header-controls-right { display: flex; align-items: center; gap: 10px; }
@@ -93,7 +82,6 @@
     .header-icon-btn:hover { background: #333; transform: scale(1.05); }
     .header-icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
     
-    /* Icono Metrónomo (SVG stroke) */
     #metronome-toggle-btn svg { fill: none; stroke: currentColor; stroke-width: 2; }
     
     #site-audio-control-button { display: none; } 
@@ -181,7 +169,6 @@
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
     
-    /* Ajustes columnas setlist */
     #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6),
     #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #second-setlist table th:nth-child(6),
     #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5), #star-setlist table th:nth-child(6) { text-align: center; }
@@ -190,7 +177,6 @@
     #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6),
     #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6) { text-align: center; }
     
-    /* JUKEBOX COLUMNS */
     th.jukebox-col-header, td.jukebox-col { width: 40px; text-align: center; padding: 5px; }
     .jukebox-btn {
         background: transparent; border: 1px solid #333; color: #555;
@@ -214,24 +200,21 @@
     }
     .jukebox-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
-    /* METRONOME COLUMN & BUTTON (ACTUALIZADO) */
     th.metronome-col-header, td.metronome-col { width: 40px; text-align: center; padding: 5px; }
     
-    /* Estilo base (Gris/Apagado - No hay tempo) */
     .metronome-table-btn {
         background: transparent; border: 1px solid #333; color: #555;
         border-radius: 50%; width: 32px; height: 32px;
         display: flex; align-items: center; justify-content: center;
         margin: 0 auto; 
-        cursor: default; /* No clicable por defecto si no hay tempo */
+        cursor: default; 
         transition: all 0.3s;
     }
     .metronome-table-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
 
-    /* Estado: Tiene tempo (Azul - Como auriculares) */
     .metronome-table-btn.has-tempo {
         border-color: #0cf; color: #0cf;
-        cursor: pointer; /* Clicable */
+        cursor: pointer; 
         box-shadow: 0 0 5px rgba(0, 204, 255, 0.3);
     }
     .metronome-table-btn.has-tempo:hover {
@@ -239,7 +222,6 @@
         box-shadow: 0 0 10px rgba(0, 204, 255, 0.6);
     }
 
-    /* Estado: Reproduciendo (Rojo pulsante) - Sobrescribe el azul */
     .metronome-table-btn.active-metronome {
         background: rgba(255, 85, 85, 0.2); border-color: #ff5555 !important; color: #ff5555 !important;
         box-shadow: 0 0 8px rgba(255, 85, 85, 0.6);
@@ -339,7 +321,7 @@
     .loop-btn:hover { color: #fff; border-color: #777; background: #222; }
     .loop-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-    /* MARKERS AREA (NUEVO) */
+    /* MARKERS AREA */
     .jukebox-markers-area { width: 100%; margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; }
     .markers-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .markers-header span { font-size: 0.9em; color: #0cf; font-weight: bold; }
@@ -354,8 +336,6 @@
     .marker-del-btn { background: none; border: none; color: #666; font-size: 1.2em; cursor: pointer; padding: 0 5px; }
     .marker-del-btn:hover { color: #f55; }
 
-
-    /* Estilos para el modo Iframe (Google Drive) */
     #jukebox-iframe-container { width: 100%; height: 80px; display: none; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
     #jukebox-iframe-container iframe { width: 100%; height: 100%; border: none; background: transparent; }
 
@@ -385,12 +365,11 @@
     .metronome-play-btn:hover { background: #fff; transform: scale(1.05); }
     .metronome-play-btn.playing { background: #ff3333; color: #fff; animation: pulse-red 1s infinite; }
     
-    /* BOTÓN TAP (NUEVO) */
     .metronome-tap-btn {
         margin-top: 5px;
         width: 60px;
         height: 60px;
-        background: #0cf; /* Azul corporativo */
+        background: #0cf; 
         border: none;
         border-radius: 8px;
         color: #000;
@@ -408,12 +387,24 @@
         background: #fff;
     }
 
+    /* ESTILOS TABLA LOGS EXPANDIBLE */
+    #access-logs-table .log-row { cursor: pointer; transition: background 0.2s; }
+    #access-logs-table .log-row:hover { background: rgba(255,255,255,0.05); }
+    #access-logs-table .log-details-row { display: none; background: rgba(0,0,0,0.3); }
+    #access-logs-table .log-details-row.show { display: table-row; }
+    .log-details-content { padding: 10px; font-size: 0.9em; color: #ccc; }
+    .log-event-item { border-left: 2px solid #0cf; padding-left: 8px; margin-bottom: 4px; }
+    .expand-btn { 
+        background: none; border: 1px solid #444; color: #0cf; border-radius: 4px; 
+        width: 24px; height: 24px; cursor: pointer; font-weight: bold; display: inline-flex; 
+        align-items: center; justify-content: center; padding: 0; 
+    }
+
     @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
 
     @media(max-width:768px){
       header { height: 55px; padding: 8px 10px; }  
       .logo img.logo-main{ width: 110px; }
-      /* Ajuste logo intranet móvil */
       .logo-intranet{ height:25px; margin-left: 5px; }
       .header-icon-btn { width: 35px; height: 35px; padding: 6px; }
       .hamburger { width: 35px; height: 35px; }
@@ -435,82 +426,11 @@
       .modal-content { width: 95%; padding: 15px; }  
       .modal-field-group { flex-direction: column; }  
       
-      /* Ajustes Popup en móvil */
       #jukebox-player-bar { width: 95%; padding: 15px; max-width: none; }
       .jukebox-loop-area { flex-wrap: wrap; }
       .jukebox-control-btn svg { width: 28px; height: 28px; }
       
-      /* Metrónomo móvil */
       #metronome-popup { right: 10px; left: 10px; width: auto; top: 65px; }
-    }
-
-    #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
-    .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #fff; }
-    .calendar-controls button { background: rgba(34, 34, 34, 0.8); border: 1px solid #0cf; color: #0cf; padding: 5px 15px; border-radius: 4px; cursor: pointer; transition: all 0.2s;}
-    .calendar-controls button:hover { background: #0cf; color: #000; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; background: transparent; border: none; }
-    .cal-header { background: rgba(26, 26, 26, 0.8); color: #0cf; text-align: center; padding: 10px 0; font-weight: bold; font-size: 0.9em; border-radius: 4px; }
-    .cal-day { background: rgba(0, 0, 0, 0.5); min-height: 100px; padding: 5px; position: relative; display: flex; flex-direction: column; gap: 2px; border-radius: 4px; border: 1px solid #333; }
-    .cal-day.other-month { background: rgba(0, 0, 0, 0.2); opacity: 0.5; border: none; }
-    .cal-day.today { border: 1px solid #0cf; background: rgba(0, 204, 255, 0.05); }
-    .cal-day-number { font-size: 0.8em; color: #777; align-self: flex-end; margin-bottom: 5px; }
-    .cal-event { font-size: 0.75em; padding: 3px 5px; border-radius: 3px; margin-bottom: 3px; word-wrap: break-word; line-height: 1.2; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.2s ease, filter 0.2s ease; }
-    .cal-event:hover { transform: scale(1.02) translateY(-1px); filter: brightness(1.2); z-index: 5; }
-    .cal-event.type-ensayo { color: #ff9999; border-left: 3px solid #ff3333; background: linear-gradient(90deg, rgba(255, 0, 0, 0.15) 0%, rgba(255,0,0,0.05) 100%); }
-    .cal-event.type-concierto { color: #ffff99; border-left: 3px solid #ffff00; background: linear-gradient(90deg, rgba(255, 255, 0, 0.15) 0%, rgba(255,255,0,0.05) 100%); }
-
-    @media(max-width:768px){ .cal-day { min-height: 70px; font-size: 0.9em; } .cal-event { font-size: 0.7em; } .cal-header { font-size: 0.7em; padding: 5px 0; } }
-
-    .suggestion-form { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
-    .suggestion-form-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-    .suggestion-form-row input { flex: 1; min-width: 150px; }
-    .suggestions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-    .suggestion-card { background: rgba(30, 30, 30, 0.6); border: 1px solid rgba(0, 204, 255, 0.1); border-radius: 8px; padding: 15px; position: relative; transition: transform 0.2s; display: flex; flex-direction: column; }
-    .suggestion-card:hover { transform: translateY(-3px); background: rgba(40, 40, 40, 0.8); border-color: rgba(0, 204, 255, 0.3); }
-    .suggestion-header { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px; }
-    .suggestion-title { font-size: 1.1em; font-weight: bold; color: #fff; margin-bottom: 2px; }
-    .suggestion-artist { color: #0cf; font-size: 0.9em; margin-bottom: 5px; }
-    .suggestion-meta { font-size: 0.75em; color: #888; font-style: italic; }
-    .suggestion-body { flex-grow: 1; margin-bottom: 10px; }
-    .star-rating-display { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
-    .star-rating-display .avg-score { font-size: 1.2em; font-weight: bold; color: #FFD700; }
-    .star-rating-display .star-visual { color: #555; font-size: 1.2em; }
-    .star-visual.filled { color: #FFD700; }
-    .voting-area { background: rgba(0,0,0,0.3); padding: 8px; border-radius: 5px; text-align: center; }
-    .voting-label { font-size: 0.8em; color: #aaa; margin-bottom: 5px; display:block; }
-    .interactive-stars { display: inline-flex; gap: 5px; cursor: pointer; }
-    .interactive-star { font-size: 1.5em; color: #555; transition: color 0.2s; }
-    .interactive-star:hover, .interactive-star.active { color: #FFD700; }
-    .interactive-stars.voted { pointer-events: none; opacity: 0.8; }
-    .interactive-stars.voted .interactive-star.active { color: #FFD700; }
-    .voters-details { margin-top: 10px; font-size: 0.8em; color: #ccc; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px; display: none; }
-    .voters-details.show { display: block; }
-    .toggle-voters-btn { background: none; border: none; color: #0cf; font-size: 0.8em; cursor: pointer; padding: 0; margin-top: 5px; text-decoration: underline; }
-    #user-identity-selector { background: #222; color: #fff; border: 1px solid #0cf; padding: 5px; border-radius: 4px; margin-bottom: 15px; width: 100%; max-width: 300px; }
-    .admin-badge { background: red; color: white; font-size: 0.7em; padding: 2px 5px; border-radius: 3px; margin-left: 5px; }
-    .deleted-row { background: rgba(255, 0, 0, 0.1); color: #aaa; }
-
-    /* --- ESTILOS MODO DIRECTO --- */
-    #live-mode-overlay {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: #000; z-index: 999999;
-        display: none; flex-direction: column; color: #fff;
-    }
-    #live-mode-overlay.show { display: flex; }
-    .live-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #333; }
-    .live-counter { color: #888; font-size: 1.2em; }
-    .live-close-btn { background: none; border: 1px solid #555; color: #aaa; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2em; cursor: pointer; }
-    .live-content { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
-    .live-song-title { font-size: 3.5em; font-weight: bold; color: #fff; margin-bottom: 20px; line-height: 1.1; text-shadow: 0 0 10px rgba(0,204,255,0.3); }
-    .live-song-meta { font-size: 2em; color: #FFD700; display: flex; gap: 30px; margin-bottom: 40px; }
-    .live-next-song { color: #555; font-size: 1.2em; margin-top: auto; }
-    .live-controls { display: flex; height: 100px; border-top: 1px solid #333; }
-    .live-control-btn { flex: 1; background: #111; border: none; color: #0cf; font-size: 2em; cursor: pointer; border-right: 1px solid #333; }
-    .live-control-btn:last-child { border-right: none; }
-    .live-control-btn:active { background: #222; }
-    @media(max-width:768px){
-        .live-song-title { font-size: 2.2em; }
-        .live-song-meta { font-size: 1.5em; flex-direction: column; gap: 10px; }
     }
   </style>
 <script type="importmap">
@@ -554,14 +474,12 @@
       </div>
   </div>
 
-  <!-- JUKEBOX PLAYER BAR (POPUP) -->
   <div id="jukebox-player-bar">
     <div class="jukebox-info">
         <span id="jukebox-current-title" class="jukebox-song-title">No hay canción seleccionada</span>
         <button class="jukebox-close-btn" id="jukebox-close-player" title="Cerrar Player">✕</button>
     </div>
     
-    <!-- NUEVO: CONTROLES DE BUCLE A-B (Arriba de los controles principales) -->
     <div class="jukebox-loop-area">
         <button class="loop-btn" id="jb-loop-a" title="Marcar Inicio (A)">
             <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
@@ -575,7 +493,6 @@
         <button class="loop-btn" id="jb-loop-clear" title="Borrar Bucle" style="border-color:#f55; color:#f55; display:none;">✕</button>
     </div>
 
-    <!-- CONTROLES ESTÁNDAR (YouTube / HTML5) -->
     <div class="jukebox-controls" id="jukebox-std-controls">
         <button class="jukebox-control-btn" id="jb-rewind">
         <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
@@ -598,29 +515,24 @@
         <span id="jb-total-time">0:00</span>
     </div>
     
-    <!-- SECCIÓN DE MARCADORES (NUEVO) -->
     <div class="jukebox-markers-area" id="jukebox-markers-area">
        <div class="markers-header">
           <span>Marcadores</span>
           <button id="jb-add-marker" title="Añadir marcador en posición actual">+</button>
        </div>
        <div id="jb-markers-list" class="markers-list">
-          <!-- Items dinámicos -->
        </div>
     </div>
     
-    <!-- IFRAME CONTAINER (Solo fallback) -->
     <div id="jukebox-iframe-container">
         <iframe id="jb-iframe" src="" allow="autoplay"></iframe>
     </div>
 
-    <!-- Hidden elements for logic -->
     <audio id="jukebox-audio-element" style="display:none;"></audio>
     <div id="youtube-player-placeholder" style="position:absolute; top:-9999px; left:-9999px;"></div>
   </div>
 
   <header>
-    <!-- ZONA IZQUIERDA: LOGOS AGRUPADOS -->
     <div class="header-left">
         <div class="logo">
           <img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main">
@@ -628,11 +540,8 @@
         <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
     </div>
 
-    <!-- ZONA DERECHA: BOTONES -->
     <div class="header-controls-right">
-        <!-- BOTÓN METRÓNOMO (NUEVO) -->
         <button id="metronome-toggle-btn" class="header-icon-btn" title="Metrónomo">
-            <!-- Icono sencillo tipo triángulo -->
             <svg viewBox="0 0 24 24">
                 <path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/> 
             </svg>
@@ -657,26 +566,21 @@
     </div>
   </header>
 
-  <!-- POPUP DEL METRÓNOMO (Oculto por defecto) -->
   <div id="metronome-popup">
      <div class="metronome-bpm-display"><span id="metro-bpm-val">120</span> <span style="font-size:0.4em; color:#aaa;">BPM</span></div>
-     <!-- Slider BPM -->
      <input type="range" id="metro-bpm-slider" class="metronome-slider" min="40" max="240" value="120">
      
      <div class="metronome-controls">
          <button class="metronome-btn-circle" id="metro-minus">-</button>
          
          <button class="metronome-play-btn" id="metro-play-btn">
-             <!-- Icono Play -->
              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" id="metro-icon-play"><path d="M8 5v14l11-7z"/></svg>
-             <!-- Icono Stop -->
              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" id="metro-icon-stop" style="display:none;"><path d="M6 6h12v12H6z"/></svg>
          </button>
          
          <button class="metronome-btn-circle" id="metro-plus">+</button>
      </div>
      
-     <!-- BOTÓN TAP (NUEVO) -->
      <button id="metro-tap-btn" class="metronome-tap-btn">TAP</button>
   </div>
 
@@ -699,12 +603,11 @@
       <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
       <a href="#" id="menu-admin-suggestions">Gestión de Propuestas</a>
       <a href="#" id="menu-jukebox-mgmt">Gestión Jukebox</a> 
-      <a href="#" id="menu-access-logs" style="color:#0cf;">Registro de Accesos</a> <!-- NUEVO MENU LOGS -->
+      <a href="#" id="menu-access-logs" style="color:#0cf;">Registro de Accesos</a> 
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
 
-  <!-- CRITICAL UI SCRIPT: Makes menu interactive immediately while heavy scripts load below -->
   <script id="critical-ui-script">
       (function() {
           var sidebar = document.getElementById("sidebar-menu");
@@ -755,7 +658,6 @@
   <div id="rehearsal-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Información del Ensayo</h3><h4 id="rehearsal-detail-title-display"></h4><input type="hidden" id="rehearsal-detail-index"><label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label><textarea id="rehearsal-notes" style="min-height: 400px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea><button id="save-rehearsal-details">Guardar Información</button><button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button><p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="setlist-config-screen" class="config-screen"><button class="close-btn" id="close-setlist-config">Cerrar</button><h2>Configuración de Setlists</h2><h3>Setlist Próximo Ensayo</h3><label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025"><label>ID/URL feed</label><input id="setlist1-url" placeholder="URL"><h3>Setlist Próximo Concierto</h3><label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad"><label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa"><h3>Setlist Concierto Estrella</h3><label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025"><label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL"><button id="guardar-setlist-config">Guardar Configuración</button><p id="setlist-message" class="error-message"></p></div>
   
-  <!-- JUKEBOX MGMT SCREEN -->
   <div id="jukebox-mgmt-screen" class="config-screen">
       <button class="close-btn" id="close-jukebox-mgmt">Cerrar</button>
       <h2>Gestión Jukebox</h2>
@@ -768,20 +670,18 @@
       </div>
   </div>
 
-  <!-- ACCESS LOGS SCREEN (NUEVO) -->
   <div id="access-logs-screen" class="config-screen">
       <button class="close-btn" id="close-access-logs">Cerrar</button>
       <h2>Registro de Accesos</h2>
-      <p style="color:#aaa; text-align:center;">Últimos accesos a la Intranet.</p>
+      <p style="color:#aaa; text-align:center;">Últimos accesos a la Intranet (Expandir + para ver detalle).</p>
       <div class="table-wrapper">
-          <table id="access-logs-table" style="font-size:0.8em;">
-              <thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Dispositivo</th></tr></thead>
+          <table id="access-logs-table" style="font-size:0.8em; width:100%;">
+              <thead><tr><th>Fecha</th><th>Usuario</th><th>Duración</th><th></th></tr></thead>
               <tbody id="access-logs-body"></tbody>
           </table>
       </div>
   </div>
 
-  <!-- JUKEBOX EDIT MODAL -->
   <div id="jukebox-edit-modal" class="modal-backdrop">
       <div class="modal-content" style="max-width: 500px;">
          <h3>Jukebox: <span id="jb-modal-songname" style="color:#fff;"></span></h3>
@@ -799,7 +699,6 @@
       </div>
   </div>
 
-  <!-- MARKER INPUT MODAL -->
   <div id="marker-input-modal" class="modal-backdrop" style="z-index: 12000;">
       <div class="modal-content" style="max-width: 400px;">
           <h3>Nuevo Marcador</h3>
@@ -881,13 +780,14 @@
     Tu navegador no soporta el elemento de audio.
   </audio>
 
-  <!-- Jukebox Logic -->
   <script src="jukebox.js"></script>
-  <!-- Metronome Logic -->
   <script src="metronome.js"></script>
 
 <script>
-/* ---------- 0. Firebase ---------- */
+// 0. Configuración Global
+const APP_VERSION = "1.2";
+let currentSessionId = null;
+
 const firebaseConfig = {
   apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",  
   authDomain: "sotanointranet.firebaseapp.com",
@@ -896,7 +796,136 @@ const firebaseConfig = {
   messagingSenderId: "756955233128",
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { const banner = document.getElementById('firebase-critical-error-banner'); if (banner) banner.style.display = 'block'; console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");}
+
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI") { 
+    const banner = document.getElementById('firebase-critical-error-banner'); 
+    if (banner) banner.style.display = 'block'; 
+}
+
+// ---------- LOGIC: SESSION TRACKING ----------
+function initSession() {
+    if (typeof db === 'undefined') return;
+    
+    currentSessionId = 'sess_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    const userAgent = navigator.userAgent;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(userAgent) ? 'Móvil' : 'PC';
+    const storedUser = localStorage.getItem('elSotanoCurrentUser') || 'Anónimo';
+    
+    db.collection('access_logs').doc(currentSessionId).set({
+        sessionId: currentSessionId,
+        timestamp: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        userAgent: userAgent,
+        deviceType: isMobile,
+        user: storedUser,
+        version: APP_VERSION,
+        events: [] 
+    }).catch(e => console.warn("Error init session", e));
+    
+    // Track navigation clicks
+    document.querySelectorAll('.sidebar a').forEach(link => {
+        link.addEventListener('click', () => {
+            const sectionName = link.textContent || link.id;
+            logInteraction('NAVEGACION', sectionName);
+        });
+    });
+    
+    // Track downloads
+    document.querySelectorAll('.download-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            logInteraction('DESCARGA', btn.textContent || btn.id);
+        });
+    });
+}
+
+// Global Logging Function
+window.logInteraction = function(type, detail) {
+    if (!currentSessionId || typeof db === 'undefined') return;
+    
+    const eventEntry = {
+        time: new Date().toLocaleTimeString(),
+        type: type,
+        detail: detail
+    };
+    
+    // Update Firestore
+    db.collection('access_logs').doc(currentSessionId).update({
+        lastActive: new Date().toISOString(),
+        events: firebase.firestore.FieldValue.arrayUnion(eventEntry)
+    }).catch(e => console.warn("Log update failed", e));
+};
+
+// Render Admin Logs Table
+function renderAccessLogs() {
+    const tbody = document.getElementById('access-logs-body');
+    tbody.innerHTML = "<tr><td colspan='4'>Cargando logs...</td></tr>";
+    
+    db.collection('access_logs').orderBy('timestamp', 'desc').limit(30).get().then(snapshot => {
+        tbody.innerHTML = "";
+        if(snapshot.empty) {
+            tbody.innerHTML = "<tr><td colspan='4'>No hay registros.</td></tr>";
+            return;
+        }
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const date = new Date(data.timestamp).toLocaleString();
+            let userColor = data.user === 'Anónimo' ? '#aaa' : '#0cf';
+            
+            // Calculate Duration
+            let durationStr = "-";
+            if (data.lastActive && data.timestamp) {
+                const start = new Date(data.timestamp);
+                const end = new Date(data.lastActive);
+                const diffMins = Math.round((end - start) / 60000);
+                durationStr = diffMins < 1 ? "< 1 min" : diffMins + " min";
+            }
+            
+            const hasEvents = data.events && data.events.length > 0;
+            const expandBtn = hasEvents ? `<button class="expand-btn" onclick="toggleLogDetails('${data.sessionId}')">+</button>` : '';
+            
+            // Main Row
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr class="log-row">
+                    <td style="font-size:0.9em;">${date}</td>
+                    <td style="color:${userColor}; font-weight:bold;">${data.user} <br><span style="font-size:0.8em; color:#666; font-weight:normal;">${data.deviceType}</span></td>
+                    <td>${durationStr}</td>
+                    <td>${expandBtn}</td>
+                </tr>
+            `);
+            
+            // Details Row (Hidden)
+            if (hasEvents) {
+                let eventsHtml = data.events.map(e => 
+                    `<div class="log-event-item">
+                        <span style="color:#777;">[${e.time}]</span> 
+                        <strong style="color:#0cf;">${e.type}</strong>: ${e.detail}
+                     </div>`
+                ).join('');
+                
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr id="details-${data.sessionId}" class="log-details-row">
+                        <td colspan="4">
+                            <div class="log-details-content">${eventsHtml}</div>
+                        </td>
+                    </tr>
+                `);
+            }
+        });
+    }).catch(e => {
+        console.error(e);
+        tbody.innerHTML = "<tr><td colspan='4'>Error cargando logs.</td></tr>";
+    });
+}
+
+window.toggleLogDetails = function(id) {
+    const row = document.getElementById('details-' + id);
+    if (row) {
+        row.classList.toggle('show');
+        const btn = document.querySelector(`button[onclick="toggleLogDetails('${id}')"]`);
+        if(btn) btn.textContent = row.classList.contains('show') ? '-' : '+';
+    }
+};
 
 /* ---------- 1. Utilidades y Variables Globales ---------- */
 window.globalItems1 = [];
@@ -2169,8 +2198,6 @@ function renderVisualCalendar() {
 /* ---------- 13. Carga inicial & Lógica Audio Global y Splash ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
   
-  // Clean previous optimization attempt that failed
-  
   /* --- Inicialización de Firebase Diferida --- */
   try {
       if (typeof firebase !== 'undefined') {
@@ -2179,8 +2206,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           firebase.firestore().enablePersistence().catch(err => console.warn(err));
           attachSuggestionsListener(); // Attach listener now that DB is ready
           attachConcertDetailsListener(); // NEW: Attach concert listener
-          // Log Access
-          setTimeout(logAccess, 2000); // Wait a bit to ensure DB ready
+          // START SESSION
+          setTimeout(initSession, 1500);
       } else {
           // If firebase script hasn't loaded yet due to defer, wait a bit
           const checkFirebase = setInterval(() => {
@@ -2193,7 +2220,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                   attachConcertDetailsListener(); // NEW
                   // Trigger data load
                   loadAllData();
-                  setTimeout(logAccess, 2000);
+                  setTimeout(initSession, 1500);
               }
           }, 100);
       }
