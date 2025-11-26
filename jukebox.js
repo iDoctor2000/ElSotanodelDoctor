@@ -3,7 +3,8 @@
    JUKEBOX.JS
    Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
    + Marcadores (Bookmarks)
-   + Inyección UI: Nueva fila de herramientas (Velocidad, Pitch, Notas, Offset, VOLUMEN)
+   + Inyección UI: Nueva fila de herramientas (Velocidad, Pitch, Notas, Offset, VOLUMEN, AUTOPLAY)
+   + Playlist Automática (Next/Prev)
 */
 
 // Variables Globales del Jukebox
@@ -27,6 +28,11 @@ let isMinimized = false;
 let currentVolume = 100; // 0 a 100
 let isMuted = false;
 let preMuteVolume = 100;
+
+// Variables Playlist / Autoplay
+let jukeboxPlaylist = []; // Array de {title, url}
+let currentPlaylistIndex = -1;
+let isAutoplayEnabled = false;
 
 // Variables Bucle A-B
 let jukeboxLoopA = null;
@@ -128,20 +134,19 @@ window.injectJukeboxStyles = function() {
             border-radius: 3px;
             outline: none;
             cursor: pointer;
-            /* CLAVE PARA MÓVIL: Evita el scroll de la página al mover el slider */
             touch-action: none; 
         }
         .jb-volume-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px; /* Más grande para el dedo */
-            height: 20px; /* Más grande para el dedo */
+            width: 20px;
+            height: 20px;
             background: #0cf;
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 0 8px rgba(0,204,255,0.6);
             transition: transform 0.1s;
-            margin-top: -2px; /* Ajuste visual */
+            margin-top: -2px;
         }
         .jb-volume-slider::-webkit-slider-thumb:hover, .jb-volume-slider::-webkit-slider-thumb:active {
             transform: scale(1.2);
@@ -182,7 +187,6 @@ window.injectJukeboxStyles = function() {
         }
         #jukebox-player-bar.minimized .jukebox-info { width: auto; margin-bottom: 0; flex: 1; margin-right: 15px; }
         
-        /* Ocultar todo menos controles básicos en modo mini */
         #jukebox-player-bar.minimized .jukebox-loop-area,
         #jukebox-player-bar.minimized .jukebox-markers-area,
         #jukebox-player-bar.minimized .jukebox-progress-container,
@@ -199,7 +203,7 @@ window.injectJukeboxStyles = function() {
             #jukebox-player-bar.minimized .jukebox-song-title { font-size: 0.9em; max-width: 140px; }
             #jukebox-tools-row { gap: 8px; justify-content: space-around; }
             .jukebox-tool-btn { padding: 6px 8px; font-size: 0.8em; }
-            .jb-volume-slider { width: 100px; } /* Un poco más pequeña para caber en pantallas muy estrechas */
+            .jb-volume-slider { width: 100px; }
         }
     `;
 
@@ -213,6 +217,7 @@ window.injectExtraControls = function() {
     const playerBar = document.getElementById('jukebox-player-bar');
     const infoArea = document.querySelector('#jukebox-player-bar .jukebox-info');
     const closeBtn = document.getElementById('jukebox-close-player');
+    const stdControls = document.getElementById('jukebox-std-controls');
     
     if (!playerBar || !infoArea) return;
 
@@ -227,6 +232,26 @@ window.injectExtraControls = function() {
         infoArea.insertBefore(minBtn, closeBtn);
     }
 
+    // 1.5. Botones Prev/Next en Controles Principales
+    // Insertar Antes de Rewind (Prev) y Después de Forward (Next)
+    if (stdControls && !document.getElementById('jb-prev-track')) {
+        const prevBtn = document.createElement('button');
+        prevBtn.id = 'jb-prev-track';
+        prevBtn.className = 'jukebox-control-btn';
+        prevBtn.title = "Anterior Canción";
+        prevBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>';
+        prevBtn.onclick = window.playPrevTrack;
+        stdControls.insertBefore(prevBtn, stdControls.firstElementChild);
+
+        const nextBtn = document.createElement('button');
+        nextBtn.id = 'jb-next-track';
+        nextBtn.className = 'jukebox-control-btn';
+        nextBtn.title = "Siguiente Canción";
+        nextBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>';
+        nextBtn.onclick = window.playNextTrack;
+        stdControls.appendChild(nextBtn);
+    }
+
     // 2. CREAR FILA DE HERRAMIENTAS (Debajo de barra de progreso)
     let toolsRow = document.getElementById('jukebox-tools-row');
     if (!toolsRow) {
@@ -238,7 +263,6 @@ window.injectExtraControls = function() {
         if (progressContainer && progressContainer.nextSibling) {
             playerBar.insertBefore(toolsRow, progressContainer.nextSibling);
         } else {
-            // Fallback: antes de markers
             const markersArea = document.getElementById('jukebox-markers-area');
             playerBar.insertBefore(toolsRow, markersArea);
         }
@@ -294,15 +318,24 @@ window.injectExtraControls = function() {
         toolsRow.appendChild(notesBtn);
     }
 
-    // E. Grupo VOLUMEN (NUEVO)
+    // E. Botón AUTOPLAY (NUEVO)
+    if (!document.getElementById('jb-autoplay-btn')) {
+        const autoBtn = document.createElement('button');
+        autoBtn.id = 'jb-autoplay-btn';
+        autoBtn.className = 'jukebox-tool-btn';
+        autoBtn.innerHTML = '<span>🔁</span> Auto'; 
+        autoBtn.title = "Reproducción continua (Lista)";
+        autoBtn.onclick = window.toggleAutoplay;
+        toolsRow.appendChild(autoBtn);
+    }
+
+    // F. Grupo VOLUMEN
     if (!document.getElementById('jb-volume-group')) {
         const volWrapper = document.createElement('div');
         volWrapper.id = 'jb-volume-group';
         volWrapper.className = 'jukebox-volume-group';
         
         // DETECCIÓN IOS (iPhone/iPad)
-        // iOS no permite controlar el volumen por HTML5/JS, solo botones físicos.
-        // Ocultamos el control para evitar confusión UX.
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -318,25 +351,18 @@ window.injectExtraControls = function() {
         `;
         toolsRow.appendChild(volWrapper);
         
-        // Asignar listeners inmediatamente
         setTimeout(() => {
             const slider = document.getElementById('jb-volume-slider');
             const muteBtn = document.getElementById('jb-mute-btn');
             
             if (slider) {
-                // SOPORTE MEJORADO PARA MÓVIL
-                // 'input' cubre la mayoría de casos modernos
                 slider.addEventListener('input', (e) => window.setJukeboxVolume(e.target.value));
-                // 'change' como fallback
                 slider.addEventListener('change', (e) => window.setJukeboxVolume(e.target.value));
-                
-                // Restaurar valor visual por si acaso
                 slider.value = currentVolume;
             }
             if (muteBtn) {
                 muteBtn.onclick = window.toggleJukeboxMute;
             }
-            // Actualizar icono inicial
             window.updateMuteIcon();
         }, 100);
     }
@@ -348,14 +374,12 @@ window.injectExtraControls = function() {
         notesPanel.innerHTML = `
             <textarea id="jb-song-notes-input" placeholder="Escribe notas privadas sobre este audio (ej: El solo empieza en el 2:30)..."></textarea>
         `;
-        // Insertar justo después de la fila de herramientas
         if(toolsRow && toolsRow.nextSibling) {
             playerBar.insertBefore(notesPanel, toolsRow.nextSibling);
         } else {
             playerBar.appendChild(notesPanel);
         }
 
-        // Auto-save listener
         const textarea = notesPanel.querySelector('textarea');
         textarea.addEventListener('blur', () => {
             if(currentSongKey) {
@@ -371,7 +395,6 @@ window.injectExtraControls = function() {
 window.loadJukeboxLibrary = async function() {
     try {
         if (typeof window.loadDoc === 'function') {
-            // Cargar todos los campos nuevos
             const data = await window.withRetry(() => window.loadDoc("intranet", "jukebox_library", { mapping: {}, markers: {}, offsets: {}, notes: {}, pitch: {} }));
             window.jukeboxLibrary = data.mapping || {};
             jukeboxMarkers = data.markers || {};
@@ -430,7 +453,13 @@ function onPlayerStateChange(event) {
         isJukeboxPlaying = false;
         if(btnPlay) btnPlay.style.display = 'block'; 
         if(btnPause) btnPause.style.display = 'none';
-        if (event.data == YT.PlayerState.ENDED) window.stopJukeboxProgressLoop();
+        if (event.data == YT.PlayerState.ENDED) {
+            window.stopJukeboxProgressLoop();
+            // AUTOPLAY LOGIC
+            if(isAutoplayEnabled) {
+                window.playNextTrack();
+            }
+        }
     }
 }
 
@@ -448,20 +477,68 @@ window.convertDriveToDirectLink = function(url) {
     return null;
 };
 
-// MEJORA CRÍTICA DROPBOX: Usar dominio CDN directo
 window.convertDropboxLink = function(url) {
     if (url.includes('dropbox.com')) {
-        // ESTRATEGIA: Reemplazar el dominio principal por el CDN de contenido
-        // Esto evita la página de previsualización HTML y sirve el binario.
-        let newUrl = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
-        newUrl = newUrl.replace(/^https:\/\/dropbox\.com/, 'https://dl.dropboxusercontent.com');
-        
+        // Estrategia robusta para Dropbox: usar dl=1 para forzar descarga
+        // y mantener dominio original para soportar rutas nuevas
+        let newUrl = url;
+        if (newUrl.includes('dl=0')) newUrl = newUrl.replace('dl=0', 'dl=1');
+        else if (!newUrl.includes('dl=1')) {
+            if (newUrl.includes('?')) newUrl += '&dl=1';
+            else newUrl += '?dl=1';
+        }
         return newUrl;
     }
     return null;
 };
 
+// LÓGICA DE PLAYLIST Y APERTURA
+window.initializePlaylist = function(startTitle) {
+    // Buscar en qué setlist está esta canción para construir la cola
+    let itemsToScan = [];
+    if (window.globalItems1 && window.globalItems1.some(i => i.displayName === startTitle)) itemsToScan = window.globalItems1;
+    else if (window.globalItems2 && window.globalItems2.some(i => i.displayName === startTitle)) itemsToScan = window.globalItems2;
+    else if (window.globalItemsStar && window.globalItemsStar.some(i => i.displayName === startTitle)) itemsToScan = window.globalItemsStar;
+    else {
+        // Fallback: Crear playlist de 1 solo elemento
+        jukeboxPlaylist = [{ title: startTitle, key: sanitizeJukeboxKey(startTitle) }];
+        currentPlaylistIndex = 0;
+        return;
+    }
+
+    // Aplanar estructura (extraer canciones de los bloques/sets)
+    let flatList = [];
+    itemsToScan.forEach(item => {
+        if (item.isSetHeader && item.songs) {
+            flatList = flatList.concat(item.songs);
+        } else if (item.isSong) {
+            flatList.push(item);
+        }
+    });
+
+    // Filtrar solo las que tienen audio disponible en la librería
+    jukeboxPlaylist = flatList.filter(item => {
+        const key = sanitizeJukeboxKey(item.displayName);
+        return window.jukeboxLibrary && window.jukeboxLibrary[key];
+    }).map(item => ({
+        title: item.displayName,
+        key: sanitizeJukeboxKey(item.displayName),
+        url: window.jukeboxLibrary[sanitizeJukeboxKey(item.displayName)]
+    }));
+
+    // Encontrar índice actual
+    currentPlaylistIndex = jukeboxPlaylist.findIndex(item => item.title === startTitle);
+    
+    console.log(`Playlist creada con ${jukeboxPlaylist.length} canciones. Índice actual: ${currentPlaylistIndex}`);
+};
+
 window.openJukeboxPlayer = function(title, rawUrl) {
+    // Inicializar Playlist si es una nueva sesión o cambio de contexto
+    // Comprobamos si la canción ya está en la playlist actual para no resetear si navegamos
+    if (currentPlaylistIndex === -1 || !jukeboxPlaylist[currentPlaylistIndex] || jukeboxPlaylist[currentPlaylistIndex].title !== title) {
+        window.initializePlaylist(title);
+    }
+
     currentSongKey = sanitizeJukeboxKey(title);
 
     const playerBar = document.getElementById('jukebox-player-bar');
@@ -519,6 +596,13 @@ window.openJukeboxPlayer = function(title, rawUrl) {
     if(volSlider) volSlider.value = currentVolume;
     window.updateMuteIcon();
 
+    // 6. Update UI Autoplay Btn
+    const autoBtn = document.getElementById('jb-autoplay-btn');
+    if(autoBtn) {
+        if(isAutoplayEnabled) autoBtn.classList.add('active');
+        else autoBtn.classList.remove('active');
+    }
+
     const siteAudio = document.getElementById('site-audio');
     if(siteAudio && !siteAudio.paused) siteAudio.pause();
 
@@ -533,7 +617,6 @@ window.openJukeboxPlayer = function(title, rawUrl) {
     let driveDirectLink = window.convertDriveToDirectLink(url);
     let dropboxLink = window.convertDropboxLink(url);
 
-    // SHOW/HIDE LOGIC BASED ON TYPE
     if (toolsRow) toolsRow.style.display = 'flex';
 
     // 1. DROPBOX (HTML5)
@@ -566,7 +649,6 @@ window.openJukeboxPlayer = function(title, rawUrl) {
         iframeContainer.style.display = 'none';
         if(loopControls) loopControls.style.display = 'none'; 
         if(markersArea) markersArea.style.display = 'block';
-        // YouTube NO Pitch
         if(pitchControls) pitchControls.style.display = 'none';
 
         let videoId = "";
@@ -580,14 +662,14 @@ window.openJukeboxPlayer = function(title, rawUrl) {
 
         if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
             ytPlayer.loadVideoById(ytConfig);
-            ytPlayer.setVolume(currentVolume); // Apply Volume
+            ytPlayer.setVolume(currentVolume); 
             ytPlayer.playVideo();
             ytPlayer.setPlaybackRate(1.0);
         } else {
             setTimeout(() => {
                 if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
                     ytPlayer.loadVideoById(ytConfig);
-                    ytPlayer.setVolume(currentVolume); // Apply Volume
+                    ytPlayer.setVolume(currentVolume); 
                     ytPlayer.playVideo();
                     ytPlayer.setPlaybackRate(1.0);
                 } else { alert("YouTube API no lista."); }
@@ -622,7 +704,6 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0
     currentAudioObj.webkitPreservesPitch = false;
 
     currentAudioObj.src = srcUrl;
-    // IMPORTANTE: setVolume gestiona el volumen actual, applyPlaybackRate la velocidad
     window.setJukeboxVolume(currentVolume);
     window.applyPlaybackRate();
 
@@ -643,7 +724,6 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0
         }
     };
 
-    // MEJORA DIAGNÓSTICO DE ERRORES
     currentAudioObj.onerror = function() {
         const err = currentAudioObj.error;
         console.error("Error cargando audio HTML5:", err);
@@ -654,14 +734,12 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0
         } else {
             let msg = "Error al reproducir el audio.";
             let codeInfo = "";
-            
             if(err) {
-                if(err.code === 3) msg = "Error de decodificación (MEDIA_ERR_DECODE). El archivo de audio está corrupto o el navegador no puede leerlo.";
-                if(err.code === 4) msg = "Formato no soportado (MEDIA_ERR_SRC_NOT_SUPPORTED). Tu navegador no soporta este tipo de archivo de audio.";
+                if(err.code === 3) msg = "Error de decodificación (MEDIA_ERR_DECODE).";
+                if(err.code === 4) msg = "Formato no soportado (Posible archivo ALAC/Lossless).";
                 codeInfo = ` (Código: ${err.code})`;
             }
-            
-            alert(`${msg}${codeInfo}\n\nEnlace intentado:\n${srcUrl}\n\nSi es un archivo de Dropbox, verifica que sea público.`);
+            alert(`${msg}${codeInfo}\n\nEnlace:\n${srcUrl}`);
             window.stopJukebox();
         }
     };
@@ -679,7 +757,13 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0
             if(p) p.style.display = 'block'; 
             if(pa) pa.style.display = 'none';
     };
-    currentAudioObj.onended = () => { window.stopJukeboxProgressLoop(); };
+    currentAudioObj.onended = () => { 
+        window.stopJukeboxProgressLoop(); 
+        // AUTOPLAY LOGIC
+        if(isAutoplayEnabled) {
+            window.playNextTrack();
+        }
+    };
 };
 
 window.switchToDriveIframeMode = function() {
@@ -705,7 +789,7 @@ window.switchToDriveIframeMode = function() {
         stdProgress.style.display = 'none';
         if(loopControls) loopControls.style.display = 'none';
         if(markersArea) markersArea.style.display = 'none'; 
-        if(toolsRow) toolsRow.style.display = 'none'; // Hide tools in iframe mode
+        if(toolsRow) toolsRow.style.display = 'none'; 
         
         iframeContainer.style.display = 'block';
         iframeEl.src = previewUrl;
@@ -768,7 +852,42 @@ window.seekJukebox = function(percent) {
     }
 };
 
-/* --- FUNCIONES HERRAMIENTAS (SPEED, PITCH, NOTES, OFFSET, VOLUMEN) --- */
+/* --- FUNCIONES HERRAMIENTAS (SPEED, PITCH, NOTES, OFFSET, VOLUMEN, AUTOPLAY) --- */
+
+window.toggleAutoplay = function() {
+    isAutoplayEnabled = !isAutoplayEnabled;
+    const btn = document.getElementById('jb-autoplay-btn');
+    if(btn) {
+        if(isAutoplayEnabled) btn.classList.add('active');
+        else btn.classList.remove('active');
+    }
+};
+
+window.playNextTrack = function() {
+    if (jukeboxPlaylist.length === 0) return;
+    
+    const nextIndex = currentPlaylistIndex + 1;
+    if (nextIndex < jukeboxPlaylist.length) {
+        currentPlaylistIndex = nextIndex;
+        const nextSong = jukeboxPlaylist[currentPlaylistIndex];
+        window.openJukeboxPlayer(nextSong.title, nextSong.url);
+    } else {
+        console.log("Fin de la lista de reproducción.");
+        // Opcional: Volver al principio si es Loop de lista
+        // currentPlaylistIndex = 0; window.openJukeboxPlayer(...)
+    }
+};
+
+window.playPrevTrack = function() {
+    if (jukeboxPlaylist.length === 0) return;
+    
+    const prevIndex = currentPlaylistIndex - 1;
+    if (prevIndex >= 0) {
+        currentPlaylistIndex = prevIndex;
+        const prevSong = jukeboxPlaylist[currentPlaylistIndex];
+        window.openJukeboxPlayer(prevSong.title, prevSong.url);
+    }
+};
 
 // 1. SPEED
 window.cycleSpeed = function() {
@@ -833,17 +952,15 @@ window.toggleNotesPanel = function() {
     }
 };
 
-// 4. VOLUMEN (LÓGICA CORREGIDA Y ROBUSTA)
+// 4. VOLUMEN (LÓGICA CORREGIDA)
 window.setJukeboxVolume = function(val) {
     currentVolume = parseInt(val, 10);
     
-    // Asegurar actualización visual del slider si se llama programáticamente
     const slider = document.getElementById('jb-volume-slider');
     if(slider && parseInt(slider.value, 10) !== currentVolume) {
         slider.value = currentVolume;
     }
 
-    // Gestión de estado Mute
     if(currentVolume > 0 && isMuted) {
         isMuted = false;
         window.updateMuteIcon();
@@ -853,33 +970,26 @@ window.setJukeboxVolume = function(val) {
         window.updateMuteIcon();
     }
 
-    // Aplicar a HTML5 (con check de rango para evitar errores)
     if (currentJukeboxType === 'html5' && currentAudioObj) {
         try {
             const vol = Math.max(0, Math.min(1, currentVolume / 100));
             if (isFinite(vol)) currentAudioObj.volume = vol;
-        } catch(e) { console.warn("Error setting HTML5 volume", e); }
+        } catch(e) {}
     }
     
-    // Aplicar a YouTube
     if (currentJukeboxType === 'youtube' && ytPlayer && typeof ytPlayer.setVolume === 'function') {
-        try {
-            ytPlayer.setVolume(currentVolume);
-        } catch(e) { console.warn("Error setting YT volume", e); }
+        try { ytPlayer.setVolume(currentVolume); } catch(e) {}
     }
 };
 
 window.toggleJukeboxMute = function() {
     isMuted = !isMuted;
-    
     if(isMuted) {
         preMuteVolume = currentVolume > 0 ? currentVolume : 100;
         currentVolume = 0;
     } else {
         currentVolume = preMuteVolume;
     }
-    
-    // Al llamar a setJukeboxVolume, este actualizará el slider y el icono
     window.setJukeboxVolume(currentVolume);
 };
 
