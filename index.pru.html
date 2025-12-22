@@ -166,7 +166,7 @@
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
     
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual, #suggestions { 
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual, #suggestions, #analisis { 
         background: rgba(20, 20, 20, 0.75); 
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
         padding:20px; border-radius:12px; 
@@ -174,7 +174,7 @@
         border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
     }
     
-    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2 { text-align:center;color:#0cf;margin-bottom:5px }
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2, #analisis h2 { text-align:center;color:#0cf;margin-bottom:5px }
     .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
     table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
@@ -703,6 +703,7 @@
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#vista-calendario-mensual" id="menu-calendar-view">Calendario Mensual</a>
     <a href="#suggestions" id="menu-suggestions">Propuestas de Canciones</a>
+    <a href="#analisis" id="menu-analisis-section">Análisis / Debriefing</a>
     <a href="#" id="menu-stats">Estadísticas</a>
     <a href="#" id="menu-user-list-display">Usuarios Registrados</a>  
     <a href="#" id="menu-config">Configuración</a>
@@ -824,6 +825,39 @@
           </div>
       </div>
   </div>
+  
+  <!-- NUEVOS MODALES PARA ANÁLISIS -->
+  <div id="analisis-config-modal" class="modal-backdrop">
+      <div class="modal-content" style="max-width: 450px;">
+          <h3>Configurar Análisis</h3>
+          <label for="analisis-config-title">Título (Concierto / Ensayo):</label>
+          <input type="text" id="analisis-config-title" placeholder="Ej: Concierto Sala X - 12/10/2023">
+          
+          <label for="analisis-config-url">URL de Audio (Dropbox, Drive, MP3):</label>
+          <input type="url" id="analisis-config-url" placeholder="https://...">
+
+          <div style="display:flex; justify-content:space-between; margin-top:20px;">
+              <button id="analisis-delete-btn" style="background:#ff3333;">Eliminar</button>
+              <div>
+                  <button id="analisis-config-close" class="modal-close-btn">Cancelar</button>
+                  <button id="analisis-config-save">Guardar</button>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <div id="analisis-notes-modal" class="modal-backdrop">
+      <div class="modal-content">
+          <h3>Notas de Debriefing</h3>
+          <h4 id="analisis-notes-display-title" style="color:#0cf; margin-top:0;"></h4>
+          <textarea id="analisis-notes-textarea" style="min-height:300px;" placeholder="Escribe aquí las conclusiones, fallos a corregir o cosas a destacar..."></textarea>
+          <div style="text-align:right;">
+              <button id="analisis-notes-close" class="modal-close-btn">Cerrar</button>
+              <button id="analisis-notes-save">Guardar Notas</button>
+          </div>
+      </div>
+  </div>
+  <!-- FIN MODALES ANÁLISIS -->
 
   <div id="user-mgmt-screen" class="config-screen"><button class="close-btn" id="close-user-mgmt">Cerrar</button><h2>Gestión de Usuarios</h2><label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label><select id="user-role" multiple><option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option><option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option><option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option><option value="Coros">Coros</option><option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option><option value="Técnico de Luces">Técnico de Luces</option><option value="Montador">Montador</option><option value="Road Manager">Road Manager</option><option value="Backliner">Backliner</option></select><button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button><p id="user-message" class="error-message"></p><table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table></div>
   <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha</label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
@@ -885,6 +919,29 @@
       </div>
       <div class="calendar-grid" id="calendar-grid-container"></div>
     </section>
+
+    <!-- NUEVA SECCIÓN ANÁLISIS -->
+    <section id="analisis">
+        <h2>Análisis / Debriefing</h2>
+        <div style="text-align:right; margin-bottom:10px;">
+            <button id="add-analysis-btn" class="download-btn" style="margin:0; font-size:0.9em; padding:8px 15px;">+ Nuevo</button>
+        </div>
+        <div class="table-wrapper">
+            <table id="analisis-table">
+                <thead>
+                    <tr>
+                        <th>Título / Fecha</th>
+                        <th style="width:50px; text-align:center;">Audio</th>
+                        <th style="width:50px; text-align:center;">Notas</th>
+                        <th style="width:50px; text-align:center;">Config</th>
+                    </tr>
+                </thead>
+                <tbody id="analisis-body">
+                    <!-- Contenido dinámico desde analisis.js -->
+                </tbody>
+            </table>
+        </div>
+    </section>
   </main>
 
   <!-- FOOTER & SCRIPTS -->
@@ -897,6 +954,7 @@
 
   <script src="jukebox.js"></script>
   <script src="metronome.js"></script>
+  <script src="analisis.js"></script> <!-- Nuevo script añadido -->
 
 <script>
 // 0. Configuración Global
@@ -1733,6 +1791,8 @@ const setupMenuLink = (menuId, targetId) => { const link=document.getElementById
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
 setupMenuLink("menu-suggestions", "suggestions");
+// NUEVO ENLACE PARA ANÁLISIS
+setupMenuLink("menu-analisis-section", "analisis");
 
 // --- CONFIGURACIÓN MENÚ SUGGESTIONS ---
 document.getElementById("menu-suggestions").onclick = e => { 
@@ -2526,6 +2586,14 @@ document.addEventListener("DOMContentLoaded", async () => {
           console.log("[DOMContentLoaded] Configuración, usuarios, ensayos y Jukebox cargados.");
       } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
 
+      // --- CARGA DE ANÁLISIS ---
+      // Aseguramos que se carguen los análisis
+      if(window.loadAnalysisData) {
+          window.loadAnalysisData();
+      } else {
+          setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
+      }
+      
       // Load Setlists into Global Variables
       try {  
         console.log("[DOMContentLoaded] Cargando primer setlist...");
