@@ -598,10 +598,16 @@ window.saveDoc = async function(collection, docId, data, merge = false) {
     await db.collection(collection).doc(docId).set(data, { merge: merge });
 }
 
-// --- PDF FEATURE ---
-const pdfEditModal = document.getElementById('pdf-edit-modal');
-let currentEditingPdfSongName = null;
+// --- RESTORED JUKEBOX LIBRARY LOGIC (INLINE FOR SAFETY) ---
+window.loadJukeboxLibrary = async function() {
+    const doc = await window.loadDoc('intranet', 'jukebox_library', { links: {} });
+    window.jukeboxLibrary = doc.links || {};
+}
+window.saveJukeboxLibrary = async function() {
+    await window.saveDoc('intranet', 'jukebox_library', { links: window.jukeboxLibrary }, true);
+}
 
+// --- PDF FEATURE LOGIC ---
 window.loadPdfLibrary = async function() {
     const data = await window.loadDoc("intranet", "pdf_library", { library: {} });
     window.pdfLibrary = data.library || {};
@@ -609,6 +615,10 @@ window.loadPdfLibrary = async function() {
 window.savePdfLibrary = async function() {
     await window.saveDoc("intranet", "pdf_library", { library: window.pdfLibrary });
 };
+
+const pdfEditModal = document.getElementById('pdf-edit-modal');
+let currentEditingPdfSongName = null;
+
 window.openPdfLink = function(url) {
     if(url) window.open(url, '_blank');
 };
@@ -973,7 +983,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             await Promise.all([
                 loadUsers(),
                 loadRehearsals(),
-                (window.loadJukeboxLibrary ? window.loadJukeboxLibrary() : Promise.resolve()),
+                window.loadJukeboxLibrary(), // Use inline function now
                 window.loadPdfLibrary(),
                 loadAllSetlists()
             ]);
