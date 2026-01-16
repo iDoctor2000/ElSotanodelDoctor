@@ -183,8 +183,8 @@
     
     /* Ajustes columnas setlist - AHORA CON PDF */
     #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6), #setlists table th:nth-child(7),
-    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #second-setlist table th:nth-child(6), #second-setlist table th:nth-child(7),
-    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5), #star-setlist table th:nth-child(6), #star-setlist table th:nth-child(7) { text-align: center; }
+    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
+    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7) { text-align: center; }
     
     #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6), #setlists table td:nth-child(7),
     #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
@@ -239,7 +239,21 @@
     }
     .pdf-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
-    /* ESTILO BOTÓN GLOBAL MAESTRO (NUEVO) */
+    /* ESTILO BOTÓN GLOBAL MAESTRO (ACTUALIZADO 1, 2, 3) */
+    .master-direct-group { display: inline-flex; gap: 6px; vertical-align: middle; margin-left: 10px; }
+    .master-slot-btn {
+        background: transparent; border: 1px solid #444; color: #666;
+        border-radius: 50%; width: 28px; height: 28px; display: flex;
+        align-items: center; justify-content: center; cursor: pointer;
+        font-weight: bold; font-size: 11px; transition: all 0.3s;
+    }
+    .master-slot-btn.active { 
+        border-color: #ff9800; color: #ff9800; 
+        box-shadow: 0 0 8px rgba(255, 152, 0, 0.4); 
+    }
+    .master-slot-btn:hover { transform: scale(1.1); }
+
+    /* ESTILO BOTÓN GLOBAL MAESTRO LEGACY */
     .setlist-master-doc-btn {
         background: transparent; border: 1px solid #444; color: #555;
         border-radius: 50%; width: 32px; height: 32px;
@@ -258,6 +272,9 @@
     .master-doc-slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .master-doc-slot-title { color: #ff9800; font-weight: bold; font-size: 0.9em; }
     .master-doc-slot input { margin-bottom: 8px !important; }
+
+    /* PREVIEW DIA */
+    .day-preview-text { color: #0cf; font-weight: bold; margin-left: 10px; font-style: italic; font-size: 0.9em; }
 
     /* METRONOME COLUMN & BUTTON (ACTUALIZADO) */
     th.metronome-col-header, td.metronome-col { width: 40px; text-align: center; padding: 5px; }
@@ -313,11 +330,11 @@
     .calendar-btn:hover svg { fill: #09b; }
     .details-btn { font-size: 1.5em; color: #0cf; }
     .details-btn:hover { color: #09b; }
-    .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-    .edit-user, .edit-rehearsal { background: #0cf; color: #000; }
+    .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal, .copy-rehearsal { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .edit-user, .edit-rehearsal, .copy-rehearsal { background: #0cf; color: #000; }
     .clear-attendance { background: #ff9800; }
     .delete-user, .delete-rehearsal:hover { background: #d00; }
-    .edit-user:hover, .edit-rehearsal:hover { background: #09b; }
+    .edit-user:hover, .edit-rehearsal:hover, .copy-rehearsal:hover { background: #09b; }
     .clear-attendance:hover { background: #e68900; }
     #cancel-edit-user, #cancel-edit-rehearsal { background: #666; color: #fff; }
     #cancel-edit-user:hover, #cancel-edit-rehearsal:hover { background: #555; }
@@ -698,7 +715,7 @@
 
         <button id="site-audio-control-button" class="header-icon-btn" title="Activar sonido"> 
             <svg class="icon-muted" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/>
+                <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0z"/>
             </svg>
             <svg class="icon-unmuted" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
                 <path d="M12.4 4.42a1.19 1.19 0 00-1.75 1.05v13.1a1.19 1.19 0 001.75 1.05l4.91-3.3H19a1 1 0 001-1.07V9.72a1 1 0 00-1-1.07h-1.66zm6.1 2.51a6.73 6.73 0 010 10.14M16 9.48a3.23 3.23 0 010 5M4 9.72v4.56a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.65H5a1 1 0 00-1 1.07z"/>
@@ -1003,7 +1020,7 @@
   </div>
 
   <div id="user-mgmt-screen" class="config-screen"><button class="close-btn" id="close-user-mgmt">Cerrar</button><h2>Gestión de Usuarios</h2><label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label><select id="user-role" multiple><option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option><option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option><option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option><option value="Coros">Coros</option><option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option><option value="Técnico de Luces">Técnico de Luces</option><option value="Montador">Montador</option><option value="Road Manager">Road Manager</option><option value="Backliner">Backliner</option></select><button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button><p id="user-message" class="error-message"></p><table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table></div>
-  <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha</label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
+  <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha <span id="rehearsal-day-preview" class="day-preview-text"></span></label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
   <div id="admin-suggestions-screen" class="config-screen"><button class="close-btn" id="close-admin-suggestions">Cerrar</button><h2>Gestión de Propuestas (Admin)</h2><p style="color:#aaa; text-align:center;">Aquí puedes ver el historial y eliminar propuestas inadecuadas.</p><div class="table-wrapper"><table id="admin-suggestions-table"><thead><tr><th>Canción</th><th>Propuesta por</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="admin-suggestions-body"></tbody></table></div></div>
   <div id="suggestions-screen" class="config-screen"><button class="close-btn" id="close-suggestions">Cerrar</button><h2>Propuestas de Canciones</h2><div style="text-align:center; margin-bottom:20px;"><label for="user-identity-selector" style="color:#0cf; font-weight:bold; display:block; margin-bottom:5px;">¿Quién eres? (Necesario para proponer y votar)</label><select id="user-identity-selector"><option value="" disabled selected>-- Selecciona tu nombre --</option></select></div><div class="suggestion-form"><h4 style="color:#fff; margin-top:0;">Nueva Propuesta</h4><div class="suggestion-form-row"><input type="text" id="suggestion-title" placeholder="Título de la canción"><input type="text" id="suggestion-artist" placeholder="Artista / Banda original"></div><div class="suggestion-form-row"><input type="url" id="suggestion-link" placeholder="Enlace (Spotify/Youtube) - Opcional"><button id="add-suggestion-btn" style="width:auto; flex:0 0 150px;">Proponer</button></div><p id="suggestion-message" class="error-message" style="text-align:left; margin:0;"></p></div><div class="suggestions-grid" id="suggestions-container"></div></div>
   <div id="stats-screen" class="config-screen"><button class="close-btn" id="close-stats">Cerrar</button><h2>Estadísticas</h2><div class="stats-filter"><label>Filtrar por mes:</label><select id="stats-month-filter"><option value="all">Todos los meses</option></select></div><div class="stats-table"><h3>Tiempo Ensayado por Mes</h3><table id="time-per-month-table"><thead><tr><th>Mes</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-month-body"></tbody></table></div><div class="stats-table"><h3>Tiempo Ensayado por Usuario</h3><table id="time-per-user-table"><thead><tr><th>Usuario</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-user-body"></tbody></table></div><div class="stats-table"><h3>Ensayos Pasados</h3><div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Asistencias</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div></div></div>
@@ -1013,9 +1030,11 @@
     <section id="setlists">
       <h2>
           Setlist Próximo Ensayo 
-          <button class="setlist-master-doc-btn" id="master-btn-setlist1" onclick="openMasterDocsModal('setlist1', 'Setlist Ensayo')" title="Documentación Maestra">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
-          </button>
+          <div class="master-direct-group">
+              <button class="master-slot-btn" id="master-slot-setlist1-1" onclick="handleMasterDirectClick('setlist1', 1, 'Setlist Ensayo')" title="Doc 1">1</button>
+              <button class="master-slot-btn" id="master-slot-setlist1-2" onclick="handleMasterDirectClick('setlist1', 2, 'Setlist Ensayo')" title="Doc 2">2</button>
+              <button class="master-slot-btn" id="master-slot-setlist1-3" onclick="handleMasterDirectClick('setlist1', 3, 'Setlist Ensayo')" title="Doc 3">3</button>
+          </div>
       </h2>
       <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
       <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
@@ -1031,9 +1050,11 @@
     <section id="second-setlist">
       <h2>
           Setlist Próximo Concierto
-          <button class="setlist-master-doc-btn" id="master-btn-setlist2" onclick="openMasterDocsModal('setlist2', 'Setlist Próximo Concierto')" title="Documentación Maestra">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
-          </button>
+          <div class="master-direct-group">
+              <button class="master-slot-btn" id="master-slot-setlist2-1" onclick="handleMasterDirectClick('setlist2', 1, 'Setlist Próximo Concierto')" title="Doc 1">1</button>
+              <button class="master-slot-btn" id="master-slot-setlist2-2" onclick="handleMasterDirectClick('setlist2', 2, 'Setlist Próximo Concierto')" title="Doc 2">2</button>
+              <button class="master-slot-btn" id="master-slot-setlist2-3" onclick="handleMasterDirectClick('setlist2', 3, 'Setlist Próximo Concierto')" title="Doc 3">3</button>
+          </div>
       </h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
       <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
@@ -1048,9 +1069,11 @@
     <section id="star-setlist">
       <h2>
           Setlist Concierto Estrella
-          <button class="setlist-master-doc-btn" id="master-btn-setlistStar" onclick="openMasterDocsModal('setlistStar', 'Setlist Concierto Estrella')" title="Documentación Maestra">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
-          </button>
+          <div class="master-direct-group">
+              <button class="master-slot-btn" id="master-slot-setlistStar-1" onclick="handleMasterDirectClick('setlistStar', 1, 'Setlist Concierto Estrella')" title="Doc 1">1</button>
+              <button class="master-slot-btn" id="master-slot-setlistStar-2" onclick="handleMasterDirectClick('setlistStar', 2, 'Setlist Concierto Estrella')" title="Doc 2">2</button>
+              <button class="master-slot-btn" id="master-slot-setlistStar-3" onclick="handleMasterDirectClick('setlistStar', 3, 'Setlist Concierto Estrella')" title="Doc 3">3</button>
+          </div>
       </h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
       <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
@@ -1646,14 +1669,27 @@ window.saveMasterDocs = async () => {
 
 function updateMasterDocsVisuals() {
     ['setlist1', 'setlist2', 'setlistStar'].forEach(key => {
-        const btn = document.getElementById('master-btn-' + key);
-        if(!btn) return;
-        const setDocs = window.masterDocs[key] || {};
-        const hasFiles = Object.values(setDocs).some(slot => slot && slot.url);
-        if (hasFiles) btn.classList.add('has-files');
-        else btn.classList.remove('has-files');
+        for(let i=1; i<=3; i++) {
+            const btn = document.getElementById(`master-slot-${key}-${i}`);
+            if(!btn) continue;
+            const setDocs = window.masterDocs[key] || {};
+            const slotData = setDocs['slot' + i];
+            if (slotData && slotData.url) btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
     });
 }
+
+// Nueva función para manejar el clic directo en los botones 1, 2, 3
+window.handleMasterDirectClick = (setlistKey, slotNum, displayName) => {
+    const slotData = window.masterDocs[setlistKey]['slot' + slotNum];
+    if (slotData && slotData.url) {
+        window.open(slotData.url, '_blank');
+    } else {
+        // Si no hay URL, abrimos el modal de edición original para ese setlist
+        window.openMasterDocsModal(setlistKey, displayName);
+    }
+};
 
 window.openMasterDocsModal = function(setlistKey, displayName) {
     currentMasterDocsSetlistKey = setlistKey;
@@ -1787,6 +1823,17 @@ function populateIdentitySelector() {
 
 /* ---------- 7. Ensayos ---------- */
 let rehearsals = []; let editingRehearsalIndex = null;
+
+// Lógica para el preview del día al cambiar fecha
+document.getElementById("rehearsal-date").addEventListener("change", function() {
+    const val = this.value;
+    const target = document.getElementById("rehearsal-day-preview");
+    if(!val) { target.textContent = ""; return; }
+    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const d = new Date(val + 'T00:00:00');
+    target.textContent = isNaN(d.getTime()) ? "" : `(${days[d.getDay()]})`;
+});
+
 function renderRehearsals() { 
     const tbodyConfig=document.getElementById("rehearsal-table-body");
     const tbodyMain=document.getElementById("rehearsal-main-body");
@@ -1820,7 +1867,8 @@ function renderRehearsals() {
         const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";
         const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
         
-        tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); 
+        // Tabla de configuración Admin con botón Copiar
+        tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="copy-rehearsal">Copiar</button><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); 
         
         const rehearsalDate=new Date(r.date+'T00:00:00Z');
         if(rehearsalDate>=today){
@@ -1830,7 +1878,20 @@ function renderRehearsals() {
         }
     }); 
 
-    tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block"}); 
+    // Listeners Admin
+    tbodyConfig.querySelectorAll(".copy-rehearsal").forEach(btn=>btn.onclick=()=>{
+        const index=parseInt(btn.dataset.i,10);
+        const rehearsal=rehearsals[index];
+        document.getElementById("rehearsal-start-time").value = rehearsal.startTime || "";
+        document.getElementById("rehearsal-end-time").value = rehearsal.endTime || "";
+        document.getElementById("rehearsal-location").value = rehearsal.location || "";
+        document.getElementById("rehearsal-date").focus();
+        document.getElementById("rehearsal-screen").scrollTop = 0;
+        // Trigger preview dia si hay fecha
+        document.getElementById("rehearsal-date").dispatchEvent(new Event('change'));
+    });
+
+    tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block";document.getElementById("rehearsal-date").dispatchEvent(new Event('change'));}); 
     tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn=>btn.onclick=async()=>{if(confirm("¿Estás seguro de que deseas eliminar este ensayo?")){rehearsals.splice(parseInt(btn.dataset.i,10),1);await saveRehearsals();renderStats()}}); 
     tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn=>btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[index];if(confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)){rehearsal.attendance=[];await saveRehearsals();document.getElementById("rehearsal-message").textContent="Asistencias eliminadas.";renderStats()}}); 
     
@@ -1869,7 +1930,7 @@ document.getElementById('save-rehearsal-details').onclick = async () => {
 
 async function loadRehearsals() { try { const data = await window.withRetry(() => window.loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); } catch (e) { console.error("Error al cargar ensayos:", e); } }
 async function saveRehearsals() { try { await window.withRetry(() => window.saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar ensayos:", e); throw e; } }
-function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; }
+function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; document.getElementById("rehearsal-day-preview").textContent = ""; }
 
 /* ---------- 8. Estadísticas ---------- */
 function updateMonthFilter() { const select=document.getElementById("stats-month-filter");select.innerHTML='<option value="all">Todos los meses</option>';const now=new Date();const pastRehearsals=rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);const months=new Set(pastRehearsals.map(r=>getMonthYear(r.date)));Array.from(months).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{select.insertAdjacentHTML("beforeend",`<option value="${month}">${month}</option>`)})}
