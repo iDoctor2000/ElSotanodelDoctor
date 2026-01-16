@@ -181,14 +181,14 @@
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
     
-    /* Ajustes columnas setlist */
-    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6),
-    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #second-setlist table th:nth-child(6),
-    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5), #star-setlist table th:nth-child(6) { text-align: center; }
+    /* Ajustes columnas setlist - AHORA CON PDF */
+    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6), #setlists table th:nth-child(7),
+    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #second-setlist table th:nth-child(6), #second-setlist table th:nth-child(7),
+    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5), #star-setlist table th:nth-child(6), #star-setlist table th:nth-child(7) { text-align: center; }
     
-    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6),
-    #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6),
-    #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6) { text-align: center; }
+    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6), #setlists table td:nth-child(7),
+    #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
+    #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7) { text-align: center; }
     
     /* JUKEBOX COLUMNS */
     th.jukebox-col-header, td.jukebox-col { width: 40px; text-align: center; padding: 5px; }
@@ -213,6 +213,32 @@
         opacity: 1; border-color: #666; color: #999;
     }
     .jukebox-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* PDF COLUMN STYLES (NUEVO) */
+    th.pdf-col-header, td.pdf-col { width: 40px; text-align: center; padding: 5px; }
+    .pdf-btn {
+        background: transparent; border: 1px solid #333; color: #555;
+        border-radius: 50%; width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.3s; margin: 0 auto;
+    }
+    /* Estilo "Active" en Naranja para diferenciar del audio */
+    .pdf-btn.active {
+        border-color: #ff9800; color: #ff9800; 
+        box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
+    }
+    .pdf-btn.active:hover {
+        background: rgba(255, 152, 0, 0.1); transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(255, 152, 0, 0.6);
+    }
+    .pdf-btn.inactive {
+        opacity: 0.4; filter: grayscale(100%); border-color: #444;
+    }
+    .pdf-btn.inactive:hover {
+        opacity: 1; border-color: #666; color: #999;
+    }
+    .pdf-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
 
     /* METRONOME COLUMN & BUTTON (ACTUALIZADO) */
     th.metronome-col-header, td.metronome-col { width: 40px; text-align: center; padding: 5px; }
@@ -251,7 +277,7 @@
 
     .break-row td { font-style: italic; color: #ccc; background-color: #161616; }
     .break-row td:first-child { color: #777; text-align: center; }
-    .break-row td:nth-child(3), .break-row td:nth-child(4), .break-row td:nth-child(5) { text-align: center; }
+    .break-row td:nth-child(3), .break-row td:nth-child(4), .break-row td:nth-child(5), .break-row td:nth-child(6) { text-align: center; }
     .set-header-row td { font-weight: bold; text-align: center; background-color: #383838; color: #0cf; padding-top: 12px; padding-bottom: 12px; border-top: 1px solid #505050 !important; border-bottom: 1px solid #505050 !important; }
     th.calendar-col-header, td.calendar-col { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
     th.details-col-header { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
@@ -271,7 +297,7 @@
     .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
     .edit-user, .edit-rehearsal { background: #0cf; color: #000; }
     .clear-attendance { background: #ff9800; }
-    .delete-user:hover, .delete-rehearsal:hover { background: #d00; }
+    .delete-user, .delete-rehearsal:hover { background: #d00; }
     .edit-user:hover, .edit-rehearsal:hover { background: #09b; }
     .clear-attendance:hover { background: #e68900; }
     #cancel-edit-user, #cancel-edit-rehearsal { background: #666; color: #fff; }
@@ -712,7 +738,8 @@
       <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
       <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
       <a href="#" id="menu-admin-suggestions">Gestión de Propuestas</a>
-      <a href="#" id="menu-jukebox-mgmt">Gestión Jukebox</a> 
+      <a href="#" id="menu-jukebox-mgmt">Gestión Jukebox</a>
+      <a href="#" id="menu-pdf-mgmt">Gestión de Partituras (PDF)</a> <!-- NUEVO MENU PDF -->
       <a href="#" id="menu-access-logs" style="color:#0cf;">Registro de Accesos</a> <!-- NUEVO MENU LOGS -->
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
@@ -782,6 +809,19 @@
       </div>
   </div>
 
+  <!-- PDF MGMT SCREEN (NUEVO) -->
+  <div id="pdf-mgmt-screen" class="config-screen">
+      <button class="close-btn" id="close-pdf-mgmt">Cerrar</button>
+      <h2>Gestión de Partituras (PDF)</h2>
+      <p style="color:#aaa; text-align:center;">Listado de canciones que tienen un enlace a documento asignado.</p>
+      <div class="table-wrapper">
+          <table id="pdf-mgmt-table">
+              <thead><tr><th>Canción (ID)</th><th>Enlace Documento</th><th>Acciones</th></tr></thead>
+              <tbody id="pdf-mgmt-body"></tbody>
+          </table>
+      </div>
+  </div>
+
   <!-- ACCESS LOGS SCREEN (NUEVO) -->
   <div id="access-logs-screen" class="config-screen">
       <button class="close-btn" id="close-access-logs">Cerrar</button>
@@ -808,6 +848,23 @@
             <div>
                 <button id="jb-modal-cancel-btn" class="modal-close-btn">Cancelar</button>
                 <button id="jb-modal-save-btn">Guardar</button>
+            </div>
+         </div>
+      </div>
+  </div>
+
+  <!-- PDF EDIT MODAL (NUEVO) -->
+  <div id="pdf-edit-modal" class="modal-backdrop">
+      <div class="modal-content" style="max-width: 500px;">
+         <h3>Partitura: <span id="pdf-modal-songname" style="color:#fff;"></span></h3>
+         
+         <label for="pdf-modal-url-input">Enlace del Documento (Dropbox, Drive, etc):</label>
+         <input type="text" id="pdf-modal-url-input" placeholder="Pegar URL del PDF aquí...">
+         
+         <div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;">
+            <div>
+                <button id="pdf-modal-cancel-btn" class="modal-close-btn">Cancelar</button>
+                <button id="pdf-modal-save-btn">Guardar</button>
             </div>
          </div>
       </div>
@@ -870,7 +927,7 @@
     <section id="setlists">
       <h2>Setlist Próximo Ensayo</h2>
       <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
@@ -883,7 +940,7 @@
     <section id="second-setlist">
       <h2>Setlist Próximo Concierto</h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
+      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-2">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
@@ -895,7 +952,7 @@
     <section id="star-setlist">
       <h2>Setlist Concierto Estrella</h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-star">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
@@ -1104,6 +1161,7 @@ window.toggleLogDetails = function(id) {
 window.globalItems1 = [];
 window.globalItems2 = [];
 window.globalItemsStar = [];
+window.pdfLibrary = {}; // NUEVA LIBRERIA PDF
 
 const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
 const toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
@@ -1216,6 +1274,24 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 
         return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
     };
+    
+    // Helper for PDF Cell (NUEVO)
+    const createPdfCell = (songName) => {
+        const cleanName = sanitizeFirebaseKey(songName);
+        const url = window.pdfLibrary ? window.pdfLibrary[cleanName] : null;
+        const hasLink = !!url;
+        const statusClass = hasLink ? 'active' : 'inactive';
+        const safeName = songName.replace(/'/g, "\\'");
+        
+        const clickAction = hasLink 
+            ? `window.openPdfLink('${url}')` 
+            : `openPdfEditModal('${safeName}')`;
+
+        // Icono: Nota y lápiz
+        const iconSvg = `<svg viewBox="0 0 24 24"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/><path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>`;
+
+        return `<td class="pdf-col"><button class="pdf-btn ${statusClass}" onclick="${clickAction}">${iconSvg}</button></td>`;
+    };
 
     // Helper for Metronome Cell
     const createMetronomeCell = (tempo) => {
@@ -1244,26 +1320,28 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
         setlistStructure.forEach(blockOrItem => {
             if (blockOrItem.isSetHeader) {
                 const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="7">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
+                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="8">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
                 totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
                 blockOrItem.songs.forEach(song => {
                     songCount++;
                     const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
                     const jukeboxCell = createJukeboxCell(song.displayName);
+                    const pdfCell = createPdfCell(song.displayName); // AÑADIDO
                     const metronomeCell = createMetronomeCell(song.tempo);
-                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
+                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}${pdfCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
                 })
             } else if (blockOrItem.isBreak) {
                 const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
                 totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
+                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
             } else if (blockOrItem.isSong) {
                 songCount++;
                 const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
                 totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
                 const jukeboxCell = createJukeboxCell(blockOrItem.displayName);
+                const pdfCell = createPdfCell(blockOrItem.displayName); // AÑADIDO
                 const metronomeCell = createMetronomeCell(blockOrItem.tempo);
-                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
+                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}${pdfCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
             }
         });
     }
@@ -1349,6 +1427,101 @@ window.deleteJukeboxLink = async function(cleanKey) {
         await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
     }
 }
+
+/* ---------- 3.6. PDF Library Logic (NUEVO) ---------- */
+let currentEditingPdfSong = null;
+const pdfEditModal = document.getElementById('pdf-edit-modal');
+
+window.openPdfLink = function(url) {
+    window.open(url, '_blank');
+}
+
+window.openPdfEditModal = function(songName) {
+    currentEditingPdfSong = songName;
+    const cleanName = sanitizeFirebaseKey(songName);
+    const currentLink = window.pdfLibrary ? window.pdfLibrary[cleanName] : "";
+    
+    document.getElementById('pdf-modal-songname').textContent = songName;
+    document.getElementById('pdf-modal-url-input').value = currentLink || "";
+    
+    pdfEditModal.classList.add('show');
+}
+
+document.getElementById('pdf-modal-save-btn').onclick = async () => {
+    if(!currentEditingPdfSong) return;
+    const url = document.getElementById('pdf-modal-url-input').value.trim();
+    const cleanName = sanitizeFirebaseKey(currentEditingPdfSong);
+    
+    if (window.pdfLibrary) {
+        if (url) {
+            window.pdfLibrary[cleanName] = url;
+        } else {
+            delete window.pdfLibrary[cleanName];
+        }
+        
+        await window.savePdfLibrary();
+        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
+    }
+    pdfEditModal.classList.remove('show');
+};
+
+document.getElementById('pdf-modal-cancel-btn').onclick = () => {
+    pdfEditModal.classList.remove('show');
+};
+
+// Logic to Load/Save PDF Library from Firestore
+window.loadPdfLibrary = async () => {
+     try {
+         const data = await window.withRetry(() => window.loadDoc("intranet", "pdf_library", { library: {} }));
+         window.pdfLibrary = data.library || {};
+     } catch (e) {
+         console.error("Error loading PDF library:", e);
+         window.pdfLibrary = {};
+     }
+}
+
+window.savePdfLibrary = async () => {
+     try {
+         await window.withRetry(() => window.saveDoc("intranet", "pdf_library", { library: window.pdfLibrary }));
+     } catch (e) {
+         console.error("Error saving PDF library:", e);
+         throw e;
+     }
+}
+
+// --- GESTIÓN MASIVA PDF ---
+document.getElementById("menu-pdf-mgmt").onclick = e => { 
+    e.preventDefault(); 
+    openConfigScreen("pdf-mgmt-screen");
+    renderPdfMgmtTable();
+};
+document.getElementById("close-pdf-mgmt").onclick = () => {
+    document.getElementById("pdf-mgmt-screen").style.display = "none";
+};
+
+function renderPdfMgmtTable() {
+    const tbody = document.getElementById('pdf-mgmt-body');
+    tbody.innerHTML = "";
+    if(!window.pdfLibrary) return;
+    const keys = Object.keys(window.pdfLibrary).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    if (keys.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay partituras enlazadas.</td></tr>"; return; }
+    keys.forEach(key => {
+        const url = window.pdfLibrary[key];
+        const displayName = key.replace(/_/g, " "); 
+        const row = `<tr><td>${displayName}</td><td style="font-size:0.8em; color:#aaa; max-width: 200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${url}</td><td><button onclick="deletePdfLink('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;">Eliminar</button></td></tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+}
+
+window.deletePdfLink = async function(cleanKey) {
+    if(confirm("¿Eliminar el enlace de esta partitura?")) {
+        delete window.pdfLibrary[cleanKey];
+        await window.savePdfLibrary();
+        renderPdfMgmtTable(); 
+        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
+    }
+}
+
 
 // --- ACCESS LOGS LOGIC (NUEVO) ---
 document.getElementById("menu-access-logs").onclick = e => { 
@@ -2573,17 +2746,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadAllData() {
       try {
           console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
-          // IMPORTANTE: Cargar librería Jukebox
+          // IMPORTANTE: Cargar librería Jukebox Y PDF
           if(window.loadJukeboxLibrary) {
-              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary()]);
+              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary(), window.loadPdfLibrary()]);
           } else {
               // Fallback si el script tarda en cargar
               setTimeout(() => { 
                   if(window.loadJukeboxLibrary) window.loadJukeboxLibrary();
+                  if(window.loadPdfLibrary) window.loadPdfLibrary();
               }, 1000);
               await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
           }
-          console.log("[DOMContentLoaded] Configuración, usuarios, ensayos y Jukebox cargados.");
+          console.log("[DOMContentLoaded] Configuración, usuarios, ensayos, PDF y Jukebox cargados.");
       } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
 
       // --- CARGA DE ANÁLISIS ---
