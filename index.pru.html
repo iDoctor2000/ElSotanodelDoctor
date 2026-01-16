@@ -19,6 +19,11 @@
   <meta property="og:description"  content="Banda de rock y versiones. Intranet de gestión.">
   <meta property="og:image"        content="assets/logo_negro copia.jpg">
 
+  <!-- POLYFILL: Ensure process.env exists for libraries that expect it (fixes "process is not defined") -->
+  <script>
+    window.process = window.process || { env: {} };
+  </script>
+
   <!-- IMPORT MAP PARA GEMINI AI -->
   <script type="importmap">
 {
