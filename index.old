@@ -166,7 +166,7 @@
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
     
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual, #suggestions { 
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual, #suggestions, #analisis { 
         background: rgba(20, 20, 20, 0.75); 
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
         padding:20px; border-radius:12px; 
@@ -174,7 +174,7 @@
         border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
     }
     
-    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2 { text-align:center;color:#0cf;margin-bottom:5px }
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2, #analisis h2 { text-align:center;color:#0cf;margin-bottom:5px }
     .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
     table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
@@ -406,6 +406,19 @@
     .metronome-tap-btn:active {
         transform: scale(0.95);
         background: #fff;
+    }
+
+    /* ESTILOS TABLA LOGS EXPANDIBLE */
+    #access-logs-table .log-row { cursor: pointer; transition: background 0.2s; }
+    #access-logs-table .log-row:hover { background: rgba(255,255,255,0.05); }
+    #access-logs-table .log-details-row { display: none; background: rgba(0,0,0,0.3); }
+    #access-logs-table .log-details-row.show { display: table-row; }
+    .log-details-content { padding: 10px; font-size: 0.9em; color: #ccc; }
+    .log-event-item { border-left: 2px solid #0cf; padding-left: 8px; margin-bottom: 4px; }
+    .expand-btn { 
+        background: none; border: 1px solid #444; color: #0cf; border-radius: 4px; 
+        width: 24px; height: 24px; cursor: pointer; font-weight: bold; display: inline-flex; 
+        align-items: center; justify-content: center; padding: 0; 
     }
 
     @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
@@ -690,6 +703,7 @@
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#vista-calendario-mensual" id="menu-calendar-view">Calendario Mensual</a>
     <a href="#suggestions" id="menu-suggestions">Propuestas de Canciones</a>
+    <a href="#analisis" id="menu-analisis-section">Análisis / Debriefing</a>
     <a href="#" id="menu-stats">Estadísticas</a>
     <a href="#" id="menu-user-list-display">Usuarios Registrados</a>  
     <a href="#" id="menu-config">Configuración</a>
@@ -698,7 +712,8 @@
       <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
       <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
       <a href="#" id="menu-admin-suggestions">Gestión de Propuestas</a>
-      <a href="#" id="menu-jukebox-mgmt">Gestión Jukebox</a> <!-- NUEVO MENU -->
+      <a href="#" id="menu-jukebox-mgmt">Gestión Jukebox</a> 
+      <a href="#" id="menu-access-logs" style="color:#0cf;">Registro de Accesos</a> <!-- NUEVO MENU LOGS -->
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
@@ -754,7 +769,7 @@
   <div id="rehearsal-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Información del Ensayo</h3><h4 id="rehearsal-detail-title-display"></h4><input type="hidden" id="rehearsal-detail-index"><label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label><textarea id="rehearsal-notes" style="min-height: 400px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea><button id="save-rehearsal-details">Guardar Información</button><button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button><p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="setlist-config-screen" class="config-screen"><button class="close-btn" id="close-setlist-config">Cerrar</button><h2>Configuración de Setlists</h2><h3>Setlist Próximo Ensayo</h3><label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025"><label>ID/URL feed</label><input id="setlist1-url" placeholder="URL"><h3>Setlist Próximo Concierto</h3><label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad"><label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa"><h3>Setlist Concierto Estrella</h3><label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025"><label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL"><button id="guardar-setlist-config">Guardar Configuración</button><p id="setlist-message" class="error-message"></p></div>
   
-  <!-- JUKEBOX MGMT SCREEN (Nuevo: Gestión Masiva) -->
+  <!-- JUKEBOX MGMT SCREEN -->
   <div id="jukebox-mgmt-screen" class="config-screen">
       <button class="close-btn" id="close-jukebox-mgmt">Cerrar</button>
       <h2>Gestión Jukebox</h2>
@@ -767,7 +782,20 @@
       </div>
   </div>
 
-  <!-- JUKEBOX EDIT MODAL (Nuevo: Reemplaza al Jukebox Config Screen) -->
+  <!-- ACCESS LOGS SCREEN (NUEVO) -->
+  <div id="access-logs-screen" class="config-screen">
+      <button class="close-btn" id="close-access-logs">Cerrar</button>
+      <h2>Registro de Accesos</h2>
+      <p style="color:#aaa; text-align:center;">Últimos accesos a la Intranet (Expandir + para ver detalle).</p>
+      <div class="table-wrapper">
+          <table id="access-logs-table" style="font-size:0.8em; width:100%;">
+              <thead><tr><th>Fecha</th><th>Usuario</th><th>Duración</th><th></th></tr></thead>
+              <tbody id="access-logs-body"></tbody>
+          </table>
+      </div>
+  </div>
+
+  <!-- JUKEBOX EDIT MODAL -->
   <div id="jukebox-edit-modal" class="modal-backdrop">
       <div class="modal-content" style="max-width: 500px;">
          <h3>Jukebox: <span id="jb-modal-songname" style="color:#fff;"></span></h3>
@@ -777,7 +805,6 @@
          <p style="font-size:0.8em; color:#888; margin-top:5px;">* Soporta YouTube y Google Drive (modo vista previa)</p>
 
          <div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;">
-            <!-- Eliminado botón borrar y play de aquí, movido a gestión o automático -->
             <div>
                 <button id="jb-modal-cancel-btn" class="modal-close-btn">Cancelar</button>
                 <button id="jb-modal-save-btn">Guardar</button>
@@ -786,7 +813,7 @@
       </div>
   </div>
 
-  <!-- MARKER INPUT MODAL (Reemplazo de prompt) -->
+  <!-- MARKER INPUT MODAL -->
   <div id="marker-input-modal" class="modal-backdrop" style="z-index: 12000;">
       <div class="modal-content" style="max-width: 400px;">
           <h3>Nuevo Marcador</h3>
@@ -798,6 +825,39 @@
           </div>
       </div>
   </div>
+  
+  <!-- NUEVOS MODALES PARA ANÁLISIS -->
+  <div id="analisis-config-modal" class="modal-backdrop">
+      <div class="modal-content" style="max-width: 450px;">
+          <h3>Configurar Análisis</h3>
+          <label for="analisis-config-title">Título (Concierto / Ensayo):</label>
+          <input type="text" id="analisis-config-title" placeholder="Ej: Concierto Sala X - 12/10/2023">
+          
+          <label for="analisis-config-url">URL de Audio (Dropbox, Drive, MP3):</label>
+          <input type="url" id="analisis-config-url" placeholder="https://...">
+
+          <div style="display:flex; justify-content:space-between; margin-top:20px;">
+              <button id="analisis-delete-btn" style="background:#ff3333;">Eliminar</button>
+              <div>
+                  <button id="analisis-config-close" class="modal-close-btn">Cancelar</button>
+                  <button id="analisis-config-save">Guardar</button>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <div id="analisis-notes-modal" class="modal-backdrop">
+      <div class="modal-content">
+          <h3>Notas de Debriefing</h3>
+          <h4 id="analisis-notes-display-title" style="color:#0cf; margin-top:0;"></h4>
+          <textarea id="analisis-notes-textarea" style="min-height:300px;" placeholder="Escribe aquí las conclusiones, fallos a corregir o cosas a destacar..."></textarea>
+          <div style="text-align:right;">
+              <button id="analisis-notes-close" class="modal-close-btn">Cerrar</button>
+              <button id="analisis-notes-save">Guardar Notas</button>
+          </div>
+      </div>
+  </div>
+  <!-- FIN MODALES ANÁLISIS -->
 
   <div id="user-mgmt-screen" class="config-screen"><button class="close-btn" id="close-user-mgmt">Cerrar</button><h2>Gestión de Usuarios</h2><label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label><select id="user-role" multiple><option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option><option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option><option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option><option value="Coros">Coros</option><option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option><option value="Técnico de Luces">Técnico de Luces</option><option value="Montador">Montador</option><option value="Road Manager">Road Manager</option><option value="Backliner">Backliner</option></select><button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button><p id="user-message" class="error-message"></p><table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table></div>
   <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha</label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
@@ -859,8 +919,32 @@
       </div>
       <div class="calendar-grid" id="calendar-grid-container"></div>
     </section>
+
+    <!-- NUEVA SECCIÓN ANÁLISIS -->
+    <section id="analisis">
+        <h2>Análisis / Debriefing</h2>
+        <div style="text-align:right; margin-bottom:10px;">
+            <button id="add-analysis-btn" class="download-btn" style="margin:0; font-size:0.9em; padding:8px 15px;">+ Nuevo</button>
+        </div>
+        <div class="table-wrapper">
+            <table id="analisis-table">
+                <thead>
+                    <tr>
+                        <th>Título / Fecha</th>
+                        <th style="width:50px; text-align:center;">Audio</th>
+                        <th style="width:50px; text-align:center;">Notas</th>
+                        <th style="width:50px; text-align:center;">Config</th>
+                    </tr>
+                </thead>
+                <tbody id="analisis-body">
+                    <!-- Contenido dinámico desde analisis.js -->
+                </tbody>
+            </table>
+        </div>
+    </section>
   </main>
 
+  <!-- FOOTER & SCRIPTS -->
   <footer>© Año 2025 -iDoctor & El Sótano del Doctor- All Rights Reserved.</footer>
 
   <audio id="site-audio">
@@ -868,13 +952,15 @@
     Tu navegador no soporta el elemento de audio.
   </audio>
 
-  <!-- Jukebox Logic (Separated) -->
   <script src="jukebox.js"></script>
-  <!-- Metronome Logic (New) -->
   <script src="metronome.js"></script>
+  <script src="analisis.js"></script> <!-- Nuevo script añadido -->
 
 <script>
-/* ---------- 0. Firebase ---------- */
+// 0. Configuración Global
+const APP_VERSION = "1.2";
+let currentSessionId = null;
+
 const firebaseConfig = {
   apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",  
   authDomain: "sotanointranet.firebaseapp.com",
@@ -883,12 +969,141 @@ const firebaseConfig = {
   messagingSenderId: "756955233128",
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI" || (firebaseConfig.apiKey.startsWith("AIzaSyC") && firebaseConfig.apiKey.length < 30 && firebaseConfig.apiKey.includes("placeholder")) ) { const banner = document.getElementById('firebase-critical-error-banner'); if (banner) banner.style.display = 'block'; console.error("¡ERROR CRÍTICO! La API Key de Firebase no está configurada o es un placeholder.");}
+
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI") { 
+    const banner = document.getElementById('firebase-critical-error-banner'); 
+    if (banner) banner.style.display = 'block'; 
+}
+
+// ---------- LOGIC: SESSION TRACKING ----------
+function initSession() {
+    if (typeof db === 'undefined') return;
+    
+    currentSessionId = 'sess_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    const userAgent = navigator.userAgent;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(userAgent) ? 'Móvil' : 'PC';
+    const storedUser = localStorage.getItem('elSotanoCurrentUser') || 'Anónimo';
+    
+    db.collection('access_logs').doc(currentSessionId).set({
+        sessionId: currentSessionId,
+        timestamp: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        userAgent: userAgent,
+        deviceType: isMobile,
+        user: storedUser,
+        version: APP_VERSION,
+        events: [] 
+    }).catch(e => console.warn("Error init session", e));
+    
+    // Track navigation clicks
+    document.querySelectorAll('.sidebar a').forEach(link => {
+        link.addEventListener('click', () => {
+            const sectionName = link.textContent || link.id;
+            logInteraction('NAVEGACION', sectionName);
+        });
+    });
+    
+    // Track downloads
+    document.querySelectorAll('.download-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            logInteraction('DESCARGA', btn.textContent || btn.id);
+        });
+    });
+}
+
+// Global Logging Function
+window.logInteraction = function(type, detail) {
+    if (!currentSessionId || typeof db === 'undefined') return;
+    
+    const eventEntry = {
+        time: new Date().toLocaleTimeString(),
+        type: type,
+        detail: detail
+    };
+    
+    // Update Firestore
+    db.collection('access_logs').doc(currentSessionId).update({
+        lastActive: new Date().toISOString(),
+        events: firebase.firestore.FieldValue.arrayUnion(eventEntry)
+    }).catch(e => console.warn("Log update failed", e));
+};
+
+// Render Admin Logs Table
+function renderAccessLogs() {
+    const tbody = document.getElementById('access-logs-body');
+    tbody.innerHTML = "<tr><td colspan='4'>Cargando logs...</td></tr>";
+    
+    db.collection('access_logs').orderBy('timestamp', 'desc').limit(30).get().then(snapshot => {
+        tbody.innerHTML = "";
+        if(snapshot.empty) {
+            tbody.innerHTML = "<tr><td colspan='4'>No hay registros.</td></tr>";
+            return;
+        }
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const date = new Date(data.timestamp).toLocaleString();
+            let userColor = data.user === 'Anónimo' ? '#aaa' : '#0cf';
+            
+            // Calculate Duration
+            let durationStr = "-";
+            if (data.lastActive && data.timestamp) {
+                const start = new Date(data.timestamp);
+                const end = new Date(data.lastActive);
+                const diffMins = Math.round((end - start) / 60000);
+                durationStr = diffMins < 1 ? "< 1 min" : diffMins + " min";
+            }
+            
+            const hasEvents = data.events && data.events.length > 0;
+            const expandBtn = hasEvents ? `<button class="expand-btn" onclick="toggleLogDetails('${data.sessionId}')">+</button>` : '';
+            
+            // Main Row
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr class="log-row">
+                    <td style="font-size:0.9em;">${date}</td>
+                    <td style="color:${userColor}; font-weight:bold;">${data.user} <br><span style="font-size:0.8em; color:#666; font-weight:normal;">${data.deviceType}</span></td>
+                    <td>${durationStr}</td>
+                    <td>${expandBtn}</td>
+                </tr>
+            `);
+            
+            // Details Row (Hidden)
+            if (hasEvents) {
+                let eventsHtml = data.events.map(e => 
+                    `<div class="log-event-item">
+                        <span style="color:#777;">[${e.time}]</span> 
+                        <strong style="color:#0cf;">${e.type}</strong>: ${e.detail}
+                     </div>`
+                ).join('');
+                
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr id="details-${data.sessionId}" class="log-details-row">
+                        <td colspan="4">
+                            <div class="log-details-content">${eventsHtml}</div>
+                        </td>
+                    </tr>
+                `);
+            }
+        });
+    }).catch(e => {
+        console.error(e);
+        tbody.innerHTML = "<tr><td colspan='4'>Error cargando logs.</td></tr>";
+    });
+}
+
+window.toggleLogDetails = function(id) {
+    const row = document.getElementById('details-' + id);
+    if (row) {
+        row.classList.toggle('show');
+        const btn = document.querySelector(`button[onclick="toggleLogDetails('${id}')"]`);
+        if(btn) btn.textContent = row.classList.contains('show') ? '-' : '+';
+    }
+};
 
 /* ---------- 1. Utilidades y Variables Globales ---------- */
-let globalItems1 = [];
-let globalItems2 = [];
-let globalItemsStar = [];
+window.globalItems1 = [];
+window.globalItems2 = [];
+window.globalItemsStar = [];
 
 const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
 const toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
@@ -1002,15 +1217,13 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
         return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
     };
 
-    // Helper for Metronome Cell (MODIFICADO)
+    // Helper for Metronome Cell
     const createMetronomeCell = (tempo) => {
         const tempoStr = decodeHtmlEntities(tempo || "-");
         const match = String(tempoStr).match(/\d+/);
         
-        // Icono SVG común
         const svgIcon = `<svg viewBox="0 0 24 24"><path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/></svg>`;
 
-        // Si no hay tempo -> Botón gris apagado (sin onclick)
         if (!match) {
             return `<td class="metronome-col">
                 <button class="metronome-table-btn" title="Sin tempo definido">
@@ -1019,7 +1232,6 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
             </td>`;
         }
         
-        // Si hay tempo -> Botón azul activo (con onclick)
         const cleanTempo = match[0];
         return `<td class="metronome-col">
             <button class="metronome-table-btn has-tempo" title="Tempo: ${cleanTempo} BPM" onclick="window.toggleMetronomeFromTable('${cleanTempo}', this)">
@@ -1064,9 +1276,9 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     return setlistStructure;
 }
 
-const cargarPrimerSetlist = async () => { globalItems1 = await cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo"); return globalItems1; };
-const cargarSegundoSetlist = async () => { globalItems2 = await cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto"); return globalItems2; };
-const cargarStarSetlist = async () => { globalItemsStar = await cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella"); return globalItemsStar; };
+const cargarPrimerSetlist = async () => { window.globalItems1 = await cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo"); return window.globalItems1; };
+const cargarSegundoSetlist = async () => { window.globalItems2 = await cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto"); return window.globalItems2; };
+const cargarStarSetlist = async () => { window.globalItemsStar = await cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella"); return window.globalItemsStar; };
 
 /* ---------- 3.5. Jukebox Edit & Management Logic ---------- */
 let currentEditingSongName = null;
@@ -1096,8 +1308,6 @@ document.getElementById('jb-modal-save-btn').onclick = async () => {
         }
         
         await window.saveJukeboxLibrary();
-        
-        // Recargar tablas para actualizar colores y lógica
         await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
     }
     jukeboxEditModal.classList.remove('show');
@@ -1107,7 +1317,7 @@ document.getElementById('jb-modal-cancel-btn').onclick = () => {
     jukeboxEditModal.classList.remove('show');
 };
 
-// --- GESTIÓN MASIVA JUKEBOX (NUEVO) ---
+// --- GESTIÓN MASIVA JUKEBOX ---
 document.getElementById("menu-jukebox-mgmt").onclick = e => { 
     e.preventDefault(); 
     openConfigScreen("jukebox-mgmt-screen");
@@ -1120,29 +1330,13 @@ document.getElementById("close-jukebox-mgmt").onclick = () => {
 function renderJukeboxMgmtTable() {
     const tbody = document.getElementById('jukebox-mgmt-body');
     tbody.innerHTML = "";
-    
     if(!window.jukeboxLibrary) return;
-
     const keys = Object.keys(window.jukeboxLibrary).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-
-    if (keys.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay canciones con enlace.</td></tr>";
-        return;
-    }
-
+    if (keys.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay canciones con enlace.</td></tr>"; return; }
     keys.forEach(key => {
         const url = window.jukeboxLibrary[key];
         const displayName = key.replace(/_/g, " "); 
-        
-        const row = `
-            <tr>
-                <td>${displayName}</td>
-                <td style="font-size:0.8em; color:#aaa; max-width: 200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${url}</td>
-                <td>
-                    <button onclick="deleteJukeboxLink('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;">Eliminar</button>
-                </td>
-            </tr>
-        `;
+        const row = `<tr><td>${displayName}</td><td style="font-size:0.8em; color:#aaa; max-width: 200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${url}</td><td><button onclick="deleteJukeboxLink('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;">Eliminar</button></td></tr>`;
         tbody.insertAdjacentHTML('beforeend', row);
     });
 }
@@ -1151,12 +1345,64 @@ window.deleteJukeboxLink = async function(cleanKey) {
     if(confirm("¿Eliminar el enlace de esta canción?")) {
         delete window.jukeboxLibrary[cleanKey];
         await window.saveJukeboxLibrary();
-        renderJukeboxMgmtTable(); // Refrescar tabla admin
-        // Refrescar setlists principales para apagar el icono
+        renderJukeboxMgmtTable(); 
         await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
     }
 }
 
+// --- ACCESS LOGS LOGIC (NUEVO) ---
+document.getElementById("menu-access-logs").onclick = e => { 
+    e.preventDefault(); 
+    openConfigScreen("access-logs-screen");
+    renderAccessLogs();
+};
+document.getElementById("close-access-logs").onclick = () => {
+    document.getElementById("access-logs-screen").style.display = "none";
+};
+
+function logAccess() {
+    if (typeof db === 'undefined') return;
+    const userAgent = navigator.userAgent;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) ? 'Móvil' : 'PC';
+    const storedUser = localStorage.getItem('elSotanoCurrentUser') || 'Anónimo';
+    
+    db.collection('access_logs').add({
+        timestamp: new Date().toISOString(),
+        userAgent: userAgent,
+        deviceType: isMobile,
+        user: storedUser
+    }).catch(e => console.warn("Error logging access", e));
+}
+
+function renderAccessLogs() {
+    const tbody = document.getElementById('access-logs-body');
+    tbody.innerHTML = "<tr><td colspan='3'>Cargando logs...</td></tr>";
+    
+    // Fetch last 50 logs
+    db.collection('access_logs').orderBy('timestamp', 'desc').limit(50).get().then(snapshot => {
+        tbody.innerHTML = "";
+        if(snapshot.empty) {
+            tbody.innerHTML = "<tr><td colspan='3'>No hay registros.</td></tr>";
+            return;
+        }
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const date = new Date(data.timestamp).toLocaleString();
+            let userColor = data.user === 'Anónimo' ? '#aaa' : '#0cf';
+            
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td>${date}</td>
+                    <td style="color:${userColor}; font-weight:bold;">${data.user}</td>
+                    <td>${data.deviceType}</td>
+                </tr>
+            `);
+        });
+    }).catch(e => {
+        console.error(e);
+        tbody.innerHTML = "<tr><td colspan='3'>Error cargando logs.</td></tr>";
+    });
+}
 
 /* ---------- 6. Usuarios ---------- */
 let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
@@ -1167,10 +1413,18 @@ function resetUserForm() { document.getElementById("user-name").value = ""; docu
 
 function populateIdentitySelector() {
     const select = document.getElementById('user-identity-selector');
+    const storedUser = localStorage.getItem('elSotanoCurrentUser');
+    
     select.innerHTML = '<option value="" disabled selected>-- Selecciona tu nombre --</option>';
     users.sort((a, b) => a.name.localeCompare(b.name)).forEach(u => {
-        select.insertAdjacentHTML('beforeend', `<option value="${u.name}">${u.name} (${u.nickname})</option>`);
+        const isSelected = storedUser === u.name ? 'selected' : '';
+        select.insertAdjacentHTML('beforeend', `<option value="${u.name}" ${isSelected}>${u.name} (${u.nickname})</option>`);
     });
+    
+    // Listener para guardar identidad
+    select.onchange = () => {
+        localStorage.setItem('elSotanoCurrentUser', select.value);
+    };
 }
 
 /* ---------- 7. Ensayos ---------- */
@@ -1279,9 +1533,9 @@ const PDF_FONT_NAMES = { bleedingCowboys: "BleedingCowboysCustom", carnevalee: "
 async function loadFontAsBase64(fontPath) { if(fontDataCache[fontPath]){return fontDataCache[fontPath]}try{const response=await fetch(fontPath);if(!response.ok){throw new Error(`No se pudo cargar la fuente: ${response.statusText} (URL: ${fontPath})`)} const blob=await response.blob();return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onloadend=()=>{fontDataCache[fontPath]=reader.result.split(',')[1];resolve(fontDataCache[fontPath])};reader.onerror=(error)=>reject(new Error("Error del FileReader al convertir fuente a Base64: "+error.message));reader.readAsDataURL(blob)})}catch(error){console.error(`Error crítico cargando la fuente ${fontPath}:`,error);fontDataCache[fontPath]=null;return null}}
 async function registerFontWithDoc(doc,fontPath,fontVFSAlias,fontNameInDoc){const fontBase64=await loadFontAsBase64(fontPath);if(fontBase64){try{doc.addFileToVFS(fontVFSAlias,fontBase64);doc.addFont(fontVFSAlias,fontNameInDoc,'normal');console.log(`Fuente ${fontNameInDoc} registrada en jsPDF desde ${fontPath}.`);return true}catch(fontError){console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`,fontError)}}else{console.warn(`No se pudo cargar la fuente ${fontPath} para registrarla.`)} return false}
 async function getBackgroundImageDataURL(){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'))};img.onerror=(err)=>reject(new Error("Error al cargar la imagen de plantilla: "+(err.message||err.toString())));img.src=PDF_BACKGROUND_IMAGE_PATH;if(img.complete){if(img.naturalHeight!==0){const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'))}else if(img.src){reject(new Error("Imagen de plantilla en caché pero inválida."))}}})}
-async function genPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let bleedingCowboysRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.bleedingCowboys,'Bleeding_Cowboys.ttf',PDF_FONT_NAMES.bleedingCowboys);let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S');doc.setFontSize(10);doc.setTextColor(150,0,0);doc.text("Advertencia: No se pudo cargar la plantilla de fondo.",pageWidth/2,pageHeight/2,{align:"center"})} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;doc.setFont(bleedingCowboysRegistered?PDF_FONT_NAMES.bleedingCowboys:"times",'normal');if(!bleedingCowboysRegistered)doc.setFontType("bold");doc.setFontSize(28);doc.text("SETLIST",pageWidth/2,currentY,{align:"center"});currentY+=28+10;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');if(!carnevaleeRegistered)doc.setFontType("bold");doc.setFontSize(22);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=22+5;doc.setFont("times","italic");doc.setFontSize(10); let totalOverallSeconds=0;let totalSongCount=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){totalOverallSeconds+=blockOrItem.calculatedBlockDurationSeconds||0;totalSongCount+=blockOrItem.songs?blockOrItem.songs.length:0}else if(blockOrItem.isBreak){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0}else if(blockOrItem.isSong){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0;totalSongCount++}});const totalItemsText=`${totalSongCount} canciones`;doc.text(`${totalItemsText}  |  Tiempo total: ${toHHMM(totalOverallSeconds)}`,pageWidth/2,currentY,{align:"center"});currentY+=10+20; const tableFont="helvetica";const tableHeadFont="helvetica";let pdfSongNumber=0;const tableBody=[];setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){tableBody.push([{content:`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,colSpan:5,styles:{halign:'center',fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0],fontSize:10}}]);if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{pdfSongNumber++;tableBody.push([pdfSongNumber,song.displayName,decodeHtmlEntities(song.key||"-"),decodeHtmlEntities(song.tempo||"-"),toMMSS(song.calculatedDurationSeconds||0)])})}}else if(blockOrItem.isBreak){tableBody.push([{content:"»",styles:{halign:'center',fontStyle:'italic',textColor:[100,100,100]}},{content:blockOrItem.displayName,styles:{fontStyle:'italic',textColor:[80,80,80]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:toMMSS(blockOrItem.calculatedDurationSeconds||0),styles:{halign:'center',fontStyle:'italic',textColor:[80,80,80]}}])}else if(blockOrItem.isSong){pdfSongNumber++;tableBody.push([pdfSongNumber,blockOrItem.displayName,decodeHtmlEntities(blockOrItem.key||"-"),decodeHtmlEntities(blockOrItem.tempo||"-"),toMMSS(blockOrItem.calculatedDurationSeconds||0)])}}); doc.autoTable({startY:currentY,head:[["#","Título","Key","Tempo","Time"]],body:tableBody,theme:'grid',headStyles:{fillColor:[200,200,200],textColor:[0,0,0],font:tableHeadFont,fontStyle:'bold',halign:'center',fontSize:10},styles:{font:tableFont,fontSize:9,cellPadding:{top:4,right:5,bottom:4,left:5},lineColor:[80,80,80],lineWidth:.5,textColor:[0,0,0]},columnStyles:{0:{halign:'center',cellWidth:25,fontSize:9},1:{halign:'left',cellWidth:'auto',fontSize:10},2:{halign:'center',cellWidth:50,fontSize:9},3:{halign:'center',cellWidth:50,fontSize:9},4:{halign:'center',cellWidth:50,fontSize:9}},margin:{top:contentMarginTop,right:contentMarginSides,bottom:contentMarginBottom,left:contentMarginSides},pageBreak:'auto',didDrawPage:function(data){if(data.pageNumber>1&&backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}}});doc.save(`${cleanFileName}.pdf`)}
+async function genPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist"; let bleedingCowboysRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.bleedingCowboys,'Bleeding_Cowboys.ttf',PDF_FONT_NAMES.bleedingCowboys);let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S');doc.setFontSize(10);doc.setTextColor(150,0,0);doc.text("Advertencia: No se pudo cargar la plantilla de fondo.",pageWidth/2,pageHeight/2,{align:"center"})} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;doc.setFont(bleedingCowboysRegistered?PDF_FONT_NAMES.bleedingCowboys:"times",'normal');if(!bleedingCowboysRegistered)doc.setFontType("bold");doc.setFontSize(28);doc.text("SETLIST",pageWidth/2,currentY,{align:"center"});currentY+=28+10;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');if(!carnevaleeRegistered)doc.setFontType("bold");doc.setFontSize(22);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=22+5;doc.setFont("times","italic");doc.setFontSize(10); let totalOverallSeconds=0;let totalSongCount=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){totalOverallSeconds+=blockOrItem.calculatedBlockDurationSeconds||0;totalSongCount+=blockOrItem.songs?blockOrItem.songs.length:0}else if(blockOrItem.isBreak){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0}else if(blockOrItem.isSong){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0;totalSongCount++}});const totalItemsText=`${totalSongCount} canciones`;doc.text(`${totalItemsText}  |  Tiempo total: ${toHHMM(totalOverallSeconds)}`,pageWidth/2,currentY,{align:"center"});currentY+=10+20; const tableFont="helvetica";const tableHeadFont="helvetica";let pdfSongNumber=0;const tableBody=[];setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){tableBody.push([{content:`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,colSpan:5,styles:{halign:'center',fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0],fontSize:10}}]);if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{pdfSongNumber++;tableBody.push([pdfSongNumber,song.displayName,decodeHtmlEntities(song.key||"-"),decodeHtmlEntities(song.tempo||"-"),toMMSS(song.calculatedDurationSeconds||0)])})}}else if(blockOrItem.isBreak){tableBody.push([{content:"»",styles:{halign:'center',fontStyle:'italic',textColor:[100,100,100]}},{content:blockOrItem.displayName,styles:{fontStyle:'italic',textColor:[80,80,80]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:toMMSS(blockOrItem.calculatedDurationSeconds||0),styles:{halign:'center',fontStyle:'italic',textColor:[80,80,80]}}])}else if(blockOrItem.isSong){pdfSongNumber++;tableBody.push([pdfSongNumber,blockOrItem.displayName,decodeHtmlEntities(blockOrItem.key||"-"),decodeHtmlEntities(blockOrItem.tempo||"-"),toMMSS(blockOrItem.calculatedDurationSeconds||0)])}}); doc.autoTable({startY:currentY,head:[["#","Título","Key","Tempo","Time"]],body:tableBody,theme:'grid',headStyles:{fillColor:[200,200,200],textColor:[0,0,0],font:tableHeadFont,fontStyle:'bold',halign:'center',fontSize:10},styles:{font:tableFont,fontSize:9,cellPadding:{top:4,right:5,bottom:4,left:5},lineColor:[80,80,80],lineWidth:.5,textColor:[0,0,0]},columnStyles:{0:{halign:'center',cellWidth:25,fontSize:9},1:{halign:'left',cellWidth:'auto',fontSize:10},2:{halign:'center',cellWidth:50,fontSize:9},3:{halign:'center',cellWidth:50,fontSize:9},4:{halign:'center',cellWidth:50,fontSize:9}},margin:{top:contentMarginTop,right:contentMarginSides,bottom:contentMarginBottom,left:contentMarginSides},pageBreak:'auto',didDrawPage:function(data){if(data.pageNumber>1&&backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}}});doc.save(`${cleanFileName}.pdf`)}
 async function genBasicPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const itemTitleFontSize=14;const setHeaderFontSize=16;const itemLineHeight=itemTitleFontSize*1.6;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{if(currentY+itemLineHeight*2.5>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=itemLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderFontSize*1.6;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+itemLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=itemLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(itemTitleFontSize-1>8?itemTitleFontSize-1:8);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=(itemTitleFontSize-1>8?itemTitleFontSize-1:8)*1.6;if(idx<setlistStructure.length-1)currentY+=itemLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight}});doc.save(`${cleanFileName}_Basico.pdf`)}
-async function genPersonalPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf,songTitleFontSizeParam){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const songTitleFontSize=parseInt(songTitleFontSizeParam,10)||14;const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF Personal:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S')} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const setHeaderFontSize=16;const breakTextFontSize=Math.max(8,songTitleFontSize-2);const songTitleLineHeight=songTitleFontSize*1.5;const setHeaderLineHeight=setHeaderFontSize*1.5;const breakTextLineHeight=breakTextFontSize*1.5;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{let estimatedBlockHeight=songTitleLineHeight;if(blockOrItem.isSetHeader)estimatedBlockHeight=setHeaderLineHeight+(blockOrItem.songs?blockOrItem.songs.length*songTitleLineHeight:0);else if(blockOrItem.isBreak)estimatedBlockHeight=breakTextLineHeight;if(currentY+estimatedBlockHeight>pageHeight-contentMarginBottom&&idx>0){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=songTitleLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderLineHeight;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+songTitleLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=songTitleLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(breakTextFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=breakTextLineHeight;if(idx<setlistStructure.length-1)currentY+=songTitleLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight}});doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`)}
+async function genPersonalPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf,songTitleFontSizeParam){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const songTitleFontSize=parseInt(songTitleFontSizeParam,10)||14;const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF Personal:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S')} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const setHeaderFontSize=16;const breakTextFontSize=Math.max(8,songTitleFontSize-2);const songTitleLineHeight=songTitleFontSize*1.5;const setHeaderLineHeight=setHeaderFontSize*1.5;const breakTextLineHeight=breakTextFontSize*1.5;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{let estimatedBlockHeight=songTitleLineHeight;if(blockOrItem.isSetHeader)estimatedBlockHeight=setHeaderLineHeight+(blockOrItem.songs?blockOrItem.songs.length:0);else if(blockOrItem.isBreak)estimatedBlockHeight=breakTextLineHeight;if(currentY+estimatedBlockHeight>pageHeight-contentMarginBottom&&idx>0){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=songTitleLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderLineHeight;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+songTitleLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=songTitleLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(breakTextFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=breakTextLineHeight;if(idx<setlistStructure.length-1)currentY+=songTitleLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight}});doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`)}
 
 /* ---------- 10. BandHelper & Detalles Concierto (REPARADO Y OPTIMIZADO) ---------- */
 function loadBandHelperWidget() {
@@ -1537,6 +1791,8 @@ const setupMenuLink = (menuId, targetId) => { const link=document.getElementById
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
 setupMenuLink("menu-suggestions", "suggestions");
+// NUEVO ENLACE PARA ANÁLISIS
+setupMenuLink("menu-analisis-section", "analisis");
 
 // --- CONFIGURACIÓN MENÚ SUGGESTIONS ---
 document.getElementById("menu-suggestions").onclick = e => { 
@@ -2127,6 +2383,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           firebase.firestore().enablePersistence().catch(err => console.warn(err));
           attachSuggestionsListener(); // Attach listener now that DB is ready
           attachConcertDetailsListener(); // NEW: Attach concert listener
+          // START SESSION
+          setTimeout(initSession, 1500); // Wait for auth state or just start
       } else {
           // If firebase script hasn't loaded yet due to defer, wait a bit
           const checkFirebase = setInterval(() => {
@@ -2139,6 +2397,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                   attachConcertDetailsListener(); // NEW
                   // Trigger data load
                   loadAllData();
+                  setTimeout(initSession, 1500);
               }
           }, 100);
       }
@@ -2327,34 +2586,42 @@ document.addEventListener("DOMContentLoaded", async () => {
           console.log("[DOMContentLoaded] Configuración, usuarios, ensayos y Jukebox cargados.");
       } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
 
-      let items1 = [], items2 = [], itemsStar = [];  
+      // --- CARGA DE ANÁLISIS ---
+      // Aseguramos que se carguen los análisis
+      if(window.loadAnalysisData) {
+          window.loadAnalysisData();
+      } else {
+          setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
+      }
+      
+      // Load Setlists into Global Variables
       try {  
         console.log("[DOMContentLoaded] Cargando primer setlist...");
-        items1 = await cargarPrimerSetlist();  
-        console.log("[DOMContentLoaded] Primer setlist cargado:", items1 ? items1.length : 0, "bloques/items.");
+        window.globalItems1 = await cargarPrimerSetlist();  
+        console.log("[DOMContentLoaded] Primer setlist cargado:", window.globalItems1 ? window.globalItems1.length : 0, "bloques/items.");
       } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Ensayo:", e); }
       
       try {  
         console.log("[DOMContentLoaded] Cargando segundo setlist...");
-        items2 = await cargarSegundoSetlist();  
-        console.log("[DOMContentLoaded] Segundo setlist cargado:", items2 ? items2.length : 0, "bloques/items.");
+        window.globalItems2 = await cargarSegundoSetlist();  
+        console.log("[DOMContentLoaded] Segundo setlist cargado:", window.globalItems2 ? window.globalItems2.length : 0, "bloques/items.");
       } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Próx. Concierto:", e); }
       
       try {  
         console.log("[DOMContentLoaded] Cargando setlist estrella...");
-        itemsStar = await cargarStarSetlist();  
-        console.log("[DOMContentLoaded] Setlist estrella cargado:", itemsStar ? itemsStar.length : 0, "bloques/items.");
+        window.globalItemsStar = await cargarStarSetlist();  
+        console.log("[DOMContentLoaded] Setlist estrella cargado:", window.globalItemsStar ? window.globalItemsStar.length : 0, "bloques/items.");
       } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Estrella:", e); }
 
       // Setup download buttons once data is likely ready
-      document.getElementById("download-btn").onclick = () => { if (items1 && items1.length > 0) genPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
-      document.getElementById("download-basic-btn").onclick = () => { if (items1 && items1.length > 0) genBasicPDF(items1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
+      document.getElementById("download-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
+      document.getElementById("download-basic-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genBasicPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
       
-      document.getElementById("download-btn-2").onclick = () => { if (items2 && items2.length > 0) genPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
-      document.getElementById("download-basic-btn-2").onclick = () => { if (items2 && items2.length > 0) genBasicPDF(items2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
+      document.getElementById("download-btn-2").onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
+      document.getElementById("download-basic-btn-2").onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genBasicPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
       
-      document.getElementById("download-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
-      document.getElementById("download-basic-btn-star").onclick = () => { if (itemsStar && itemsStar.length > 0) genBasicPDF(itemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
+      document.getElementById("download-btn-star").onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
+      document.getElementById("download-basic-btn-star").onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genBasicPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
 
       // Setup personal PDF buttons
       const setupPersonalPdfBtn = (btnId, items, name) => {
@@ -2376,9 +2643,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           };
       };
       
-      setupPersonalPdfBtn("download-personal-btn", items1, setlistConfig.setlist1.name);
-      setupPersonalPdfBtn("download-personal-btn-2", items2, setlistConfig.setlist2.name);
-      setupPersonalPdfBtn("download-personal-btn-star", itemsStar, setlistConfig.setlistStar.name);
+      setupPersonalPdfBtn("download-personal-btn", window.globalItems1, setlistConfig.setlist1.name);
+      setupPersonalPdfBtn("download-personal-btn-2", window.globalItems2, setlistConfig.setlist2.name);
+      setupPersonalPdfBtn("download-personal-btn-star", window.globalItemsStar, setlistConfig.setlistStar.name);
   }
   
   // Si Firebase ya estaba cargado por cache, iniciamos. Si no, el interval de arriba lo hará.
