@@ -19,11 +19,6 @@
   <meta property="og:description"  content="Banda de rock y versiones. Intranet de gestión.">
   <meta property="og:image"        content="assets/logo_negro copia.jpg">
 
-  <!-- POLYFILL: Ensure process.env exists for libraries that expect it (fixes "process is not defined") -->
-  <script>
-    window.process = window.process || { env: {} };
-  </script>
-
   <!-- IMPORT MAP PARA GEMINI AI -->
   <script type="importmap">
 {
@@ -1180,9 +1175,15 @@ window.generateHypeForSetlist = async (setlistItems, contextName) => {
     `;
 
     try {
+        let apiKeyVal = '';
+        try { apiKeyVal = process.env.API_KEY; } catch(e) {}
+        
+        if (!apiKeyVal) {
+             throw new Error("API Key no encontrada. Asegúrate de que process.env.API_KEY esté configurada.");
+        }
+
         // Inicializar Gemini usando la variable de entorno directa.
-        // La plataforma reemplazará process.env.API_KEY con el valor real.
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: apiKeyVal });
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-latest',
@@ -2397,31 +2398,7 @@ async function rateSuggestion(id, rating) {
     const scores = Object.values(currentVotes);
     const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
     try { await db.collection('suggestions').doc(id).update({ votes: currentVotes, averageRating: avg }); } catch (e) { console.error("Error al votar:", e); }
-}
-function renderSuggestions() {
-    const container = document.getElementById('suggestions-container');
-    container.innerHTML = "";
-    const userSelector = document.getElementById('user-identity-selector');
-    const currentUser = userSelector.value;
-    const activeSuggestions = suggestions.filter(s => s.status === 'active').sort((a, b) => b.averageRating - a.averageRating);
-    if (activeSuggestions.length === 0) { container.innerHTML = "<p style='color:#888; font-style:italic;'>No hay propuestas activas.</p>"; return; }
-    activeSuggestions.forEach(s => {
-        const date = new Date(s.proposedAt).toLocaleDateString();
-        const votes = s.votes || {};
-        const myVote = currentUser ? votes[currentUser] : 0;
-        const votersCount = Object.keys(votes).length;
-        const hasVoted = myVote > 0;
-        let starsHtml = ''; for (let i = 1; i <= 5; i++) starsHtml += `<span class="star-visual ${i <= Math.round(s.averageRating) ? 'filled' : ''}">★</span>`;
-        let interactiveStarsHtml = '';
-        if (hasVoted) { for (let i = 1; i <= 5; i++) interactiveStarsHtml += `<span class="interactive-star ${i <= myVote ? 'active' : ''}" style="cursor:default; opacity:${i <= myVote ? 1 : 0.3};">★</span>`; }
-        else { for (let i = 1; i <= 5; i++) interactiveStarsHtml += `<span class="interactive-star" onclick="rateSuggestion('${s.id}', ${i})">★</span>`; }
-        let votersDetailsHtml = votersCount > 0 ? `<div class="voters-details" id="voters-${s.id}">${Object.entries(votes).map(([name, score]) => `${name}: ${score}★`).join(', ')}</div>` : `<div class="voters-details" id="voters-${s.id}">Nadie ha votado aún.</div>`;
-        const voteStatusText = hasVoted ? `<span style="color:#FFD700; font-size:0.9em;">Votado (${myVote}/5)</span>` : `<span class="voting-label">Tu Voto:</span>`;
-        const card = document.createElement('div');
-        card.className = 'suggestion-card';
-        card.innerHTML = `<div class="suggestion-header"><div class="suggestion-title">${s.title}</div><div class="suggestion-artist">${s.artist}</div><div class="suggestion-meta">Propuesto por: ${s.proposedBy} el ${date}</div></div><div class="suggestion-body">${s.link ? `<a href="${s.link}" target="_blank" style="color:#0cf; font-size:0.8em;">Escuchar (Link)</a>` : ''}<div style="margin-top:15px;"><div class="star-rating-display"><span class="avg-score">${s.averageRating.toFixed(1)}</span><div style="display:flex;">${starsHtml}</div><span style="font-size:0.8em; color:#888; margin-left:5px;">(${votersCount} votos)</span></div><button class="toggle-voters-btn" onclick="document.getElementById('voters-${s.id}').classList.toggle('show')">Ver votaciones</button>${votersDetailsHtml}</div></div><div class="suggestion-actions"><div class="voting-area">${voteStatusText}<div class="interactive-stars ${hasVoted ? 'voted' : ''}">${interactiveStarsHtml}</div></div></div>`;
-        container.appendChild(card);
-    });
+
 }
 function renderAdminSuggestions() {
     const tbody = document.getElementById('admin-suggestions-body');
