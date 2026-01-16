@@ -778,6 +778,7 @@
       <a href="#" id="menu-pdf-mgmt">Gestión de Partituras (PDF)</a>
       <a href="#" id="menu-master-docs-mgmt">Gestión Documentación Maestra</a> <!-- NUEVO MENU DOCS -->
       <a href="#" id="menu-access-logs" style="color:#0cf;">Registro de Accesos</a>
+      <a href="#" id="menu-enroll-biometry" style="color:#FFD700; font-weight: bold; border-top: 1px solid #444; margin-top: 10px;">🛡️ Activar FaceID / Huella</a>
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
@@ -2132,8 +2133,136 @@ setupMenuLink("menu-suggestions", "suggestions");
 setupMenuLink("menu-analisis-section", "analisis");
 document.getElementById("menu-suggestions").onclick = e => { e.preventDefault(); openConfigScreen("suggestions-screen"); renderSuggestions(); };
 document.getElementById("close-suggestions").onclick = () => { document.getElementById("suggestions-screen").style.display = "none"; };
-document.getElementById("menu-config").onclick = e => { e.preventDefault();const submenu=document.getElementById("config-submenu");if(!isAuthenticated){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true;submenu.style.display=submenu.style.display==="block"?"none":"block"}else{alert("Contraseña incorrecta.");return}}else{submenu.style.display=submenu.style.display==="block"?"none":"block"}};
-const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'&&screenId!=='suggestions-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'||screenId==='suggestions-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; 
+
+// --- LÓGICA BIOMETRÍA ---
+const BIO_STORAGE_KEY = 'elsotano_bio_auth';
+const supportsBiometrics = () => window.PublicKeyCredential && window.isSecureContext;
+
+async function enrollBiometry() {
+    if (!supportsBiometrics()) {
+        alert("Tu navegador o dispositivo no soporta biometría o no estás en una conexión segura (HTTPS).");
+        return;
+    }
+    
+    // Desafío aleatorio para WebAuthn
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+    
+    const createOptions = {
+        publicKey: {
+            challenge: challenge,
+            rp: { name: "El Sótano del Doctor" },
+            user: {
+                id: new Uint8Array(16),
+                name: "admin@sotano.com",
+                displayName: "Admin El Sótano"
+            },
+            pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+            authenticatorSelection: { userVerification: "required" },
+            timeout: 60000
+        }
+    };
+
+    try {
+        const credential = await navigator.credentials.create(createOptions);
+        if (credential) {
+            localStorage.setItem(BIO_STORAGE_KEY, 'true');
+            alert("¡Acceso biométrico activado! La próxima vez entrarás con tu cara o huella.");
+        }
+    } catch (err) {
+        console.error("Error enrolando biometría:", err);
+        alert("No se pudo configurar la biometría: " + err.message);
+    }
+}
+
+async function verifyBiometry() {
+    if (!localStorage.getItem(BIO_STORAGE_KEY)) return false;
+    
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+    
+    const getOptions = {
+        publicKey: {
+            challenge: challenge,
+            userVerification: "required",
+            timeout: 60000
+        }
+    };
+
+    try {
+        const assertion = await navigator.credentials.get(getOptions);
+        return !!assertion;
+    } catch (err) {
+        console.warn("Fallo o cancelación de biometría:", err);
+        return false;
+    }
+}
+
+document.getElementById("menu-config").onclick = async (e) => { 
+    e.preventDefault();
+    const submenu = document.getElementById("config-submenu");
+    
+    if (!isAuthenticated) {
+        // 1. Intentar biometría primero si está activa
+        let bioSuccess = await verifyBiometry();
+        
+        if (bioSuccess) {
+            isAuthenticated = true;
+            submenu.style.display = "block";
+        } else {
+            // 2. Fallback al prompt clásico
+            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
+            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+                isAuthenticated = true;
+                submenu.style.display = "block";
+            } else if (password !== null) {
+                alert("Contraseña incorrecta.");
+            }
+        }
+    } else {
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+    }
+    
+    // Mostrar/Ocultar botón de enrolamiento según disponibilidad
+    const enrollBtn = document.getElementById("menu-enroll-biometry");
+    if (enrollBtn) {
+        enrollBtn.style.display = (supportsBiometrics() && isAuthenticated) ? "block" : "none";
+    }
+};
+
+document.getElementById("menu-enroll-biometry").onclick = (e) => {
+    e.preventDefault();
+    enrollBiometry();
+};
+
+const openConfigScreen = async (screenId) => { 
+    if(!isAuthenticated && screenId!=='user-list-screen' && screenId!=='stats-screen' && screenId!=='suggestions-screen') {
+        let bioSuccess = await verifyBiometry();
+        if (bioSuccess) {
+            isAuthenticated = true;
+        } else {
+            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
+            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+                isAuthenticated = true;
+            } else {
+                if (password !== null) alert("Contraseña incorrecta.");
+                return false;
+            }
+        }
+    } 
+    if(isAuthenticated || screenId==='user-list-screen' || screenId==='stats-screen' || screenId==='suggestions-screen') {
+        closeAll();
+        const screen = document.getElementById(screenId);
+        if (screen) {
+            screen.style.display = "block";
+            if (screenId === 'user-list-screen') renderUsers();
+            screen.scrollTop = 0;
+        }
+    } 
+    return true;
+}; 
+// --- FIN LÓGICA BIOMETRÍA ---
+
 document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
 document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; document.getElementById("setlist-message").textContent = ""; };
 document.getElementById("guardar-setlist-config").onclick = async () => { const msg=document.getElementById("setlist-message");msg.textContent="";const n1=document.getElementById("setlist1-name").value.trim(),u1=document.getElementById("setlist1-url").value.trim();const n2=document.getElementById("setlist2-name").value.trim(),raw2=document.getElementById("setlist2-url").value.trim();const nStar=document.getElementById("setlistStar-name").value.trim(),uStar=document.getElementById("setlistStar-url").value.trim();if(!n1||!u1||!n2||!raw2||!nStar||!uStar){msg.className="error-message";msg.textContent="Completa todos los campos.";return} try{setlistConfig.setlist1={name:n1,url:u1};setlistConfig.setlist2={name:n2,url:raw2.startsWith("http")?raw2:`https://www.bandhelper.com/feed/set_list/${raw2}`};setlistConfig.setlistStar={name:nStar,url:uStar};await saveSetlistConfig();await Promise.all([cargarPrimerSetlist(),cargarSegundoSetlist(),cargarStarSetlist()]);document.getElementById("setlist-config-screen").style.display="none"}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
