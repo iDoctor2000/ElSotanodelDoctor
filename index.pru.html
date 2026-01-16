@@ -607,13 +607,6 @@
 </head>
 
 <body>
-  <!-- Safe Polyfill for process.env -->
-  <script>
-    if (typeof process === 'undefined') {
-      window.process = { env: { API_KEY: '' } };
-    }
-  </script>
-
   <div id="splash-screen">
     <img src="assets/Logo Sobre negro1.png" alt="Cargando El Sótano del Doctor...">
   </div>
@@ -1182,13 +1175,9 @@ window.generateHypeForSetlist = async (setlistItems, contextName) => {
     `;
 
     try {
-        // Initialize AI here to prevent page load crash if process is missing
-        const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : '';
-        if (!apiKey) {
-            throw new Error("No se encontró la API Key de Gemini (process.env.API_KEY).");
-        }
-
-        const ai = new GoogleGenAI({ apiKey: apiKey });
+        // Inicializar Gemini usando la variable de entorno directa.
+        // La plataforma reemplazará process.env.API_KEY con el valor real.
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-latest',
