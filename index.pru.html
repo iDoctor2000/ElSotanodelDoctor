@@ -20,6 +20,18 @@
   <meta property="og:description"  content="Banda de rock y versiones. Intranet de gestión.">
   <meta property="og:image"        content="assets/logo_negro copia.jpg">
 
+  <!-- IMPORT MAP PARA GEMINI AI -->
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.run/@google/genai",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+
   <!-- OPTIMIZACIÓN: Preconectar a dominios externos para acelerar la carga -->
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="preconnect" href="https://www.gstatic.com">
@@ -483,6 +495,45 @@
         align-items: center; justify-content: center; padding: 0; 
     }
 
+    /* --- HYPE MAN MODAL STYLES (IA Marketing) --- */
+    .hype-option {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        position: relative;
+    }
+    .hype-style-label {
+        font-size: 0.75em;
+        text-transform: uppercase;
+        color: #FFD700;
+        margin-bottom: 8px;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+    .hype-text {
+        font-size: 1em;
+        line-height: 1.4;
+        color: #eee;
+        margin-bottom: 10px;
+        white-space: pre-wrap;
+    }
+    .copy-hype-btn {
+        background: #222;
+        color: #0cf;
+        border: 1px solid #0cf;
+        padding: 5px 10px;
+        font-size: 0.8em;
+        border-radius: 4px;
+        cursor: pointer;
+        float: right;
+    }
+    .copy-hype-btn:hover {
+        background: #0cf;
+        color: #000;
+    }
+
     @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
 
     @media(max-width:768px){
@@ -595,7 +646,8 @@
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/",
+    "@google/genai": "https://esm.run/@google/genai"
   }
 }
 </script>
@@ -988,6 +1040,20 @@
       </div>
   </div>
   
+  <!-- HYPE MAN MODAL (MARKETING IA) -->
+  <div id="hype-man-modal" class="modal-backdrop">
+      <div class="modal-content">
+          <h3>📢 Hype Man (IA Marketing)</h3>
+          <p id="hype-loading" style="display:none; color:#0cf; font-style:italic; text-align:center;">
+             El Doctor IA está pensando frases épicas... 🎸
+          </p>
+          <div id="hype-results"></div>
+          <div style="text-align:right; margin-top:15px;">
+             <button class="modal-close-btn" onclick="window.closeHypeModal()">Cerrar</button>
+          </div>
+      </div>
+  </div>
+
   <!-- NUEVOS MODALES PARA ANÁLISIS -->
   <div id="analisis-config-modal" class="modal-backdrop">
       <div class="modal-content" style="max-width: 450px;">
@@ -1044,6 +1110,7 @@
         <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
         <button class="download-btn" id="download-personal-btn">PDF Personal</button>
         <button class="live-mode-btn" onclick="startLiveMode(globalItems1)">Modo Show 🎤</button>
+        <button class="download-btn" onclick="window.generateHypeForSetlist(window.globalItems1, setlistConfig.setlist1.name)" style="background: linear-gradient(45deg, #FFD700, #FF8C00); color: black;">📢 Hype Man</button>
       </div>
       <p id="total-time"></p>
     </section>
@@ -1064,6 +1131,7 @@
         <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
         <button class="download-btn" id="download-personal-btn-2">PDF Personal</button>
         <button class="live-mode-btn" onclick="startLiveMode(globalItems2)">Modo Show 🎤</button>
+        <button class="download-btn" onclick="window.generateHypeForSetlist(window.globalItems2, setlistConfig.setlist2.name)" style="background: linear-gradient(45deg, #FFD700, #FF8C00); color: black;">📢 Hype Man</button>
       </div>
       <p id="total-time-2"></p>
     </section>
@@ -1083,6 +1151,7 @@
         <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
         <button class="download-btn" id="download-personal-btn-star">PDF Personal</button>
         <button class="live-mode-btn" onclick="startLiveMode(globalItemsStar)">Modo Show 🎤</button>
+        <button class="download-btn" onclick="window.generateHypeForSetlist(window.globalItemsStar, setlistConfig.setlistStar.name)" style="background: linear-gradient(45deg, #FFD700, #FF8C00); color: black;">📢 Hype Man</button>
       </div>
       <p id="total-time-star"></p>
     </section>
@@ -1137,6 +1206,90 @@
   <script src="jukebox.js"></script>
   <script src="metronome.js"></script>
   <script src="analisis.js"></script> <!-- Nuevo script añadido -->
+
+<!-- MODULE SCRIPT FOR HYPE MAN IA LOGIC -->
+<script type="module">
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+// Expose function to global window so standard HTML buttons can call it
+window.generateHypeForSetlist = async (setlistItems, contextName) => {
+    if(!setlistItems || setlistItems.length === 0) {
+        alert("El setlist está vacío.");
+        return;
+    }
+
+    const modal = document.getElementById('hype-man-modal');
+    const resultsDiv = document.getElementById('hype-results');
+    const loading = document.getElementById('hype-loading');
+    
+    modal.classList.add('show');
+    resultsDiv.innerHTML = '';
+    loading.style.display = 'block';
+
+    // Extract song titles
+    const songList = setlistItems
+        .filter(i => i.isSong)
+        .map(i => i.displayName)
+        .slice(0, 15) // Limit context to avoid overload
+        .join(", ");
+
+    const prompt = `
+        Actúa como el Community Manager de la banda de rock "El Sótano del Doctor".
+        Tenemos un concierto/ensayo llamado "${contextName}".
+        
+        Algunas canciones del setlist son: ${songList}.
+        
+        Genera 3 opciones de texto para un post de Instagram/WhatsApp para animar a la gente a venir.
+        
+        1. Opción "Divertida/Canalla".
+        2. Opción "Épica/Rockera".
+        3. Opción "Misteriosa/Hype".
+        
+        Usa emojis. Sé breve (máximo 280 caracteres por opción).
+        Devuelve el resultado estrictamente en formato JSON con la estructura:
+        [
+            {"style": "Divertido", "text": "..."},
+            {"style": "Épico", "text": "..."},
+            {"style": "Misterioso", "text": "..."}
+        ]
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-latest',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json"
+            }
+        });
+
+        const options = JSON.parse(response.text);
+        
+        loading.style.display = 'none';
+        
+        options.forEach(opt => {
+            const div = document.createElement('div');
+            div.className = 'hype-option';
+            div.innerHTML = `
+                <div class="hype-style-label">${opt.style}</div>
+                <div class="hype-text">${opt.text}</div>
+                <button class="copy-hype-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText); alert('¡Copiado al portapapeles!')">Copiar Texto</button>
+            `;
+            resultsDiv.appendChild(div);
+        });
+
+    } catch (e) {
+        loading.style.display = 'none';
+        resultsDiv.innerHTML = `<p style="color:red; text-align:center;">El Doctor IA tuvo un fallo técnico: ${e.message}</p>`;
+    }
+};
+
+window.closeHypeModal = () => {
+    document.getElementById('hype-man-modal').classList.remove('show');
+}
+</script>
 
 <script>
 // 0. Configuración Global
