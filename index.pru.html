@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -470,26 +471,6 @@
         background: #fff;
     }
 
-    /* --- AFINADOR POPUP (NUEVO) --- */
-    #tuner-popup {
-        position: fixed; top: 70px; right: 80px; width: 260px;
-        background: rgba(20, 20, 20, 0.95); 
-        border: 1px solid #0cf; border-radius: 12px;
-        padding: 15px; z-index: 2000;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-        display: none; flex-direction: column; align-items: center; gap: 10px;
-        backdrop-filter: blur(10px);
-        transform-origin: top right;
-        transition: transform 0.2s ease, opacity 0.2s ease;
-    }
-    #tuner-popup.visible { display: flex; }
-    .tuner-note-display { font-size: 3.5em; font-weight: bold; color: #0cf; margin: 10px 0; font-family: 'Arial Black', sans-serif; text-shadow: 0 0 15px rgba(0, 204, 255, 0.5); }
-    .tuner-gauge { width: 100%; height: 60px; position: relative; border-bottom: 2px solid #333; margin-bottom: 15px; }
-    .tuner-needle { position: absolute; bottom: 0; left: 50%; width: 3px; height: 50px; background: #0cf; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); transition: transform 0.1s ease; }
-    .tuner-scale { position: absolute; width: 100%; top: 10px; display: flex; justify-content: space-between; font-size: 0.7em; color: #666; padding: 0 5px; }
-    .tuner-freq { font-size: 0.9em; color: #aaa; font-family: monospace; }
-    .tuner-cents { font-size: 1.2em; color: #fff; font-weight: bold; }
-
     /* ESTILOS TABLA LOGS EXPANDIBLE */
     #access-logs-table .log-row { cursor: pointer; transition: background 0.2s; }
     #access-logs-table .log-row:hover { background: rgba(255,255,255,0.05); }
@@ -502,6 +483,45 @@
         width: 24px; height: 24px; cursor: pointer; font-weight: bold; display: inline-flex; 
         align-items: center; justify-content: center; padding: 0; 
     }
+
+    /* --- TUNER POPUP (NUEVO) --- */
+    #tuner-popup {
+        position: fixed; top: 70px; right: 20px; width: 260px;
+        background: rgba(20, 20, 20, 0.95); 
+        border: 1px solid #0cf; border-radius: 12px;
+        padding: 15px; z-index: 2000;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        display: none; flex-direction: column; align-items: center; gap: 10px;
+        backdrop-filter: blur(10px);
+        transform-origin: top right;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    #tuner-popup.visible { display: flex; }
+    
+    .tuner-display-area { 
+        width: 100%; height: 100px; background: #111; 
+        border: 1px solid #333; border-radius: 8px; position: relative; 
+        overflow: hidden; margin-bottom: 10px;
+    }
+    .tuner-needle {
+        position: absolute; bottom: 0; left: 50%; width: 2px; height: 80%;
+        background: #0cf; transform-origin: bottom center;
+        transition: left 0.1s ease-out;
+        box-shadow: 0 0 5px #0cf;
+    }
+    .tuner-note { 
+        font-size: 3em; font-weight: bold; color: #fff; 
+        text-align: center; margin-top: 10px; z-index: 2; position: relative;
+        text-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+    .tuner-freq { font-size: 0.9em; color: #aaa; font-family: monospace; }
+    
+    /* Status colors */
+    #tuner-popup.tuner-status-perfect .tuner-note { color: #0f0; text-shadow: 0 0 10px #0f0; }
+    #tuner-popup.tuner-status-perfect .tuner-needle { background: #0f0; box-shadow: 0 0 5px #0f0; }
+    
+    #tuner-popup.tuner-status-flat .tuner-note { color: #0cf; } /* Flat is blueish/cyan */
+    #tuner-popup.tuner-status-sharp .tuner-note { color: #f55; } /* Sharp is red */
 
     @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
 
@@ -537,6 +557,7 @@
       
       /* Metrónomo móvil */
       #metronome-popup { right: 10px; left: 10px; width: auto; top: 65px; }
+      /* Afinador móvil */
       #tuner-popup { right: 10px; left: 10px; width: auto; top: 65px; }
     }
 
@@ -727,9 +748,9 @@
     <!-- ZONA DERECHA: BOTONES -->
     <div class="header-controls-right">
         <!-- BOTÓN AFINADOR (NUEVO) -->
-        <button id="tuner-toggle-btn" class="header-icon-btn" title="Afinador de Guitarra">
+        <button id="tuner-toggle-btn" class="header-icon-btn" title="Afinador">
             <svg viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7zM12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z"/>
+                <path d="M15 2H9v2H7v6c0 2.76 2.24 5 5 5s5-2.24 5-5V4h-2V2zm0 8c0 1.66-1.34 3-3 3s-3-1.34-3-3V4h6v6z M11 14v8h2v-8h-2z" fill="currentColor"/>
             </svg>
         </button>
 
@@ -783,17 +804,14 @@
      <button id="metro-tap-btn" class="metronome-tap-btn">TAP</button>
   </div>
 
-  <!-- POPUP DEL AFINADOR (NUEVO) -->
+  <!-- POPUP DEL AFINADOR (Oculto por defecto) -->
   <div id="tuner-popup">
-      <div style="color: #0cf; font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">Afinador El Sótano</div>
-      <div class="tuner-gauge">
-          <div class="tuner-scale"><span>-50</span><span>0</span><span>+50</span></div>
-          <div id="tuner-needle" class="tuner-needle"></div>
-      </div>
-      <div id="tuner-note" class="tuner-note-display">--</div>
-      <div id="tuner-cents" class="tuner-cents">0</div>
-      <div id="tuner-freq" class="tuner-freq">0.00 Hz</div>
-      <button id="tuner-start-btn" style="width: 100%; margin-top: 10px; padding: 12px; background: #0cf; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000;">Iniciar Micrófono</button>
+     <div class="tuner-display-area">
+         <div class="tuner-note" id="tuner-note">--</div>
+         <div class="tuner-needle" id="tuner-needle"></div>
+     </div>
+     <div class="tuner-freq" id="tuner-freq">0.0 Hz</div>
+     <p style="font-size:0.7em; color:#666; margin:5px 0 0 0;">Asegúrate de permitir el micrófono.</p>
   </div>
 
   <div id="overlay"></div>
@@ -832,16 +850,10 @@
           var hamburger = document.getElementById("hamburger-btn");
           var closeBtn = document.getElementById("menu-cerrar");
           var calendarBtn = document.getElementById("header-calendar-btn");
-          var tunerBtn = document.getElementById("tuner-toggle-btn");
-          var tunerPopup = document.getElementById("tuner-popup");
-          var metroBtn = document.getElementById("metronome-toggle-btn");
-          var metroPopup = document.getElementById("metronome-popup");
           
           function closeMenu() {
               sidebar.classList.remove("show");
               overlay.classList.remove("show");
-              if(tunerPopup) tunerPopup.classList.remove("visible");
-              if(metroPopup) metroPopup.classList.remove("visible");
               document.querySelectorAll(".config-screen").forEach(function(s){s.style.display="none"});
               document.querySelectorAll(".modal-backdrop").forEach(function(s){s.classList.remove("show")});
               document.body.style.overflow = '';
@@ -861,18 +873,6 @@
           }
           if(overlay) {
               overlay.onclick = closeMenu;
-          }
-          if(tunerBtn) {
-              tunerBtn.onclick = function() {
-                  tunerPopup.classList.toggle("visible");
-                  if(metroPopup) metroPopup.classList.remove("visible");
-              };
-          }
-          if(metroBtn) {
-              metroBtn.onclick = function() {
-                  metroPopup.classList.toggle("visible");
-                  if(tunerPopup) tunerPopup.classList.remove("visible");
-              };
           }
           if(calendarBtn) {
               calendarBtn.onclick = function() {
@@ -1131,8 +1131,8 @@
           Setlist Concierto Estrella
           <div class="master-direct-group">
               <button class="master-slot-btn" id="master-slot-setlistStar-1" onclick="handleMasterDirectClick('setlistStar', 1, 'Setlist Concierto Estrella')" title="Doc 1">1</button>
-              <button class="master-slot-btn" id="master-slot-setlistStar-2" onclick="handleMasterDirectClick('setlistStar', 2, 'Setlist Concirollo Estrella')" title="Doc 2">2</button>
-              <button class="master-slot-btn" id="master-slot-setlistStar-3" onclick="handleMasterDirectClick('setlistStar', 3, 'Setlist Concirollo Estrella')" title="Doc 3">3</button>
+              <button class="master-slot-btn" id="master-slot-setlistStar-2" onclick="handleMasterDirectClick('setlistStar', 2, 'Setlist Concierto Estrella')" title="Doc 2">2</button>
+              <button class="master-slot-btn" id="master-slot-setlistStar-3" onclick="handleMasterDirectClick('setlistStar', 3, 'Setlist Concierto Estrella')" title="Doc 3">3</button>
           </div>
       </h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
@@ -1196,7 +1196,7 @@
   <script src="jukebox.js"></script>
   <script src="metronome.js"></script>
   <script src="tuner.js"></script>
-  <script src="analisis.js"></script>
+  <script src="analisis.js"></script> <!-- Nuevo script añadido -->
 
 <script>
 // 0. Configuración Global
