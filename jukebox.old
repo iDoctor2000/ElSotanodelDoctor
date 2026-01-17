@@ -490,6 +490,12 @@ function onPlayerStateChange(event) {
         if(btnPlay) btnPlay.style.display = 'none'; 
         if(btnPause) btnPause.style.display = 'block';
         window.startJukeboxProgressLoop();
+        
+        // TRACKING (Solo la primera vez que cambia a playing)
+        if(window.logInteraction && currentSongKey) {
+             // Para evitar loguear cada pausa/play, podríamos usar un flag, pero lo más simple es loguear al abrir.
+             // Aquí lo dejamos como refuerzo.
+        }
     } else {
         isJukeboxPlaying = false;
         if(btnPlay) btnPlay.style.display = 'block'; 
@@ -651,6 +657,9 @@ window.togglePlaylistPanel = function() {
 };
 
 window.openJukeboxPlayer = function(title, rawUrl) {
+    // TRACKING: Log play event
+    if(window.logInteraction) window.logInteraction('JUKEBOX', 'Play: ' + title);
+
     const cleanTitle = sanitizeJukeboxKey(title);
     let foundInCurrent = -1;
     
@@ -731,10 +740,9 @@ window.openJukeboxPlayer = function(title, rawUrl) {
 
     // Update Mode Buttons
     const loopBtn = document.getElementById('jb-looptrack-btn');
-    const playAllBtn = document.getElementById('jb-show-playlist-btn'); // Reusamos el botón de ver lista como indicador visual? No, mejor el toggle panel.
+    // const playAllBtn = document.getElementById('jb-show-playlist-btn'); 
     
     if (loopBtn) loopBtn.classList.toggle('active', isLoopingTrack);
-    // El botón de "Lista" ahora abre el panel, no alterna modo. El modo "Autoplay" es implícito si no hay loop.
 
     const siteAudio = document.getElementById('site-audio');
     if(siteAudio && !siteAudio.paused) siteAudio.pause();
