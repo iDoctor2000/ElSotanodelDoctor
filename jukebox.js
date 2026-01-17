@@ -506,7 +506,12 @@ window.loadJukeboxLibrary = async function() {
             jukeboxOffsets = data.offsets || {};
             jukeboxNotes = data.notes || {};
             jukeboxPitch = data.pitch || {}; 
-            jukeboxRelated = data.related || {}; // Cargar relacionados
+            // Fix: Asegurar que related es un objeto, no un array (por si acaso datos antiguos)
+            if(Array.isArray(data.related)) {
+                 jukeboxRelated = {};
+            } else {
+                 jukeboxRelated = data.related || {};
+            }
             console.log("Jukebox Library cargada completa.");
         }
     } catch (e) { console.error("Error cargando Jukebox Library:", e); }
@@ -758,15 +763,19 @@ window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
         
         // ESTABLECER CLAVE DE CANCIÓN ACTUAL (CONTEXTO PRINCIPAL)
         currentSongKey = cleanTitle;
+        console.log("Jukebox: Contexto cambiado a " + currentSongKey);
 
-        // --- FIX: CERRAR PANELES DE DATOS DE LA CANCIÓN ANTERIOR ---
-        // Esto evita que se muestren los extras/notas de la canción anterior si el panel estaba abierto
+        // --- FIX: CERRAR Y LIMPIAR PANELES DE DATOS DE LA CANCIÓN ANTERIOR ---
+        // Esto evita que se muestren los extras/notas de la canción anterior
         const auxPanels = ['jukebox-playlist-panel', 'jukebox-related-panel', 'jukebox-notes-panel'];
         const auxBtns = ['jb-show-playlist-btn', 'jb-related-btn', 'jb-notes-btn'];
         
         auxPanels.forEach(pid => {
             const p = document.getElementById(pid);
-            if(p) p.style.display = 'none';
+            if(p) {
+                p.style.display = 'none';
+                if(pid === 'jukebox-related-panel') p.innerHTML = ""; // Limpiar contenido visual de extras para forzar recarga
+            }
         });
         auxBtns.forEach(bid => {
             const b = document.getElementById(bid);
