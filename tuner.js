@@ -1,8 +1,14 @@
 
 /*
-    TUNER.JS - Versión Robusta
-    Afinador cromático con feedback visual inmediato.
+    TUNER.JS - PRO VERSION
+    Características:
+    - Detección de Pitch (Auto-correlación mejorada)
+    - Selector de Instrumentos (Guitarra, Bajo 4/5, Ukelele)
+    - Modo Manual: Generador de Tonos (Oscilador)
+    - Feedback Visual: Gradación de colores HSL
 */
+
+console.log("--- TUNER.JS PRO CARGADO ---");
 
 (function() {
     let audioContext = null;
@@ -10,108 +16,241 @@
     let microphoneStream = null;
     let tunerInterval = null;
     let isTunerRunning = false;
-
-    // Elementos DOM
-    const popup = document.getElementById('tuner-popup');
-    const toggleBtn = document.getElementById('tuner-toggle-btn');
-    const noteDisplay = document.getElementById('tuner-note');
-    const freqDisplay = document.getElementById('tuner-freq');
-    const needle = document.getElementById('tuner-needle');
-    
-    // Elemento para mensajes (creado dinámicamente o usando el <p> existente)
-    let msgDisplay = popup ? popup.querySelector('p') : null;
+    let activeOscillator = null; // Para el tono de referencia
 
     // Configuración Audio
     const buflen = 2048;
     const buf = new Float32Array(buflen);
-    const MIN_VOLUME_THRESHOLD = 0.01; 
-
+    const MIN_VOLUME_THRESHOLD = 0.012; // Un poco más alto para filtrar ruido
+    
     const noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
-    function initTuner() {
-        if (toggleBtn) {
-            toggleBtn.onclick = handleToggleClick;
+    // Datos de Instrumentos
+    const instruments = {
+        guitar: {
+            name: "Guitarra (E Std)",
+            strings: [
+                { note: "E2", freq: 82.41 },
+                { note: "A2", freq: 110.00 },
+                { note: "D3", freq: 146.83 },
+                { note: "G3", freq: 196.00 },
+                { note: "B3", freq: 246.94 },
+                { note: "E4", freq: 329.63 }
+            ]
+        },
+        bass: {
+            name: "Bajo (4 Cuerdas)",
+            strings: [
+                { note: "E1", freq: 41.20 },
+                { note: "A1", freq: 55.00 },
+                { note: "D2", freq: 73.42 },
+                { note: "G2", freq: 98.00 }
+            ]
+        },
+        bass5: {
+            name: "Bajo (5 Cuerdas)",
+            strings: [
+                { note: "B0", freq: 30.87 },
+                { note: "E1", freq: 41.20 },
+                { note: "A1", freq: 55.00 },
+                { note: "D2", freq: 73.42 },
+                { note: "G2", freq: 98.00 }
+            ]
+        },
+        ukulele: {
+            name: "Ukelele (GCEA)",
+            strings: [
+                { note: "G4", freq: 392.00 },
+                { note: "C4", freq: 261.63 },
+                { note: "E4", freq: 329.63 },
+                { note: "A4", freq: 440.00 }
+            ]
         }
+    };
+
+    let currentInstrument = 'guitar';
+
+    // Función principal de inicialización
+    function initTuner() {
+        const toggleBtn = document.getElementById('tuner-toggle-btn');
+        if (toggleBtn) {
+            toggleBtn.removeEventListener('click', handleToggleClick); 
+            toggleBtn.addEventListener('click', handleToggleClick);
+            injectTunerHTML(); // Inyectar estructura HTML avanzada
+        } else {
+            setTimeout(initTuner, 1000);
+        }
+    }
+
+    function injectTunerHTML() {
+        const popup = document.getElementById('tuner-popup');
+        if(!popup) return;
+
+        // Limpiar contenido previo simple
+        popup.innerHTML = `
+            <div class="tuner-controls-top">
+                <select id="tuner-instrument-select" class="tuner-select">
+                    <option value="guitar">🎸 Guitarra</option>
+                    <option value="bass">🎸 Bajo (4)</option>
+                    <option value="bass5">🎸 Bajo (5)</option>
+                    <option value="ukulele">🏝️ Ukelele</option>
+                </select>
+                <!-- Modo manual implícito en los botones -->
+            </div>
+
+            <div class="tuner-display-area">
+                <div class="tuner-gradient-bar"></div>
+                <div class="tuner-center-marker"></div>
+                <div class="tuner-needle" id="tuner-needle"></div>
+                
+                <div class="tuner-freq-info">
+                    <span id="tuner-cents">0c</span>
+                    <span id="tuner-freq">0.0 Hz</span>
+                </div>
+                
+                <div class="tuner-note" id="tuner-note">--</div>
+            </div>
+
+            <div id="tuner-strings-area" class="tuner-strings-container">
+                <!-- Se llenará dinámicamente según instrumento -->
+            </div>
+
+            <p class="tuner-msg" id="tuner-msg">Pulsa una cuerda para oír tono referencia.</p>
+        `;
+
+        // Event listener para cambio de instrumento
+        document.getElementById('tuner-instrument-select').addEventListener('change', (e) => {
+            currentInstrument = e.target.value;
+            renderStringButtons();
+        });
+
+        renderStringButtons();
+    }
+
+    function renderStringButtons() {
+        const container = document.getElementById('tuner-strings-area');
+        if(!container) return;
+        container.innerHTML = "";
+
+        const data = instruments[currentInstrument];
+        data.strings.forEach(s => {
+            const btn = document.createElement('button');
+            btn.className = 'tuner-string-btn';
+            btn.textContent = s.note.replace(/[0-9]/g, ''); // Mostrar solo la letra (E, A, etc)
+            btn.title = `Tocar nota ${s.note} (${s.freq} Hz)`;
+            
+            // Acción: Reproducir tono
+            btn.onclick = () => playReferenceTone(s.freq, btn);
+            
+            container.appendChild(btn);
+        });
+    }
+
+    function playReferenceTone(freq, btnElement) {
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Parar anterior si existe
+        if (activeOscillator) {
+            activeOscillator.stop();
+            activeOscillator = null;
+        }
+
+        // Feedback visual en el botón
+        const allBtns = document.querySelectorAll('.tuner-string-btn');
+        allBtns.forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        // Crear oscilador
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        osc.type = 'sine'; // Onda suave
+        osc.frequency.value = freq;
+        
+        // Envolvente de volumen (Fade in - Fade out)
+        gain.gain.setValueAtTime(0, audioContext.currentTime);
+        gain.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 2.0);
+
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+
+        osc.start();
+        osc.stop(audioContext.currentTime + 2.0);
+        
+        activeOscillator = osc;
+        
+        // Quitar clase activa después de un rato
+        setTimeout(() => {
+            if(btnElement) btnElement.classList.remove('active');
+        }, 2000);
     }
 
     function handleToggleClick(e) {
         e.preventDefault();
-        if (isTunerRunning) {
-            stopTuner();
-        } else {
-            startTuner();
-        }
+        e.stopPropagation();
+        if (isTunerRunning) stopTuner(); else startTuner();
     }
 
     async function startTuner() {
+        const popup = document.getElementById('tuner-popup');
+        const toggleBtn = document.getElementById('tuner-toggle-btn');
+        const msgDisplay = document.getElementById('tuner-msg');
+
         if (!popup) return;
 
-        // 1. Mostrar Popup Inmediatamente (Estado Cargando)
-        isTunerRunning = true; // Pre-activar flag para UI
+        isTunerRunning = true;
         popup.classList.add('visible');
-        if(toggleBtn) {
-            toggleBtn.style.backgroundColor = '#333';
-            toggleBtn.style.transform = 'scale(1.1)';
-        }
         
-        if(msgDisplay) msgDisplay.textContent = "Iniciando micrófono...";
-        if(noteDisplay) noteDisplay.textContent = "...";
+        if(toggleBtn) {
+            toggleBtn.style.backgroundColor = '#0cf';
+            toggleBtn.style.color = '#000';
+            toggleBtn.style.boxShadow = '0 0 10px #0cf';
+        }
 
-        // Cerrar otros popups si existen
+        if(msgDisplay) msgDisplay.textContent = "Iniciando micrófono...";
+
+        // Cerrar metrónomo si está abierto
         const metroPopup = document.getElementById('metronome-popup');
         if(metroPopup) metroPopup.classList.remove('visible');
 
         try {
-            // 2. Inicializar Audio Context
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioContext.state === 'suspended') {
-                await audioContext.resume();
-            }
-
-            // 3. Pedir Micrófono
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error("Tu navegador no soporta acceso al micrófono.");
+                throw new Error("Sin soporte de micrófono.");
             }
 
-            microphoneStream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    echoCancellation: false,
-                    autoGainControl: false,
-                    noiseSuppression: false
-                } 
-            });
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') await audioContext.resume();
 
+            microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false } });
+            
             const source = audioContext.createMediaStreamSource(microphoneStream);
             analyser = audioContext.createAnalyser();
-            analyser.fftSize = 2048;
+            analyser.fftSize = 4096; // Mayor resolución para graves
             source.connect(analyser);
 
-            if(msgDisplay) msgDisplay.textContent = "Escuchando...";
-            
-            // Iniciar Loop
+            if(msgDisplay) msgDisplay.textContent = "Toca una cuerda...";
             updatePitch();
 
         } catch (err) {
-            console.error("Tuner Error:", err);
-            if(msgDisplay) {
-                msgDisplay.style.color = "#f55";
-                msgDisplay.textContent = "Error: Acceso micro denegado.";
-            }
-            // No detenemos inmediatamente para que el usuario vea el error, 
-            // pero el loop no arrancará bien sin analyser.
+            console.error("Error Tuner:", err);
+            if(msgDisplay) msgDisplay.textContent = "Error: Acceso micro denegado.";
             setTimeout(stopTuner, 3000); 
         }
     }
 
     function stopTuner() {
         isTunerRunning = false;
+        
+        const popup = document.getElementById('tuner-popup');
+        const toggleBtn = document.getElementById('tuner-toggle-btn');
+        
         if(popup) popup.classList.remove('visible');
         
         if(toggleBtn) {
             toggleBtn.style.backgroundColor = '';
-            toggleBtn.style.transform = '';
+            toggleBtn.style.color = '';
+            toggleBtn.style.boxShadow = '';
         }
 
         if (tunerInterval) {
@@ -124,15 +263,10 @@
             microphoneStream = null;
         }
         
-        // Reset UI
-        if(noteDisplay) noteDisplay.textContent = "--";
-        if(freqDisplay) freqDisplay.textContent = "0.0 Hz";
-        if(needle) needle.style.left = "50%";
-        if(popup) popup.className = ""; // Limpiar clases de estado (perfect/flat/sharp) pero mantener id
-        if(popup) popup.id = "tuner-popup"; // Restaurar ID por si acaso
-        if(msgDisplay) {
-            msgDisplay.style.color = "#666";
-            msgDisplay.textContent = "Asegúrate de permitir el micrófono.";
+        // Parar oscilador si estaba sonando
+        if (activeOscillator) {
+            activeOscillator.stop();
+            activeOscillator = null;
         }
     }
 
@@ -142,14 +276,14 @@
         analyser.getFloatTimeDomainData(buf);
         const ac = autoCorrelate(buf, audioContext.sampleRate);
 
-        if (ac === -1) {
-            // Silencio o ruido: No actualizar aguja drásticamente, o resetear suavemente
-            // Opción: Dejar la aguja donde está o ir al centro lentamente
-        } else {
+        if (ac !== -1) {
             const pitch = ac;
             const note = noteFromPitch(pitch);
             const detune = centsOffFromPitch(pitch, note);
             updateUI(note, detune, pitch);
+        } else {
+            // Decaimiento suave si no hay señal
+            // Opcional: mover aguja lentamente al centro o dejarla
         }
 
         tunerInterval = requestAnimationFrame(updatePitch);
@@ -217,40 +351,52 @@
     }
 
     function updateUI(noteNum, cents, freq) {
-        if(!noteDisplay || !freqDisplay || !needle) return;
+        const noteDisplay = document.getElementById('tuner-note');
+        const freqDisplay = document.getElementById('tuner-freq');
+        const centsDisplay = document.getElementById('tuner-cents');
+        const needle = document.getElementById('tuner-needle');
+        
+        if(!noteDisplay || !needle) return;
 
         const noteName = noteStrings[noteNum % 12];
         noteDisplay.textContent = noteName;
-        freqDisplay.textContent = Math.round(freq) + " Hz";
+        
+        if(freqDisplay) freqDisplay.textContent = Math.round(freq * 10) / 10 + " Hz";
+        if(centsDisplay) centsDisplay.textContent = (cents > 0 ? "+" : "") + cents + "c";
 
-        // Mapeo: -50 cents = 0% left, +50 cents = 100% left
-        let percent = 50 + cents; 
-        percent = Math.max(5, Math.min(95, percent)); // Margen de seguridad visual
+        // Mapeo visual: -50c = 0%, 0c = 50%, +50c = 100%
+        // Añadimos smoothing
+        let percent = 50 + (cents); 
+        percent = Math.max(5, Math.min(95, percent)); 
         needle.style.left = percent + "%";
 
-        // Gestión de colores
-        popup.classList.remove('tuner-status-perfect', 'tuner-status-flat', 'tuner-status-sharp');
+        // LÓGICA DE COLOR (HSL)
+        // 0 cents (afinado) -> Verde (120 de Hue)
+        // 50 cents (desafinado) -> Rojo (0 de Hue)
+        // Usamos valor absoluto de cents para calcular
+        const absCents = Math.abs(cents);
+        let hue = 120 - (absCents * 2.4); // 50 * 2.4 = 120, así que a 50 cents el hue llega a 0 (rojo)
+        if (hue < 0) hue = 0;
         
-        if (Math.abs(cents) < 5) {
-            popup.classList.add('tuner-status-perfect');
-            if(msgDisplay) msgDisplay.textContent = "¡Afinado!";
-        } else if (cents < 0) {
-            popup.classList.add('tuner-status-flat');
-            if(msgDisplay) msgDisplay.textContent = "Bajo (sube tono)";
-        } else {
-            popup.classList.add('tuner-status-sharp');
-            if(msgDisplay) msgDisplay.textContent = "Alto (baja tono)";
-        }
+        const color = `hsl(${hue}, 100%, 50%)`;
+        
+        // Aplicar color a elementos
+        needle.style.backgroundColor = color;
+        needle.style.boxShadow = `0 0 15px ${color}`;
+        noteDisplay.style.color = color;
+        noteDisplay.style.textShadow = `0 0 20px ${color}`;
     }
 
-    // Inicialización al cargar
+    // Inicialización
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initTuner);
     } else {
         initTuner();
     }
+    
+    // Fallback de carga
+    setTimeout(initTuner, 1000);
 
-    // Exponer stop globalmente
     window.closeTuner = stopTuner;
 
 })();
