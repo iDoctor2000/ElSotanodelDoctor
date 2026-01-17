@@ -1,8 +1,7 @@
 
 /*
-    TUNER.JS
-    Afinador cromático simple basado en Web Audio API y autocorrelación.
-    Se integra con la UI definida en index.html (#tuner-popup, #tuner-toggle-btn).
+    TUNER.JS - Versión Robusta
+    Afinador cromático con feedback visual inmediato.
 */
 
 (function() {
@@ -18,29 +17,62 @@
     const noteDisplay = document.getElementById('tuner-note');
     const freqDisplay = document.getElementById('tuner-freq');
     const needle = document.getElementById('tuner-needle');
-    const statusContainer = document.getElementById('tuner-popup'); // Para clases CSS
+    
+    // Elemento para mensajes (creado dinámicamente o usando el <p> existente)
+    let msgDisplay = popup ? popup.querySelector('p') : null;
 
     // Configuración Audio
     const buflen = 2048;
     const buf = new Float32Array(buflen);
-    const MIN_VOLUME_THRESHOLD = 0.01; // Ruido de fondo
+    const MIN_VOLUME_THRESHOLD = 0.01; 
 
-    // Notas
     const noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
     function initTuner() {
         if (toggleBtn) {
-            toggleBtn.onclick = toggleTuner;
+            toggleBtn.onclick = handleToggleClick;
+        }
+    }
+
+    function handleToggleClick(e) {
+        e.preventDefault();
+        if (isTunerRunning) {
+            stopTuner();
+        } else {
+            startTuner();
         }
     }
 
     async function startTuner() {
+        if (!popup) return;
+
+        // 1. Mostrar Popup Inmediatamente (Estado Cargando)
+        isTunerRunning = true; // Pre-activar flag para UI
+        popup.classList.add('visible');
+        if(toggleBtn) {
+            toggleBtn.style.backgroundColor = '#333';
+            toggleBtn.style.transform = 'scale(1.1)';
+        }
+        
+        if(msgDisplay) msgDisplay.textContent = "Iniciando micrófono...";
+        if(noteDisplay) noteDisplay.textContent = "...";
+
+        // Cerrar otros popups si existen
+        const metroPopup = document.getElementById('metronome-popup');
+        if(metroPopup) metroPopup.classList.remove('visible');
+
         try {
+            // 2. Inicializar Audio Context
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
             if (audioContext.state === 'suspended') {
                 await audioContext.resume();
+            }
+
+            // 3. Pedir Micrófono
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error("Tu navegador no soporta acceso al micrófono.");
             }
 
             microphoneStream = await navigator.mediaDevices.getUserMedia({ 
@@ -56,33 +88,31 @@
             analyser.fftSize = 2048;
             source.connect(analyser);
 
-            isTunerRunning = true;
-            popup.classList.add('visible');
-            toggleBtn.style.backgroundColor = '#333'; // Estado activo visual
-            toggleBtn.style.borderColor = '#fff';
-
-            // Cerrar metrónomo si está abierto para evitar solapamiento visual
-            const metronomePopup = document.getElementById('metronome-popup');
-            if (metronomePopup && metronomePopup.classList.contains('visible')) {
-                metronomePopup.classList.remove('visible');
-                // Asumiendo que metronome.js tiene lógica para apagar botón, 
-                // aquí solo ocultamos visualmente el popup por seguridad.
-            }
-
+            if(msgDisplay) msgDisplay.textContent = "Escuchando...";
+            
+            // Iniciar Loop
             updatePitch();
 
         } catch (err) {
-            console.error("Error al iniciar el afinador:", err);
-            alert("No se pudo acceder al micrófono. Asegúrate de dar permisos.");
-            stopTuner();
+            console.error("Tuner Error:", err);
+            if(msgDisplay) {
+                msgDisplay.style.color = "#f55";
+                msgDisplay.textContent = "Error: Acceso micro denegado.";
+            }
+            // No detenemos inmediatamente para que el usuario vea el error, 
+            // pero el loop no arrancará bien sin analyser.
+            setTimeout(stopTuner, 3000); 
         }
     }
 
     function stopTuner() {
         isTunerRunning = false;
-        popup.classList.remove('visible');
-        toggleBtn.style.backgroundColor = ''; 
-        toggleBtn.style.borderColor = '';
+        if(popup) popup.classList.remove('visible');
+        
+        if(toggleBtn) {
+            toggleBtn.style.backgroundColor = '';
+            toggleBtn.style.transform = '';
+        }
 
         if (tunerInterval) {
             cancelAnimationFrame(tunerInterval);
@@ -95,36 +125,30 @@
         }
         
         // Reset UI
-        noteDisplay.textContent = "--";
-        freqDisplay.textContent = "0.0";
-        needle.style.left = "50%";
-        statusContainer.className = ""; // Limpiar clases de estado
-    }
-
-    function toggleTuner() {
-        if (isTunerRunning) {
-            stopTuner();
-        } else {
-            startTuner();
+        if(noteDisplay) noteDisplay.textContent = "--";
+        if(freqDisplay) freqDisplay.textContent = "0.0 Hz";
+        if(needle) needle.style.left = "50%";
+        if(popup) popup.className = ""; // Limpiar clases de estado (perfect/flat/sharp) pero mantener id
+        if(popup) popup.id = "tuner-popup"; // Restaurar ID por si acaso
+        if(msgDisplay) {
+            msgDisplay.style.color = "#666";
+            msgDisplay.textContent = "Asegúrate de permitir el micrófono.";
         }
     }
 
-    /* --- LÓGICA DE DETECCIÓN DE PITCH (AUTOCORRELACIÓN) --- */
     function updatePitch() {
-        if (!isTunerRunning) return;
+        if (!isTunerRunning || !analyser) return;
 
         analyser.getFloatTimeDomainData(buf);
         const ac = autoCorrelate(buf, audioContext.sampleRate);
 
         if (ac === -1) {
-            // No hay señal clara o suficiente volumen
-            // Mantenemos la última lectura o reseteamos suavemente si pasa mucho tiempo
-            // Por ahora, solo visualmente indicamos inactividad si es prolongada
+            // Silencio o ruido: No actualizar aguja drásticamente, o resetear suavemente
+            // Opción: Dejar la aguja donde está o ir al centro lentamente
         } else {
             const pitch = ac;
             const note = noteFromPitch(pitch);
             const detune = centsOffFromPitch(pitch, note);
-            
             updateUI(note, detune, pitch);
         }
 
@@ -132,7 +156,6 @@
     }
 
     function autoCorrelate(buf, sampleRate) {
-        // RMS (Root Mean Square) para volumen
         let size = buf.length;
         let rms = 0;
         for (let i = 0; i < size; i++) {
@@ -143,7 +166,6 @@
 
         if (rms < MIN_VOLUME_THRESHOLD) return -1;
 
-        // Algoritmo simple de autocorrelación
         let r1 = 0, r2 = size - 1, thres = 0.2;
         for (let i = 0; i < size / 2; i++) {
             if (Math.abs(buf[i]) < thres) { r1 = i; break; }
@@ -173,7 +195,6 @@
         }
         let T0 = maxpos;
 
-        // Interpolación parabólica para mayor precisión
         const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
         const a = (x1 + x3 - 2 * x2) / 2;
         const b = (x3 - x1) / 2;
@@ -196,38 +217,40 @@
     }
 
     function updateUI(noteNum, cents, freq) {
+        if(!noteDisplay || !freqDisplay || !needle) return;
+
         const noteName = noteStrings[noteNum % 12];
-        
         noteDisplay.textContent = noteName;
         freqDisplay.textContent = Math.round(freq) + " Hz";
 
-        // Mover la aguja
-        // Cents van de -50 a +50 aprox para el rango de la nota
-        // Mapeamos -50..50 a 0%..100% left
-        let percent = 50 + cents; // Simple mapping: 0 cents = 50%
-        percent = Math.max(0, Math.min(100, percent));
+        // Mapeo: -50 cents = 0% left, +50 cents = 100% left
+        let percent = 50 + cents; 
+        percent = Math.max(5, Math.min(95, percent)); // Margen de seguridad visual
         needle.style.left = percent + "%";
 
-        // Clases de color
-        statusContainer.classList.remove('tuner-status-perfect', 'tuner-status-flat', 'tuner-status-sharp');
+        // Gestión de colores
+        popup.classList.remove('tuner-status-perfect', 'tuner-status-flat', 'tuner-status-sharp');
         
         if (Math.abs(cents) < 5) {
-            statusContainer.classList.add('tuner-status-perfect');
+            popup.classList.add('tuner-status-perfect');
+            if(msgDisplay) msgDisplay.textContent = "¡Afinado!";
         } else if (cents < 0) {
-            statusContainer.classList.add('tuner-status-flat');
+            popup.classList.add('tuner-status-flat');
+            if(msgDisplay) msgDisplay.textContent = "Bajo (sube tono)";
         } else {
-            statusContainer.classList.add('tuner-status-sharp');
+            popup.classList.add('tuner-status-sharp');
+            if(msgDisplay) msgDisplay.textContent = "Alto (baja tono)";
         }
     }
 
-    // Inicializar al cargar
+    // Inicialización al cargar
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initTuner);
     } else {
         initTuner();
     }
 
-    // Exponer stop globalmente por si cerramos menús
+    // Exponer stop globalmente
     window.closeTuner = stopTuner;
 
 })();
