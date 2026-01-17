@@ -47,7 +47,7 @@ let jukeboxLoopB = null;
 let pendingMarkerState = null;
 
 // Helper para sanitize
-const sanitizeJukeboxKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
+const sanitizeJukeboxKey = (str) => str ? str.toString().trim().replace(/[.#$[\]/:\s,]/g, '_') : 'unknown';
 
 // Exponer funciones al objeto window
 window.jukeboxLibrary = jukeboxLibrary;
@@ -389,6 +389,7 @@ window.injectExtraControls = function() {
     }
 
     // NUEVO BOTÓN: EXTRAS (RELATED)
+    // Aseguramos que se inserte correctamente si no existe
     if (!document.getElementById('jb-related-btn')) {
         const relatedBtn = document.createElement('button');
         relatedBtn.id = 'jb-related-btn';
@@ -396,7 +397,14 @@ window.injectExtraControls = function() {
         relatedBtn.innerHTML = '<span>🔗</span> Extras'; 
         relatedBtn.title = "Archivos de audio relacionados";
         relatedBtn.onclick = window.toggleRelatedPanel;
-        toolsRow.appendChild(relatedBtn);
+        
+        // Insertar antes del grupo de volumen si existe
+        const volGroup = document.getElementById('jb-volume-group');
+        if (volGroup && volGroup.parentNode === toolsRow) {
+            toolsRow.insertBefore(relatedBtn, volGroup);
+        } else {
+            toolsRow.appendChild(relatedBtn);
+        }
     }
 
     // F. Grupo VOLUMEN
@@ -750,6 +758,20 @@ window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
         
         // ESTABLECER CLAVE DE CANCIÓN ACTUAL (CONTEXTO PRINCIPAL)
         currentSongKey = cleanTitle;
+
+        // --- FIX: CERRAR PANELES DE DATOS DE LA CANCIÓN ANTERIOR ---
+        // Esto evita que se muestren los extras/notas de la canción anterior si el panel estaba abierto
+        const auxPanels = ['jukebox-playlist-panel', 'jukebox-related-panel', 'jukebox-notes-panel'];
+        const auxBtns = ['jb-show-playlist-btn', 'jb-related-btn', 'jb-notes-btn'];
+        
+        auxPanels.forEach(pid => {
+            const p = document.getElementById(pid);
+            if(p) p.style.display = 'none';
+        });
+        auxBtns.forEach(bid => {
+            const b = document.getElementById(bid);
+            if(b) b.classList.remove('active');
+        });
     }
 
     const playerBar = document.getElementById('jukebox-player-bar');
@@ -1650,7 +1672,8 @@ window.stopJukeboxProgressLoop = function() {
     if (jukeboxCheckInterval) clearInterval(jukeboxCheckInterval);
 };
 
-document.addEventListener("DOMContentLoaded", () => {
+// FUNCIÓN DE INICIALIZACIÓN CONSOLIDADA
+function initJukebox() {
     window.injectJukeboxStyles();
     window.injectExtraControls();
 
@@ -1687,4 +1710,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if(btnCancelMarker) btnCancelMarker.onclick = window.closeMarkerModal;
     const btnConfirmMarker = document.getElementById('confirm-marker-btn');
     if(btnConfirmMarker) btnConfirmMarker.onclick = window.confirmAddMarker;
-});
+}
+
+// Inicialización robusta para SPAs y carga diferida
+if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", initJukebox);
+} else {
+    // Si el script carga después de DOMContentLoaded, ejecutar directamente
+    initJukebox();
+}
