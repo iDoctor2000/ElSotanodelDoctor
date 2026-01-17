@@ -2520,4 +2520,64 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
   } catch(e) { }
 
-  const siteAudioElement
+  const siteAudioElement = document.getElementById('site-audio'); const siteAudioControlButton = document.getElementById('site-audio-control-button'); const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; let currentSiteSongIndex = -1; let siteAudioFadeInterval = null; const SITE_AUDIO_FADE_DURATION = 500; const SITE_AUDIO_TARGET_VOLUME = 0.8; 
+  function stopSiteAudioFade() { if (siteAudioFadeInterval) { clearInterval(siteAudioFadeInterval); siteAudioFadeInterval = null; } }
+  function fadeInSiteAudio(audio, duration, targetVolume) { stopSiteAudioFade(); if (!audio) return; if (audio.muted) { audio.volume = 0; audio.play().catch(e => {}); return; } audio.volume = 0; if (audio.paused) audio.play().catch(e => {}); let step = targetVolume / (duration / 50); let currentVolume = 0; siteAudioFadeInterval = setInterval(() => { currentVolume += step; if (currentVolume >= targetVolume) { if(audio) audio.volume = targetVolume; stopSiteAudioFade(); } else if (audio) audio.volume = currentVolume; else stopSiteAudioFade(); }, 50); }
+  function fadeOutSiteAudio(audio, duration, callback) { stopSiteAudioFade(); if (!audio) { if (callback) callback(); return; } if (audio.paused || audio.volume < 0.01) { if (!audio.paused) audio.pause(); audio.volume = 0; if (callback) callback(); return; } let currentVolume = audio.volume; let step = currentVolume / (duration / 50); siteAudioFadeInterval = setInterval(() => { currentVolume -= step; if (currentVolume <= 0.01) { if (audio) { audio.volume = 0; audio.pause(); } stopSiteAudioFade(); if (callback) callback(); } else if (audio) audio.volume = currentVolume; else stopSiteAudioFade(); }, 50); }
+  function playNextSiteSong(audioElement) { if (!audioElement || siteAudioSongs.length === 0) return; currentSiteSongIndex = (currentSiteSongIndex + 1) % siteAudioSongs.length; audioElement.src = siteAudioSongs[currentSiteSongIndex]; audioElement.load(); audioElement.addEventListener('canplaythrough', () => { if (audioElement) fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME); }, { once: true }); }
+  if (siteAudioElement && siteAudioControlButton) {
+    const iconMuted = siteAudioControlButton.querySelector('.icon-muted'); const iconUnmuted = siteAudioControlButton.querySelector('.icon-unmuted');
+    const updateSiteAudioMuteButton = () => { if (!siteAudioElement || !iconMuted || !iconUnmuted || !siteAudioControlButton) return; if (siteAudioElement.muted) { iconMuted.style.display = 'inline'; iconUnmuted.style.display = 'none'; siteAudioControlButton.title = "Activar sonido"; } else { iconMuted.style.display = 'none'; iconUnmuted.style.display = 'inline'; siteAudioControlButton.title = "Desactivar sonido"; } };
+    siteAudioElement.muted = true; siteAudioElement.loop = false; updateSiteAudioMuteButton(); siteAudioControlButton.style.display = 'flex'; 
+    currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length); siteAudioElement.src = siteAudioSongs[currentSiteSongIndex]; siteAudioElement.load(); 
+    siteAudioElement.addEventListener('ended', () => { fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => { playNextSiteSong(siteAudioElement); }); });
+    siteAudioControlButton.addEventListener('click', () => { if (!siteAudioElement) return; const wasMuted = siteAudioElement.muted; siteAudioElement.muted = !siteAudioElement.muted; updateSiteAudioMuteButton(); if (!siteAudioElement.muted) { if (siteAudioElement.paused || wasMuted) { if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused) fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); else { siteAudioElement.volume = 0; fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); } } } else stopSiteAudioFade(); });
+  }
+
+  const splashScreen = document.getElementById('splash-screen'); if (splashScreen) { setTimeout(() => { splashScreen.classList.add('hidden'); setTimeout(() => { if (splashScreen.parentNode) splashScreen.style.display = 'none'; }, 500); }, 100); }
+  updateConnectionStatus();
+
+  async function loadAllData() {
+      try {
+          if(window.loadJukeboxLibrary) {
+              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary(), window.loadPdfLibrary(), window.loadMasterDocs()]);
+          } else {
+              setTimeout(() => { if(window.loadJukeboxLibrary) window.loadJukeboxLibrary(); if(window.loadPdfLibrary) window.loadPdfLibrary(); if(window.loadMasterDocs) window.loadMasterDocs(); }, 1000);
+              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
+          }
+      } catch (e) { }
+      if(window.loadAnalysisData) window.loadAnalysisData(); else setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
+      try { window.globalItems1 = await cargarPrimerSetlist(); } catch (e) { }
+      try { window.globalItems2 = await cargarSegundoSetlist(); } catch (e) { }
+      try { window.globalItemsStar = await cargarStarSetlist(); } catch (e) { }
+      document.getElementById("download-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("Vacío."); };
+      document.getElementById("download-basic-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genBasicPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("Vacío."); };
+      document.getElementById("download-btn-2").onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("Vacío."); };
+      document.getElementById("download-basic-btn-2").onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genBasicPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("Vacío."); };
+      document.getElementById("download-btn-star").onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("Vacío."); };
+      document.getElementById("download-basic-btn-star").onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genBasicPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("Vacío."); };
+      const setupPersonalPdfBtn = (btnId, items, name) => {
+          const btn = document.getElementById(btnId);
+          if(btn) btn.onclick = () => {
+              if (items && items.length > 0) {
+                  const fontSizeInput = prompt("PDF Personal - Tamaño letra títulos (ej: 14):", "14");
+                  if (fontSizeInput) {
+                      const fontSize = parseInt(fontSizeInput, 10);
+                      if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) genPersonalPDF(items, name, name, fontSize); else alert("Inválido.");
+                  }
+              } else alert("Vacío.");
+          };
+      };
+      setupPersonalPdfBtn("download-personal-btn", window.globalItems1, setlistConfig.setlist1.name);
+      setupPersonalPdfBtn("download-personal-btn-2", window.globalItems2, setlistConfig.setlist2.name);
+      setupPersonalPdfBtn("download-personal-btn-star", window.globalItemsStar, setlistConfig.setlistStar.name);
+  }
+  if (typeof firebase !== 'undefined') loadAllData();
+  const prevBtn = document.getElementById('prev-month-btn'); const nextBtn = document.getElementById('next-month-btn');
+  if(prevBtn) { const newPrev = prevBtn.cloneNode(true); prevBtn.parentNode.replaceChild(newPrev, prevBtn); newPrev.addEventListener('click', () => { currentCalDate.setMonth(currentCalDate.getMonth() - 1); renderVisualCalendar(); }); }
+  if(nextBtn) { const newNext = nextBtn.cloneNode(true); nextBtn.parentNode.replaceChild(newNext, nextBtn); newNext.addEventListener('click', () => { currentCalDate.setMonth(currentCalDate.getMonth() + 1); renderVisualCalendar(); }); }
+  renderVisualCalendar(); setTimeout(renderVisualCalendar, 2000); setTimeout(renderVisualCalendar, 5000);
+});
+</script>
+</body>
+</html>
