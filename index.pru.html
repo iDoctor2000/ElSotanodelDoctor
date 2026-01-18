@@ -1196,7 +1196,8 @@
   <script src="jukebox.js"></script>
   <script src="metronome.js"></script>
   <script src="tuner.js"></script>
-  <script src="analisis.js"></script> <!-- Nuevo script añadido -->
+  <script src="analisis.js"></script>
+  <script src="ensayos.js"></script> <!-- Nuevo script añadido -->
 
 <script>
 // 0. Configuración Global
@@ -1349,16 +1350,17 @@ window.globalItemsStar = [];
 window.pdfLibrary = {};
 window.masterDocs = { setlist1: {}, setlist2: {}, setlistStar: {} }; // NUEVA LIBRERIA DOCS MAESTROS
 
-const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
-const toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
-const toHHMM = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;};
-const toHours = s => { if (isNaN(s) || s === null || s === undefined) return (0).toFixed(2); return (s / 3600).toFixed(2);};
-function decodeHtmlEntities(text) { if (typeof text !== 'string') return text; const textArea = document.createElement('textarea'); textArea.innerHTML = text; return textArea.value;}
-const calculateDuration = (startTime, endTime) => { if (!startTime || !endTime) return 0; const [startH, startM] = startTime.split(":").map(Number); const [endH, endM] = endTime.split(":").map(Number); const startSeconds = startH * 3600 + startM * 60; const endSeconds = endH * 3600 + endM * 60; let duration = endSeconds - startSeconds; if (duration < 0) duration += 24 * 3600; return duration;};
-const formatDateWithDay = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]; const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;};
-const getMonthYear = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;};
-function generateICS(title, date, startTime, location, description = "", durationSeconds = 7200) { const startDate = new Date(`${date}T${startTime}`); const endDate = new Date(startDate.getTime() + durationSeconds * 1000); const formatICSDate = d => { const pad = (num) => String(num).padStart(2, '0'); return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`; }; const startICS = formatICSDate(startDate); const endICS = formatICSDate(endDate); const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ElSotanoDelDoctor//Intranet//ES", "BEGIN:VEVENT", `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, "")}Z`, `UID:${startICS}-${sanitizeFirebaseKey(title)}@elsotanodeldoctor.com`, `DTSTART:${startICS}`, `DTEND:${endICS}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n"); const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${sanitizeFirebaseKey(title)}.ics`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); }
-const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
+// EXPOSICIÓN DE HELPERS A WINDOW PARA QUE ENSAYOS.JS LOS VEA
+window.parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
+window.toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
+window.toHHMM = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;};
+window.toHours = s => { if (isNaN(s) || s === null || s === undefined) return (0).toFixed(2); return (s / 3600).toFixed(2);};
+window.decodeHtmlEntities = function(text) { if (typeof text !== 'string') return text; const textArea = document.createElement('textarea'); textArea.innerHTML = text; return textArea.value;}
+window.calculateDuration = (startTime, endTime) => { if (!startTime || !endTime) return 0; const [startH, startM] = startTime.split(":").map(Number); const [endH, endM] = endTime.split(":").map(Number); const startSeconds = startH * 3600 + startM * 60; const endSeconds = endH * 3600 + endM * 60; let duration = endSeconds - startSeconds; if (duration < 0) duration += 24 * 3600; return duration;};
+window.formatDateWithDay = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]; const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;};
+window.getMonthYear = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;};
+window.generateICS = function(title, date, startTime, location, description = "", durationSeconds = 7200) { const startDate = new Date(`${date}T${startTime}`); const endDate = new Date(startDate.getTime() + durationSeconds * 1000); const formatICSDate = d => { const pad = (num) => String(num).padStart(2, '0'); return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`; }; const startICS = formatICSDate(startDate); const endICS = formatICSDate(endDate); const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ElSotanoDelDoctor//Intranet//ES", "BEGIN:VEVENT", `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, "")}Z`, `UID:${startICS}-${window.sanitizeFirebaseKey(title)}@elsotanodeldoctor.com`, `DTSTART:${startICS}`, `DTEND:${endICS}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n"); const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${window.sanitizeFirebaseKey(title)}.ics`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); }
+window.sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
 const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|#$.[\]]/g, '_').replace(/\s+/g, '_');
 
 /* ---------- 1.5. Manejo de conexión ---------- */
@@ -1419,7 +1421,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
             else { item.isSetHeader = true; durationInSeconds = rawDurationValue * 60 }
         } else { durationInSeconds = 0 }
         item.calculatedDurationSeconds = durationInSeconds;
-        item.displayName = decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : item.isBreak ? "Pausa" : "Set"));
+        item.displayName = window.decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : item.isBreak ? "Pausa" : "Set"));
         item.originalJSONDuration = item.duration;
         return item
     }).filter(item => item !== null);
@@ -1448,7 +1450,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     
     // Helper for Jukebox Cell
     const createJukeboxCell = (songName) => {
-        const cleanName = sanitizeFirebaseKey(songName);
+        const cleanName = window.sanitizeFirebaseKey(songName);
         const url = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : null;
         const hasLink = !!url;
         const statusClass = hasLink ? 'active' : 'inactive';
@@ -1463,7 +1465,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     
     // Helper for PDF Cell
     const createPdfCell = (songName) => {
-        const cleanName = sanitizeFirebaseKey(songName);
+        const cleanName = window.sanitizeFirebaseKey(songName);
         const url = window.pdfLibrary ? window.pdfLibrary[cleanName] : null;
         const hasLink = !!url;
         const statusClass = hasLink ? 'active' : 'inactive';
@@ -1480,7 +1482,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 
     // Helper for Metronome Cell
     const createMetronomeCell = (tempo) => {
-        const tempoStr = decodeHtmlEntities(tempo || "-");
+        const tempoStr = window.decodeHtmlEntities(tempo || "-");
         const match = String(tempoStr).match(/\d+/);
         
         const svgIcon = `<svg viewBox="0 0 24 24"><path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/></svg>`;
@@ -1504,34 +1506,34 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
     if (tbody) {
         setlistStructure.forEach(blockOrItem => {
             if (blockOrItem.isSetHeader) {
-                const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
+                const setHeaderTime = window.toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
                 tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="8">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
                 totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
                 blockOrItem.songs.forEach(song => {
                     songCount++;
-                    const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
+                    const songFormattedTime = window.toMMSS(song.calculatedDurationSeconds || 0);
                     const jukeboxCell = createJukeboxCell(song.displayName);
                     const pdfCell = createPdfCell(song.displayName);
                     const metronomeCell = createMetronomeCell(song.tempo);
-                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}${pdfCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
+                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}${pdfCell}<td>${window.decodeHtmlEntities(song.key || "-")}</td><td>${window.decodeHtmlEntities(song.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
                 })
             } else if (blockOrItem.isBreak) {
-                const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+                const breakFormattedTime = window.toMMSS(blockOrItem.calculatedDurationSeconds || 0);
                 totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
                 tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
             } else if (blockOrItem.isSong) {
                 songCount++;
-                const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
+                const songFormattedTime = window.toMMSS(blockOrItem.calculatedDurationSeconds || 0);
                 totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
                 const jukeboxCell = createJukeboxCell(blockOrItem.displayName);
                 const pdfCell = createPdfCell(blockOrItem.displayName);
                 const metronomeCell = createMetronomeCell(blockOrItem.tempo);
-                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}${pdfCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
+                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}${pdfCell}<td>${window.decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${window.decodeHtmlEntities(blockOrItem.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
             }
         });
     }
     
-    let timeText = "Tiempo total del set: " + toHHMM(totalSecondsOverall);
+    let timeText = "Tiempo total del set: " + window.toHHMM(totalSecondsOverall);
     if(usedCache) timeText += " (Datos guardados)";
     
     const timeElem = document.getElementById(totalTimeId);
@@ -1549,7 +1551,7 @@ const jukeboxEditModal = document.getElementById('jukebox-edit-modal');
 
 function openJukeboxEditModal(songName) {
     currentEditingSongName = songName;
-    const cleanName = sanitizeFirebaseKey(songName);
+    const cleanName = window.sanitizeFirebaseKey(songName);
     const currentLink = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : "";
     
     document.getElementById('jb-modal-songname').textContent = songName;
@@ -1561,7 +1563,7 @@ function openJukeboxEditModal(songName) {
 document.getElementById('jb-modal-save-btn').onclick = async () => {
     if(!currentEditingSongName) return;
     const url = document.getElementById('jb-modal-url-input').value.trim();
-    const cleanName = sanitizeFirebaseKey(currentEditingSongName);
+    const cleanName = window.sanitizeFirebaseKey(currentEditingSongName);
     
     if (window.jukeboxLibrary) {
         if (url) {
@@ -1583,7 +1585,7 @@ document.getElementById('jb-modal-cancel-btn').onclick = () => {
 // --- GESTIÓN MASIVA JUKEBOX ---
 document.getElementById("menu-jukebox-mgmt").onclick = e => { 
     e.preventDefault(); 
-    openConfigScreen("jukebox-mgmt-screen");
+    if(window.openConfigScreen) window.openConfigScreen("jukebox-mgmt-screen");
     renderJukeboxMgmtTable();
 };
 document.getElementById("close-jukebox-mgmt").onclick = () => {
@@ -1623,7 +1625,7 @@ window.openPdfLink = function(url) {
 
 window.openPdfEditModal = function(songName) {
     currentEditingPdfSong = songName;
-    const cleanName = sanitizeFirebaseKey(songName);
+    const cleanName = window.sanitizeFirebaseKey(songName);
     const currentLink = window.pdfLibrary ? window.pdfLibrary[cleanName] : "";
     
     document.getElementById('pdf-modal-songname').textContent = songName;
@@ -1635,7 +1637,7 @@ window.openPdfEditModal = function(songName) {
 document.getElementById('pdf-modal-save-btn').onclick = async () => {
     if(!currentEditingPdfSong) return;
     const url = document.getElementById('pdf-modal-url-input').value.trim();
-    const cleanName = sanitizeFirebaseKey(currentEditingPdfSong);
+    const cleanName = window.sanitizeFirebaseKey(currentEditingPdfSong);
     
     if (window.pdfLibrary) {
         if (url) {
@@ -1675,7 +1677,7 @@ window.savePdfLibrary = async () => {
 
 document.getElementById("menu-pdf-mgmt").onclick = e => { 
     e.preventDefault(); 
-    openConfigScreen("pdf-mgmt-screen");
+    if(window.openConfigScreen) window.openConfigScreen("pdf-mgmt-screen");
     renderPdfMgmtTable();
 };
 document.getElementById("close-pdf-mgmt").onclick = () => {
@@ -1819,7 +1821,7 @@ document.getElementById('close-master-docs-modal').onclick = () => {
 // --- GESTIÓN MASIVA MASTER DOCS ---
 document.getElementById("menu-master-docs-mgmt").onclick = e => { 
     e.preventDefault(); 
-    openConfigScreen("master-docs-mgmt-screen");
+    if(window.openConfigScreen) window.openConfigScreen("master-docs-mgmt-screen");
     renderMasterDocsMgmtTable();
 };
 document.getElementById("close-master-docs-mgmt").onclick = () => {
@@ -1861,10 +1863,10 @@ window.clearSetlistMasterDocs = async function(setlistKey) {
 }
 
 /* ---------- 6. Usuarios ---------- */
-let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
-function renderUsers() { const tbodyMgmt=document.getElementById("user-table-body");const tbodyDisplay=document.getElementById("users-body");if(tbodyMgmt)tbodyMgmt.innerHTML="";if(tbodyDisplay)tbodyDisplay.innerHTML="";if(!Array.isArray(users)||users.length===0){const emptyMsgMgmt='<tr><td colspan="4">No hay usuarios registrados.</td></tr>';const emptyMsgDisplay='<tr><td colspan="3">No hay usuarios registrados.</td></tr>';if(tbodyMgmt)tbodyMgmt.innerHTML=emptyMsgMgmt;if(tbodyDisplay)tbodyDisplay.innerHTML=emptyMsgDisplay;return} users.forEach((u,i)=>{if(!u||typeof u!=='object'||!u.name||!u.nickname||!Array.isArray(u.roles)){console.warn(`Usuario inválido en la posición ${i}:`,u);return} const rolesDisplay=u.roles.join(", ");if(tbodyMgmt){tbodyMgmt.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`)} if(tbodyDisplay){tbodyDisplay.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`)}});if(tbodyMgmt){tbodyMgmt.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{const userIndex=parseInt(btn.dataset.i,10);const userToDelete=users[userIndex];if(confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)){rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance=r.attendance.filter(a=>a.name!==userToDelete.name)}});users.splice(userIndex,1);await saveUsers();await saveRehearsals();renderStats()}});tbodyMgmt.querySelectorAll(".edit-user").forEach(btn=>btn.onclick=()=>{editingUserIndex=parseInt(btn.dataset.i,10);const user=users[editingUserIndex];document.getElementById("user-name").value=user.name;document.getElementById("user-nickname").value=user.nickname;const roleSelect=document.getElementById("user-role");Array.from(roleSelect.options).forEach(option=>{option.selected=user.roles.includes(option.value)});document.getElementById("add-user").textContent="Guardar Cambios";document.getElementById("cancel-edit-user").style.display="inline-block"})}}
-async function loadUsers() { try { const data = await window.withRetry(() => window.loadDoc("intranet", "users", { users: [] })); users = Array.isArray(data.users) ? data.users : []; users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles)); renderUsers(); populateIdentitySelector(); } catch (e) { console.error("Error al cargar usuarios:", e); } }
-async function saveUsers() { try { await window.withRetry(() => window.saveDoc("intranet", "users", { users })); renderUsers(); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar usuarios:", e); throw e; } }
+window.users = []; let editingUserIndex = null; // USERS AHORA ES GLOBAL
+function renderUsers() { const tbodyMgmt=document.getElementById("user-table-body");const tbodyDisplay=document.getElementById("users-body");if(tbodyMgmt)tbodyMgmt.innerHTML="";if(tbodyDisplay)tbodyDisplay.innerHTML="";if(!Array.isArray(window.users)||window.users.length===0){const emptyMsgMgmt='<tr><td colspan="4">No hay usuarios registrados.</td></tr>';const emptyMsgDisplay='<tr><td colspan="3">No hay usuarios registrados.</td></tr>';if(tbodyMgmt)tbodyMgmt.innerHTML=emptyMsgMgmt;if(tbodyDisplay)tbodyDisplay.innerHTML=emptyMsgDisplay;return} window.users.forEach((u,i)=>{if(!u||typeof u!=='object'||!u.name||!u.nickname||!Array.isArray(u.roles)){console.warn(`Usuario inválido en la posición ${i}:`,u);return} const rolesDisplay=u.roles.join(", ");if(tbodyMgmt){tbodyMgmt.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`)} if(tbodyDisplay){tbodyDisplay.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`)}});if(tbodyMgmt){tbodyMgmt.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{const userIndex=parseInt(btn.dataset.i,10);const userToDelete=window.users[userIndex];if(confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)){if(window.rehearsals) window.rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance=r.attendance.filter(a=>a.name!==userToDelete.name)}});window.users.splice(userIndex,1);await saveUsers();await window.saveRehearsals();window.renderStats()}});tbodyMgmt.querySelectorAll(".edit-user").forEach(btn=>btn.onclick=()=>{editingUserIndex=parseInt(btn.dataset.i,10);const user=window.users[editingUserIndex];document.getElementById("user-name").value=user.name;document.getElementById("user-nickname").value=user.nickname;const roleSelect=document.getElementById("user-role");Array.from(roleSelect.options).forEach(option=>{option.selected=user.roles.includes(option.value)});document.getElementById("add-user").textContent="Guardar Cambios";document.getElementById("cancel-edit-user").style.display="inline-block"})}}
+async function loadUsers() { try { const data = await window.withRetry(() => window.loadDoc("intranet", "users", { users: [] })); window.users = Array.isArray(data.users) ? data.users : []; window.users = window.users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles)); renderUsers(); populateIdentitySelector(); } catch (e) { console.error("Error al cargar usuarios:", e); } }
+async function saveUsers() { try { await window.withRetry(() => window.saveDoc("intranet", "users", { users: window.users })); renderUsers(); window.renderRehearsals(); window.renderStats(); return true; } catch (e) { console.error("Error al guardar usuarios:", e); throw e; } }
 function resetUserForm() { document.getElementById("user-name").value = ""; document.getElementById("user-nickname").value = ""; const roleSelect = document.getElementById("user-role"); Array.from(roleSelect.options).forEach(option => option.selected = false); document.getElementById("add-user").textContent = "Añadir Usuario"; document.getElementById("cancel-edit-user").style.display = "none"; editingUserIndex = null; }
 
 function populateIdentitySelector() {
@@ -1872,7 +1874,7 @@ function populateIdentitySelector() {
     const storedUser = localStorage.getItem('elSotanoCurrentUser');
     
     select.innerHTML = '<option value="" disabled selected>-- Selecciona tu nombre --</option>';
-    users.sort((a, b) => a.name.localeCompare(b.name)).forEach(u => {
+    window.users.sort((a, b) => a.name.localeCompare(b.name)).forEach(u => {
         const isSelected = storedUser === u.name ? 'selected' : '';
         select.insertAdjacentHTML('beforeend', `<option value="${u.name}" ${isSelected}>${u.name} (${u.nickname})</option>`);
     });
@@ -1882,121 +1884,11 @@ function populateIdentitySelector() {
     };
 }
 
-/* ---------- 7. Ensayos ---------- */
-let rehearsals = []; let editingRehearsalIndex = null;
-
-// Lógica para el preview del día al cambiar fecha
-document.getElementById("rehearsal-date").addEventListener("change", function() {
-    const val = this.value;
-    const target = document.getElementById("rehearsal-day-preview");
-    if(!val) { target.textContent = ""; return; }
-    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-    const d = new Date(val + 'T00:00:00');
-    target.textContent = isNaN(d.getTime()) ? "" : `(${days[d.getDay()]})`;
-});
-
-function renderRehearsals() { 
-    const tbodyConfig=document.getElementById("rehearsal-table-body");
-    const tbodyMain=document.getElementById("rehearsal-main-body");
-    
-    if(!tbodyConfig||!tbodyMain){console.error("Tablas de ensayos no encontradas en el DOM.");return} 
-    
-    rehearsals.sort((a,b)=>new Date(a.date+'T'+(a.startTime||'00:00'))-new Date(b.date+'T'+(b.startTime||'00:00')));
-    tbodyConfig.innerHTML=tbodyMain.innerHTML="";
-    
-    if(!Array.isArray(rehearsals)||rehearsals.length===0){
-        const emptyMsgConfig='<tr><td colspan="6">No hay ensayos programados.</td></tr>';
-        tbodyConfig.innerHTML=emptyMsgConfig;
-        const emptyMsgMain='<tr><td colspan="6">No hay próximos ensayos.</td></tr>';
-        tbodyMain.innerHTML=emptyMsgMain;
-        return
-    } 
-    
-    const availableUsersForRehearsal=users.filter(user=>!excludedRehearsalUsers.includes(user.name));
-    const userOptions=availableUsersForRehearsal.length>0?availableUsersForRehearsal.map(user=>`<option value="${user.name}">${user.nickname||user.name}</option>`).join(""):`<option value="" disabled>No hay usuarios disponibles</option>`;
-    
-    const now=new Date();
-    const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()); 
-    
-    rehearsals.forEach((r,i)=>{
-        if(r.time&&(!r.startTime||!r.endTime)){r.startTime=r.time;const[hours,minutes]=r.time.split(":").map(Number);const endHours=(hours+2)%24;r.endTime=`${String(endHours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}`;delete r.time} 
-        
-        const formattedDate=formatDateWithDay(r.date);
-        const durationSeconds=calculateDuration(r.startTime,r.endTime);
-        const durationText=toHHMM(durationSeconds);
-        const attendance=Array.isArray(r.attendance)?r.attendance:[];
-        const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";
-        const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
-        
-        // Tabla de configuración Admin con botón Copiar
-        tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="copy-rehearsal">Copiar</button><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); 
-        
-        const rehearsalDate=new Date(r.date+'T00:00:00Z');
-        if(rehearsalDate>=today){
-            const calendarCell=`<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
-            const detailsCell = `<td class="details-col-header"><button class="details-btn" onclick="openRehearsalDetailsModal(${i})" title="Notas del Ensayo">➡️</button></td>`;
-            tbodyMain.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}${detailsCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`)
-        }
-    }); 
-
-    // Listeners Admin
-    tbodyConfig.querySelectorAll(".copy-rehearsal").forEach(btn=>btn.onclick=()=>{
-        const index=parseInt(btn.dataset.i,10);
-        const rehearsal=rehearsals[index];
-        document.getElementById("rehearsal-start-time").value = rehearsal.startTime || "";
-        document.getElementById("rehearsal-end-time").value = rehearsal.endTime || "";
-        document.getElementById("rehearsal-location").value = rehearsal.location || "";
-        document.getElementById("rehearsal-date").focus();
-        document.getElementById("rehearsal-screen").scrollTop = 0;
-        // Trigger preview dia si hay fecha
-        document.getElementById("rehearsal-date").dispatchEvent(new Event('change'));
-    });
-
-    tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block";document.getElementById("rehearsal-date").dispatchEvent(new Event('change'));}); 
-    tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn=>btn.onclick=async()=>{if(confirm("¿Estás seguro de que deseas eliminar este ensayo?")){rehearsals.splice(parseInt(btn.dataset.i,10),1);await saveRehearsals();renderStats()}}); 
-    tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn=>btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[index];if(confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)){rehearsal.attendance=[];await saveRehearsals();document.getElementById("rehearsal-message").textContent="Asistencias eliminadas.";renderStats()}}); 
-    
-    tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn=>{btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const userSelect=document.querySelector(`.attendance-user[data-i="${index}"]`);const responseSelect=document.querySelector(`.attendance-response[data-i="${index}"]`);const name=userSelect.value;const attending=responseSelect.value;if(!name||!attending){alert("Selecciona nombre y respuesta.");return} const rehearsal=rehearsals[index];const confirmMsg=`${name}, ¿${attending==="Sí"?"ASISTIRÁS":"NO ASISTIRÁS"} al ensayo del ${formatDateWithDay(rehearsal.date)}?`;if(!confirm(confirmMsg))return;if(!Array.isArray(rehearsal.attendance))rehearsal.attendance=[];const existingResponse=rehearsal.attendance.find(a=>a.name===name);if(existingResponse)existingResponse.attending=attending;else rehearsal.attendance.push({name,attending});try{await saveRehearsals();userSelect.value="";responseSelect.value="";renderStats()}catch(e){alert("Error al guardar asistencia: "+e.message)}}})
-}
-
-const rehearsalDetailModal = document.getElementById('rehearsal-details-modal');
-function openRehearsalDetailsModal(index) {
-    const rehearsal = rehearsals[index];
-    if(!rehearsal) return;
-    document.getElementById('rehearsal-detail-index').value = index;
-    document.getElementById('rehearsal-detail-title-display').textContent = `Ensayo: ${formatDateWithDay(rehearsal.date)} (${rehearsal.startTime} - ${rehearsal.endTime})`;
-    document.getElementById('rehearsal-notes').value = rehearsal.notes || "";
-    document.getElementById('rehearsal-detail-message').textContent = "";
-    rehearsalDetailModal.classList.add('show');
-}
-document.getElementById('close-rehearsal-details-modal').onclick = () => {
-    rehearsalDetailModal.classList.remove('show');
-};
-document.getElementById('save-rehearsal-details').onclick = async () => {
-    const index = parseInt(document.getElementById('rehearsal-detail-index').value, 10);
-    const notes = document.getElementById('rehearsal-notes').value;
-    const msg = document.getElementById('rehearsal-detail-message');
-    if (rehearsals[index]) {
-        rehearsals[index].notes = notes;
-        try {
-            await saveRehearsals();
-            msg.textContent = "Información guardada correctamente.";
-            msg.className = "success-message";
-        } catch (e) {
-            msg.textContent = "Error al guardar: " + e.message;
-            msg.className = "error-message";
-        }
-    }
-};
-
-async function loadRehearsals() { try { const data = await window.withRetry(() => window.loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); } catch (e) { console.error("Error al cargar ensayos:", e); } }
-async function saveRehearsals() { try { await window.withRetry(() => window.saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar ensayos:", e); throw e; } }
-function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; document.getElementById("rehearsal-day-preview").textContent = ""; }
-
 /* ---------- 8. Estadísticas ---------- */
-function updateMonthFilter() { const select=document.getElementById("stats-month-filter");select.innerHTML='<option value="all">Todos los meses</option>';const now=new Date();const pastRehearsals=rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);const months=new Set(pastRehearsals.map(r=>getMonthYear(r.date)));Array.from(months).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{select.insertAdjacentHTML("beforeend",`<option value="${month}">${month}</option>`)})}
+function updateMonthFilter() { const select=document.getElementById("stats-month-filter");select.innerHTML='<option value="all">Todos los meses</option>';const now=new Date();const pastRehearsals=window.rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);const months=new Set(pastRehearsals.map(r=>window.getMonthYear(r.date)));Array.from(months).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{select.insertAdjacentHTML("beforeend",`<option value="${month}">${month}</option>`)})}
 function getMonthIndex(monthName) { const months=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];return months.indexOf(monthName)}
-function renderStats() { const now=new Date();const selectedMonth=document.getElementById("stats-month-filter")?.value||"all";let filteredRehearsals=rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);if(selectedMonth!=="all"){filteredRehearsals=filteredRehearsals.filter(r=>getMonthYear(r.date)===selectedMonth)} const timePerMonth={};filteredRehearsals.forEach(r=>{const monthYear=getMonthYear(r.date);const duration=calculateDuration(r.startTime,r.endTime);timePerMonth[monthYear]=(timePerMonth[monthYear]||0)+duration});const tbodyMonth=document.getElementById("time-per-month-body");tbodyMonth.innerHTML="";Object.keys(timePerMonth).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{tbodyMonth.insertAdjacentHTML("beforeend",`<tr><td>${month}</td><td>${toHours(timePerMonth[month])}</td></tr>`)}); const timePerUser={};users.forEach(user=>{timePerUser[user.name]=0;filteredRehearsals.forEach(r=>{const attendance=r.attendance?.find(a=>a.name===user.name);if(attendance&&attendance.attending==="Sí"){timePerUser[user.name]+=calculateDuration(r.startTime,r.endTime)}})});const tbodyUser=document.getElementById("time-per-user-body");tbodyUser.innerHTML="";Object.keys(timePerUser).sort().forEach(user=>{tbodyUser.insertAdjacentHTML("beforeend",`<tr><td>${users.find(u=>u.name===user)?.nickname||user}</td><td>${toHours(timePerUser[user])}</td></tr>`)}); const tbodyPast=document.getElementById("past-rehearsals-body");tbodyPast.innerHTML="";filteredRehearsals.sort((a,b)=>new Date(b.date+'T'+(b.startTime||'00:00'))-new Date(a.date+'T'+(a.startTime||'00:00')));filteredRehearsals.forEach(r=>{const formattedDate=formatDateWithDay(r.date);const durationText=toHHMM(calculateDuration(r.startTime,r.endTime));const attendance=Array.isArray(r.attendance)?r.attendance:[];const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;tbodyPast.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td><td>${summary}</td></tr>`)})}
+// RENDER STATS AHORA ES GLOBAL
+window.renderStats = function() { const now=new Date();const selectedMonth=document.getElementById("stats-month-filter")?.value||"all";let filteredRehearsals=window.rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);if(selectedMonth!=="all"){filteredRehearsals=filteredRehearsals.filter(r=>window.getMonthYear(r.date)===selectedMonth)} const timePerMonth={};filteredRehearsals.forEach(r=>{const monthYear=window.getMonthYear(r.date);const duration=window.calculateDuration(r.startTime,r.endTime);timePerMonth[monthYear]=(timePerMonth[monthYear]||0)+duration});const tbodyMonth=document.getElementById("time-per-month-body");tbodyMonth.innerHTML="";Object.keys(timePerMonth).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{tbodyMonth.insertAdjacentHTML("beforeend",`<tr><td>${month}</td><td>${window.toHours(timePerMonth[month])}</td></tr>`)}); const timePerUser={};window.users.forEach(user=>{timePerUser[user.name]=0;filteredRehearsals.forEach(r=>{const attendance=r.attendance?.find(a=>a.name===user.name);if(attendance&&attendance.attending==="Sí"){timePerUser[user.name]+=window.calculateDuration(r.startTime,r.endTime)}})});const tbodyUser=document.getElementById("time-per-user-body");tbodyUser.innerHTML="";Object.keys(timePerUser).sort().forEach(user=>{tbodyUser.insertAdjacentHTML("beforeend",`<tr><td>${window.users.find(u=>u.name===user)?.nickname||user}</td><td>${window.toHours(timePerUser[user])}</td></tr>`)}); const tbodyPast=document.getElementById("past-rehearsals-body");tbodyPast.innerHTML="";filteredRehearsals.sort((a,b)=>new Date(b.date+'T'+(b.startTime||'00:00'))-new Date(a.date+'T'+(a.startTime||'00:00')));filteredRehearsals.forEach(r=>{const formattedDate=window.formatDateWithDay(r.date);const durationText=window.toHHMM(window.calculateDuration(r.startTime,r.endTime));const attendance=Array.isArray(r.attendance)?r.attendance:[];const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=window.users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;tbodyPast.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td><td>${summary}</td></tr>`)})}
 
 /* ---------- 9. PDF ---------- */
 const fontDataCache = {}; const PDF_FONT_PATHS = { bleedingCowboys: 'assets/Bleeding_Cowboys.ttf', carnevalee: 'assets/Carnevalee_Freakshow.ttf' };
@@ -2004,9 +1896,9 @@ const PDF_FONT_NAMES = { bleedingCowboys: "BleedingCowboysCustom", carnevalee: "
 async function loadFontAsBase64(fontPath) { if(fontDataCache[fontPath]){return fontDataCache[fontPath]}try{const response=await fetch(fontPath);if(!response.ok){throw new Error(`No se pudo cargar la fuente: ${response.statusText} (URL: ${fontPath})`)} const blob=await response.blob();return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onloadend=()=>{fontDataCache[fontPath]=reader.result.split(',')[1];resolve(fontDataCache[fontPath])};reader.onerror=(error)=>reject(new Error("Error del FileReader al convertir fuente a Base64: "+error.message));reader.readAsDataURL(blob)})}catch(error){console.error(`Error crítico cargando la fuente ${fontPath}:`,error);fontDataCache[fontPath]=null;return null}}
 async function registerFontWithDoc(doc,fontPath,fontVFSAlias,fontNameInDoc){const fontBase64=await loadFontAsBase64(fontPath);if(fontBase64){try{doc.addFileToVFS(fontVFSAlias,fontBase64);doc.addFont(fontVFSAlias,fontNameInDoc,'normal');console.log(`Fuente ${fontNameInDoc} registrada en jsPDF desde ${fontPath}.`);return true}catch(fontError){console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`,fontError)}}else{console.warn(`No se pudo cargar la fuente ${fontPath} para registrarla.`)} return false}
 async function getBackgroundImageDataURL(){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'))};img.onerror=(err)=>reject(new Error("Error al cargar la imagen de plantilla: "+(err.message||err.toString())));img.src=PDF_BACKGROUND_IMAGE_PATH;if(img.complete){if(img.naturalHeight!==0){const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'))}else if(img.src){reject(new Error("Imagen de plantilla en caché pero inválida."))}}})}
-async function genPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist"; let bleedingCowboysRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.bleedingCowboys,'Bleeding_Cowboys.ttf',PDF_FONT_NAMES.bleedingCowboys);let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S');doc.setFontSize(10);doc.setTextColor(150,0,0);doc.text("Advertencia: No se pudo cargar la plantilla de fondo.",pageWidth/2,pageHeight/2,{align:"center"})} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;doc.setFont(bleedingCowboysRegistered?PDF_FONT_NAMES.bleedingCowboys:"times",'normal');if(!bleedingCowboysRegistered)doc.setFontType("bold");doc.setFontSize(28);doc.text("SETLIST",pageWidth/2,currentY,{align:"center"});currentY+=28+10;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');if(!carnevaleeRegistered)doc.setFontType("bold");doc.setFontSize(22);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=22+5;doc.setFont("times","italic");doc.setFontSize(10); let totalOverallSeconds=0;let totalSongCount=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){totalOverallSeconds+=blockOrItem.calculatedBlockDurationSeconds||0;totalSongCount+=blockOrItem.songs?blockOrItem.songs.length:0}else if(blockOrItem.isBreak){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0}else if(blockOrItem.isSong){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0;totalSongCount++}});const totalItemsText=`${totalSongCount} canciones`;doc.text(`${totalItemsText}  |  Tiempo total: ${toHHMM(totalOverallSeconds)}`,pageWidth/2,currentY,{align:"center"});currentY+=10+20; const tableFont="helvetica";const tableHeadFont="helvetica";let pdfSongNumber=0;const tableBody=[];setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){tableBody.push([{content:`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,colSpan:5,styles:{halign:'center',fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0],fontSize:10}}]);if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{pdfSongNumber++;tableBody.push([pdfSongNumber,song.displayName,decodeHtmlEntities(song.key||"-"),decodeHtmlEntities(song.tempo||"-"),toMMSS(song.calculatedDurationSeconds||0)])})}}else if(blockOrItem.isBreak){tableBody.push([{content:"»",styles:{halign:'center',fontStyle:'italic',textColor:[100,100,100]}},{content:blockOrItem.displayName,styles:{fontStyle:'italic',textColor:[80,80,80]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:toMMSS(blockOrItem.calculatedDurationSeconds||0),styles:{halign:'center',fontStyle:'italic',textColor:[80,80,80]}}])}else if(blockOrItem.isSong){pdfSongNumber++;tableBody.push([pdfSongNumber,blockOrItem.displayName,decodeHtmlEntities(blockOrItem.key||"-"),decodeHtmlEntities(blockOrItem.tempo||"-"),toMMSS(blockOrItem.calculatedDurationSeconds||0)])}}); doc.autoTable({startY:currentY,head:[["#","Título","Key","Tempo","Time"]],body:tableBody,theme:'grid',headStyles:{fillColor:[200,200,200],textColor:[0,0,0],font:tableHeadFont,fontStyle:'bold',halign:'center',fontSize:10},styles:{font:tableFont,fontSize:9,cellPadding:{top:4,right:5,bottom:4,left:5},lineColor:[80,80,80],lineWidth:.5,textColor:[0,0,0]},columnStyles:{0:{halign:'center',cellWidth:25,fontSize:9},1:{halign:'left',cellWidth:'auto',fontSize:10},2:{halign:'center',cellWidth:50,fontSize:9},3:{halign:'center',cellWidth:50,fontSize:9},4:{halign:'center',cellWidth:50,fontSize:9}},margin:{top:contentMarginTop,right:contentMarginSides,bottom:contentMarginBottom,left:contentMarginSides},pageBreak:'auto',didDrawPage:function(data){if(data.pageNumber>1&&backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}}});doc.save(`${cleanFileName}.pdf`)}
-async function genBasicPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const itemTitleFontSize=14;const setHeaderFontSize=16;const itemLineHeight=itemTitleFontSize*1.6;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{if(currentY+itemLineHeight*2.5>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=itemLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderFontSize*1.6;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+itemLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=itemLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(itemTitleFontSize-1>8?itemTitleFontSize-1:8);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=(itemTitleFontSize-1>8?itemTitleFontSize-1:8)*1.6;if(idx<setlistStructure.length-1)currentY+=itemLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight}});doc.save(`${cleanFileName}_Basico.pdf`)}
-async function genPersonalPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf,songTitleFontSizeParam){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const songTitleFontSize=parseInt(songTitleFontSizeParam,10)||14;const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF Personal:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S')} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const setHeaderFontSize=16;const breakTextFontSize=Math.max(8,songTitleFontSize-2);const songTitleLineHeight=songTitleFontSize*1.5;const setHeaderLineHeight=setHeaderFontSize*1.5;const breakTextLineHeight=breakTextFontSize*1.5;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{let estimatedBlockHeight=songTitleLineHeight;if(blockOrItem.isSetHeader)estimatedBlockHeight=setHeaderLineHeight+(blockOrItem.songs?blockOrItem.songs.length:0);else if(blockOrItem.isBreak)estimatedBlockHeight=breakTextLineHeight;if(currentY+estimatedBlockHeight>pageHeight-contentMarginBottom&&idx>0){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=songTitleLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderLineHeight;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+songTitleLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=songTitleLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(breakTextFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=breakTextLineHeight;if(idx<setlistStructure.length-1)currentY+=songTitleLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight}});doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`)}
+async function genPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist"; let bleedingCowboysRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.bleedingCowboys,'Bleeding_Cowboys.ttf',PDF_FONT_NAMES.bleedingCowboys);let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S');doc.setFontSize(10);doc.setTextColor(150,0,0);doc.text("Advertencia: No se pudo cargar la plantilla de fondo.",pageWidth/2,pageHeight/2,{align:"center"})} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;doc.setFont(bleedingCowboysRegistered?PDF_FONT_NAMES.bleedingCowboys:"times",'normal');if(!bleedingCowboysRegistered)doc.setFontType("bold");doc.setFontSize(28);doc.text("SETLIST",pageWidth/2,currentY,{align:"center"});currentY+=28+10;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');if(!carnevaleeRegistered)doc.setFontType("bold");doc.setFontSize(22);doc.text(window.decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=22+5;doc.setFont("times","italic");doc.setFontSize(10); let totalOverallSeconds=0;let totalSongCount=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){totalOverallSeconds+=blockOrItem.calculatedBlockDurationSeconds||0;totalSongCount+=blockOrItem.songs?blockOrItem.songs.length:0}else if(blockOrItem.isBreak){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0}else if(blockOrItem.isSong){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0;totalSongCount++}});const totalItemsText=`${totalSongCount} canciones`;doc.text(`${totalItemsText}  |  Tiempo total: ${window.toHHMM(totalOverallSeconds)}`,pageWidth/2,currentY,{align:"center"});currentY+=10+20; const tableFont="helvetica";const tableHeadFont="helvetica";let pdfSongNumber=0;const tableBody=[];setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){tableBody.push([{content:`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,colSpan:5,styles:{halign:'center',fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0],fontSize:10}}]);if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{pdfSongNumber++;tableBody.push([pdfSongNumber,song.displayName,window.decodeHtmlEntities(song.key||"-"),window.decodeHtmlEntities(song.tempo||"-"),window.toMMSS(song.calculatedDurationSeconds||0)])})}}else if(blockOrItem.isBreak){tableBody.push([{content:"»",styles:{halign:'center',fontStyle:'italic',textColor:[100,100,100]}},{content:blockOrItem.displayName,styles:{fontStyle:'italic',textColor:[80,80,80]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:window.toMMSS(blockOrItem.calculatedDurationSeconds||0),styles:{halign:'center',fontStyle:'italic',textColor:[80,80,80]}}])}else if(blockOrItem.isSong){pdfSongNumber++;tableBody.push([pdfSongNumber,blockOrItem.displayName,window.decodeHtmlEntities(blockOrItem.key||"-"),window.decodeHtmlEntities(blockOrItem.tempo||"-"),window.toMMSS(blockOrItem.calculatedDurationSeconds||0)])}}); doc.autoTable({startY:currentY,head:[["#","Título","Key","Tempo","Time"]],body:tableBody,theme:'grid',headStyles:{fillColor:[200,200,200],textColor:[0,0,0],font:tableHeadFont,fontStyle:'bold',halign:'center',fontSize:10},styles:{font:tableFont,fontSize:9,cellPadding:{top:4,right:5,bottom:4,left:5},lineColor:[80,80,80],lineWidth:.5,textColor:[0,0,0]},columnStyles:{0:{halign:'center',cellWidth:25,fontSize:9},1:{halign:'left',cellWidth:'auto',fontSize:10},2:{halign:'center',cellWidth:50,fontSize:9},3:{halign:'center',cellWidth:50,fontSize:9},4:{halign:'center',cellWidth:50,fontSize:9}},margin:{top:contentMarginTop,right:contentMarginSides,bottom:contentMarginBottom,left:contentMarginSides},pageBreak:'auto',didDrawPage:function(data){if(data.pageNumber>1&&backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}}});doc.save(`${cleanFileName}.pdf`)}
+async function genBasicPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const itemTitleFontSize=14;const setHeaderFontSize=16;const itemLineHeight=itemTitleFontSize*1.6;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(window.decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{if(currentY+itemLineHeight*2.5>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=itemLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderFontSize*1.6;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+itemLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=itemLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(itemTitleFontSize-1>8?itemTitleFontSize-1:8);doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=(itemTitleFontSize-1>8?itemTitleFontSize-1:8)*1.6;if(idx<setlistStructure.length-1)currentY+=itemLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight}});doc.save(`${cleanFileName}_Basico.pdf`)}
+async function genPersonalPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf,songTitleFontSizeParam){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const songTitleFontSize=parseInt(songTitleFontSizeParam,10)||14;const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF Personal:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S')} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const setHeaderFontSize=16;const breakTextFontSize=Math.max(8,songTitleFontSize-2);const songTitleLineHeight=songTitleFontSize*1.5;const setHeaderLineHeight=setHeaderFontSize*1.5;const breakTextLineHeight=breakTextFontSize*1.5;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(window.decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{let estimatedBlockHeight=songTitleLineHeight;if(blockOrItem.isSetHeader)estimatedBlockHeight=setHeaderLineHeight+(blockOrItem.songs?blockOrItem.songs.length:0);else if(blockOrItem.isBreak)estimatedBlockHeight=breakTextLineHeight;if(currentY+estimatedBlockHeight>pageHeight-contentMarginBottom&&idx>0){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=songTitleLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderLineHeight;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+songTitleLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=songTitleLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(breakTextFontSize);doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=breakTextLineHeight;if(idx<setlistStructure.length-1)currentY+=songTitleLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight}});doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`)}
 
 /* ---------- 10. BandHelper & Detalles Concierto ---------- */
 function loadBandHelperWidget() {
@@ -2056,7 +1948,7 @@ function processBandHelperTable() {
     headerRow.innerHTML='';
     desiredHeaders.forEach(text=>{const th=document.createElement('th');th.textContent=text;if(text==="Cal")th.classList.add("calendar-col-header");if(text==="Info")th.classList.add("details-col-header");headerRow.appendChild(th)});
     const dataRowsSource=table.querySelector("tbody")?Array.from(table.querySelectorAll("tbody tr")):[];
-    dataRowsSource.forEach(row=>{const originalCells=Array.from(row.cells);row.innerHTML='';const dateCellFullText=originalCells[0]?.textContent.trim()||"";const eventTitleFromCell=originalCells[1]?.textContent.trim().split('\n')[0].trim()||"Evento Sin Título";const locationText=originalCells[3]?.textContent.trim().split('\n')[0].trim()||originalCells[2]?.textContent.trim().split('\n')[0].trim()||"";row.insertCell().textContent=dateCellFullText;row.insertCell().textContent=eventTitleFromCell;row.insertCell().textContent=locationText;const calendarDisplayCell=row.insertCell();calendarDisplayCell.className="calendar-col";calendarDisplayCell.style.textAlign="center";const detailDisplayCell=row.insertCell();detailDisplayCell.className="details-col-header";detailDisplayCell.style.textAlign="center";const dateForId=dateCellFullText.split(',')[0].trim();const concertId=sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);const detailsBtn=document.createElement("button");detailsBtn.className="details-btn";detailsBtn.innerHTML="➡️";detailsBtn.title="Ver/Editar Detalles del Concierto";detailsBtn.onclick=()=>openConcertDetailModal(concertId,dateCellFullText,eventTitleFromCell,locationText);detailDisplayCell.appendChild(detailsBtn);let icsDate=new Date().toISOString().split('T')[0];let startTimeForICS="20:00";let durationSecondsForICS=2*3600;const dateMatch=dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(dateMatch){let year=parseInt(dateMatch[3],10);year+=(year<70?2000:1900);icsDate=`${year}-${dateMatch[2]}-${dateMatch[1]}`} const timeRangeMatch=dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/);const singleTimeMatch=dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/);if(timeRangeMatch){startTimeForICS=timeRangeMatch[1];durationSecondsForICS=calculateDuration(timeRangeMatch[1],timeRangeMatch[2]);if(durationSecondsForICS<=0)durationSecondsForICS=2*3600}else if(singleTimeMatch){startTimeForICS=singleTimeMatch[1]} const locationForICS=locationText||eventTitleFromCell;const descriptionForICS=`Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;const calendarBtn=document.createElement('button');calendarBtn.className='calendar-btn';calendarBtn.title='Añadir a mi calendario';calendarBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';calendarBtn.onclick=()=>generateICS(`Concierto: ${eventTitleFromCell}`,icsDate,startTimeForICS,locationForICS,descriptionForICS,durationSecondsForICS);calendarDisplayCell.appendChild(calendarBtn)})
+    dataRowsSource.forEach(row=>{const originalCells=Array.from(row.cells);row.innerHTML='';const dateCellFullText=originalCells[0]?.textContent.trim()||"";const eventTitleFromCell=originalCells[1]?.textContent.trim().split('\n')[0].trim()||"Evento Sin Título";const locationText=originalCells[3]?.textContent.trim().split('\n')[0].trim()||originalCells[2]?.textContent.trim().split('\n')[0].trim()||"";row.insertCell().textContent=dateCellFullText;row.insertCell().textContent=eventTitleFromCell;row.insertCell().textContent=locationText;const calendarDisplayCell=row.insertCell();calendarDisplayCell.className="calendar-col";calendarDisplayCell.style.textAlign="center";const detailDisplayCell=row.insertCell();detailDisplayCell.className="details-col-header";detailDisplayCell.style.textAlign="center";const dateForId=dateCellFullText.split(',')[0].trim();const concertId=window.sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);const detailsBtn=document.createElement("button");detailsBtn.className="details-btn";detailsBtn.innerHTML="➡️";detailsBtn.title="Ver/Editar Detalles del Concierto";detailsBtn.onclick=()=>openConcertDetailModal(concertId,dateCellFullText,eventTitleFromCell,locationText);detailDisplayCell.appendChild(detailsBtn);let icsDate=new Date().toISOString().split('T')[0];let startTimeForICS="20:00";let durationSecondsForICS=2*3600;const dateMatch=dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(dateMatch){let year=parseInt(dateMatch[3],10);year+=(year<70?2000:1900);icsDate=`${year}-${dateMatch[2]}-${dateMatch[1]}`} const timeRangeMatch=dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/);const singleTimeMatch=dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/);if(timeRangeMatch){startTimeForICS=timeRangeMatch[1];durationSecondsForICS=window.calculateDuration(timeRangeMatch[1],timeRangeMatch[2]);if(durationSecondsForICS<=0)durationSecondsForICS=2*3600}else if(singleTimeMatch){startTimeForICS=singleTimeMatch[1]} const locationForICS=locationText||eventTitleFromCell;const descriptionForICS=`Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;const calendarBtn=document.createElement('button');calendarBtn.className='calendar-btn';calendarBtn.title='Añadir a mi calendario';calendarBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';calendarBtn.onclick=()=>window.generateICS(`Concierto: ${eventTitleFromCell}`,icsDate,startTimeForICS,locationForICS,descriptionForICS,durationSecondsForICS);calendarDisplayCell.appendChild(calendarBtn)})
 }
 
 const concertDetailModal = document.getElementById('concert-details-modal'); const concertDetailMessage = document.getElementById('concert-detail-message');
@@ -2069,7 +1961,7 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     const concertTitleDisplay = document.getElementById('concert-detail-title-display');
     if (concertTitleDisplay) {
         const datePartOnly = concertFullDateText.split(',')[0].trim();
-        concertTitleDisplay.innerHTML = `${decodeHtmlEntities(concertTitle) || "Título no disponible"} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`
+        concertTitleDisplay.innerHTML = `${window.decodeHtmlEntities(concertTitle) || "Título no disponible"} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`
     }
     document.getElementById('concert-detail-location').value = '';
     document.getElementById('concert-detail-sound-company').value = ''; 
@@ -2087,15 +1979,15 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     musiciansListDiv.innerHTML = 'Cargando...';
     techListDiv.innerHTML = 'Cargando...';
     const techRolesList = ["Técnico de Sonido", "Montador", "Técnico de Luces", "Road Manager", "Backliner"];
-    if (users && users.length > 0) {
+    if (window.users && window.users.length > 0) {
         musiciansListDiv.innerHTML = '';
         techListDiv.innerHTML = '';
-        users.forEach(user => {
+        window.users.forEach(user => {
             const userDiv = document.createElement('div');
             userDiv.style.display = 'flex';         
             userDiv.style.alignItems = 'center';    
             userDiv.style.marginBottom = '8px';     
-            const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`;
+            const checkboxId = `user-att-${window.sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`;
             userDiv.innerHTML = ` <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}" style="margin-right: 8px;"> <label for="${checkboxId}" style="margin:0; cursor:pointer;">${user.name} (${user.nickname})</label> `;
             const isTech = user.roles.some(r => techRolesList.includes(r));
             if (isTech) techListDiv.appendChild(userDiv); else musiciansListDiv.appendChild(userDiv);
@@ -2184,14 +2076,14 @@ document.getElementById('close-concert-details-modal').onclick = () => { closeAl
 
 /* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
-function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
+function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof window.resetRehearsalForm==="function")window.resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
 setupMenuLink("menu-suggestions", "suggestions");
 setupMenuLink("menu-analisis-section", "analisis");
-document.getElementById("menu-suggestions").onclick = e => { e.preventDefault(); openConfigScreen("suggestions-screen"); renderSuggestions(); };
+document.getElementById("menu-suggestions").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("suggestions-screen"); renderSuggestions(); };
 document.getElementById("close-suggestions").onclick = () => { document.getElementById("suggestions-screen").style.display = "none"; };
 
 // --- LÓGICA BIOMETRÍA ---
@@ -2295,7 +2187,7 @@ document.getElementById("menu-enroll-biometry").onclick = (e) => {
     enrollBiometry();
 };
 
-const openConfigScreen = async (screenId) => { 
+window.openConfigScreen = async (screenId) => { 
     if(!isAuthenticated && screenId!=='user-list-screen' && screenId!=='stats-screen' && screenId!=='suggestions-screen') {
         let bioSuccess = await verifyBiometry();
         if (bioSuccess) {
@@ -2323,27 +2215,24 @@ const openConfigScreen = async (screenId) => {
 }; 
 // --- FIN LÓGICA BIOMETRÍA ---
 
-document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
+document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(window.openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
 document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; document.getElementById("setlist-message").textContent = ""; };
 document.getElementById("guardar-setlist-config").onclick = async () => { const msg=document.getElementById("setlist-message");msg.textContent="";const n1=document.getElementById("setlist1-name").value.trim(),u1=document.getElementById("setlist1-url").value.trim();const n2=document.getElementById("setlist2-name").value.trim(),raw2=document.getElementById("setlist2-url").value.trim();const nStar=document.getElementById("setlistStar-name").value.trim(),uStar=document.getElementById("setlistStar-url").value.trim();if(!n1||!u1||!n2||!raw2||!nStar||!uStar){msg.className="error-message";msg.textContent="Completa todos los campos.";return} try{setlistConfig.setlist1={name:n1,url:u1};setlistConfig.setlist2={name:n2,url:raw2.startsWith("http")?raw2:`https://www.bandhelper.com/feed/set_list/${raw2}`};setlistConfig.setlistStar={name:nStar,url:uStar};await saveSetlistConfig();await Promise.all([cargarPrimerSetlist(),cargarSegundoSetlist(),cargarStarSetlist()]);document.getElementById("setlist-config-screen").style.display="none"}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
-document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); openConfigScreen("user-mgmt-screen"); };
+document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("user-mgmt-screen"); };
 document.getElementById("close-user-mgmt").onclick = () => { document.getElementById("user-mgmt-screen").style.display = "none"; document.getElementById("user-message").textContent = ""; resetUserForm(); };
-document.getElementById("add-user").onclick = async () => { const msg=document.getElementById("user-message");msg.textContent="";const name=document.getElementById("user-name").value.trim(),nickname=document.getElementById("user-nickname").value.trim();const roles=Array.from(document.getElementById("user-role").selectedOptions).map(o=>o.value);if(!name||!nickname||roles.length===0){msg.className="error-message";msg.textContent="Nombre, apodo y rol son obligatorios.";return} try{if(editingUserIndex!==null){const oldName=users[editingUserIndex].name;users[editingUserIndex]={name,nickname,roles};if(oldName!==name){rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance.forEach(a=>{if(a.name===oldName)a.name=name})}});await saveRehearsals()} msg.textContent="Usuario actualizado."}else{users.push({name,nickname,roles});msg.textContent="Usuario añadido."} await saveUsers();msg.className="success-message";resetUserForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
+document.getElementById("add-user").onclick = async () => { const msg=document.getElementById("user-message");msg.textContent="";const name=document.getElementById("user-name").value.trim(),nickname=document.getElementById("user-nickname").value.trim();const roles=Array.from(document.getElementById("user-role").selectedOptions).map(o=>o.value);if(!name||!nickname||roles.length===0){msg.className="error-message";msg.textContent="Nombre, apodo y rol son obligatorios.";return} try{if(editingUserIndex!==null){const oldName=window.users[editingUserIndex].name;window.users[editingUserIndex]={name,nickname,roles};if(oldName!==name){if(window.rehearsals) window.rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance.forEach(a=>{if(a.name===oldName)a.name=name})}});await window.saveRehearsals()} msg.textContent="Usuario actualizado."}else{window.users.push({name,nickname,roles});msg.textContent="Usuario añadido."} await saveUsers();msg.className="success-message";resetUserForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
 document.getElementById("cancel-edit-user").onclick = () => { resetUserForm(); document.getElementById("user-message").textContent = ""; };
-document.getElementById("menu-rehearsal").onclick = e => { e.preventDefault(); openConfigScreen("rehearsal-screen"); };
-document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; document.getElementById("rehearsal-message").textContent = ""; resetRehearsalForm(); };
-document.getElementById("add-rehearsal").onclick = async () => { const msg=document.getElementById("rehearsal-message");msg.textContent="";const date=document.getElementById("rehearsal-date").value,startTime=document.getElementById("rehearsal-start-time").value,endTime=document.getElementById("rehearsal-end-time").value,loc=document.getElementById("rehearsal-location").value.trim();if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return} if(calculateDuration(startTime,endTime)<=0){msg.className="error-message";msg.textContent="Hora fin posterior a inicio.";return} try{const newData={date,startTime,endTime,location:loc,attendance:[]};if(editingRehearsalIndex!==null){newData.attendance=rehearsals[editingRehearsalIndex].attendance||[];rehearsals[editingRehearsalIndex]=newData;msg.textContent="Ensayo actualizado."}else{rehearsals.push(newData);msg.textContent="Ensayo añadido."} await saveRehearsals();msg.className="success-message";resetRehearsalForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
-document.getElementById("cancel-edit-rehearsal").onclick = () => { resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = ""; };
-document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(openConfigScreen("stats-screen")){ updateMonthFilter(); renderStats(); }};
+// ELIMINADOS LISTENERS DE ENSAYO QUE AHORA ESTAN EN ENSAYOS.JS
+document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(window.openConfigScreen("stats-screen")){ updateMonthFilter(); window.renderStats(); }};
 document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
-document.getElementById("stats-month-filter").addEventListener("change", renderStats);
-document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); openConfigScreen("user-list-screen"); };
+document.getElementById("stats-month-filter").addEventListener("change", window.renderStats);
+document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("user-list-screen"); };
 document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
 
 // --- FIX: MENU GESTIÓN PROPUESTAS (ADMIN) ---
 document.getElementById("menu-admin-suggestions").onclick = e => { 
     e.preventDefault(); 
-    if(openConfigScreen("admin-suggestions-screen")) {
+    if(window.openConfigScreen("admin-suggestions-screen")) {
         renderAdminSuggestions();
     }
 };
@@ -2451,8 +2340,8 @@ function renderLiveSong(index) {
     const titleEl = document.getElementById('live-song-title');
     titleEl.textContent = song.displayName;
     if (song.displayName.length > 20) titleEl.style.fontSize = "2.5em"; else titleEl.style.fontSize = "3.5em";
-    const cleanKey = decodeHtmlEntities(song.key || '-');
-    const cleanTempo = decodeHtmlEntities(song.tempo || '-');
+    const cleanKey = window.decodeHtmlEntities(song.key || '-');
+    const cleanTempo = window.decodeHtmlEntities(song.tempo || '-');
     document.getElementById('live-song-key').textContent = `Key: ${cleanKey}`;
     document.getElementById('live-song-tempo').textContent = `${cleanTempo} BPM`;
     const nextSong = currentLiveSetlist[index + 1];
@@ -2481,7 +2370,7 @@ function renderVisualCalendar() {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
     const events = [];
-    if (Array.isArray(rehearsals)) { rehearsals.forEach((r, i) => { let missingStr = ""; if (r.attendance && Array.isArray(r.attendance)) { const missingNames = r.attendance.filter(a => a.attending === "No").map(a => { const u = users.find(user => user.name === a.name); return u ? u.nickname : a.name; }); if (missingNames.length > 0) missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`; } events.push({ dateStr: r.date, type: 'ensayo', title: `Ensayo (${r.startTime} - ${r.endTime})${missingStr}`, index: i }); }); }
+    if (Array.isArray(window.rehearsals)) { window.rehearsals.forEach((r, i) => { let missingStr = ""; if (r.attendance && Array.isArray(r.attendance)) { const missingNames = r.attendance.filter(a => a.attending === "No").map(a => { const u = window.users.find(user => user.name === a.name); return u ? u.nickname : a.name; }); if (missingNames.length > 0) missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`; } events.push({ dateStr: r.date, type: 'ensayo', title: `Ensayo (${r.startTime} - ${r.endTime})${missingStr}`, index: i }); }); }
     const concertRows = document.querySelectorAll('#bandhelper-concerts-container table tbody tr');
     concertRows.forEach(row => {
       const cells = row.cells;
@@ -2490,9 +2379,9 @@ function renderVisualCalendar() {
         const dateMatch = dateText.match(/(\d{2})\/(\d{2})\/(\d{2})/);
         if (dateMatch) {
             let y = parseInt(dateMatch[3], 10); y += (y < 70 ? 2000 : 1900); const isoDate = `${y}-${dateMatch[2]}-${dateMatch[1]}`;
-            const dateForId = dateText.split(',')[0].trim(); const concertId = sanitizeFirebaseKey(`${dateForId}_${titleText}`);
+            const dateForId = dateText.split(',')[0].trim(); const concertId = window.sanitizeFirebaseKey(`${dateForId}_${titleText}`);
             let missingStr = ""; const details = globalConcertDetails[concertId];
-            if (details && details.attendees) { const missingNames = users.filter(u => { const val = u.nickname || u.name; return !details.attendees.includes(val); }).map(u => u.nickname); if (missingNames.length > 0) missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`; }
+            if (details && details.attendees) { const missingNames = window.users.filter(u => { const val = u.nickname || u.name; return !details.attendees.includes(val); }).map(u => u.nickname); if (missingNames.length > 0) missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`; }
             events.push({ dateStr: isoDate, type: 'concierto', title: `${titleText}${missingStr}`, rawDate: dateText, rawTitle: titleText, rawLoc: locationText, id: concertId });
         }
       }
@@ -2507,7 +2396,7 @@ function renderVisualCalendar() {
       dayEvents.forEach(evt => {
         const evtDiv = document.createElement('div'); evtDiv.className = `cal-event type-${evt.type}`; evtDiv.innerHTML = evt.title;
         if (evt.type === 'concierto') { evtDiv.style.cursor = 'pointer'; evtDiv.onclick = (e) => { e.stopPropagation(); openConcertDetailModal(evt.id, evt.rawDate, evt.rawTitle, evt.rawLoc); }; }
-        if (evt.type === 'ensayo') { evtDiv.style.cursor = 'pointer'; evtDiv.onclick = (e) => { e.stopPropagation(); openRehearsalDetailsModal(evt.index); }; }
+        if (evt.type === 'ensayo') { evtDiv.style.cursor = 'pointer'; evtDiv.onclick = (e) => { e.stopPropagation(); window.openRehearsalDetailsModal(evt.index); }; }
         div.appendChild(evtDiv);
       });
       grid.appendChild(div);
@@ -2551,10 +2440,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadAllData() {
       try {
           if(window.loadJukeboxLibrary) {
-              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary(), window.loadPdfLibrary(), window.loadMasterDocs()]);
+              await Promise.all([loadSetlistConfig(), loadUsers(), window.loadRehearsals(), window.loadJukeboxLibrary(), window.loadPdfLibrary(), window.loadMasterDocs()]);
           } else {
               setTimeout(() => { if(window.loadJukeboxLibrary) window.loadJukeboxLibrary(); if(window.loadPdfLibrary) window.loadPdfLibrary(); if(window.loadMasterDocs) window.loadMasterDocs(); }, 1000);
-              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
+              await Promise.all([loadSetlistConfig(), loadUsers(), window.loadRehearsals()]);
           }
       } catch (e) { }
       if(window.loadAnalysisData) window.loadAnalysisData(); else setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
