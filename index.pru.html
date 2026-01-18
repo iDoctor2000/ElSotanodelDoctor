@@ -1198,7 +1198,8 @@
   <script src="tuner.js"></script>
   <script src="analisis.js"></script>
   <script src="ensayos.js"></script>
-  <script src="calendario.js"></script> <!-- Nuevo script añadido -->
+  <script src="calendario.js"></script>
+  <script src="setlists.js"></script> <!-- Nuevo script Setlists/PDF -->
 
 <script>
 // 0. Configuración Global
@@ -1345,24 +1346,18 @@ window.toggleLogDetails = function(id) {
 };
 
 /* ---------- 1. Utilidades y Variables Globales ---------- */
-window.globalItems1 = [];
-window.globalItems2 = [];
-window.globalItemsStar = [];
-window.pdfLibrary = {};
-window.masterDocs = { setlist1: {}, setlist2: {}, setlistStar: {} }; // NUEVA LIBRERIA DOCS MAESTROS
+// NOTA: Algunas utilidades ahora están en setlists.js, otras en ensayos.js
+// Helpers básicos que necesita user-mgmt o analisis pueden quedarse aquí o compartirse
 
-// EXPOSICIÓN DE HELPERS A WINDOW PARA QUE ENSAYOS.JS LOS VEA
-window.parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
-window.toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
-window.toHHMM = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;};
 window.toHours = s => { if (isNaN(s) || s === null || s === undefined) return (0).toFixed(2); return (s / 3600).toFixed(2);};
 window.decodeHtmlEntities = function(text) { if (typeof text !== 'string') return text; const textArea = document.createElement('textarea'); textArea.innerHTML = text; return textArea.value;}
+window.sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
+
+// Métricas tiempo
 window.calculateDuration = (startTime, endTime) => { if (!startTime || !endTime) return 0; const [startH, startM] = startTime.split(":").map(Number); const [endH, endM] = endTime.split(":").map(Number); const startSeconds = startH * 3600 + startM * 60; const endSeconds = endH * 3600 + endM * 60; let duration = endSeconds - startSeconds; if (duration < 0) duration += 24 * 3600; return duration;};
+window.toHHMM = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;};
 window.formatDateWithDay = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]; const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;};
 window.getMonthYear = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;};
-window.generateICS = function(title, date, startTime, location, description = "", durationSeconds = 7200) { const startDate = new Date(`${date}T${startTime}`); const endDate = new Date(startDate.getTime() + durationSeconds * 1000); const formatICSDate = d => { const pad = (num) => String(num).padStart(2, '0'); return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`; }; const startICS = formatICSDate(startDate); const endICS = formatICSDate(endDate); const icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ElSotanoDelDoctor//Intranet//ES", "BEGIN:VEVENT", `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, "")}Z`, `UID:${startICS}-${window.sanitizeFirebaseKey(title)}@elsotanodeldoctor.com`, `DTSTART:${startICS}`, `DTEND:${endICS}`, `SUMMARY:${title}`, `DESCRIPTION:${description}`, `LOCATION:${location}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n"); const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${window.sanitizeFirebaseKey(title)}.ics`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); }
-window.sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
-const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|#$.[\]]/g, '_').replace(/\s+/g, '_');
 
 /* ---------- 1.5. Manejo de conexión ---------- */
 const connectionStatus = document.getElementById("connection-status"); let isOnline = navigator.onLine; 
@@ -1374,494 +1369,6 @@ window.withRetry = async function(fn, maxRetries = 3, delay = 2000) { for (let i
 let db; 
 window.loadDoc = async function(collection, docId, fallback) { try { const snap = await db.collection(collection).doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); return fallback; } }
 window.saveDoc = async function(collection, docId, data, merge = false) { try { console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge); await db.collection(collection).doc(docId).set(data, { merge: merge }); console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`); return true; } catch (e) { console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); throw e; } }
-
-/* ---------- 3. Configuración Setlists ---------- */
-let setlistConfig = {setlist1:{name:"Setlist Predeterminado Ensayo",url:"URL_POR_CONFIGURAR_1"},setlist2:{name:"Setlist Predeterminado Próximo Concierto",url:"URL_POR_CONFIGURAR_2"},setlistStar:{name:"Setlist Predeterminado Concierto Estrella",url:"URL_POR_CONFIGURAR_STAR"}};
-function updateDynamicSetlistTitles(){document.getElementById("setlist1-dynamic-name").textContent=setlistConfig.setlist1.name;document.getElementById("second-setlist-dynamic-name").textContent=setlistConfig.setlist2.name;document.getElementById("star-setlist-dynamic-name").textContent=setlistConfig.setlistStar.name}
-async function loadSetlistConfig(){try{const data=await window.withRetry(()=>window.loadDoc("intranet","setlists",{config:setlistConfig}));setlistConfig={setlist1:data.config?.setlist1||setlistConfig.setlist1,setlist2:data.config?.setlist2||setlistConfig.setlist2,setlistStar:data.config?.setlistStar||setlistConfig.setlistStar};updateDynamicSetlistTitles()}catch(e){console.error("Error al cargar la configuración de setlists:",e);updateDynamicSetlistTitles()}}
-async function saveSetlistConfig(){updateDynamicSetlistTitles();return await window.withRetry(()=>window.saveDoc("intranet","setlists",{config:setlistConfig}))}
-async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
-    const CACHE_KEY = `cache_setlist_${tbodyId}`;
-    let rawData = null;
-    let usedCache = false;
-
-    try {
-        if (!configEntry.url || configEntry.url.startsWith("URL_POR_CONFIGURAR")) { throw new Error("URL no configurada."); }
-        const response = await fetch(configEntry.url);
-        if (!response.ok) throw new Error(`Error API (${response.status})`);
-        rawData = await response.json();
-        localStorage.setItem(CACHE_KEY, JSON.stringify(rawData));
-    } catch (networkError) {
-        console.warn(`[Offline Mode] Falló la descarga para ${tbodyId}. Intentando caché...`, networkError);
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        if (cachedData) {
-            rawData = JSON.parse(cachedData);
-            usedCache = true;
-            const titleEl = document.getElementById(totalTimeId).previousElementSibling.previousElementSibling;
-            if(titleEl) titleEl.innerHTML += " <span style='color:orange; font-size:0.8em;'>(⚠️ Modo Offline)</span>";
-        } else {
-            return [];
-        }
-    }
-
-    if (!rawData) return [];
-
-    const dataToProcess = Array.isArray(rawData) ? rawData : rawData.items || [];
-    const processedItems = dataToProcess.map(item => {
-        if (!item || item.type !== "song" && item.type !== "set") { return null }
-        let rawDurationValue = parseFloat(item.duration);
-        let durationIsInvalidOrMissing = isNaN(rawDurationValue) || rawDurationValue === 0;
-        if (isNaN(rawDurationValue)) { rawDurationValue = 0; durationIsInvalidOrMissing = true }
-        let durationInSeconds;
-        const itemName = item.name || item.title || (item.type === "song" ? "Canción sin título" : "Set sin nombre");
-        const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);
-        item.isSong = false; item.isBreak = false; item.isSetHeader = false;
-        if (item.type === "song") { durationInSeconds = rawDurationValue; item.isSong = true; } 
-        else if (item.type === "set") {
-            if (isBreakByName) { item.isBreak = true; if (durationIsInvalidOrMissing) { durationInSeconds = 3 * 60 } else { durationInSeconds = rawDurationValue * 60 } } 
-            else { item.isSetHeader = true; durationInSeconds = rawDurationValue * 60 }
-        } else { durationInSeconds = 0 }
-        item.calculatedDurationSeconds = durationInSeconds;
-        item.displayName = window.decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : item.isBreak ? "Pausa" : "Set"));
-        item.originalJSONDuration = item.duration;
-        return item
-    }).filter(item => item !== null);
-
-    const tbody = document.getElementById(tbodyId);
-    if(tbody) tbody.innerHTML = "";
-    let songCount = 0;
-    const setlistStructure = [];
-    let currentSet = null;
-
-    processedItems.forEach(item => {
-        if (item.isSetHeader) {
-            if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet) }
-            currentSet = { ...item, songs: [], calculatedBlockDurationSeconds: 0 }
-        } else if (item.isBreak) {
-            if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet); currentSet = null }
-            setlistStructure.push(item)
-        } else if (item.isSong) {
-            if (!currentSet) { currentSet = { isSetHeader: true, displayName: "Set General", calculatedDurationSeconds: 0, songs: [], calculatedBlockDurationSeconds: 0 } }
-            currentSet.songs.push(item)
-        }
-    });
-    if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet) }
-
-    let totalSecondsOverall = 0;
-    
-    // Helper for Jukebox Cell
-    const createJukeboxCell = (songName) => {
-        const cleanName = window.sanitizeFirebaseKey(songName);
-        const url = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : null;
-        const hasLink = !!url;
-        const statusClass = hasLink ? 'active' : 'inactive';
-        const safeName = songName.replace(/'/g, "\\'");
-        
-        const clickAction = hasLink 
-            ? `window.openJukeboxPlayer('${safeName}', '${url}')` 
-            : `openJukeboxEditModal('${safeName}')`;
-
-        return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
-    };
-    
-    // Helper for PDF Cell
-    const createPdfCell = (songName) => {
-        const cleanName = window.sanitizeFirebaseKey(songName);
-        const url = window.pdfLibrary ? window.pdfLibrary[cleanName] : null;
-        const hasLink = !!url;
-        const statusClass = hasLink ? 'active' : 'inactive';
-        const safeName = songName.replace(/'/g, "\\'");
-        
-        const clickAction = hasLink 
-            ? `window.openPdfLink('${url}')` 
-            : `openPdfEditModal('${safeName}')`;
-
-        const iconSvg = `<svg viewBox="0 0 24 24"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/><path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>`;
-
-        return `<td class="pdf-col"><button class="pdf-btn ${statusClass}" onclick="${clickAction}">${iconSvg}</button></td>`;
-    };
-
-    // Helper for Metronome Cell
-    const createMetronomeCell = (tempo) => {
-        const tempoStr = window.decodeHtmlEntities(tempo || "-");
-        const match = String(tempoStr).match(/\d+/);
-        
-        const svgIcon = `<svg viewBox="0 0 24 24"><path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/></svg>`;
-
-        if (!match) {
-            return `<td class="metronome-col">
-                <button class="metronome-table-btn" title="Sin tempo definido">
-                    ${svgIcon}
-                </button>
-            </td>`;
-        }
-        
-        const cleanTempo = match[0];
-        return `<td class="metronome-col">
-            <button class="metronome-table-btn has-tempo" title="Tempo: ${cleanTempo} BPM" onclick="window.toggleMetronomeFromTable('${cleanTempo}', this)">
-                ${svgIcon}
-            </button>
-        </td>`;
-    };
-
-    if (tbody) {
-        setlistStructure.forEach(blockOrItem => {
-            if (blockOrItem.isSetHeader) {
-                const setHeaderTime = window.toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="8">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
-                totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
-                blockOrItem.songs.forEach(song => {
-                    songCount++;
-                    const songFormattedTime = window.toMMSS(song.calculatedDurationSeconds || 0);
-                    const jukeboxCell = createJukeboxCell(song.displayName);
-                    const pdfCell = createPdfCell(song.displayName);
-                    const metronomeCell = createMetronomeCell(song.tempo);
-                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}${pdfCell}<td>${window.decodeHtmlEntities(song.key || "-")}</td><td>${window.decodeHtmlEntities(song.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
-                })
-            } else if (blockOrItem.isBreak) {
-                const breakFormattedTime = window.toMMSS(blockOrItem.calculatedDurationSeconds || 0);
-                totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
-            } else if (blockOrItem.isSong) {
-                songCount++;
-                const songFormattedTime = window.toMMSS(blockOrItem.calculatedDurationSeconds || 0);
-                totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-                const jukeboxCell = createJukeboxCell(blockOrItem.displayName);
-                const pdfCell = createPdfCell(blockOrItem.displayName);
-                const metronomeCell = createMetronomeCell(blockOrItem.tempo);
-                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}${pdfCell}<td>${window.decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${window.decodeHtmlEntities(blockOrItem.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
-            }
-        });
-    }
-    
-    let timeText = "Tiempo total del set: " + window.toHHMM(totalSecondsOverall);
-    if(usedCache) timeText += " (Datos guardados)";
-    
-    const timeElem = document.getElementById(totalTimeId);
-    if(timeElem) timeElem.textContent = timeText;
-    return setlistStructure;
-}
-
-const cargarPrimerSetlist = async () => { window.globalItems1 = await cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo"); return window.globalItems1; };
-const cargarSegundoSetlist = async () => { window.globalItems2 = await cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto"); return window.globalItems2; };
-const cargarStarSetlist = async () => { window.globalItemsStar = await cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella"); return window.globalItemsStar; };
-
-/* ---------- 3.5. Jukebox Edit & Management Logic ---------- */
-let currentEditingSongName = null;
-const jukeboxEditModal = document.getElementById('jukebox-edit-modal');
-
-function openJukeboxEditModal(songName) {
-    currentEditingSongName = songName;
-    const cleanName = window.sanitizeFirebaseKey(songName);
-    const currentLink = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : "";
-    
-    document.getElementById('jb-modal-songname').textContent = songName;
-    document.getElementById('jb-modal-url-input').value = currentLink || "";
-    
-    jukeboxEditModal.classList.add('show');
-}
-
-document.getElementById('jb-modal-save-btn').onclick = async () => {
-    if(!currentEditingSongName) return;
-    const url = document.getElementById('jb-modal-url-input').value.trim();
-    const cleanName = window.sanitizeFirebaseKey(currentEditingSongName);
-    
-    if (window.jukeboxLibrary) {
-        if (url) {
-            window.jukeboxLibrary[cleanName] = url;
-        } else {
-            delete window.jukeboxLibrary[cleanName];
-        }
-        
-        await window.saveJukeboxLibrary();
-        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
-    }
-    jukeboxEditModal.classList.remove('show');
-};
-
-document.getElementById('jb-modal-cancel-btn').onclick = () => {
-    jukeboxEditModal.classList.remove('show');
-};
-
-// --- GESTIÓN MASIVA JUKEBOX ---
-document.getElementById("menu-jukebox-mgmt").onclick = e => { 
-    e.preventDefault(); 
-    if(window.openConfigScreen) window.openConfigScreen("jukebox-mgmt-screen");
-    renderJukeboxMgmtTable();
-};
-document.getElementById("close-jukebox-mgmt").onclick = () => {
-    document.getElementById("jukebox-mgmt-screen").style.display = "none";
-};
-
-function renderJukeboxMgmtTable() {
-    const tbody = document.getElementById('jukebox-mgmt-body');
-    tbody.innerHTML = "";
-    if(!window.jukeboxLibrary) return;
-    const keys = Object.keys(window.jukeboxLibrary).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-    if (keys.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay canciones con enlace.</td></tr>"; return; }
-    keys.forEach(key => {
-        const url = window.jukeboxLibrary[key];
-        const displayName = key.replace(/_/g, " "); 
-        const row = `<tr><td>${displayName}</td><td style="font-size:0.8em; color:#aaa; max-width: 200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${url}</td><td><button onclick="deleteJukeboxLink('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;">Eliminar</button></td></tr>`;
-        tbody.insertAdjacentHTML('beforeend', row);
-    });
-}
-
-window.deleteJukeboxLink = async function(cleanKey) {
-    if(confirm("¿Eliminar el enlace de esta canción?")) {
-        delete window.jukeboxLibrary[cleanKey];
-        await window.saveJukeboxLibrary();
-        renderJukeboxMgmtTable(); 
-        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
-    }
-}
-
-/* ---------- 3.6. PDF Library Logic ---------- */
-let currentEditingPdfSong = null;
-const pdfEditModal = document.getElementById('pdf-edit-modal');
-
-window.openPdfLink = function(url) {
-    window.open(url, '_blank');
-}
-
-window.openPdfEditModal = function(songName) {
-    currentEditingPdfSong = songName;
-    const cleanName = window.sanitizeFirebaseKey(songName);
-    const currentLink = window.pdfLibrary ? window.pdfLibrary[cleanName] : "";
-    
-    document.getElementById('pdf-modal-songname').textContent = songName;
-    document.getElementById('pdf-modal-url-input').value = currentLink || "";
-    
-    pdfEditModal.classList.add('show');
-}
-
-document.getElementById('pdf-modal-save-btn').onclick = async () => {
-    if(!currentEditingPdfSong) return;
-    const url = document.getElementById('pdf-modal-url-input').value.trim();
-    const cleanName = window.sanitizeFirebaseKey(currentEditingPdfSong);
-    
-    if (window.pdfLibrary) {
-        if (url) {
-            window.pdfLibrary[cleanName] = url;
-        } else {
-            delete window.pdfLibrary[cleanName];
-        }
-        
-        await window.savePdfLibrary();
-        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
-    }
-    pdfEditModal.classList.remove('show');
-};
-
-document.getElementById('pdf-modal-cancel-btn').onclick = () => {
-    pdfEditModal.classList.remove('show');
-};
-
-window.loadPdfLibrary = async () => {
-     try {
-         const data = await window.withRetry(() => window.loadDoc("intranet", "pdf_library", { library: {} }));
-         window.pdfLibrary = data.library || {};
-     } catch (e) {
-         console.error("Error loading PDF library:", e);
-         window.pdfLibrary = {};
-     }
-}
-
-window.savePdfLibrary = async () => {
-     try {
-         await window.withRetry(() => window.saveDoc("intranet", "pdf_library", { library: window.pdfLibrary }));
-     } catch (e) {
-         console.error("Error saving PDF library:", e);
-         throw e;
-     }
-}
-
-document.getElementById("menu-pdf-mgmt").onclick = e => { 
-    e.preventDefault(); 
-    if(window.openConfigScreen) window.openConfigScreen("pdf-mgmt-screen");
-    renderPdfMgmtTable();
-};
-document.getElementById("close-pdf-mgmt").onclick = () => {
-    document.getElementById("pdf-mgmt-screen").style.display = "none";
-};
-
-function renderPdfMgmtTable() {
-    const tbody = document.getElementById('pdf-mgmt-body');
-    tbody.innerHTML = "";
-    if(!window.pdfLibrary) return;
-    const keys = Object.keys(window.pdfLibrary).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-    if (keys.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay partituras enlazadas.</td></tr>"; return; }
-    keys.forEach(key => {
-        const url = window.pdfLibrary[key];
-        const displayName = key.replace(/_/g, " "); 
-        const row = `<tr><td>${displayName}</td><td style="font-size:0.8em; color:#aaa; max-width: 200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${url}</td><td><button onclick="deletePdfLink('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;">Eliminar</button></td></tr>`;
-        tbody.insertAdjacentHTML('beforeend', row);
-    });
-}
-
-window.deletePdfLink = async function(cleanKey) {
-    if(confirm("¿Eliminar el enlace de esta partitura?")) {
-        delete window.pdfLibrary[cleanKey];
-        await window.savePdfLibrary();
-        renderPdfMgmtTable(); 
-        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
-    }
-}
-
-/* ---------- 3.7. Master Docs (Globales) Logic (NUEVO) ---------- */
-let currentMasterDocsSetlistKey = null;
-
-window.loadMasterDocs = async () => {
-    try {
-        const data = await window.withRetry(() => window.loadDoc("intranet", "master_docs", { docs: { setlist1: {}, setlist2: {}, setlistStar: {} } }));
-        window.masterDocs = data.docs || { setlist1: {}, setlist2: {}, setlistStar: {} };
-        updateMasterDocsVisuals();
-    } catch (e) {
-        console.error("Error loading master docs:", e);
-    }
-}
-
-window.saveMasterDocs = async () => {
-    try {
-        await window.withRetry(() => window.saveDoc("intranet", "master_docs", { docs: window.masterDocs }));
-        updateMasterDocsVisuals();
-    } catch (e) {
-        console.error("Error saving master docs:", e);
-        throw e;
-    }
-}
-
-function updateMasterDocsVisuals() {
-    ['setlist1', 'setlist2', 'setlistStar'].forEach(key => {
-        for(let i=1; i<=3; i++) {
-            const btn = document.getElementById(`master-slot-${key}-${i}`);
-            if(!btn) continue;
-            const setDocs = window.masterDocs[key] || {};
-            const slotData = setDocs['slot' + i];
-            if (slotData && slotData.url) btn.classList.add('active');
-            else btn.classList.remove('active');
-        }
-    });
-}
-
-// Nueva función para manejar el clic directo en los botones 1, 2, 3
-window.handleMasterDirectClick = (setlistKey, slotNum, displayName) => {
-    const slotData = window.masterDocs[setlistKey]['slot' + slotNum];
-    if (slotData && slotData.url) {
-        window.open(slotData.url, '_blank');
-    } else {
-        // Si no hay URL, abrimos el modal de edición original para ese setlist
-        window.openMasterDocsModal(setlistKey, displayName);
-    }
-};
-
-window.openMasterDocsModal = function(setlistKey, displayName) {
-    currentMasterDocsSetlistKey = setlistKey;
-    document.getElementById('master-docs-setlist-name').textContent = displayName;
-    
-    const adminHint = document.getElementById('master-docs-admin-hint');
-    const adminAreas = document.querySelectorAll('.admin-only');
-    
-    if (isAuthenticated) {
-        adminHint.style.display = 'block';
-        adminAreas.forEach(a => a.style.display = 'block');
-    } else {
-        adminHint.style.display = 'none';
-        adminAreas.forEach(a => a.style.display = 'none');
-    }
-
-    const setDocs = window.masterDocs[setlistKey] || {};
-    
-    for(let i=1; i<=3; i++) {
-        const slot = setDocs['slot' + i] || { name: "", url: "" };
-        
-        // Admin Inputs
-        document.getElementById('master-name-' + i).value = slot.name || "";
-        document.getElementById('master-url-' + i).value = slot.url || "";
-        
-        // Display Text
-        const displayEl = document.getElementById('master-display-' + i);
-        const viewBtn = document.getElementById('master-btn-view-' + i);
-        
-        if (slot.url) {
-            displayEl.textContent = slot.name || "Documento sin nombre";
-            displayEl.style.fontStyle = 'normal';
-            displayEl.style.color = '#fff';
-            viewBtn.style.display = 'flex';
-            viewBtn.onclick = () => window.open(slot.url, '_blank');
-        } else {
-            displayEl.textContent = "Vacío";
-            displayEl.style.fontStyle = 'italic';
-            displayEl.style.color = '#777';
-            viewBtn.style.display = 'none';
-        }
-
-        // Save Action (Admin)
-        document.getElementById('master-save-' + i).onclick = async () => {
-            const newName = document.getElementById('master-name-' + i).value.trim();
-            const newUrl = document.getElementById('master-url-' + i).value.trim();
-            
-            if(!window.masterDocs[setlistKey]) window.masterDocs[setlistKey] = {};
-            window.masterDocs[setlistKey]['slot' + i] = { name: newName, url: newUrl };
-            
-            try {
-                await window.saveMasterDocs();
-                alert("Ranura " + i + " guardada.");
-                window.openMasterDocsModal(setlistKey, displayName); // Refresh visuals
-            } catch(e) { alert("Error al guardar: " + e.message); }
-        };
-    }
-
-    document.getElementById('master-docs-modal').classList.add('show');
-}
-
-document.getElementById('close-master-docs-modal').onclick = () => {
-    document.getElementById('master-docs-modal').classList.remove('show');
-}
-
-// --- GESTIÓN MASIVA MASTER DOCS ---
-document.getElementById("menu-master-docs-mgmt").onclick = e => { 
-    e.preventDefault(); 
-    if(window.openConfigScreen) window.openConfigScreen("master-docs-mgmt-screen");
-    renderMasterDocsMgmtTable();
-};
-document.getElementById("close-master-docs-mgmt").onclick = () => {
-    document.getElementById("master-docs-mgmt-screen").style.display = "none";
-};
-
-function renderMasterDocsMgmtTable() {
-    const tbody = document.getElementById('master-docs-mgmt-body');
-    tbody.innerHTML = "";
-    
-    const setlistLabels = { setlist1: "Setlist Ensayo", setlist2: "Setlist Concierto", setlistStar: "Setlist Estrella" };
-    
-    ['setlist1', 'setlist2', 'setlistStar'].forEach(key => {
-        const setDocs = window.masterDocs[key] || {};
-        const slotsWithFiles = Object.entries(setDocs).filter(([slotId, data]) => data && data.url);
-        
-        let filesHtml = slotsWithFiles.length > 0 
-            ? slotsWithFiles.map(([slotId, data]) => `<div style="font-size:0.8em; color:#aaa;">- ${data.name || slotId}</div>`).join('')
-            : '<span style="color:#666; font-style:italic;">Sin archivos</span>';
-        
-        const row = `
-            <tr>
-                <td>${setlistLabels[key]}</td>
-                <td>${filesHtml}</td>
-                <td>
-                    <button onclick="clearSetlistMasterDocs('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;" ${slotsWithFiles.length === 0 ? 'disabled' : ''}>Limpiar Todo</button>
-                </td>
-            </tr>`;
-        tbody.insertAdjacentHTML('beforeend', row);
-    });
-}
-
-window.clearSetlistMasterDocs = async function(setlistKey) {
-    if(confirm("¿Estás seguro de que deseas eliminar TODOS los archivos maestros de este setlist?")) {
-        window.masterDocs[setlistKey] = {};
-        await window.saveMasterDocs();
-        renderMasterDocsMgmtTable();
-    }
-}
 
 /* ---------- 6. Usuarios ---------- */
 window.users = []; let editingUserIndex = null; // USERS AHORA ES GLOBAL
@@ -1891,15 +1398,285 @@ function getMonthIndex(monthName) { const months=["Enero","Febrero","Marzo","Abr
 // RENDER STATS AHORA ES GLOBAL
 window.renderStats = function() { const now=new Date();const selectedMonth=document.getElementById("stats-month-filter")?.value||"all";let filteredRehearsals=window.rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);if(selectedMonth!=="all"){filteredRehearsals=filteredRehearsals.filter(r=>window.getMonthYear(r.date)===selectedMonth)} const timePerMonth={};filteredRehearsals.forEach(r=>{const monthYear=window.getMonthYear(r.date);const duration=window.calculateDuration(r.startTime,r.endTime);timePerMonth[monthYear]=(timePerMonth[monthYear]||0)+duration});const tbodyMonth=document.getElementById("time-per-month-body");tbodyMonth.innerHTML="";Object.keys(timePerMonth).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{tbodyMonth.insertAdjacentHTML("beforeend",`<tr><td>${month}</td><td>${window.toHours(timePerMonth[month])}</td></tr>`)}); const timePerUser={};window.users.forEach(user=>{timePerUser[user.name]=0;filteredRehearsals.forEach(r=>{const attendance=r.attendance?.find(a=>a.name===user.name);if(attendance&&attendance.attending==="Sí"){timePerUser[user.name]+=window.calculateDuration(r.startTime,r.endTime)}})});const tbodyUser=document.getElementById("time-per-user-body");tbodyUser.innerHTML="";Object.keys(timePerUser).sort().forEach(user=>{tbodyUser.insertAdjacentHTML("beforeend",`<tr><td>${window.users.find(u=>u.name===user)?.nickname||user}</td><td>${window.toHours(timePerUser[user])}</td></tr>`)}); const tbodyPast=document.getElementById("past-rehearsals-body");tbodyPast.innerHTML="";filteredRehearsals.sort((a,b)=>new Date(b.date+'T'+(b.startTime||'00:00'))-new Date(a.date+'T'+(a.startTime||'00:00')));filteredRehearsals.forEach(r=>{const formattedDate=window.formatDateWithDay(r.date);const durationText=window.toHHMM(window.calculateDuration(r.startTime,r.endTime));const attendance=Array.isArray(r.attendance)?r.attendance:[];const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=window.users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;tbodyPast.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td><td>${summary}</td></tr>`)})}
 
-/* ---------- 9. PDF ---------- */
-const fontDataCache = {}; const PDF_FONT_PATHS = { bleedingCowboys: 'assets/Bleeding_Cowboys.ttf', carnevalee: 'assets/Carnevalee_Freakshow.ttf' };
-const PDF_FONT_NAMES = { bleedingCowboys: "BleedingCowboysCustom", carnevalee: "CarnevaleeCustom" }; const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png';
-async function loadFontAsBase64(fontPath) { if(fontDataCache[fontPath]){return fontDataCache[fontPath]}try{const response=await fetch(fontPath);if(!response.ok){throw new Error(`No se pudo cargar la fuente: ${response.statusText} (URL: ${fontPath})`)} const blob=await response.blob();return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onloadend=()=>{fontDataCache[fontPath]=reader.result.split(',')[1];resolve(fontDataCache[fontPath])};reader.onerror=(error)=>reject(new Error("Error del FileReader al convertir fuente a Base64: "+error.message));reader.readAsDataURL(blob)})}catch(error){console.error(`Error crítico cargando la fuente ${fontPath}:`,error);fontDataCache[fontPath]=null;return null}}
-async function registerFontWithDoc(doc,fontPath,fontVFSAlias,fontNameInDoc){const fontBase64=await loadFontAsBase64(fontPath);if(fontBase64){try{doc.addFileToVFS(fontVFSAlias,fontBase64);doc.addFont(fontVFSAlias,fontNameInDoc,'normal');console.log(`Fuente ${fontNameInDoc} registrada en jsPDF desde ${fontPath}.`);return true}catch(fontError){console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`,fontError)}}else{console.warn(`No se pudo cargar la fuente ${fontPath} para registrarla.`)} return false}
-async function getBackgroundImageDataURL(){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'))};img.onerror=(err)=>reject(new Error("Error al cargar la imagen de plantilla: "+(err.message||err.toString())));img.src=PDF_BACKGROUND_IMAGE_PATH;if(img.complete){if(img.naturalHeight!==0){const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'))}else if(img.src){reject(new Error("Imagen de plantilla en caché pero inválida."))}}})}
-async function genPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist"; let bleedingCowboysRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.bleedingCowboys,'Bleeding_Cowboys.ttf',PDF_FONT_NAMES.bleedingCowboys);let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S');doc.setFontSize(10);doc.setTextColor(150,0,0);doc.text("Advertencia: No se pudo cargar la plantilla de fondo.",pageWidth/2,pageHeight/2,{align:"center"})} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;doc.setFont(bleedingCowboysRegistered?PDF_FONT_NAMES.bleedingCowboys:"times",'normal');if(!bleedingCowboysRegistered)doc.setFontType("bold");doc.setFontSize(28);doc.text("SETLIST",pageWidth/2,currentY,{align:"center"});currentY+=28+10;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');if(!carnevaleeRegistered)doc.setFontType("bold");doc.setFontSize(22);doc.text(window.decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=22+5;doc.setFont("times","italic");doc.setFontSize(10); let totalOverallSeconds=0;let totalSongCount=0;setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){totalOverallSeconds+=blockOrItem.calculatedBlockDurationSeconds||0;totalSongCount+=blockOrItem.songs?blockOrItem.songs.length:0}else if(blockOrItem.isBreak){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0}else if(blockOrItem.isSong){totalOverallSeconds+=blockOrItem.calculatedDurationSeconds||0;totalSongCount++}});const totalItemsText=`${totalSongCount} canciones`;doc.text(`${totalItemsText}  |  Tiempo total: ${window.toHHMM(totalOverallSeconds)}`,pageWidth/2,currentY,{align:"center"});currentY+=10+20; const tableFont="helvetica";const tableHeadFont="helvetica";let pdfSongNumber=0;const tableBody=[];setlistStructure.forEach(blockOrItem=>{if(blockOrItem.isSetHeader){tableBody.push([{content:`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,colSpan:5,styles:{halign:'center',fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0],fontSize:10}}]);if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{pdfSongNumber++;tableBody.push([pdfSongNumber,song.displayName,window.decodeHtmlEntities(song.key||"-"),window.decodeHtmlEntities(song.tempo||"-"),window.toMMSS(song.calculatedDurationSeconds||0)])})}}else if(blockOrItem.isBreak){tableBody.push([{content:"»",styles:{halign:'center',fontStyle:'italic',textColor:[100,100,100]}},{content:blockOrItem.displayName,styles:{fontStyle:'italic',textColor:[80,80,80]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:"-",styles:{halign:'center',fontStyle:'italic',textColor:[150,150,150]}},{content:window.toMMSS(blockOrItem.calculatedDurationSeconds||0),styles:{halign:'center',fontStyle:'italic',textColor:[80,80,80]}}])}else if(blockOrItem.isSong){pdfSongNumber++;tableBody.push([pdfSongNumber,blockOrItem.displayName,window.decodeHtmlEntities(blockOrItem.key||"-"),window.decodeHtmlEntities(blockOrItem.tempo||"-"),window.toMMSS(blockOrItem.calculatedDurationSeconds||0)])}}); doc.autoTable({startY:currentY,head:[["#","Título","Key","Tempo","Time"]],body:tableBody,theme:'grid',headStyles:{fillColor:[200,200,200],textColor:[0,0,0],font:tableHeadFont,fontStyle:'bold',halign:'center',fontSize:10},styles:{font:tableFont,fontSize:9,cellPadding:{top:4,right:5,bottom:4,left:5},lineColor:[80,80,80],lineWidth:.5,textColor:[0,0,0]},columnStyles:{0:{halign:'center',cellWidth:25,fontSize:9},1:{halign:'left',cellWidth:'auto',fontSize:10},2:{halign:'center',cellWidth:50,fontSize:9},3:{halign:'center',cellWidth:50,fontSize:9},4:{halign:'center',cellWidth:50,fontSize:9}},margin:{top:contentMarginTop,right:contentMarginSides,bottom:contentMarginBottom,left:contentMarginSides},pageBreak:'auto',didDrawPage:function(data){if(data.pageNumber>1&&backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}}});doc.save(`${cleanFileName}.pdf`)}
-async function genBasicPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const itemTitleFontSize=14;const setHeaderFontSize=16;const itemLineHeight=itemTitleFontSize*1.6;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(window.decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{if(currentY+itemLineHeight*2.5>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=itemLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderFontSize*1.6;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+itemLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=itemLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(itemTitleFontSize-1>8?itemTitleFontSize-1:8);doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=(itemTitleFontSize-1>8?itemTitleFontSize-1:8)*1.6;if(idx<setlistStructure.length-1)currentY+=itemLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight}});doc.save(`${cleanFileName}_Basico.pdf`)}
-async function genPersonalPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf,songTitleFontSizeParam){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const songTitleFontSize=parseInt(songTitleFontSizeParam,10)||14;const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF Personal:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S')} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const setHeaderFontSize=16;const breakTextFontSize=Math.max(8,songTitleFontSize-2);const songTitleLineHeight=songTitleFontSize*1.5;const setHeaderLineHeight=setHeaderFontSize*1.5;const breakTextLineHeight=breakTextFontSize*1.5;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(window.decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{let estimatedBlockHeight=songTitleLineHeight;if(blockOrItem.isSetHeader)estimatedBlockHeight=setHeaderLineHeight+(blockOrItem.songs?blockOrItem.songs.length:0);else if(blockOrItem.isBreak)estimatedBlockHeight=breakTextLineHeight;if(currentY+estimatedBlockHeight>pageHeight-contentMarginBottom&&idx>0){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=songTitleLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderLineHeight;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+songTitleLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=songTitleLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(breakTextFontSize);doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=breakTextLineHeight;if(idx<setlistStructure.length-1)currentY+=songTitleLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight}});doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`)}
+/* ---------- 11. Menú & pantallas ---------- */
+const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
+function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof window.resetRehearsalForm==="function")window.resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
+document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
+const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
+setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
+setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
+setupMenuLink("menu-suggestions", "suggestions");
+setupMenuLink("menu-analisis-section", "analisis");
+document.getElementById("menu-suggestions").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("suggestions-screen"); renderSuggestions(); };
+document.getElementById("close-suggestions").onclick = () => { document.getElementById("suggestions-screen").style.display = "none"; };
+
+// --- FIX: MENU GESTIÓN PROPUESTAS (ADMIN) ---
+document.getElementById("menu-admin-suggestions").onclick = e => { 
+    e.preventDefault(); 
+    if(window.openConfigScreen("admin-suggestions-screen")) {
+        renderAdminSuggestions();
+    }
+};
+document.getElementById("close-admin-suggestions").onclick = () => { 
+    document.getElementById("admin-suggestions-screen").style.display = "none"; 
+};
+
+// --- LÓGICA BIOMETRÍA ---
+const BIO_STORAGE_KEY = 'elsotano_bio_auth';
+const supportsBiometrics = () => window.PublicKeyCredential && window.isSecureContext;
+
+async function enrollBiometry() {
+    if (!supportsBiometrics()) {
+        alert("Tu navegador o dispositivo no soporta biometría o no estás en una conexión segura (HTTPS).");
+        return;
+    }
+    
+    // Desafío aleatorio para WebAuthn
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+    
+    const createOptions = {
+        publicKey: {
+            challenge: challenge,
+            rp: { name: "El Sótano del Doctor" },
+            user: {
+                id: new Uint8Array(16),
+                name: "admin@sotano.com",
+                displayName: "Admin El Sótano"
+            },
+            pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+            authenticatorSelection: { userVerification: "required" },
+            timeout: 60000
+        }
+    };
+
+    try {
+        const credential = await navigator.credentials.create(createOptions);
+        if (credential) {
+            localStorage.setItem(BIO_STORAGE_KEY, 'true');
+            alert("¡Acceso biométrico activado! La próxima vez entrarás con tu cara o huella.");
+        }
+    } catch (err) {
+        console.error("Error enrolando biometría:", err);
+        alert("No se pudo configurar la biometría: " + err.message);
+    }
+}
+
+async function verifyBiometry() {
+    if (!localStorage.getItem(BIO_STORAGE_KEY)) return false;
+    
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+    
+    const getOptions = {
+        publicKey: {
+            challenge: challenge,
+            userVerification: "required",
+            timeout: 60000
+        }
+    };
+
+    try {
+        const assertion = await navigator.credentials.get(getOptions);
+        return !!assertion;
+    } catch (err) {
+        console.warn("Fallo o cancelación de biometría:", err);
+        return false;
+    }
+}
+
+document.getElementById("menu-config").onclick = async (e) => { 
+    e.preventDefault();
+    const submenu = document.getElementById("config-submenu");
+    
+    if (!isAuthenticated) {
+        // 1. Intentar biometría primero si está activa
+        let bioSuccess = await verifyBiometry();
+        
+        if (bioSuccess) {
+            isAuthenticated = true;
+            submenu.style.display = "block";
+        } else {
+            // 2. Fallback al prompt clásico
+            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
+            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+                isAuthenticated = true;
+                submenu.style.display = "block";
+            } else if (password !== null) {
+                alert("Contraseña incorrecta.");
+            }
+        }
+    } else {
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+    }
+    
+    // Mostrar/Ocultar botón de enrolamiento según disponibilidad
+    const enrollBtn = document.getElementById("menu-enroll-biometry");
+    if (enrollBtn) {
+        enrollBtn.style.display = (supportsBiometrics() && isAuthenticated) ? "block" : "none";
+    }
+};
+
+document.getElementById("menu-enroll-biometry").onclick = (e) => {
+    e.preventDefault();
+    enrollBiometry();
+};
+
+window.openConfigScreen = async (screenId) => { 
+    // Exponer isAuthenticated para otros scripts (master docs modal)
+    window.isAuthenticated = isAuthenticated;
+
+    if(!isAuthenticated && screenId!=='user-list-screen' && screenId!=='stats-screen' && screenId!=='suggestions-screen') {
+        let bioSuccess = await verifyBiometry();
+        if (bioSuccess) {
+            isAuthenticated = true;
+            window.isAuthenticated = true;
+        } else {
+            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
+            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+                isAuthenticated = true;
+                window.isAuthenticated = true;
+            } else {
+                if (password !== null) alert("Contraseña incorrecta.");
+                return false;
+            }
+        }
+    } 
+    if(isAuthenticated || screenId==='user-list-screen' || screenId==='stats-screen' || screenId==='suggestions-screen') {
+        closeAll();
+        const screen = document.getElementById(screenId);
+        if (screen) {
+            screen.style.display = "block";
+            if (screenId === 'user-list-screen') renderUsers();
+            screen.scrollTop = 0;
+        }
+    } 
+    return true;
+}; 
+// --- FIN LÓGICA BIOMETRÍA ---
+
+document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("user-mgmt-screen"); };
+document.getElementById("close-user-mgmt").onclick = () => { document.getElementById("user-mgmt-screen").style.display = "none"; document.getElementById("user-message").textContent = ""; resetUserForm(); };
+document.getElementById("add-user").onclick = async () => { const msg=document.getElementById("user-message");msg.textContent="";const name=document.getElementById("user-name").value.trim(),nickname=document.getElementById("user-nickname").value.trim();const roles=Array.from(document.getElementById("user-role").selectedOptions).map(o=>o.value);if(!name||!nickname||roles.length===0){msg.className="error-message";msg.textContent="Nombre, apodo y rol son obligatorios.";return} try{if(editingUserIndex!==null){const oldName=window.users[editingUserIndex].name;window.users[editingUserIndex]={name,nickname,roles};if(oldName!==name){if(window.rehearsals) window.rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance.forEach(a=>{if(a.name===oldName)a.name=name})}});await window.saveRehearsals()} msg.textContent="Usuario actualizado."}else{window.users.push({name,nickname,roles});msg.textContent="Usuario añadido."} await saveUsers();msg.className="success-message";resetUserForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
+document.getElementById("cancel-edit-user").onclick = () => { resetUserForm(); document.getElementById("user-message").textContent = ""; };
+document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(window.openConfigScreen("stats-screen")){ updateMonthFilter(); window.renderStats(); }};
+document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
+document.getElementById("stats-month-filter").addEventListener("change", window.renderStats);
+document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("user-list-screen"); };
+document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
+
+// --- GESTIÓN DE PROPUESTAS ---
+let suggestions = [];
+function attachSuggestionsListener() {
+    if (typeof db !== 'undefined') {
+        db.collection('suggestions').onSnapshot(snapshot => {
+            suggestions = [];
+            snapshot.forEach(doc => { suggestions.push({ id: doc.id, ...doc.data() }); });
+            renderSuggestions();
+            renderAdminSuggestions();
+        });
+    }
+}
+document.getElementById("add-suggestion-btn").onclick = async () => {
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value;
+    const title = document.getElementById('suggestion-title').value.trim();
+    const artist = document.getElementById('suggestion-artist').value.trim();
+    const link = document.getElementById('suggestion-link').value.trim();
+    const msg = document.getElementById('suggestion-message');
+    msg.textContent = "";
+    if (!currentUser) { alert("Selecciona quién eres."); userSelector.focus(); return; }
+    if (!title || !artist) { msg.textContent = "Título y Artista son obligatorios."; return; }
+    const newSuggestion = { title, artist, link, proposedBy: currentUser, proposedAt: new Date().toISOString(), votes: {}, averageRating: 0, status: 'active' };
+    try { await db.collection('suggestions').add(newSuggestion); document.getElementById('suggestion-title').value = ""; document.getElementById('suggestion-artist').value = ""; document.getElementById('suggestion-link').value = ""; alert("¡Propuesta enviada!"); } catch (e) { msg.textContent = "Error: " + e.message; }
+};
+async function rateSuggestion(id, rating) {
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value;
+    if (!currentUser) { alert("Selecciona quién eres para votar."); document.getElementById('suggestions-screen').scrollTop = 0; return; }
+    const suggestion = suggestions.find(s => s.id === id);
+    if (!suggestion) return;
+    const currentVotes = suggestion.votes || {};
+    if (currentVotes[currentUser] === rating) delete currentVotes[currentUser]; else currentVotes[currentUser] = rating;
+    const scores = Object.values(currentVotes);
+    const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    try { await db.collection('suggestions').doc(id).update({ votes: currentVotes, averageRating: avg }); } catch (e) { console.error("Error al votar:", e); }
+}
+function renderSuggestions() {
+    const container = document.getElementById('suggestions-container');
+    container.innerHTML = "";
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value;
+    const activeSuggestions = suggestions.filter(s => s.status === 'active').sort((a, b) => b.averageRating - a.averageRating);
+    if (activeSuggestions.length === 0) { container.innerHTML = "<p style='color:#888; font-style:italic;'>No hay propuestas activas.</p>"; return; }
+    activeSuggestions.forEach(s => {
+        const date = new Date(s.proposedAt).toLocaleDateString();
+        const votes = s.votes || {};
+        const myVote = currentUser ? votes[currentUser] : 0;
+        const votersCount = Object.keys(votes).length;
+        const hasVoted = myVote > 0;
+        let starsHtml = ''; for (let i = 1; i <= 5; i++) starsHtml += `<span class="star-visual ${i <= Math.round(s.averageRating) ? 'filled' : ''}">★</span>`;
+        let interactiveStarsHtml = '';
+        if (hasVoted) { for (let i = 1; i <= 5; i++) interactiveStarsHtml += `<span class="interactive-star ${i <= myVote ? 'active' : ''}" style="cursor:default; opacity:${i <= myVote ? 1 : 0.3};">★</span>`; }
+        else { for (let i = 1; i <= 5; i++) interactiveStarsHtml += `<span class="interactive-star" onclick="rateSuggestion('${s.id}', ${i})">★</span>`; }
+        let votersDetailsHtml = votersCount > 0 ? `<div class="voters-details" id="voters-${s.id}">${Object.entries(votes).map(([name, score]) => `${name}: ${score}★`).join(', ')}</div>` : `<div class="voters-details" id="voters-${s.id}">Nadie ha votado aún.</div>`;
+        const voteStatusText = hasVoted ? `<span style="color:#FFD700; font-size:0.9em;">Votado (${myVote}/5)</span>` : `<span class="voting-label">Tu Voto:</span>`;
+        const card = document.createElement('div');
+        card.className = 'suggestion-card';
+        card.innerHTML = `<div class="suggestion-header"><div class="suggestion-title">${s.title}</div><div class="suggestion-artist">${s.artist}</div><div class="suggestion-meta">Propuesto por: ${s.proposedBy} el ${date}</div></div><div class="suggestion-body">${s.link ? `<a href="${s.link}" target="_blank" style="color:#0cf; font-size:0.8em;">Escuchar (Link)</a>` : ''}<div style="margin-top:15px;"><div class="star-rating-display"><span class="avg-score">${s.averageRating.toFixed(1)}</span><div style="display:flex;">${starsHtml}</div><span style="font-size:0.8em; color:#888; margin-left:5px;">(${votersCount} votos)</span></div><button class="toggle-voters-btn" onclick="document.getElementById('voters-${s.id}').classList.toggle('show')">Ver votaciones</button>${votersDetailsHtml}</div></div><div class="suggestion-actions"><div class="voting-area">${voteStatusText}<div class="interactive-stars ${hasVoted ? 'voted' : ''}">${interactiveStarsHtml}</div></div></div>`;
+        container.appendChild(card);
+    });
+}
+function renderAdminSuggestions() {
+    const tbody = document.getElementById('admin-suggestions-body');
+    tbody.innerHTML = "";
+    const sorted = [...suggestions].sort((a, b) => new Date(b.proposedAt) - new Date(a.proposedAt));
+    sorted.forEach(s => {
+        const date = new Date(s.proposedAt).toLocaleDateString();
+        const isDeleted = s.status === 'deleted';
+        const rowClass = isDeleted ? 'deleted-row' : '';
+        const statusText = isDeleted ? `Eliminada por ${s.deletedBy || '?'} (${new Date(s.deletedAt).toLocaleDateString()})` : '<span style="color:#0cf">Activa</span>';
+        const actionBtn = isDeleted ? '-' : `<button onclick="deleteSuggestion('${s.id}')" style="background:#ff3333; padding:5px; font-size:0.8em;">Eliminar</button>`;
+        const row = `<tr class="${rowClass}"><td>${s.title} (${s.artist})</td><td>${s.proposedBy}</td><td>${date}</td><td style="font-size:0.8em;">${statusText}</td><td>${actionBtn}</td></tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+}
+async function deleteSuggestion(id) {
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value || "Admin";
+    if(confirm("¿Seguro que quieres eliminar esta propuesta?")){ try { await db.collection('suggestions').doc(id).update({ status: 'deleted', deletedAt: new Date().toISOString(), deletedBy: currentUser }); alert("Propuesta eliminada."); } catch(e) { alert("Error al eliminar."); } }
+}
+
+/* --- LÓGICA MODO DIRECTO --- */
+let currentLiveSetlist = []; let currentLiveIndex = 0; let wakeLock = null;
+async function requestWakeLock() { try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); console.log('Pantalla mantenida encendida'); } } catch (err) { console.error(`${err.name}, ${err.message}`); } }
+async function releaseWakeLock() { if (wakeLock !== null) { await wakeLock.release(); wakeLock = null; } }
+function startLiveMode(setlistData) {
+    currentLiveSetlist = [];
+    if (Array.isArray(setlistData)) { setlistData.forEach(item => { if (item.isSetHeader && Array.isArray(item.songs)) currentLiveSetlist = currentLiveSetlist.concat(item.songs); else if (item.isSong) currentLiveSetlist.push(item); }); }
+    if (currentLiveSetlist.length === 0) { alert("Setlist vacío."); return; }
+    currentLiveIndex = 0; renderLiveSong(currentLiveIndex);
+    document.getElementById('live-mode-overlay').classList.add('show');
+    requestWakeLock();
+}
+function renderLiveSong(index) {
+    const song = currentLiveSetlist[index]; if (!song) return;
+    document.getElementById('live-counter').textContent = `${index + 1} / ${currentLiveSetlist.length}`;
+    const titleEl = document.getElementById('live-song-title');
+    titleEl.textContent = song.displayName;
+    if (song.displayName.length > 20) titleEl.style.fontSize = "2.5em"; else titleEl.style.fontSize = "3.5em";
+    const cleanKey = window.decodeHtmlEntities(song.key || '-');
+    const cleanTempo = window.decodeHtmlEntities(song.tempo || '-');
+    document.getElementById('live-song-key').textContent = `Key: ${cleanKey}`;
+    document.getElementById('live-song-tempo').textContent = `${cleanTempo} BPM`;
+    const nextSong = currentLiveSetlist[index + 1];
+    const nextEl = document.getElementById('live-next-song');
+    if (nextSong) { nextEl.textContent = `Siguiente: ${nextSong.displayName}`; nextEl.style.color = '#555'; } else { nextEl.textContent = "¡FIN DEL SHOW! 👏"; nextEl.style.color = '#0cf'; }
+}
+document.getElementById('live-close-btn').onclick = () => { document.getElementById('live-mode-overlay').classList.remove('show'); releaseWakeLock(); };
+document.getElementById('live-next-btn').onclick = () => { if (currentLiveIndex < currentLiveSetlist.length - 1) { currentLiveIndex++; renderLiveSong(currentLiveIndex); } };
+document.getElementById('live-prev-btn').onclick = () => { if (currentLiveIndex > 0) { currentLiveIndex--; renderLiveSong(currentLiveIndex); } };
+document.getElementById('live-content-area').onclick = (e) => { const width = window.innerWidth; if (e.clientX > width / 2) { if (currentLiveIndex < currentLiveSetlist.length - 1) { currentLiveIndex++; renderLiveSong(currentLiveIndex); } } else { if (currentLiveIndex > 0) { currentLiveIndex--; renderLiveSong(currentLiveIndex); } } };
 
 /* ---------- 13. Carga inicial ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
@@ -1907,7 +1684,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (typeof firebase !== 'undefined') {
           firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => console.warn(err));
           attachSuggestionsListener(); 
-          // attachConcertDetailsListener y otros inits ahora están en sus respectivos JS o se llaman aquí si es necesario
           if(window.attachConcertDetailsListener) window.attachConcertDetailsListener();
           setTimeout(initSession, 1500);
       } else {
@@ -1942,42 +1718,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadAllData() {
       try {
           if(window.loadJukeboxLibrary) {
-              await Promise.all([loadSetlistConfig(), loadUsers(), window.loadRehearsals(), window.loadJukeboxLibrary(), window.loadPdfLibrary(), window.loadMasterDocs()]);
+              await Promise.all([window.loadSetlistConfig(), loadUsers(), window.loadRehearsals(), window.loadJukeboxLibrary(), window.loadPdfLibrary(), window.loadMasterDocs()]);
           } else {
               setTimeout(() => { if(window.loadJukeboxLibrary) window.loadJukeboxLibrary(); if(window.loadPdfLibrary) window.loadPdfLibrary(); if(window.loadMasterDocs) window.loadMasterDocs(); }, 1000);
-              await Promise.all([loadSetlistConfig(), loadUsers(), window.loadRehearsals()]);
+              await Promise.all([window.loadSetlistConfig(), loadUsers(), window.loadRehearsals()]);
           }
       } catch (e) { }
       if(window.loadAnalysisData) window.loadAnalysisData(); else setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
-      try { window.globalItems1 = await cargarPrimerSetlist(); } catch (e) { }
-      try { window.globalItems2 = await cargarSegundoSetlist(); } catch (e) { }
-      try { window.globalItemsStar = await cargarStarSetlist(); } catch (e) { }
-      document.getElementById("download-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("Vacío."); };
-      document.getElementById("download-basic-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genBasicPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("Vacío."); };
-      document.getElementById("download-btn-2").onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("Vacío."); };
-      document.getElementById("download-basic-btn-2").onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genBasicPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("Vacío."); };
-      document.getElementById("download-btn-star").onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("Vacío."); };
-      document.getElementById("download-basic-btn-star").onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genBasicPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("Vacío."); };
-      const setupPersonalPdfBtn = (btnId, items, name) => {
-          const btn = document.getElementById(btnId);
-          if(btn) btn.onclick = () => {
-              if (items && items.length > 0) {
-                  const fontSizeInput = prompt("PDF Personal - Tamaño letra títulos (ej: 14):", "14");
-                  if (fontSizeInput) {
-                      const fontSize = parseInt(fontSizeInput, 10);
-                      if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) genPersonalPDF(items, name, name, fontSize); else alert("Inválido.");
-                  }
-              } else alert("Vacío.");
-          };
-      };
-      setupPersonalPdfBtn("download-personal-btn", window.globalItems1, setlistConfig.setlist1.name);
-      setupPersonalPdfBtn("download-personal-btn-2", window.globalItems2, setlistConfig.setlist2.name);
-      setupPersonalPdfBtn("download-personal-btn-star", window.globalItemsStar, setlistConfig.setlistStar.name);
+      try { window.globalItems1 = await window.cargarPrimerSetlist(); } catch (e) { }
+      try { window.globalItems2 = await window.cargarSegundoSetlist(); } catch (e) { }
+      try { window.globalItemsStar = await window.cargarStarSetlist(); } catch (e) { }
   }
   if (typeof firebase !== 'undefined') loadAllData();
-  
-  // LOGICA CALENDARIO MOVIDA A CALENDARIO.JS
-  // (Los listeners de botones prev/next ahora se manejan en calendario.js)
 });
 </script>
 </body>
