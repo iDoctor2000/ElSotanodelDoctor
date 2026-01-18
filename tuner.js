@@ -1,13 +1,14 @@
+
 /*
-    TUNER.JS - PRO VERSION (Self-Contained & Gauge Style)
+    TUNER.JS - PRO VERSION (Analog Image Style)
     Características:
-    - Inyección automática de estilos y HTML.
-    - Modo Auto (Default) con visualización tipo "Gauge" (arco de colores).
-    - Modo Manual con selector de cuerdas y generador de tonos.
+    - Diseño basado en imagen de fondo (assets/Img afinacion.png).
+    - Aguja rotatoria analógica.
+    - Modo Auto (Default) y Manual.
     - Soporte Guitarra, Bajo (4/5), Ukelele.
 */
 
-console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
+console.log("--- TUNER.JS ANALOG EDITION CARGADO ---");
 
 (function() {
     let audioContext = null;
@@ -18,13 +19,13 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
     let activeOscillator = null; 
     
     // Estado
-    let isManualMode = false; // Por defecto Automático
+    let isManualMode = false;
     let currentInstrument = 'guitar';
 
     // Configuración Audio
     const buflen = 2048;
     const buf = new Float32Array(buflen);
-    const MIN_VOLUME_THRESHOLD = 0.01; // Sensibilidad
+    const MIN_VOLUME_THRESHOLD = 0.01; 
     
     const noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
@@ -65,8 +66,8 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
         if (!document.getElementById('tuner-injected-styles')) {
             const css = `
                 #tuner-popup {
-                    position: fixed; top: 70px; right: 20px; width: 340px;
-                    background: #1a1a1a; 
+                    position: fixed; top: 70px; right: 20px; width: 350px;
+                    background: #121212; 
                     border: 1px solid #333; border-radius: 16px;
                     padding: 20px; z-index: 11000;
                     box-shadow: 0 20px 50px rgba(0,0,0,0.9);
@@ -76,66 +77,87 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
                 }
                 #tuner-popup.visible { display: flex !important; }
 
-                /* HEADER: SWITCH MANUAL/AUTO */
+                /* HEADER */
                 .tuner-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
                 .tuner-mode-switch {
-                    background: #333; border-radius: 20px; padding: 3px; display: flex; cursor: pointer;
+                    background: #222; border-radius: 20px; padding: 3px; display: flex; cursor: pointer; border: 1px solid #333;
                 }
                 .tuner-mode-btn {
                     padding: 4px 12px; border-radius: 16px; border: none; background: transparent;
-                    color: #888; font-size: 0.75em; font-weight: bold; transition: all 0.2s;
+                    color: #888; font-size: 0.75em; font-weight: bold; transition: all 0.2s; cursor: pointer;
                 }
                 .tuner-mode-btn.active { background: #0cf; color: #000; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
 
-                /* GAUGE AREA (ARCO) */
+                /* ANALOG GAUGE AREA */
                 .tuner-gauge-wrap {
-                    position: relative; width: 280px; height: 140px; 
-                    overflow: hidden; margin-bottom: 10px;
+                    position: relative; width: 300px; height: 160px; /* Ajustar altura según recorte de imagen */
+                    overflow: hidden; margin-bottom: 5px;
+                    display: flex; justify-content: center;
                 }
-                .tuner-ticks {
-                    position: absolute; bottom: 0; left: 50%; width: 240px; height: 240px;
-                    transform: translateX(-50%); border-radius: 50%;
-                }
-                .tuner-tick {
-                    position: absolute; top: 0; left: 50%; width: 6px; height: 25px;
-                    background: #333; transform-origin: center 120px;
-                    border-radius: 3px; transition: background 0.1s;
-                }
-                /* Colores de los ticks (definidos por JS o CSS nth-child) */
                 
-                /* BIG NOTE DISPLAY */
-                .tuner-note-display {
-                    position: absolute; bottom: 0; left: 0; width: 100%; text-align: center;
+                .tuner-bg-img {
+                    width: 100%;
+                    height: auto;
+                    object-fit: contain;
+                    position: absolute; top: 0; left: 0;
+                    z-index: 1;
+                    opacity: 0.9;
+                }
+
+                /* NEEDLE (AGUJA) */
+                .tuner-needle {
+                    position: absolute; 
+                    bottom: 10px; /* Ajustar según donde esté el pivote en tu imagen */
+                    left: 50%; 
+                    width: 4px; 
+                    height: 120px; /* Largo de la aguja */
+                    background: #ff3d00; 
+                    border-radius: 50% 50% 0 0;
+                    transform-origin: bottom center; /* PIVOTE ABAJO */
+                    transform: translateX(-50%) rotate(0deg);
+                    transition: transform 0.15s cubic-bezier(0.2, 1, 0.3, 1), background-color 0.2s;
+                    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+                    z-index: 2;
+                }
+                /* Punto central de pivote (tornillo aguja) */
+                .tuner-pivot {
+                    position: absolute; bottom: 5px; left: 50%; width: 14px; height: 14px;
+                    background: #444; border: 2px solid #111; border-radius: 50%;
+                    transform: translateX(-50%); z-index: 3;
+                }
+
+                /* NOTE DISPLAY OVERLAY */
+                .tuner-readout {
+                    position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 4;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.9);
                 }
                 .tuner-main-note {
-                    font-size: 5em; font-weight: bold; color: #fff; line-height: 1;
-                    text-shadow: 0 5px 20px rgba(0,0,0,0.5);
+                    font-size: 3.5em; font-weight: 800; color: #fff; line-height: 1;
                 }
-                .tuner-octave { font-size: 0.4em; color: #888; margin-left: 2px; }
+                .tuner-octave { font-size: 0.4em; color: #aaa; margin-left: 2px; font-weight: normal;}
                 .tuner-status-text {
-                    font-size: 0.9em; color: #00e676; margin-top: -5px; height: 20px;
+                    font-size: 0.85em; color: #00e676; margin-top: 2px;
                     text-transform: uppercase; letter-spacing: 1px; font-weight: bold;
                     opacity: 0; transition: opacity 0.2s;
                 }
                 .tuner-status-text.visible { opacity: 1; }
 
-                /* MICROPHONE VISUALIZER */
+                /* MIC VIZ */
                 .tuner-mic-viz {
-                    display: flex; gap: 4px; align-items: flex-end; height: 20px; margin-top: 10px;
+                    display: flex; gap: 4px; align-items: flex-end; height: 20px; margin-top: 5px;
                 }
                 .tuner-mic-bar {
-                    width: 4px; background: #555; border-radius: 2px; height: 4px;
-                    transition: height 0.1s, background-color 0.1s;
+                    width: 4px; background: #333; border-radius: 2px; height: 4px;
+                    transition: height 0.1s;
                 }
 
-                /* MANUAL CONTROLS (HIDDEN BY DEFAULT) */
+                /* MANUAL PANEL */
                 .tuner-manual-panel {
                     width: 100%; display: none; flex-direction: column; gap: 10px; margin-top: 10px;
                     border-top: 1px solid #333; padding-top: 15px;
                     animation: slideDown 0.3s ease;
                 }
                 .tuner-manual-panel.visible { display: flex; }
-                
                 .tuner-select {
                     width: 100%; background: #222; color: #eee; border: 1px solid #444; 
                     padding: 8px; border-radius: 6px; outline: none;
@@ -173,28 +195,34 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
         const popup = document.getElementById('tuner-popup');
         if(!popup) return;
 
-        // Construcción HTML
+        // Construcción HTML con Imagen
         popup.innerHTML = `
             <div class="tuner-header">
-                <span style="color:#666; font-size:0.8em;">iDoctor TUNER PRO</span>
+                <span style="color:#666; font-size:0.8em; font-weight:bold;">TUNER PRO</span>
                 <div class="tuner-mode-switch">
                     <button class="tuner-mode-btn active" id="btn-mode-auto">AUTO</button>
                     <button class="tuner-mode-btn" id="btn-mode-manual">MANUAL</button>
                 </div>
             </div>
 
-            <!-- GAUGE VISUALIZATION -->
+            <!-- ANALOG GAUGE -->
             <div class="tuner-gauge-wrap">
-                <div class="tuner-ticks" id="tuner-ticks-container">
-                    <!-- Ticks generados por JS -->
-                </div>
-                <div class="tuner-note-display">
+                <!-- Imagen de fondo -->
+                <img src="assets/Img afinacion.png" class="tuner-bg-img" alt="Tuner Dial">
+                
+                <!-- Aguja -->
+                <div class="tuner-needle" id="tuner-needle"></div>
+                <div class="tuner-pivot"></div>
+
+                <!-- Lectura Digital Superpuesta -->
+                <div class="tuner-readout">
                     <div class="tuner-main-note" id="tuner-note-char">--<span class="tuner-octave"></span></div>
-                    <div class="tuner-status-text" id="tuner-status">IN TUNE!</div>
+                    <div style="font-size:0.8em; color:#aaa;" id="tuner-freq-val">0.0 Hz</div>
+                    <div class="tuner-status-text" id="tuner-status">PERFECT</div>
                 </div>
             </div>
 
-            <!-- MICROPHONE VISUALIZER -->
+            <!-- MIC VIZ -->
             <div class="tuner-mic-viz" id="tuner-mic-viz">
                 <span class="tuner-mic-bar"></span><span class="tuner-mic-bar"></span>
                 <span class="tuner-mic-bar"></span><span class="tuner-mic-bar"></span>
@@ -213,27 +241,6 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
                 <div class="tuner-strings-grid" id="tuner-strings-area"></div>
             </div>
         `;
-
-        // Generar Ticks (Segmentos del arco)
-        const ticksContainer = document.getElementById('tuner-ticks-container');
-        const totalTicks = 21; // Impar para tener centro exacto
-        const startAngle = -90; 
-        const endAngle = 90;
-        const step = (endAngle - startAngle) / (totalTicks - 1);
-
-        for (let i = 0; i < totalTicks; i++) {
-            const tick = document.createElement('div');
-            tick.className = 'tuner-tick';
-            tick.dataset.index = i;
-            // Rotación
-            const rotation = startAngle + (i * step);
-            tick.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
-            
-            // Colores por defecto (apagados)
-            tick.style.background = '#333';
-            
-            ticksContainer.appendChild(tick);
-        }
 
         // Event Listeners
         document.getElementById('btn-mode-auto').onclick = () => setMode(false);
@@ -271,7 +278,7 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
         const manualPanel = document.getElementById('tuner-manual-panel');
         const noteChar = document.getElementById('tuner-note-char');
         const status = document.getElementById('tuner-status');
-        const gauge = document.getElementById('tuner-ticks-container');
+        const needle = document.getElementById('tuner-needle');
 
         if(manual) {
             btnAuto.classList.remove('active');
@@ -279,14 +286,15 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
             manualPanel.classList.add('visible');
             noteChar.innerHTML = '<span style="font-size:0.5em; color:#888;">MANUAL</span>';
             status.style.opacity = 0;
-            // Apagar gauge en manual
-            Array.from(gauge.children).forEach(t => t.style.background = '#222');
+            needle.style.transform = 'translateX(-50%) rotate(0deg)'; // Reset needle
+            needle.style.background = '#444';
         } else {
             btnAuto.classList.add('active');
             btnManual.classList.remove('active');
             manualPanel.classList.remove('visible');
             noteChar.innerHTML = '--';
-            // Parar tono si suena
+            needle.style.background = '#ff3d00';
+            
             if(activeOscillator) {
                 activeOscillator.stop();
                 activeOscillator = null;
@@ -310,7 +318,7 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
         const osc = audioContext.createOscillator();
         const gain = audioContext.createGain();
 
-        osc.type = 'triangle'; // Onda un poco más rica
+        osc.type = 'triangle'; 
         osc.frequency.value = freq;
         
         gain.gain.setValueAtTime(0, audioContext.currentTime);
@@ -360,7 +368,6 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
             toggleBtn.style.boxShadow = '0 0 10px #0cf';
         }
 
-        // Default to Auto
         setMode(false); 
 
         try {
@@ -418,7 +425,6 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
 
         analyser.getFloatTimeDomainData(buf);
         
-        // Volumen para visualizador
         let sum = 0;
         for(let i=0; i<buf.length; i++) sum += buf[i]*buf[i];
         let rms = Math.sqrt(sum / buf.length);
@@ -430,9 +436,8 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
                 const pitch = ac;
                 const note = noteFromPitch(pitch);
                 const detune = centsOffFromPitch(pitch, note);
-                updateUI(note, detune);
+                updateUI(note, detune, pitch);
             } else {
-                // Decay si no hay sonido
                 dimGauge();
             }
         }
@@ -444,10 +449,9 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
         const bars = document.querySelectorAll('.tuner-mic-bar');
         const sensitivity = 5; 
         bars.forEach((bar, idx) => {
-            // Animación simple escalonada
             let h = Math.min(100, volume * 300 * (idx+1));
             bar.style.height = Math.max(4, h/sensitivity) + 'px';
-            bar.style.background = h > 10 ? '#0cf' : '#555';
+            bar.style.background = h > 10 ? '#0cf' : '#333';
         });
     }
 
@@ -493,69 +497,47 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
     function frequencyFromNoteNumber(note) { return 440 * Math.pow(2, (note - 69) / 12); }
     function centsOffFromPitch(frequency, note) { return Math.floor(1200 * Math.log(frequency / frequencyFromNoteNumber(note)) / Math.log(2)); }
 
-    // --- LÓGICA DE VISUALIZACIÓN GAUGE ---
-    function updateUI(noteNum, cents) {
+    // --- LÓGICA DE VISUALIZACIÓN GAUGE (ROTACIÓN) ---
+    function updateUI(noteNum, cents, freq) {
         const noteChar = document.getElementById('tuner-note-char');
         const status = document.getElementById('tuner-status');
-        const ticks = document.querySelectorAll('.tuner-tick');
+        const freqVal = document.getElementById('tuner-freq-val');
+        const needle = document.getElementById('tuner-needle');
         
         const noteName = noteStrings[noteNum % 12];
         const octave = Math.floor(noteNum / 12) - 1;
 
         noteChar.innerHTML = `${noteName}<span class="tuner-octave">${octave}</span>`;
+        if(freqVal) freqVal.textContent = freq.toFixed(1) + " Hz";
 
-        // 21 Ticks. Centro es index 10.
-        // Rango de cents: -50 a +50.
-        // Mapa: -50 -> Index 0, 0 -> Index 10, +50 -> Index 20
-        let tickIndex = Math.round(10 + (cents / 5)); // Cada tick son 5 cents
-        tickIndex = Math.max(0, Math.min(20, tickIndex));
+        // ROTACIÓN DE LA AGUJA
+        // Rango de cents: -50 a +50
+        // Rango de grados: -45deg a +45deg (aprox)
+        let angle = Math.max(-45, Math.min(45, cents));
+        needle.style.transform = `translateX(-50%) rotate(${angle}deg)`;
 
-        // Actualizar colores de los ticks
-        ticks.forEach((tick, i) => {
-            // Distancia al tick activo
-            const dist = Math.abs(i - tickIndex);
-            
-            if (dist === 0) {
-                // Tick Activo
-                if (Math.abs(cents) < 5) tick.style.background = '#00e676'; // Verde perfecto
-                else if (Math.abs(cents) < 15) tick.style.background = '#ffea00'; // Amarillo
-                else tick.style.background = '#ff3d00'; // Rojo
-                tick.style.boxShadow = `0 0 10px ${tick.style.background}`;
-                tick.style.height = '35px'; // Crece un poco
-            } else if (dist === 1) {
-                // Ticks adyacentes (estela)
-                tick.style.background = '#555';
-                tick.style.boxShadow = 'none';
-                tick.style.height = '25px';
-            } else {
-                // Ticks inactivos
-                tick.style.background = '#222';
-                tick.style.boxShadow = 'none';
-                tick.style.height = '25px';
-            }
-        });
-
-        // Status Text
+        // COLOR Y ESTADO
         if (Math.abs(cents) < 5) {
-            status.textContent = "IN TUNE!";
-            status.style.color = "#00e676";
+            status.textContent = "¡AFINADO!";
             status.classList.add('visible');
+            needle.style.background = "#00e676"; // Verde
+            needle.style.boxShadow = "0 0 10px #00e676";
             noteChar.style.color = "#00e676";
         } else {
             status.classList.remove('visible');
+            needle.style.background = "#ff3d00"; // Rojo
+            needle.style.boxShadow = "0 0 5px rgba(0,0,0,0.5)";
             noteChar.style.color = "#fff";
         }
     }
 
     function dimGauge() {
-        const ticks = document.querySelectorAll('.tuner-tick');
-        ticks.forEach(t => {
-            t.style.background = '#222';
-            t.style.height = '25px';
-            t.style.boxShadow = 'none';
-        });
+        const needle = document.getElementById('tuner-needle');
+        if(needle) {
+            needle.style.background = "#555";
+            needle.style.boxShadow = "none";
+        }
         document.getElementById('tuner-status').classList.remove('visible');
-        // Mantener la última nota visible pero atenuada
     }
 
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initTuner); } 
