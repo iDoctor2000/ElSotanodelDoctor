@@ -1,4 +1,3 @@
-
 /*
     TUNER.JS - PRO VERSION (Self-Contained & Gauge Style)
     Características:
@@ -177,7 +176,7 @@ console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
         // Construcción HTML
         popup.innerHTML = `
             <div class="tuner-header">
-                <span style="color:#666; font-size:0.8em;">TUNER PRO</span>
+                <span style="color:#666; font-size:0.8em;">iDoctor TUNER PRO</span>
                 <div class="tuner-mode-switch">
                     <button class="tuner-mode-btn active" id="btn-mode-auto">AUTO</button>
                     <button class="tuner-mode-btn" id="btn-mode-manual">MANUAL</button>
