@@ -1,4 +1,3 @@
-
 /* 
    JUKEBOX.JS
    Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
@@ -404,6 +403,24 @@ window.injectExtraControls = function() {
             toolsRow.insertBefore(relatedBtn, volGroup);
         } else {
             toolsRow.appendChild(relatedBtn);
+        }
+    }
+
+    // NUEVO BOTÓN: TUNER (AFINADOR)
+    if (!document.getElementById('tuner-toggle-btn')) {
+        const tunerBtn = document.createElement('button');
+        tunerBtn.id = 'tuner-toggle-btn'; // ID específico para tuner.js
+        tunerBtn.className = 'jukebox-tool-btn';
+        tunerBtn.innerHTML = '<span>🎯</span> Tuner';
+        tunerBtn.title = "Abrir Afinador (iDoctor Tuner Pro)";
+        // No añadimos onclick aquí, tuner.js se encarga de escuchar este ID
+        
+        // Insertar antes del grupo de volumen si existe
+        const volGroup = document.getElementById('jb-volume-group');
+        if (volGroup && volGroup.parentNode === toolsRow) {
+            toolsRow.insertBefore(tunerBtn, volGroup);
+        } else {
+            toolsRow.appendChild(tunerBtn);
         }
     }
 
