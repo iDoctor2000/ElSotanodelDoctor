@@ -1,4 +1,4 @@
- 
+
 /* 
    METRONOME.JS
    Lógica básica para el metrónomo web usando AudioContext
@@ -112,6 +112,9 @@ function toggleMetronome() {
         metronomeState.isPlaying = true;
         scheduler();
         updateMetronomeUI(true);
+        
+        // TRACKING
+        if(window.logInteraction) window.logInteraction('METRONOME', 'Start: ' + metronomeState.bpm + ' BPM');
     }
 }
 
@@ -201,13 +204,6 @@ function handleTapTempo(e) {
         
         console.log("TAP detectado. Intervalo:", avgInterval, "BPM:", calculatedBpm);
         setBPM(calculatedBpm);
-        
-        // (Opcional) Si el metrónomo está sonando, sincronizar el golpe al tap
-        /* 
-        if (metronomeState.isPlaying) {
-             metronomeState.nextNoteTime = metronomeState.audioContext.currentTime + 0.05;
-        }
-        */
     }
 }
 
