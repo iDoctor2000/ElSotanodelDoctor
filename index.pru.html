@@ -885,7 +885,7 @@
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
     <a href="#setlists" id="menu-rehearsals-setlist-section">Setlist Próximo Ensayo</a>
-    <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
+    <a href="#" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
@@ -1154,6 +1154,27 @@
   <div id="stats-screen" class="config-screen"><button class="close-btn" id="close-stats">Cerrar</button><h2>Estadísticas</h2><div class="stats-filter"><label>Filtrar por mes:</label><select id="stats-month-filter"><option value="all">Todos los meses</option></select></div><div class="stats-table"><h3>Tiempo Ensayado por Mes</h3><table id="time-per-month-table"><thead><tr><th>Mes</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-month-body"></tbody></table></div><div class="stats-table"><h3>Tiempo Ensayado por Usuario</h3><table id="time-per-user-table"><thead><tr><th>Usuario</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-user-body"></tbody></table></div><div class="stats-table"><h3>Ensayos Pasados</h3><div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Asistencias</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div></div></div>
   <div id="user-list-screen" class="config-screen"><button class="close-btn" id="close-user-list-screen">Cerrar</button><h2>Usuarios Registrados</h2><div class="table-wrapper" style="padding: 0 10px;"><table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table></div></div>
 
+  <!-- PANTALLA VISUALIZACIÓN ENSAYOS (NUEVO) -->
+  <div id="rehearsals-view-screen" class="config-screen">
+      <button class="close-btn" id="close-rehearsals-view">Cerrar</button>
+      <h2>Próximos Ensayos</h2>
+      <div class="table-wrapper">
+          <table id="rehearsal-main-table">
+              <thead>
+                  <tr>
+                      <th>Fecha</th>
+                      <th>Hora</th>
+                      <th>Lugar</th>
+                      <th class="calendar-col-header">Cal</th>
+                      <th class="details-col-header">Info</th>
+                      <th>Confirmar Asistencia</th>
+                  </tr>
+              </thead>
+              <tbody id="rehearsal-main-body"></tbody>
+          </table>
+      </div>
+  </div>
+
   <main>
     <section id="setlists">
       <h2>
@@ -1174,7 +1195,16 @@
       </div>
       <p id="total-time"></p>
     </section>
-    <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th class="details-col-header">Info</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
+    
+    <!-- SECCION ENSAYOS MINIMIZADA -->
+    <section id="rehearsals-preview">
+        <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-bottom:10px;">
+            <h2 style="margin:0;">Próximos Ensayos</h2>
+            <button id="btn-open-rehearsals-view" class="jukebox-btn" style="border-radius:50%; width:40px; height:40px; font-size:1.2em; border-color:#0cf; color:#0cf;" title="Ver todos los ensayos">➔</button>
+        </div>
+        <p style="text-align:center; color:#aaa; font-size:0.9em; font-style:italic;">Pulsa la flecha para ver el calendario completo y confirmar asistencia.</p>
+    </section>
+
     <section id="second-setlist">
       <h2>
           Setlist Próximo Concierto
@@ -1473,12 +1503,18 @@ const sidebar = document.getElementById("sidebar-menu"), overlay = document.getE
 function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof window.resetRehearsalForm==="function")window.resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
-setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
+setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
 setupMenuLink("menu-suggestions", "suggestions");
 setupMenuLink("menu-analisis-section", "analisis");
 document.getElementById("menu-suggestions").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("suggestions-screen"); renderSuggestions(); };
 document.getElementById("close-suggestions").onclick = () => { document.getElementById("suggestions-screen").style.display = "none"; };
+
+// --- MENU PRÓXIMOS ENSAYOS (MODIFICADO) ---
+document.getElementById("menu-rehearsals-section").onclick = e => { 
+    e.preventDefault(); 
+    if(window.openConfigScreen) window.openConfigScreen("rehearsals-view-screen"); 
+};
 
 // --- FIX: MENU GESTIÓN PROPUESTAS (ADMIN) ---
 document.getElementById("menu-admin-suggestions").onclick = e => { 
@@ -1596,7 +1632,7 @@ window.openConfigScreen = async (screenId) => {
     // Exponer isAuthenticated para otros scripts (master docs modal)
     window.isAuthenticated = isAuthenticated;
 
-    if(!isAuthenticated && screenId!=='user-list-screen' && screenId!=='stats-screen' && screenId!=='suggestions-screen') {
+    if(!isAuthenticated && screenId!=='user-list-screen' && screenId!=='stats-screen' && screenId!=='suggestions-screen' && screenId!=='rehearsals-view-screen') {
         let bioSuccess = await verifyBiometry();
         if (bioSuccess) {
             isAuthenticated = true;
@@ -1612,7 +1648,7 @@ window.openConfigScreen = async (screenId) => {
             }
         }
     } 
-    if(isAuthenticated || screenId==='user-list-screen' || screenId==='stats-screen' || screenId==='suggestions-screen') {
+    if(isAuthenticated || screenId==='user-list-screen' || screenId==='stats-screen' || screenId==='suggestions-screen' || screenId==='rehearsals-view-screen') {
         closeAll();
         const screen = document.getElementById(screenId);
         if (screen) {
