@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -2340,6 +2339,17 @@ document.getElementById("close-stats").onclick = () => document.getElementById("
 document.getElementById("stats-month-filter").addEventListener("change", renderStats);
 document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); openConfigScreen("user-list-screen"); };
 document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
+
+// --- FIX: MENU GESTIÓN PROPUESTAS (ADMIN) ---
+document.getElementById("menu-admin-suggestions").onclick = e => { 
+    e.preventDefault(); 
+    if(openConfigScreen("admin-suggestions-screen")) {
+        renderAdminSuggestions();
+    }
+};
+document.getElementById("close-admin-suggestions").onclick = () => { 
+    document.getElementById("admin-suggestions-screen").style.display = "none"; 
+};
 
 // --- GESTIÓN DE PROPUESTAS ---
 let suggestions = [];
