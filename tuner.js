@@ -66,7 +66,8 @@ console.log("--- TUNER.JS ANALOG EDITION CARGADO ---");
         if (!document.getElementById('tuner-injected-styles')) {
             const css = `
                 #tuner-popup {
-                    position: fixed; top: 70px; right: 20px; width: 350px;
+                    position: fixed; top: 70px; right: 20px; 
+                    width: 350px; max-width: 90vw; /* RESPONSIVE FIX */
                     background: #121212; 
                     border: 1px solid #333; border-radius: 16px;
                     padding: 20px; z-index: 11000;
@@ -90,7 +91,7 @@ console.log("--- TUNER.JS ANALOG EDITION CARGADO ---");
 
                 /* ANALOG GAUGE AREA */
                 .tuner-gauge-wrap {
-                    position: relative; width: 300px; height: 160px; /* Ajustar altura según recorte de imagen */
+                    position: relative; width: 100%; max-width: 300px; height: 160px; /* Responsive width */
                     overflow: hidden; margin-bottom: 5px;
                     display: flex; justify-content: center;
                 }
@@ -174,6 +175,12 @@ console.log("--- TUNER.JS ANALOG EDITION CARGADO ---");
                 .tuner-string-btn.active {
                     background: #0cf; border-color: #0cf; color: #000;
                     box-shadow: 0 0 15px rgba(0, 204, 255, 0.4); transform: scale(1.1);
+                }
+
+                @media (max-width: 400px) {
+                    #tuner-popup { right: 5%; width: 90%; top: 65px; }
+                    .tuner-gauge-wrap { height: 140px; }
+                    .tuner-needle { height: 100px; }
                 }
 
                 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
