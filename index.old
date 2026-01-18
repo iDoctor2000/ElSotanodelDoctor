@@ -174,21 +174,21 @@
         border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
     }
     
-    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2, #analisis h2 { text-align:center;color:#0cf;margin-bottom:5px }
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2, #analisis h2 { text-align:center;color:#0cf;margin-bottom:5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
     table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
     
-    /* Ajustes columnas setlist */
-    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6),
-    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #second-setlist table th:nth-child(6),
-    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5), #star-setlist table th:nth-child(6) { text-align: center; }
+    /* Ajustes columnas setlist - AHORA CON PDF */
+    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6), #setlists table th:nth-child(7),
+    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
+    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7) { text-align: center; }
     
-    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6),
-    #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6),
-    #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6) { text-align: center; }
+    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6), #setlists table td:nth-child(7),
+    #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
+    #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7) { text-align: center; }
     
     /* JUKEBOX COLUMNS */
     th.jukebox-col-header, td.jukebox-col { width: 40px; text-align: center; padding: 5px; }
@@ -213,6 +213,68 @@
         opacity: 1; border-color: #666; color: #999;
     }
     .jukebox-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* PDF COLUMN STYLES (NUEVO) */
+    th.pdf-col-header, td.pdf-col { width: 40px; text-align: center; padding: 5px; }
+    .pdf-btn {
+        background: transparent; border: 1px solid #333; color: #555;
+        border-radius: 50%; width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.3s; margin: 0 auto;
+    }
+    /* Estilo "Active" en Naranja para diferenciar del audio */
+    .pdf-btn.active {
+        border-color: #ff9800; color: #ff9800; 
+        box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
+    }
+    .pdf-btn.active:hover {
+        background: rgba(255, 152, 0, 0.1); transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(255, 152, 0, 0.6);
+    }
+    .pdf-btn.inactive {
+        opacity: 0.4; filter: grayscale(100%); border-color: #444;
+    }
+    .pdf-btn.inactive:hover {
+        opacity: 1; border-color: #666; color: #999;
+    }
+    .pdf-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* ESTILO BOTÓN GLOBAL MAESTRO (ACTUALIZADO 1, 2, 3) */
+    .master-direct-group { display: inline-flex; gap: 6px; vertical-align: middle; margin-left: 10px; }
+    .master-slot-btn {
+        background: transparent; border: 1px solid #444; color: #666;
+        border-radius: 50%; width: 28px; height: 28px; display: flex;
+        align-items: center; justify-content: center; cursor: pointer;
+        font-weight: bold; font-size: 11px; transition: all 0.3s;
+    }
+    .master-slot-btn.active { 
+        border-color: #ff9800; color: #ff9800; 
+        box-shadow: 0 0 8px rgba(255, 152, 0, 0.4); 
+    }
+    .master-slot-btn:hover { transform: scale(1.1); }
+
+    /* ESTILO BOTÓN GLOBAL MAESTRO LEGACY */
+    .setlist-master-doc-btn {
+        background: transparent; border: 1px solid #444; color: #555;
+        border-radius: 50%; width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.3s;
+    }
+    .setlist-master-doc-btn.has-files {
+        border-color: #ff9800; color: #ff9800;
+        box-shadow: 0 0 8px rgba(255, 152, 0, 0.4);
+        animation: pulse-master-orange 2s infinite;
+    }
+    @keyframes pulse-master-orange { 0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); } }
+
+    /* SLOTS MODAL DOCUMENTOS */
+    .master-doc-slot { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #333; }
+    .master-doc-slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .master-doc-slot-title { color: #ff9800; font-weight: bold; font-size: 0.9em; }
+    .master-doc-slot input { margin-bottom: 8px !important; }
+
+    /* PREVIEW DIA */
+    .day-preview-text { color: #0cf; font-weight: bold; margin-left: 10px; font-style: italic; font-size: 0.9em; }
 
     /* METRONOME COLUMN & BUTTON (ACTUALIZADO) */
     th.metronome-col-header, td.metronome-col { width: 40px; text-align: center; padding: 5px; }
@@ -251,7 +313,7 @@
 
     .break-row td { font-style: italic; color: #ccc; background-color: #161616; }
     .break-row td:first-child { color: #777; text-align: center; }
-    .break-row td:nth-child(3), .break-row td:nth-child(4), .break-row td:nth-child(5) { text-align: center; }
+    .break-row td:nth-child(3), .break-row td:nth-child(4), .break-row td:nth-child(5), .break-row td:nth-child(6) { text-align: center; }
     .set-header-row td { font-weight: bold; text-align: center; background-color: #383838; color: #0cf; padding-top: 12px; padding-bottom: 12px; border-top: 1px solid #505050 !important; border-bottom: 1px solid #505050 !important; }
     th.calendar-col-header, td.calendar-col { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
     th.details-col-header { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
@@ -268,11 +330,11 @@
     .calendar-btn:hover svg { fill: #09b; }
     .details-btn { font-size: 1.5em; color: #0cf; }
     .details-btn:hover { color: #09b; }
-    .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-    .edit-user, .edit-rehearsal { background: #0cf; color: #000; }
+    .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal, .copy-rehearsal { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .edit-user, .edit-rehearsal, .copy-rehearsal { background: #0cf; color: #000; }
     .clear-attendance { background: #ff9800; }
-    .delete-user:hover, .delete-rehearsal:hover { background: #d00; }
-    .edit-user:hover, .edit-rehearsal:hover { background: #09b; }
+    .delete-user, .delete-rehearsal:hover { background: #d00; }
+    .edit-user:hover, .edit-rehearsal:hover, .copy-rehearsal:hover { background: #09b; }
     .clear-attendance:hover { background: #e68900; }
     #cancel-edit-user, #cancel-edit-rehearsal { background: #666; color: #fff; }
     #cancel-edit-user:hover, #cancel-edit-rehearsal:hover { background: #555; }
@@ -653,7 +715,7 @@
 
         <button id="site-audio-control-button" class="header-icon-btn" title="Activar sonido"> 
             <svg class="icon-muted" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0zM4 9.78V14.2a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.7H5a1 1 0 00-1 1.08z"/>
+                <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0z"/>
             </svg>
             <svg class="icon-unmuted" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
                 <path d="M12.4 4.42a1.19 1.19 0 00-1.75 1.05v13.1a1.19 1.19 0 001.75 1.05l4.91-3.3H19a1 1 0 001-1.07V9.72a1 1 0 00-1-1.07h-1.66zm6.1 2.51a6.73 6.73 0 010 10.14M16 9.48a3.23 3.23 0 010 5M4 9.72v4.56a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.65H5a1 1 0 00-1 1.07z"/>
@@ -712,8 +774,11 @@
       <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
       <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
       <a href="#" id="menu-admin-suggestions">Gestión de Propuestas</a>
-      <a href="#" id="menu-jukebox-mgmt">Gestión Jukebox</a> 
-      <a href="#" id="menu-access-logs" style="color:#0cf;">Registro de Accesos</a> <!-- NUEVO MENU LOGS -->
+      <a href="#" id="menu-jukebox-mgmt">Gestión Jukebox</a>
+      <a href="#" id="menu-pdf-mgmt">Gestión de Partituras (PDF)</a>
+      <a href="#" id="menu-master-docs-mgmt">Gestión Documentación Maestra</a> <!-- NUEVO MENU DOCS -->
+      <a href="#" id="menu-access-logs" style="color:#0cf;">Registro de Accesos</a>
+      <a href="#" id="menu-enroll-biometry" style="color:#FFD700; font-weight: bold; border-top: 1px solid #444; margin-top: 10px;">🛡️ Activar FaceID / Huella</a>
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
@@ -769,6 +834,19 @@
   <div id="rehearsal-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Información del Ensayo</h3><h4 id="rehearsal-detail-title-display"></h4><input type="hidden" id="rehearsal-detail-index"><label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label><textarea id="rehearsal-notes" style="min-height: 400px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea><button id="save-rehearsal-details">Guardar Información</button><button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button><p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="setlist-config-screen" class="config-screen"><button class="close-btn" id="close-setlist-config">Cerrar</button><h2>Configuración de Setlists</h2><h3>Setlist Próximo Ensayo</h3><label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025"><label>ID/URL feed</label><input id="setlist1-url" placeholder="URL"><h3>Setlist Próximo Concierto</h3><label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad"><label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa"><h3>Setlist Concierto Estrella</h3><label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025"><label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL"><button id="guardar-setlist-config">Guardar Configuración</button><p id="setlist-message" class="error-message"></p></div>
   
+  <!-- MASTER DOCS MGMT SCREEN -->
+  <div id="master-docs-mgmt-screen" class="config-screen">
+      <button class="close-btn" id="close-master-docs-mgmt">Cerrar</button>
+      <h2>Gestión Documentación Maestra</h2>
+      <p style="color:#aaa; text-align:center;">Limpia o revisa los archivos globales asociados a cada setlist.</p>
+      <div class="table-wrapper">
+          <table id="master-docs-mgmt-table">
+              <thead><tr><th>Setlist</th><th>Archivos Activos</th><th>Acciones</th></tr></thead>
+              <tbody id="master-docs-mgmt-body"></tbody>
+          </table>
+      </div>
+  </div>
+
   <!-- JUKEBOX MGMT SCREEN -->
   <div id="jukebox-mgmt-screen" class="config-screen">
       <button class="close-btn" id="close-jukebox-mgmt">Cerrar</button>
@@ -782,7 +860,20 @@
       </div>
   </div>
 
-  <!-- ACCESS LOGS SCREEN (NUEVO) -->
+  <!-- PDF MGMT SCREEN -->
+  <div id="pdf-mgmt-screen" class="config-screen">
+      <button class="close-btn" id="close-pdf-mgmt">Cerrar</button>
+      <h2>Gestión de Partituras (PDF)</h2>
+      <p style="color:#aaa; text-align:center;">Listado de canciones que tienen un enlace a documento asignado.</p>
+      <div class="table-wrapper">
+          <table id="pdf-mgmt-table">
+              <thead><tr><th>Canción (ID)</th><th>Enlace Documento</th><th>Acciones</th></tr></thead>
+              <tbody id="pdf-mgmt-body"></tbody>
+          </table>
+      </div>
+  </div>
+
+  <!-- ACCESS LOGS SCREEN -->
   <div id="access-logs-screen" class="config-screen">
       <button class="close-btn" id="close-access-logs">Cerrar</button>
       <h2>Registro de Accesos</h2>
@@ -792,6 +883,60 @@
               <thead><tr><th>Fecha</th><th>Usuario</th><th>Duración</th><th></th></tr></thead>
               <tbody id="access-logs-body"></tbody>
           </table>
+      </div>
+  </div>
+
+  <!-- MASTER DOCS MODAL (NUEVO) -->
+  <div id="master-docs-modal" class="modal-backdrop">
+      <div class="modal-content" style="max-width: 500px;">
+          <h3>Documentación: <span id="master-docs-setlist-name" style="color:#fff;"></span></h3>
+          <p id="master-docs-admin-hint" style="font-size:0.8em; color:#888; margin-bottom:15px; display:none;">(Modo Administrador: Puedes editar nombres y enlaces)</p>
+          
+          <div id="master-docs-slots-container">
+              <!-- Slot 1 -->
+              <div class="master-doc-slot">
+                  <div class="master-doc-slot-header">
+                      <span class="master-doc-slot-title">Archivo 1</span>
+                      <button id="master-btn-view-1" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+                  </div>
+                  <div class="admin-only" style="display:none;">
+                      <input type="text" id="master-name-1" placeholder="Nombre (Ej: Guion del Show)">
+                      <input type="url" id="master-url-1" placeholder="URL (Dropbox, Drive...)">
+                      <button id="master-save-1" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 1</button>
+                  </div>
+                  <div class="user-view" id="master-display-1" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div>
+              </div>
+              <!-- Slot 2 -->
+              <div class="master-doc-slot">
+                  <div class="master-doc-slot-header">
+                      <span class="master-doc-slot-title">Archivo 2</span>
+                      <button id="master-btn-view-2" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+                  </div>
+                  <div class="admin-only" style="display:none;">
+                      <input type="text" id="master-name-2" placeholder="Nombre (Ej: Notas Técnicas)">
+                      <input type="url" id="master-url-2" placeholder="URL">
+                      <button id="master-save-2" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 2</button>
+                  </div>
+                  <div class="user-view" id="master-display-2" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div>
+              </div>
+              <!-- Slot 3 -->
+              <div class="master-doc-slot">
+                  <div class="master-doc-slot-header">
+                      <span class="master-doc-slot-title">Archivo 3</span>
+                      <button id="master-btn-view-3" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+                  </div>
+                  <div class="admin-only" style="display:none;">
+                      <input type="text" id="master-name-3" placeholder="Nombre (Ej: Speech)">
+                      <input type="url" id="master-url-3" placeholder="URL">
+                      <button id="master-save-3" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 3</button>
+                  </div>
+                  <div class="user-view" id="master-display-3" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div>
+              </div>
+          </div>
+
+          <div style="text-align:right; margin-top:15px;">
+              <button id="close-master-docs-modal" class="modal-close-btn">Cerrar</button>
+          </div>
       </div>
   </div>
 
@@ -808,6 +953,23 @@
             <div>
                 <button id="jb-modal-cancel-btn" class="modal-close-btn">Cancelar</button>
                 <button id="jb-modal-save-btn">Guardar</button>
+            </div>
+         </div>
+      </div>
+  </div>
+
+  <!-- PDF EDIT MODAL -->
+  <div id="pdf-edit-modal" class="modal-backdrop">
+      <div class="modal-content" style="max-width: 500px;">
+         <h3>Partitura: <span id="pdf-modal-songname" style="color:#fff;"></span></h3>
+         
+         <label for="pdf-modal-url-input">Enlace del Documento (Dropbox, Drive, etc):</label>
+         <input type="text" id="pdf-modal-url-input" placeholder="Pegar URL del PDF aquí...">
+         
+         <div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;">
+            <div>
+                <button id="pdf-modal-cancel-btn" class="modal-close-btn">Cancelar</button>
+                <button id="pdf-modal-save-btn">Guardar</button>
             </div>
          </div>
       </div>
@@ -857,10 +1019,9 @@
           </div>
       </div>
   </div>
-  <!-- FIN MODALES ANÁLISIS -->
 
   <div id="user-mgmt-screen" class="config-screen"><button class="close-btn" id="close-user-mgmt">Cerrar</button><h2>Gestión de Usuarios</h2><label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label><select id="user-role" multiple><option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option><option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option><option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option><option value="Coros">Coros</option><option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option><option value="Técnico de Luces">Técnico de Luces</option><option value="Montador">Montador</option><option value="Road Manager">Road Manager</option><option value="Backliner">Backliner</option></select><button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button><p id="user-message" class="error-message"></p><table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table></div>
-  <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha</label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
+  <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha <span id="rehearsal-day-preview" class="day-preview-text"></span></label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
   <div id="admin-suggestions-screen" class="config-screen"><button class="close-btn" id="close-admin-suggestions">Cerrar</button><h2>Gestión de Propuestas (Admin)</h2><p style="color:#aaa; text-align:center;">Aquí puedes ver el historial y eliminar propuestas inadecuadas.</p><div class="table-wrapper"><table id="admin-suggestions-table"><thead><tr><th>Canción</th><th>Propuesta por</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="admin-suggestions-body"></tbody></table></div></div>
   <div id="suggestions-screen" class="config-screen"><button class="close-btn" id="close-suggestions">Cerrar</button><h2>Propuestas de Canciones</h2><div style="text-align:center; margin-bottom:20px;"><label for="user-identity-selector" style="color:#0cf; font-weight:bold; display:block; margin-bottom:5px;">¿Quién eres? (Necesario para proponer y votar)</label><select id="user-identity-selector"><option value="" disabled selected>-- Selecciona tu nombre --</option></select></div><div class="suggestion-form"><h4 style="color:#fff; margin-top:0;">Nueva Propuesta</h4><div class="suggestion-form-row"><input type="text" id="suggestion-title" placeholder="Título de la canción"><input type="text" id="suggestion-artist" placeholder="Artista / Banda original"></div><div class="suggestion-form-row"><input type="url" id="suggestion-link" placeholder="Enlace (Spotify/Youtube) - Opcional"><button id="add-suggestion-btn" style="width:auto; flex:0 0 150px;">Proponer</button></div><p id="suggestion-message" class="error-message" style="text-align:left; margin:0;"></p></div><div class="suggestions-grid" id="suggestions-container"></div></div>
   <div id="stats-screen" class="config-screen"><button class="close-btn" id="close-stats">Cerrar</button><h2>Estadísticas</h2><div class="stats-filter"><label>Filtrar por mes:</label><select id="stats-month-filter"><option value="all">Todos los meses</option></select></div><div class="stats-table"><h3>Tiempo Ensayado por Mes</h3><table id="time-per-month-table"><thead><tr><th>Mes</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-month-body"></tbody></table></div><div class="stats-table"><h3>Tiempo Ensayado por Usuario</h3><table id="time-per-user-table"><thead><tr><th>Usuario</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-user-body"></tbody></table></div><div class="stats-table"><h3>Ensayos Pasados</h3><div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Asistencias</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div></div></div>
@@ -868,9 +1029,16 @@
 
   <main>
     <section id="setlists">
-      <h2>Setlist Próximo Ensayo</h2>
+      <h2>
+          Setlist Próximo Ensayo 
+          <div class="master-direct-group">
+              <button class="master-slot-btn" id="master-slot-setlist1-1" onclick="handleMasterDirectClick('setlist1', 1, 'Setlist Ensayo')" title="Doc 1">1</button>
+              <button class="master-slot-btn" id="master-slot-setlist1-2" onclick="handleMasterDirectClick('setlist1', 2, 'Setlist Ensayo')" title="Doc 2">2</button>
+              <button class="master-slot-btn" id="master-slot-setlist1-3" onclick="handleMasterDirectClick('setlist1', 3, 'Setlist Ensayo')" title="Doc 3">3</button>
+          </div>
+      </h2>
       <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
@@ -881,9 +1049,16 @@
     </section>
     <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th class="details-col-header">Info</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
     <section id="second-setlist">
-      <h2>Setlist Próximo Concierto</h2>
+      <h2>
+          Setlist Próximo Concierto
+          <div class="master-direct-group">
+              <button class="master-slot-btn" id="master-slot-setlist2-1" onclick="handleMasterDirectClick('setlist2', 1, 'Setlist Próximo Concierto')" title="Doc 1">1</button>
+              <button class="master-slot-btn" id="master-slot-setlist2-2" onclick="handleMasterDirectClick('setlist2', 2, 'Setlist Próximo Concierto')" title="Doc 2">2</button>
+              <button class="master-slot-btn" id="master-slot-setlist2-3" onclick="handleMasterDirectClick('setlist2', 3, 'Setlist Próximo Concierto')" title="Doc 3">3</button>
+          </div>
+      </h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
+      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-2">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
@@ -893,9 +1068,16 @@
       <p id="total-time-2"></p>
     </section>
     <section id="star-setlist">
-      <h2>Setlist Concierto Estrella</h2>
+      <h2>
+          Setlist Concierto Estrella
+          <div class="master-direct-group">
+              <button class="master-slot-btn" id="master-slot-setlistStar-1" onclick="handleMasterDirectClick('setlistStar', 1, 'Setlist Concierto Estrella')" title="Doc 1">1</button>
+              <button class="master-slot-btn" id="master-slot-setlistStar-2" onclick="handleMasterDirectClick('setlistStar', 2, 'Setlist Concierto Estrella')" title="Doc 2">2</button>
+              <button class="master-slot-btn" id="master-slot-setlistStar-3" onclick="handleMasterDirectClick('setlistStar', 3, 'Setlist Concierto Estrella')" title="Doc 3">3</button>
+          </div>
+      </h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-star">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
@@ -958,7 +1140,7 @@
 
 <script>
 // 0. Configuración Global
-const APP_VERSION = "1.2";
+const APP_VERSION = "1.2.1";
 let currentSessionId = null;
 
 const firebaseConfig = {
@@ -1104,6 +1286,8 @@ window.toggleLogDetails = function(id) {
 window.globalItems1 = [];
 window.globalItems2 = [];
 window.globalItemsStar = [];
+window.pdfLibrary = {};
+window.masterDocs = { setlist1: {}, setlist2: {}, setlistStar: {} }; // NUEVA LIBRERIA DOCS MAESTROS
 
 const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
 const toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
@@ -1216,6 +1400,23 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
 
         return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
     };
+    
+    // Helper for PDF Cell
+    const createPdfCell = (songName) => {
+        const cleanName = sanitizeFirebaseKey(songName);
+        const url = window.pdfLibrary ? window.pdfLibrary[cleanName] : null;
+        const hasLink = !!url;
+        const statusClass = hasLink ? 'active' : 'inactive';
+        const safeName = songName.replace(/'/g, "\\'");
+        
+        const clickAction = hasLink 
+            ? `window.openPdfLink('${url}')` 
+            : `openPdfEditModal('${safeName}')`;
+
+        const iconSvg = `<svg viewBox="0 0 24 24"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/><path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>`;
+
+        return `<td class="pdf-col"><button class="pdf-btn ${statusClass}" onclick="${clickAction}">${iconSvg}</button></td>`;
+    };
 
     // Helper for Metronome Cell
     const createMetronomeCell = (tempo) => {
@@ -1244,26 +1445,28 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultE
         setlistStructure.forEach(blockOrItem => {
             if (blockOrItem.isSetHeader) {
                 const setHeaderTime = toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="7">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
+                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="8">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
                 totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
                 blockOrItem.songs.forEach(song => {
                     songCount++;
                     const songFormattedTime = toMMSS(song.calculatedDurationSeconds || 0);
                     const jukeboxCell = createJukeboxCell(song.displayName);
+                    const pdfCell = createPdfCell(song.displayName);
                     const metronomeCell = createMetronomeCell(song.tempo);
-                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
+                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}${pdfCell}<td>${decodeHtmlEntities(song.key || "-")}</td><td>${decodeHtmlEntities(song.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
                 })
             } else if (blockOrItem.isBreak) {
                 const breakFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
                 totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
+                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
             } else if (blockOrItem.isSong) {
                 songCount++;
                 const songFormattedTime = toMMSS(blockOrItem.calculatedDurationSeconds || 0);
                 totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
                 const jukeboxCell = createJukeboxCell(blockOrItem.displayName);
+                const pdfCell = createPdfCell(blockOrItem.displayName);
                 const metronomeCell = createMetronomeCell(blockOrItem.tempo);
-                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
+                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}${pdfCell}<td>${decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${decodeHtmlEntities(blockOrItem.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
             }
         });
     }
@@ -1350,58 +1553,251 @@ window.deleteJukeboxLink = async function(cleanKey) {
     }
 }
 
-// --- ACCESS LOGS LOGIC (NUEVO) ---
-document.getElementById("menu-access-logs").onclick = e => { 
-    e.preventDefault(); 
-    openConfigScreen("access-logs-screen");
-    renderAccessLogs();
-};
-document.getElementById("close-access-logs").onclick = () => {
-    document.getElementById("access-logs-screen").style.display = "none";
-};
+/* ---------- 3.6. PDF Library Logic ---------- */
+let currentEditingPdfSong = null;
+const pdfEditModal = document.getElementById('pdf-edit-modal');
 
-function logAccess() {
-    if (typeof db === 'undefined') return;
-    const userAgent = navigator.userAgent;
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) ? 'Móvil' : 'PC';
-    const storedUser = localStorage.getItem('elSotanoCurrentUser') || 'Anónimo';
-    
-    db.collection('access_logs').add({
-        timestamp: new Date().toISOString(),
-        userAgent: userAgent,
-        deviceType: isMobile,
-        user: storedUser
-    }).catch(e => console.warn("Error logging access", e));
+window.openPdfLink = function(url) {
+    window.open(url, '_blank');
 }
 
-function renderAccessLogs() {
-    const tbody = document.getElementById('access-logs-body');
-    tbody.innerHTML = "<tr><td colspan='3'>Cargando logs...</td></tr>";
+window.openPdfEditModal = function(songName) {
+    currentEditingPdfSong = songName;
+    const cleanName = sanitizeFirebaseKey(songName);
+    const currentLink = window.pdfLibrary ? window.pdfLibrary[cleanName] : "";
     
-    // Fetch last 50 logs
-    db.collection('access_logs').orderBy('timestamp', 'desc').limit(50).get().then(snapshot => {
-        tbody.innerHTML = "";
-        if(snapshot.empty) {
-            tbody.innerHTML = "<tr><td colspan='3'>No hay registros.</td></tr>";
-            return;
+    document.getElementById('pdf-modal-songname').textContent = songName;
+    document.getElementById('pdf-modal-url-input').value = currentLink || "";
+    
+    pdfEditModal.classList.add('show');
+}
+
+document.getElementById('pdf-modal-save-btn').onclick = async () => {
+    if(!currentEditingPdfSong) return;
+    const url = document.getElementById('pdf-modal-url-input').value.trim();
+    const cleanName = sanitizeFirebaseKey(currentEditingPdfSong);
+    
+    if (window.pdfLibrary) {
+        if (url) {
+            window.pdfLibrary[cleanName] = url;
+        } else {
+            delete window.pdfLibrary[cleanName];
         }
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const date = new Date(data.timestamp).toLocaleString();
-            let userColor = data.user === 'Anónimo' ? '#aaa' : '#0cf';
-            
-            tbody.insertAdjacentHTML('beforeend', `
-                <tr>
-                    <td>${date}</td>
-                    <td style="color:${userColor}; font-weight:bold;">${data.user}</td>
-                    <td>${data.deviceType}</td>
-                </tr>
-            `);
-        });
-    }).catch(e => {
-        console.error(e);
-        tbody.innerHTML = "<tr><td colspan='3'>Error cargando logs.</td></tr>";
+        
+        await window.savePdfLibrary();
+        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
+    }
+    pdfEditModal.classList.remove('show');
+};
+
+document.getElementById('pdf-modal-cancel-btn').onclick = () => {
+    pdfEditModal.classList.remove('show');
+};
+
+window.loadPdfLibrary = async () => {
+     try {
+         const data = await window.withRetry(() => window.loadDoc("intranet", "pdf_library", { library: {} }));
+         window.pdfLibrary = data.library || {};
+     } catch (e) {
+         console.error("Error loading PDF library:", e);
+         window.pdfLibrary = {};
+     }
+}
+
+window.savePdfLibrary = async () => {
+     try {
+         await window.withRetry(() => window.saveDoc("intranet", "pdf_library", { library: window.pdfLibrary }));
+     } catch (e) {
+         console.error("Error saving PDF library:", e);
+         throw e;
+     }
+}
+
+document.getElementById("menu-pdf-mgmt").onclick = e => { 
+    e.preventDefault(); 
+    openConfigScreen("pdf-mgmt-screen");
+    renderPdfMgmtTable();
+};
+document.getElementById("close-pdf-mgmt").onclick = () => {
+    document.getElementById("pdf-mgmt-screen").style.display = "none";
+};
+
+function renderPdfMgmtTable() {
+    const tbody = document.getElementById('pdf-mgmt-body');
+    tbody.innerHTML = "";
+    if(!window.pdfLibrary) return;
+    const keys = Object.keys(window.pdfLibrary).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    if (keys.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay partituras enlazadas.</td></tr>"; return; }
+    keys.forEach(key => {
+        const url = window.pdfLibrary[key];
+        const displayName = key.replace(/_/g, " "); 
+        const row = `<tr><td>${displayName}</td><td style="font-size:0.8em; color:#aaa; max-width: 200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${url}</td><td><button onclick="deletePdfLink('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;">Eliminar</button></td></tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
     });
+}
+
+window.deletePdfLink = async function(cleanKey) {
+    if(confirm("¿Eliminar el enlace de esta partitura?")) {
+        delete window.pdfLibrary[cleanKey];
+        await window.savePdfLibrary();
+        renderPdfMgmtTable(); 
+        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
+    }
+}
+
+/* ---------- 3.7. Master Docs (Globales) Logic (NUEVO) ---------- */
+let currentMasterDocsSetlistKey = null;
+
+window.loadMasterDocs = async () => {
+    try {
+        const data = await window.withRetry(() => window.loadDoc("intranet", "master_docs", { docs: { setlist1: {}, setlist2: {}, setlistStar: {} } }));
+        window.masterDocs = data.docs || { setlist1: {}, setlist2: {}, setlistStar: {} };
+        updateMasterDocsVisuals();
+    } catch (e) {
+        console.error("Error loading master docs:", e);
+    }
+}
+
+window.saveMasterDocs = async () => {
+    try {
+        await window.withRetry(() => window.saveDoc("intranet", "master_docs", { docs: window.masterDocs }));
+        updateMasterDocsVisuals();
+    } catch (e) {
+        console.error("Error saving master docs:", e);
+        throw e;
+    }
+}
+
+function updateMasterDocsVisuals() {
+    ['setlist1', 'setlist2', 'setlistStar'].forEach(key => {
+        for(let i=1; i<=3; i++) {
+            const btn = document.getElementById(`master-slot-${key}-${i}`);
+            if(!btn) continue;
+            const setDocs = window.masterDocs[key] || {};
+            const slotData = setDocs['slot' + i];
+            if (slotData && slotData.url) btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
+    });
+}
+
+// Nueva función para manejar el clic directo en los botones 1, 2, 3
+window.handleMasterDirectClick = (setlistKey, slotNum, displayName) => {
+    const slotData = window.masterDocs[setlistKey]['slot' + slotNum];
+    if (slotData && slotData.url) {
+        window.open(slotData.url, '_blank');
+    } else {
+        // Si no hay URL, abrimos el modal de edición original para ese setlist
+        window.openMasterDocsModal(setlistKey, displayName);
+    }
+};
+
+window.openMasterDocsModal = function(setlistKey, displayName) {
+    currentMasterDocsSetlistKey = setlistKey;
+    document.getElementById('master-docs-setlist-name').textContent = displayName;
+    
+    const adminHint = document.getElementById('master-docs-admin-hint');
+    const adminAreas = document.querySelectorAll('.admin-only');
+    
+    if (isAuthenticated) {
+        adminHint.style.display = 'block';
+        adminAreas.forEach(a => a.style.display = 'block');
+    } else {
+        adminHint.style.display = 'none';
+        adminAreas.forEach(a => a.style.display = 'none');
+    }
+
+    const setDocs = window.masterDocs[setlistKey] || {};
+    
+    for(let i=1; i<=3; i++) {
+        const slot = setDocs['slot' + i] || { name: "", url: "" };
+        
+        // Admin Inputs
+        document.getElementById('master-name-' + i).value = slot.name || "";
+        document.getElementById('master-url-' + i).value = slot.url || "";
+        
+        // Display Text
+        const displayEl = document.getElementById('master-display-' + i);
+        const viewBtn = document.getElementById('master-btn-view-' + i);
+        
+        if (slot.url) {
+            displayEl.textContent = slot.name || "Documento sin nombre";
+            displayEl.style.fontStyle = 'normal';
+            displayEl.style.color = '#fff';
+            viewBtn.style.display = 'flex';
+            viewBtn.onclick = () => window.open(slot.url, '_blank');
+        } else {
+            displayEl.textContent = "Vacío";
+            displayEl.style.fontStyle = 'italic';
+            displayEl.style.color = '#777';
+            viewBtn.style.display = 'none';
+        }
+
+        // Save Action (Admin)
+        document.getElementById('master-save-' + i).onclick = async () => {
+            const newName = document.getElementById('master-name-' + i).value.trim();
+            const newUrl = document.getElementById('master-url-' + i).value.trim();
+            
+            if(!window.masterDocs[setlistKey]) window.masterDocs[setlistKey] = {};
+            window.masterDocs[setlistKey]['slot' + i] = { name: newName, url: newUrl };
+            
+            try {
+                await window.saveMasterDocs();
+                alert("Ranura " + i + " guardada.");
+                window.openMasterDocsModal(setlistKey, displayName); // Refresh visuals
+            } catch(e) { alert("Error al guardar: " + e.message); }
+        };
+    }
+
+    document.getElementById('master-docs-modal').classList.add('show');
+}
+
+document.getElementById('close-master-docs-modal').onclick = () => {
+    document.getElementById('master-docs-modal').classList.remove('show');
+}
+
+// --- GESTIÓN MASIVA MASTER DOCS ---
+document.getElementById("menu-master-docs-mgmt").onclick = e => { 
+    e.preventDefault(); 
+    openConfigScreen("master-docs-mgmt-screen");
+    renderMasterDocsMgmtTable();
+};
+document.getElementById("close-master-docs-mgmt").onclick = () => {
+    document.getElementById("master-docs-mgmt-screen").style.display = "none";
+};
+
+function renderMasterDocsMgmtTable() {
+    const tbody = document.getElementById('master-docs-mgmt-body');
+    tbody.innerHTML = "";
+    
+    const setlistLabels = { setlist1: "Setlist Ensayo", setlist2: "Setlist Concierto", setlistStar: "Setlist Estrella" };
+    
+    ['setlist1', 'setlist2', 'setlistStar'].forEach(key => {
+        const setDocs = window.masterDocs[key] || {};
+        const slotsWithFiles = Object.entries(setDocs).filter(([slotId, data]) => data && data.url);
+        
+        let filesHtml = slotsWithFiles.length > 0 
+            ? slotsWithFiles.map(([slotId, data]) => `<div style="font-size:0.8em; color:#aaa;">- ${data.name || slotId}</div>`).join('')
+            : '<span style="color:#666; font-style:italic;">Sin archivos</span>';
+        
+        const row = `
+            <tr>
+                <td>${setlistLabels[key]}</td>
+                <td>${filesHtml}</td>
+                <td>
+                    <button onclick="clearSetlistMasterDocs('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;" ${slotsWithFiles.length === 0 ? 'disabled' : ''}>Limpiar Todo</button>
+                </td>
+            </tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+}
+
+window.clearSetlistMasterDocs = async function(setlistKey) {
+    if(confirm("¿Estás seguro de que deseas eliminar TODOS los archivos maestros de este setlist?")) {
+        window.masterDocs[setlistKey] = {};
+        await window.saveMasterDocs();
+        renderMasterDocsMgmtTable();
+    }
 }
 
 /* ---------- 6. Usuarios ---------- */
@@ -1421,7 +1817,6 @@ function populateIdentitySelector() {
         select.insertAdjacentHTML('beforeend', `<option value="${u.name}" ${isSelected}>${u.name} (${u.nickname})</option>`);
     });
     
-    // Listener para guardar identidad
     select.onchange = () => {
         localStorage.setItem('elSotanoCurrentUser', select.value);
     };
@@ -1429,6 +1824,17 @@ function populateIdentitySelector() {
 
 /* ---------- 7. Ensayos ---------- */
 let rehearsals = []; let editingRehearsalIndex = null;
+
+// Lógica para el preview del día al cambiar fecha
+document.getElementById("rehearsal-date").addEventListener("change", function() {
+    const val = this.value;
+    const target = document.getElementById("rehearsal-day-preview");
+    if(!val) { target.textContent = ""; return; }
+    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const d = new Date(val + 'T00:00:00');
+    target.textContent = isNaN(d.getTime()) ? "" : `(${days[d.getDay()]})`;
+});
+
 function renderRehearsals() { 
     const tbodyConfig=document.getElementById("rehearsal-table-body");
     const tbodyMain=document.getElementById("rehearsal-main-body");
@@ -1462,8 +1868,8 @@ function renderRehearsals() {
         const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";
         const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
         
-        // Tabla Configuración
-        tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); 
+        // Tabla de configuración Admin con botón Copiar
+        tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="copy-rehearsal">Copiar</button><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); 
         
         const rehearsalDate=new Date(r.date+'T00:00:00Z');
         if(rehearsalDate>=today){
@@ -1473,38 +1879,43 @@ function renderRehearsals() {
         }
     }); 
 
-    // Event Listeners Config
-    tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block"}); 
+    // Listeners Admin
+    tbodyConfig.querySelectorAll(".copy-rehearsal").forEach(btn=>btn.onclick=()=>{
+        const index=parseInt(btn.dataset.i,10);
+        const rehearsal=rehearsals[index];
+        document.getElementById("rehearsal-start-time").value = rehearsal.startTime || "";
+        document.getElementById("rehearsal-end-time").value = rehearsal.endTime || "";
+        document.getElementById("rehearsal-location").value = rehearsal.location || "";
+        document.getElementById("rehearsal-date").focus();
+        document.getElementById("rehearsal-screen").scrollTop = 0;
+        // Trigger preview dia si hay fecha
+        document.getElementById("rehearsal-date").dispatchEvent(new Event('change'));
+    });
+
+    tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block";document.getElementById("rehearsal-date").dispatchEvent(new Event('change'));}); 
     tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn=>btn.onclick=async()=>{if(confirm("¿Estás seguro de que deseas eliminar este ensayo?")){rehearsals.splice(parseInt(btn.dataset.i,10),1);await saveRehearsals();renderStats()}}); 
     tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn=>btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[index];if(confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)){rehearsal.attendance=[];await saveRehearsals();document.getElementById("rehearsal-message").textContent="Asistencias eliminadas.";renderStats()}}); 
     
-    // Event Listeners Main
     tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn=>{btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const userSelect=document.querySelector(`.attendance-user[data-i="${index}"]`);const responseSelect=document.querySelector(`.attendance-response[data-i="${index}"]`);const name=userSelect.value;const attending=responseSelect.value;if(!name||!attending){alert("Selecciona nombre y respuesta.");return} const rehearsal=rehearsals[index];const confirmMsg=`${name}, ¿${attending==="Sí"?"ASISTIRÁS":"NO ASISTIRÁS"} al ensayo del ${formatDateWithDay(rehearsal.date)}?`;if(!confirm(confirmMsg))return;if(!Array.isArray(rehearsal.attendance))rehearsal.attendance=[];const existingResponse=rehearsal.attendance.find(a=>a.name===name);if(existingResponse)existingResponse.attending=attending;else rehearsal.attendance.push({name,attending});try{await saveRehearsals();userSelect.value="";responseSelect.value="";renderStats()}catch(e){alert("Error al guardar asistencia: "+e.message)}}})
 }
 
-/* Lógica Modal Detalles Ensayo */
 const rehearsalDetailModal = document.getElementById('rehearsal-details-modal');
 function openRehearsalDetailsModal(index) {
     const rehearsal = rehearsals[index];
     if(!rehearsal) return;
-
     document.getElementById('rehearsal-detail-index').value = index;
     document.getElementById('rehearsal-detail-title-display').textContent = `Ensayo: ${formatDateWithDay(rehearsal.date)} (${rehearsal.startTime} - ${rehearsal.endTime})`;
     document.getElementById('rehearsal-notes').value = rehearsal.notes || "";
     document.getElementById('rehearsal-detail-message').textContent = "";
-    
     rehearsalDetailModal.classList.add('show');
 }
-
 document.getElementById('close-rehearsal-details-modal').onclick = () => {
     rehearsalDetailModal.classList.remove('show');
 };
-
 document.getElementById('save-rehearsal-details').onclick = async () => {
     const index = parseInt(document.getElementById('rehearsal-detail-index').value, 10);
     const notes = document.getElementById('rehearsal-notes').value;
     const msg = document.getElementById('rehearsal-detail-message');
-
     if (rehearsals[index]) {
         rehearsals[index].notes = notes;
         try {
@@ -1520,7 +1931,7 @@ document.getElementById('save-rehearsal-details').onclick = async () => {
 
 async function loadRehearsals() { try { const data = await window.withRetry(() => window.loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); } catch (e) { console.error("Error al cargar ensayos:", e); } }
 async function saveRehearsals() { try { await window.withRetry(() => window.saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar ensayos:", e); throw e; } }
-function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; }
+function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; document.getElementById("rehearsal-day-preview").textContent = ""; }
 
 /* ---------- 8. Estadísticas ---------- */
 function updateMonthFilter() { const select=document.getElementById("stats-month-filter");select.innerHTML='<option value="all">Todos los meses</option>';const now=new Date();const pastRehearsals=rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);const months=new Set(pastRehearsals.map(r=>getMonthYear(r.date)));Array.from(months).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{select.insertAdjacentHTML("beforeend",`<option value="${month}">${month}</option>`)})}
@@ -1537,78 +1948,47 @@ async function genPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){con
 async function genBasicPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const itemTitleFontSize=14;const setHeaderFontSize=16;const itemLineHeight=itemTitleFontSize*1.6;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{if(currentY+itemLineHeight*2.5>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=itemLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderFontSize*1.6;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+itemLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=itemLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(itemTitleFontSize-1>8?itemTitleFontSize-1:8);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=(itemTitleFontSize-1>8?itemTitleFontSize-1:8)*1.6;if(idx<setlistStructure.length-1)currentY+=itemLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(itemTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=itemLineHeight}});doc.save(`${cleanFileName}_Basico.pdf`)}
 async function genPersonalPDF(setlistStructure,setlistDynamicName,rawFileNameForPdf,songTitleFontSizeParam){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"pt",format:"a4"});const pageWidth=doc.internal.pageSize.getWidth();const pageHeight=doc.internal.pageSize.getHeight();const songTitleFontSize=parseInt(songTitleFontSizeParam,10)||14;const cleanFileName=sanitizeForPdfFilename(rawFileNameForPdf)||"setlist";let carnevaleeRegistered=await registerFontWithDoc(doc,PDF_FONT_PATHS.carnevalee,'Carnevalee_Freakshow.ttf',PDF_FONT_NAMES.carnevalee);let backgroundImageData=null;try{backgroundImageData=await getBackgroundImageDataURL();doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)}catch(e){console.error("No se pudo añadir la plantilla de fondo al PDF Personal:",e);doc.rect(10,10,pageWidth-20,pageHeight-20,'S')} doc.setTextColor(0,0,0);const contentMarginTop=120;const contentMarginSides=60;const contentMarginBottom=100;let currentY=contentMarginTop;const setlistNameFontSize=22;const setHeaderFontSize=16;const breakTextFontSize=Math.max(8,songTitleFontSize-2);const songTitleLineHeight=songTitleFontSize*1.5;const setHeaderLineHeight=setHeaderFontSize*1.5;const breakTextLineHeight=breakTextFontSize*1.5;doc.setFont(carnevaleeRegistered?PDF_FONT_NAMES.carnevalee:"times",'normal');doc.setFontSize(setlistNameFontSize);doc.text(decodeHtmlEntities(setlistDynamicName),pageWidth/2,currentY,{align:"center"});currentY+=setlistNameFontSize+30; setlistStructure.forEach((blockOrItem,idx)=>{let estimatedBlockHeight=songTitleLineHeight;if(blockOrItem.isSetHeader)estimatedBlockHeight=setHeaderLineHeight+(blockOrItem.songs?blockOrItem.songs.length:0);else if(blockOrItem.isBreak)estimatedBlockHeight=breakTextLineHeight;if(currentY+estimatedBlockHeight>pageHeight-contentMarginBottom&&idx>0){doc.addPage();if(backgroundImageData){doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight)} currentY=contentMarginTop} if(blockOrItem.isSetHeader){if(idx>0)currentY+=songTitleLineHeight*.3;doc.setFont("helvetica",'bold');doc.setFontSize(setHeaderFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=setHeaderLineHeight;if(blockOrItem.songs){blockOrItem.songs.forEach(song=>{if(currentY+songTitleLineHeight>pageHeight-contentMarginBottom){doc.addPage();if(backgroundImageData)doc.addImage(backgroundImageData,'PNG',0,0,pageWidth,pageHeight);currentY=contentMarginTop} doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(song.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight})}}else if(blockOrItem.isBreak){if(idx>0)currentY+=songTitleLineHeight*.2;doc.setFont("helvetica",'italic');doc.setFontSize(breakTextFontSize);doc.text(`${blockOrItem.displayName} (${toMMSS(blockOrItem.calculatedDurationSeconds||0)})`,pageWidth/2,currentY,{align:"center"});currentY+=breakTextLineHeight;if(idx<setlistStructure.length-1)currentY+=songTitleLineHeight*.2}else if(blockOrItem.isSong){doc.setFont("helvetica",'normal');doc.setFontSize(songTitleFontSize);doc.text(blockOrItem.displayName,pageWidth/2,currentY,{align:"center"});currentY+=songTitleLineHeight}});doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`)}
 
-/* ---------- 10. BandHelper & Detalles Concierto (REPARADO Y OPTIMIZADO) ---------- */
+/* ---------- 10. BandHelper & Detalles Concierto ---------- */
 function loadBandHelperWidget() {
     const container = document.getElementById('bandhelper-concerts-container');
     const loadingMessage = document.getElementById('bandhelper-loading-message');
     if (!container) return;
-    
-    // Crear iframe invisible para sandboxing de document.write
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
     document.body.appendChild(iframe);
-    
     const doc = iframe.contentWindow.document;
     doc.open();
-    doc.write(`
-        <head></head>
-        <body>
-            <script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"><\/script>
-        </body>
-    `);
+    doc.write(`<head></head><body><script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"><\/script></body>`);
     doc.close();
-
-    // Polling para detectar la tabla dentro del iframe
     let attempts = 0;
-    const maxAttempts = 50; // 25 segundos max
+    const maxAttempts = 50;
     const interval = setInterval(() => {
         attempts++;
         const table = doc.querySelector('table');
         if (table) {
             clearInterval(interval);
-            // Mover estilos y tabla al documento principal
             const styles = doc.querySelectorAll('style');
             styles.forEach(s => document.head.appendChild(s.cloneNode(true)));
-            
-            // Limpiar loader y poner tabla
             container.innerHTML = ""; 
             container.appendChild(table.cloneNode(true));
-            
-            // Limpieza
             document.body.removeChild(iframe);
-            
-            console.log("BandHelper cargado exitosamente vía Proxy Iframe.");
-            processBandHelperTable(); // Procesar la tabla ahora que existe
+            processBandHelperTable();
             renderVisualCalendar();
         } else if (attempts >= maxAttempts) {
             clearInterval(interval);
-            console.error("Timeout cargando BandHelper en iframe.");
             if(loadingMessage) loadingMessage.textContent = "Error: No se pudieron cargar los conciertos externos.";
-            // Eliminar iframe aunque falló
             document.body.removeChild(iframe);
         }
     }, 500);
 }
-
-// Inicializar la carga del widget
-document.addEventListener("DOMContentLoaded", () => {
-    // Retrasar ligeramente para priorizar UI crítica
-    setTimeout(loadBandHelperWidget, 100);
-});
-
-let processTableAttempts = 0; 
+document.addEventListener("DOMContentLoaded", () => { setTimeout(loadBandHelperWidget, 100); });
 function processBandHelperTable() { 
     const container = document.getElementById('bandhelper-concerts-container');
     if(!container) return; 
-    
     const table = container.querySelector("table");
-    
-    // Si no hay tabla, no hacemos nada (ya se encarga el loader de arriba)
     if(!table) return;
-
     if(table.dataset.processed==="true"){return} 
     table.dataset.processed="true";
-    
     let headerRow=table.querySelector("thead tr");
     const desiredHeaders=["Fecha/Hora","Evento","Lugar","Cal","Info"];
     if(!table.tHead){table.createTHead()} 
@@ -1626,14 +2006,11 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     concertDetailMessage.className = "success-message";
     document.body.style.overflow = 'hidden';
     document.getElementById('concert-detail-id').value = concertId;
-    
     const concertTitleDisplay = document.getElementById('concert-detail-title-display');
     if (concertTitleDisplay) {
         const datePartOnly = concertFullDateText.split(',')[0].trim();
         concertTitleDisplay.innerHTML = `${decodeHtmlEntities(concertTitle) || "Título no disponible"} <span class="concert-date">(${datePartOnly || 'Fecha no disp.'})</span>`
     }
-    
-    // Limpiar campos
     document.getElementById('concert-detail-location').value = '';
     document.getElementById('concert-detail-sound-company').value = ''; 
     document.getElementById('concert-detail-soundsetup').value = '';
@@ -1642,49 +2019,33 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
     document.getElementById('concert-detail-showtime').value = '';
     document.getElementById('concert-detail-notes').value = '';
     document.getElementById('concert-detail-gmaps-link').value = '';
-    
     const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
     openGmapsBtn.style.display = 'none';
     openGmapsBtn.onclick = null;
-
-    // Preparar listas
     const musiciansListDiv = document.getElementById('musicians-attendance-list');
     const techListDiv = document.getElementById('technicians-attendance-list');
     musiciansListDiv.innerHTML = 'Cargando...';
     techListDiv.innerHTML = 'Cargando...';
-
     const techRolesList = ["Técnico de Sonido", "Montador", "Técnico de Luces", "Road Manager", "Backliner"];
-
     if (users && users.length > 0) {
         musiciansListDiv.innerHTML = '';
         techListDiv.innerHTML = '';
-
         users.forEach(user => {
             const userDiv = document.createElement('div');
             userDiv.style.display = 'flex';         
             userDiv.style.alignItems = 'center';    
             userDiv.style.marginBottom = '8px';     
-
             const checkboxId = `user-att-${sanitizeFirebaseKey(user.nickname || user.name)}-${concertId}`;
             userDiv.innerHTML = ` <input type="checkbox" id="${checkboxId}" name="concertAttendees" value="${user.nickname || user.name}" style="margin-right: 8px;"> <label for="${checkboxId}" style="margin:0; cursor:pointer;">${user.name} (${user.nickname})</label> `;
-            
-            // LÓGICA DE SEPARACIÓN:
             const isTech = user.roles.some(r => techRolesList.includes(r));
-
-            if (isTech) {
-                techListDiv.appendChild(userDiv);
-            } else {
-                musiciansListDiv.appendChild(userDiv);
-            }
+            if (isTech) techListDiv.appendChild(userDiv); else musiciansListDiv.appendChild(userDiv);
         });
-
         if (musiciansListDiv.children.length === 0) musiciansListDiv.innerHTML = 'No hay músicos listados.';
         if (techListDiv.children.length === 0) techListDiv.innerHTML = 'No hay técnicos listados.';
     } else {
         musiciansListDiv.innerHTML = 'No hay usuarios registrados.';
         techListDiv.innerHTML = '';
     }
-
     try {
         const details = await window.withRetry(() => window.loadDoc('concert_details', concertId, {}));
         if (details && Object.keys(details).length > 0) {
@@ -1697,30 +2058,22 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
             document.getElementById('concert-detail-notes').value = details.generalNotes || '';
             const gmapsLink = details.googleMapsLink || '';
             document.getElementById('concert-detail-gmaps-link').value = gmapsLink;
-            
             if (gmapsLink) {
                 openGmapsBtn.style.display = 'inline-block';
                 openGmapsBtn.onclick = () => {
                     const currentLink = document.getElementById('concert-detail-gmaps-link').value.trim();
                     if (currentLink) window.open(currentLink, '_blank')
                 }
-            } else {
-                openGmapsBtn.style.display = 'none'
-            }
-            
+            } else openGmapsBtn.style.display = 'none';
             if (details.attendees && Array.isArray(details.attendees)) {
                 details.attendees.forEach(attendeeName => {
                     const checkbox = document.querySelector(`input[name="concertAttendees"][value="${attendeeName}"]`);
-                    if (checkbox) {
-                        checkbox.checked = true
-                    }
+                    if (checkbox) checkbox.checked = true
                 })
             }
-        } else {
-            openGmapsBtn.style.display = 'none'
-        }
+        } else openGmapsBtn.style.display = 'none';
     } catch (error) {
-        console.error("Error al intentar cargar detalles del concierto desde Firestore:", error);
+        console.error("Error al intentar cargar detalles del concierto:", error);
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = `Error al cargar detalles: ${error.message}.`;
         openGmapsBtn.style.display = 'none'
@@ -1730,23 +2083,17 @@ async function openConcertDetailModal(concertId, concertFullDateText, concertTit
 document.getElementById('save-concert-details').onclick = async () => {
     const concertId = document.getElementById('concert-detail-id').value;
     const concertDetailMessage = document.getElementById('concert-detail-message');
-    
     if (!concertId) {
         concertDetailMessage.className = "error-message";
-        concertDetailMessage.textContent = "Error: ID de concierto no encontrado. No se puede guardar.";
+        concertDetailMessage.textContent = "Error: ID de concierto no encontrado.";
         return
     }
-    
     const selectedAttendees = [];
-    document.querySelectorAll('input[name="concertAttendees"]:checked').forEach(checkbox => {
-        selectedAttendees.push(checkbox.value)
-    });
-    
+    document.querySelectorAll('input[name="concertAttendees"]:checked').forEach(checkbox => { selectedAttendees.push(checkbox.value) });
     const gmapsLinkValue = document.getElementById('concert-detail-gmaps-link').value.trim();
-    
     const concertData = {
         locationDetails: document.getElementById('concert-detail-location').value.trim(),
-        soundCompany: document.getElementById('concert-detail-sound-company').value.trim(), // NUEVO GUARDAR
+        soundCompany: document.getElementById('concert-detail-sound-company').value.trim(),
         soundSetupTime: document.getElementById('concert-detail-soundsetup').value,
         instrumentsSetupTime: document.getElementById('concert-detail-instrumentssetup').value,
         soundcheckTime: document.getElementById('concert-detail-soundcheck').value,
@@ -1756,12 +2103,10 @@ document.getElementById('save-concert-details').onclick = async () => {
         googleMapsLink: gmapsLinkValue,
         lastUpdated: new Date().toISOString()
     };
-    
     try {
         await window.withRetry(() => window.saveDoc('concert_details', concertId, concertData, true));
         concertDetailMessage.className = "success-message";
         concertDetailMessage.textContent = "Detalles guardados correctamente.";
-        
         const openGmapsBtn = document.getElementById('open-gmaps-link-btn');
         if (gmapsLinkValue) {
             openGmapsBtn.style.display = 'inline-block';
@@ -1769,43 +2114,155 @@ document.getElementById('save-concert-details').onclick = async () => {
                 const currentLink = document.getElementById('concert-detail-gmaps-link').value.trim();
                 if (currentLink) window.open(currentLink, '_blank')
             }
-        } else {
-            openGmapsBtn.style.display = 'none'
-        }
+        } else openGmapsBtn.style.display = 'none';
     } catch (error) {
-        console.error("Error al guardar detalles del concierto en Firestore:", error);
         concertDetailMessage.className = "error-message";
         concertDetailMessage.textContent = `Error al guardar: ${error.message}.`
     }
 };
-
 document.getElementById('close-concert-details-modal').onclick = () => { closeAll(); };
 
 /* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
 function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
-// Listener moved to DOMContentLoaded
-// document.getElementById("hamburger-btn").onclick = ...
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
 setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
 setupMenuLink("menu-suggestions", "suggestions");
-// NUEVO ENLACE PARA ANÁLISIS
 setupMenuLink("menu-analisis-section", "analisis");
+document.getElementById("menu-suggestions").onclick = e => { e.preventDefault(); openConfigScreen("suggestions-screen"); renderSuggestions(); };
+document.getElementById("close-suggestions").onclick = () => { document.getElementById("suggestions-screen").style.display = "none"; };
 
-// --- CONFIGURACIÓN MENÚ SUGGESTIONS ---
-document.getElementById("menu-suggestions").onclick = e => { 
-    e.preventDefault(); 
-    openConfigScreen("suggestions-screen");
-    renderSuggestions(); 
-};
-document.getElementById("close-suggestions").onclick = () => {
-    document.getElementById("suggestions-screen").style.display = "none";
+// --- LÓGICA BIOMETRÍA ---
+const BIO_STORAGE_KEY = 'elsotano_bio_auth';
+const supportsBiometrics = () => window.PublicKeyCredential && window.isSecureContext;
+
+async function enrollBiometry() {
+    if (!supportsBiometrics()) {
+        alert("Tu navegador o dispositivo no soporta biometría o no estás en una conexión segura (HTTPS).");
+        return;
+    }
+    
+    // Desafío aleatorio para WebAuthn
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+    
+    const createOptions = {
+        publicKey: {
+            challenge: challenge,
+            rp: { name: "El Sótano del Doctor" },
+            user: {
+                id: new Uint8Array(16),
+                name: "admin@sotano.com",
+                displayName: "Admin El Sótano"
+            },
+            pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+            authenticatorSelection: { userVerification: "required" },
+            timeout: 60000
+        }
+    };
+
+    try {
+        const credential = await navigator.credentials.create(createOptions);
+        if (credential) {
+            localStorage.setItem(BIO_STORAGE_KEY, 'true');
+            alert("¡Acceso biométrico activado! La próxima vez entrarás con tu cara o huella.");
+        }
+    } catch (err) {
+        console.error("Error enrolando biometría:", err);
+        alert("No se pudo configurar la biometría: " + err.message);
+    }
+}
+
+async function verifyBiometry() {
+    if (!localStorage.getItem(BIO_STORAGE_KEY)) return false;
+    
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+    
+    const getOptions = {
+        publicKey: {
+            challenge: challenge,
+            userVerification: "required",
+            timeout: 60000
+        }
+    };
+
+    try {
+        const assertion = await navigator.credentials.get(getOptions);
+        return !!assertion;
+    } catch (err) {
+        console.warn("Fallo o cancelación de biometría:", err);
+        return false;
+    }
+}
+
+document.getElementById("menu-config").onclick = async (e) => { 
+    e.preventDefault();
+    const submenu = document.getElementById("config-submenu");
+    
+    if (!isAuthenticated) {
+        // 1. Intentar biometría primero si está activa
+        let bioSuccess = await verifyBiometry();
+        
+        if (bioSuccess) {
+            isAuthenticated = true;
+            submenu.style.display = "block";
+        } else {
+            // 2. Fallback al prompt clásico
+            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
+            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+                isAuthenticated = true;
+                submenu.style.display = "block";
+            } else if (password !== null) {
+                alert("Contraseña incorrecta.");
+            }
+        }
+    } else {
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+    }
+    
+    // Mostrar/Ocultar botón de enrolamiento según disponibilidad
+    const enrollBtn = document.getElementById("menu-enroll-biometry");
+    if (enrollBtn) {
+        enrollBtn.style.display = (supportsBiometrics() && isAuthenticated) ? "block" : "none";
+    }
 };
 
-document.getElementById("menu-config").onclick = e => { e.preventDefault();const submenu=document.getElementById("config-submenu");if(!isAuthenticated){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true;submenu.style.display=submenu.style.display==="block"?"none":"block"}else{alert("Contraseña incorrecta.");return}}else{submenu.style.display=submenu.style.display==="block"?"none":"block"}};
-const openConfigScreen = (screenId) => { if(!isAuthenticated&&screenId!=='user-list-screen'&&screenId!=='stats-screen'&&screenId!=='suggestions-screen'){const password=prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");if(password&&password.toLowerCase()===PASSWORD.toLowerCase()){isAuthenticated=true} else{alert("Contraseña incorrecta.");return false}} if(isAuthenticated||screenId==='user-list-screen'||screenId==='stats-screen'||screenId==='suggestions-screen'){closeAll();const screen=document.getElementById(screenId);if(screen){screen.style.display="block";if(screenId==='user-list-screen'){renderUsers()} screen.scrollTop=0}else{console.error(`Pantalla ${screenId} no encontrada.`)}} return true}; 
+document.getElementById("menu-enroll-biometry").onclick = (e) => {
+    e.preventDefault();
+    enrollBiometry();
+};
+
+const openConfigScreen = async (screenId) => { 
+    if(!isAuthenticated && screenId!=='user-list-screen' && screenId!=='stats-screen' && screenId!=='suggestions-screen') {
+        let bioSuccess = await verifyBiometry();
+        if (bioSuccess) {
+            isAuthenticated = true;
+        } else {
+            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
+            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+                isAuthenticated = true;
+            } else {
+                if (password !== null) alert("Contraseña incorrecta.");
+                return false;
+            }
+        }
+    } 
+    if(isAuthenticated || screenId==='user-list-screen' || screenId==='stats-screen' || screenId==='suggestions-screen') {
+        closeAll();
+        const screen = document.getElementById(screenId);
+        if (screen) {
+            screen.style.display = "block";
+            if (screenId === 'user-list-screen') renderUsers();
+            screen.scrollTop = 0;
+        }
+    } 
+    return true;
+}; 
+// --- FIN LÓGICA BIOMETRÍA ---
+
 document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
 document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; document.getElementById("setlist-message").textContent = ""; };
 document.getElementById("guardar-setlist-config").onclick = async () => { const msg=document.getElementById("setlist-message");msg.textContent="";const n1=document.getElementById("setlist1-name").value.trim(),u1=document.getElementById("setlist1-url").value.trim();const n2=document.getElementById("setlist2-name").value.trim(),raw2=document.getElementById("setlist2-url").value.trim();const nStar=document.getElementById("setlistStar-name").value.trim(),uStar=document.getElementById("setlistStar-url").value.trim();if(!n1||!u1||!n2||!raw2||!nStar||!uStar){msg.className="error-message";msg.textContent="Completa todos los campos.";return} try{setlistConfig.setlist1={name:n1,url:u1};setlistConfig.setlist2={name:n2,url:raw2.startsWith("http")?raw2:`https://www.bandhelper.com/feed/set_list/${raw2}`};setlistConfig.setlistStar={name:nStar,url:uStar};await saveSetlistConfig();await Promise.all([cargarPrimerSetlist(),cargarSegundoSetlist(),cargarStarSetlist()]);document.getElementById("setlist-config-screen").style.display="none"}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
@@ -1823,23 +2280,18 @@ document.getElementById("stats-month-filter").addEventListener("change", renderS
 document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); openConfigScreen("user-list-screen"); };
 document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
 
-// --- GESTIÓN DE PROPUESTAS (SUGGESTIONS) ---
+// --- GESTIÓN DE PROPUESTAS ---
 let suggestions = [];
-
-// Listener will be attached after DB init
 function attachSuggestionsListener() {
     if (typeof db !== 'undefined') {
         db.collection('suggestions').onSnapshot(snapshot => {
             suggestions = [];
-            snapshot.forEach(doc => {
-                suggestions.push({ id: doc.id, ...doc.data() });
-            });
+            snapshot.forEach(doc => { suggestions.push({ id: doc.id, ...doc.data() }); });
             renderSuggestions();
-            renderAdminSuggestions(); // También actualiza la tabla de admin
+            renderAdminSuggestions();
         });
     }
 }
-
 document.getElementById("add-suggestion-btn").onclick = async () => {
     const userSelector = document.getElementById('user-identity-selector');
     const currentUser = userSelector.value;
@@ -1847,838 +2299,224 @@ document.getElementById("add-suggestion-btn").onclick = async () => {
     const artist = document.getElementById('suggestion-artist').value.trim();
     const link = document.getElementById('suggestion-link').value.trim();
     const msg = document.getElementById('suggestion-message');
-    
     msg.textContent = "";
-
-    if (!currentUser) {
-        alert("Por favor, selecciona quién eres en el desplegable de arriba.");
-        userSelector.focus();
-        return;
-    }
-    if (!title || !artist) {
-        msg.textContent = "Título y Artista son obligatorios.";
-        return;
-    }
-
-    const newSuggestion = {
-        title,
-        artist,
-        link,
-        proposedBy: currentUser,
-        proposedAt: new Date().toISOString(),
-        votes: {}, // { "Juan": 5, "Fer": 3 }
-        averageRating: 0,
-        status: 'active'
-    };
-
-    try {
-        await db.collection('suggestions').add(newSuggestion);
-        document.getElementById('suggestion-title').value = "";
-        document.getElementById('suggestion-artist').value = "";
-        document.getElementById('suggestion-link').value = "";
-        alert("¡Propuesta enviada!");
-    } catch (e) {
-        console.error("Error al añadir propuesta:", e);
-        msg.textContent = "Error: " + e.message;
-    }
+    if (!currentUser) { alert("Selecciona quién eres."); userSelector.focus(); return; }
+    if (!title || !artist) { msg.textContent = "Título y Artista son obligatorios."; return; }
+    const newSuggestion = { title, artist, link, proposedBy: currentUser, proposedAt: new Date().toISOString(), votes: {}, averageRating: 0, status: 'active' };
+    try { await db.collection('suggestions').add(newSuggestion); document.getElementById('suggestion-title').value = ""; document.getElementById('suggestion-artist').value = ""; document.getElementById('suggestion-link').value = ""; alert("¡Propuesta enviada!"); } catch (e) { msg.textContent = "Error: " + e.message; }
 };
-
 async function rateSuggestion(id, rating) {
     const userSelector = document.getElementById('user-identity-selector');
     const currentUser = userSelector.value;
-    
-    if (!currentUser) {
-        alert("Por favor, selecciona quién eres arriba para poder votar.");
-        // Scrollear arriba si está muy abajo
-        document.getElementById('suggestions-screen').scrollTop = 0;
-        return;
-    }
-
+    if (!currentUser) { alert("Selecciona quién eres para votar."); document.getElementById('suggestions-screen').scrollTop = 0; return; }
     const suggestion = suggestions.find(s => s.id === id);
     if (!suggestion) return;
-
     const currentVotes = suggestion.votes || {};
-    
-    // Si ya votaste lo mismo, quitamos el voto (toggle)
-    if (currentVotes[currentUser] === rating) {
-        delete currentVotes[currentUser];
-    } else {
-        currentVotes[currentUser] = rating;
-    }
-
-    // Recalcular media
+    if (currentVotes[currentUser] === rating) delete currentVotes[currentUser]; else currentVotes[currentUser] = rating;
     const scores = Object.values(currentVotes);
     const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-
-    try {
-        await db.collection('suggestions').doc(id).update({
-            votes: currentVotes,
-            averageRating: avg
-        });
-    } catch (e) {
-        console.error("Error al votar:", e);
-    }
+    try { await db.collection('suggestions').doc(id).update({ votes: currentVotes, averageRating: avg }); } catch (e) { console.error("Error al votar:", e); }
 }
-
 function renderSuggestions() {
     const container = document.getElementById('suggestions-container');
     container.innerHTML = "";
-
     const userSelector = document.getElementById('user-identity-selector');
     const currentUser = userSelector.value;
-
-    // Filtramos solo las activas y ordenamos por valoración media
-    const activeSuggestions = suggestions
-        .filter(s => s.status === 'active')
-        .sort((a, b) => b.averageRating - a.averageRating);
-
-    if (activeSuggestions.length === 0) {
-        container.innerHTML = "<p style='color:#888; font-style:italic;'>No hay propuestas activas.</p>";
-        return;
-    }
-
+    const activeSuggestions = suggestions.filter(s => s.status === 'active').sort((a, b) => b.averageRating - a.averageRating);
+    if (activeSuggestions.length === 0) { container.innerHTML = "<p style='color:#888; font-style:italic;'>No hay propuestas activas.</p>"; return; }
     activeSuggestions.forEach(s => {
         const date = new Date(s.proposedAt).toLocaleDateString();
         const votes = s.votes || {};
         const myVote = currentUser ? votes[currentUser] : 0;
         const votersCount = Object.keys(votes).length;
-        
-        // NUEVO: Detectar si ya ha votado para bloquear interacción
         const hasVoted = myVote > 0;
-
-        // Generar estrellas visuales (promedio)
-        let starsHtml = '';
-        for (let i = 1; i <= 5; i++) {
-            starsHtml += `<span class="star-visual ${i <= Math.round(s.averageRating) ? 'filled' : ''}">★</span>`;
-        }
-
-        // Generar estrellas interactivas (para votar)
+        let starsHtml = ''; for (let i = 1; i <= 5; i++) starsHtml += `<span class="star-visual ${i <= Math.round(s.averageRating) ? 'filled' : ''}">★</span>`;
         let interactiveStarsHtml = '';
-        // Si ha votado, no ponemos onclick y mostramos estado "bloqueado"
-        if (hasVoted) {
-            for (let i = 1; i <= 5; i++) {
-                interactiveStarsHtml += `<span class="interactive-star ${i <= myVote ? 'active' : ''}" style="cursor:default; opacity:${i <= myVote ? 1 : 0.3};">★</span>`;
-            }
-        } else {
-            // Si NO ha votado, permitimos click
-            for (let i = 1; i <= 5; i++) {
-                interactiveStarsHtml += `<span class="interactive-star" onclick="rateSuggestion('${s.id}', ${i})">★</span>`;
-            }
-        }
-
-        // Detalles de votantes
-        let votersDetailsHtml = '';
-        if (votersCount > 0) {
-            const details = Object.entries(votes).map(([name, score]) => `${name}: ${score}★`).join(', ');
-            votersDetailsHtml = `<div class="voters-details" id="voters-${s.id}">${details}</div>`;
-        } else {
-            votersDetailsHtml = `<div class="voters-details" id="voters-${s.id}">Nadie ha votado aún.</div>`;
-        }
-        
-        // Texto de estado de voto
+        if (hasVoted) { for (let i = 1; i <= 5; i++) interactiveStarsHtml += `<span class="interactive-star ${i <= myVote ? 'active' : ''}" style="cursor:default; opacity:${i <= myVote ? 1 : 0.3};">★</span>`; }
+        else { for (let i = 1; i <= 5; i++) interactiveStarsHtml += `<span class="interactive-star" onclick="rateSuggestion('${s.id}', ${i})">★</span>`; }
+        let votersDetailsHtml = votersCount > 0 ? `<div class="voters-details" id="voters-${s.id}">${Object.entries(votes).map(([name, score]) => `${name}: ${score}★`).join(', ')}</div>` : `<div class="voters-details" id="voters-${s.id}">Nadie ha votado aún.</div>`;
         const voteStatusText = hasVoted ? `<span style="color:#FFD700; font-size:0.9em;">Votado (${myVote}/5)</span>` : `<span class="voting-label">Tu Voto:</span>`;
-
         const card = document.createElement('div');
         card.className = 'suggestion-card';
-        card.innerHTML = `
-            <div class="suggestion-header">
-                <div class="suggestion-title">${s.title}</div>
-                <div class="suggestion-artist">${s.artist}</div>
-                <div class="suggestion-meta">Propuesto por: ${s.proposedBy} el ${date}</div>
-            </div>
-            <div class="suggestion-body">
-                ${s.link ? `<a href="${s.link}" target="_blank" style="color:#0cf; font-size:0.8em;">Escuchar (Link)</a>` : ''}
-                
-                <div style="margin-top:15px;">
-                    <div class="star-rating-display">
-                        <span class="avg-score">${s.averageRating.toFixed(1)}</span>
-                        <div style="display:flex;">${starsHtml}</div>
-                        <span style="font-size:0.8em; color:#888; margin-left:5px;">(${votersCount} votos)</span>
-                    </div>
-                    
-                    <button class="toggle-voters-btn" onclick="document.getElementById('voters-${s.id}').classList.toggle('show')">Ver votaciones</button>
-                    ${votersDetailsHtml}
-                </div>
-            </div>
-            <div class="suggestion-actions">
-                <div class="voting-area">
-                    ${voteStatusText}
-                    <div class="interactive-stars ${hasVoted ? 'voted' : ''}">${interactiveStarsHtml}</div>
-                </div>
-            </div>
-        `;
+        card.innerHTML = `<div class="suggestion-header"><div class="suggestion-title">${s.title}</div><div class="suggestion-artist">${s.artist}</div><div class="suggestion-meta">Propuesto por: ${s.proposedBy} el ${date}</div></div><div class="suggestion-body">${s.link ? `<a href="${s.link}" target="_blank" style="color:#0cf; font-size:0.8em;">Escuchar (Link)</a>` : ''}<div style="margin-top:15px;"><div class="star-rating-display"><span class="avg-score">${s.averageRating.toFixed(1)}</span><div style="display:flex;">${starsHtml}</div><span style="font-size:0.8em; color:#888; margin-left:5px;">(${votersCount} votos)</span></div><button class="toggle-voters-btn" onclick="document.getElementById('voters-${s.id}').classList.toggle('show')">Ver votaciones</button>${votersDetailsHtml}</div></div><div class="suggestion-actions"><div class="voting-area">${voteStatusText}<div class="interactive-stars ${hasVoted ? 'voted' : ''}">${interactiveStarsHtml}</div></div></div>`;
         container.appendChild(card);
     });
 }
-
-// --- ADMIN SUGGESTIONS ---
-document.getElementById("menu-admin-suggestions").onclick = e => { 
-    e.preventDefault(); 
-    openConfigScreen("admin-suggestions-screen");
-    renderAdminSuggestions();
-};
-document.getElementById("close-admin-suggestions").onclick = () => {
-    document.getElementById("admin-suggestions-screen").style.display = "none";
-};
-
 function renderAdminSuggestions() {
     const tbody = document.getElementById('admin-suggestions-body');
     tbody.innerHTML = "";
-
-    // Ordenar por fecha (más reciente primero)
     const sorted = [...suggestions].sort((a, b) => new Date(b.proposedAt) - new Date(a.proposedAt));
-
     sorted.forEach(s => {
         const date = new Date(s.proposedAt).toLocaleDateString();
         const isDeleted = s.status === 'deleted';
         const rowClass = isDeleted ? 'deleted-row' : '';
-        const statusText = isDeleted 
-            ? `Eliminada por ${s.deletedBy || '?'} (${new Date(s.deletedAt).toLocaleDateString()})` 
-            : '<span style="color:#0cf">Activa</span>';
-        
-        const actionBtn = isDeleted 
-            ? '-' 
-            : `<button onclick="deleteSuggestion('${s.id}')" style="background:#ff3333; padding:5px; font-size:0.8em;">Eliminar</button>`;
-
-        const row = `
-            <tr class="${rowClass}">
-                <td>${s.title} (${s.artist})</td>
-                <td>${s.proposedBy}</td>
-                <td>${date}</td>
-                <td style="font-size:0.8em;">${statusText}</td>
-                <td>${actionBtn}</td>
-            </tr>
-        `;
+        const statusText = isDeleted ? `Eliminada por ${s.deletedBy || '?'} (${new Date(s.deletedAt).toLocaleDateString()})` : '<span style="color:#0cf">Activa</span>';
+        const actionBtn = isDeleted ? '-' : `<button onclick="deleteSuggestion('${s.id}')" style="background:#ff3333; padding:5px; font-size:0.8em;">Eliminar</button>`;
+        const row = `<tr class="${rowClass}"><td>${s.title} (${s.artist})</td><td>${s.proposedBy}</td><td>${date}</td><td style="font-size:0.8em;">${statusText}</td><td>${actionBtn}</td></tr>`;
         tbody.insertAdjacentHTML('beforeend', row);
     });
 }
-
 async function deleteSuggestion(id) {
     const userSelector = document.getElementById('user-identity-selector');
-    const currentUser = userSelector.value || "Admin"; // Si entra directo, al menos que ponga Admin
-
-    if(confirm("¿Seguro que quieres eliminar esta propuesta? Se ocultará de la lista principal.")){
-        try {
-            await db.collection('suggestions').doc(id).update({
-                status: 'deleted',
-                deletedAt: new Date().toISOString(),
-                deletedBy: currentUser
-            });
-            alert("Propuesta eliminada.");
-        } catch(e) {
-            console.error(e);
-            alert("Error al eliminar.");
-        }
-    }
+    const currentUser = userSelector.value || "Admin";
+    if(confirm("¿Seguro que quieres eliminar esta propuesta?")){ try { await db.collection('suggestions').doc(id).update({ status: 'deleted', deletedAt: new Date().toISOString(), deletedBy: currentUser }); alert("Propuesta eliminada."); } catch(e) { alert("Error al eliminar."); } }
 }
 
-
-
-/* --- LÓGICA MODO DIRECTO (LIVE MODE) --- */
-let currentLiveSetlist = [];
-let currentLiveIndex = 0;
-let wakeLock = null;
-
-// Solicitar Wake Lock (Evitar que se apague la pantalla)
-async function requestWakeLock() {
-    try {
-        if ('wakeLock' in navigator) {
-            wakeLock = await navigator.wakeLock.request('screen');
-            wakeLock.addEventListener('release', () => { console.log('Pantalla desbloqueada'); });
-            console.log('Pantalla mantenida encendida');
-        }
-    } catch (err) {
-        console.error(`${err.name}, ${err.message}`);
-    }
-}
-
-// Liberar Wake Lock
-async function releaseWakeLock() {
-    if (wakeLock !== null) {
-        await wakeLock.release();
-        wakeLock = null;
-    }
-}
-
+/* --- LÓGICA MODO DIRECTO --- */
+let currentLiveSetlist = []; let currentLiveIndex = 0; let wakeLock = null;
+async function requestWakeLock() { try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); console.log('Pantalla mantenida encendida'); } } catch (err) { console.error(`${err.name}, ${err.message}`); } }
+async function releaseWakeLock() { if (wakeLock !== null) { await wakeLock.release(); wakeLock = null; } }
 function startLiveMode(setlistData) {
     currentLiveSetlist = [];
-
-    if (Array.isArray(setlistData)) {
-        setlistData.forEach(item => {
-            if (item.isSetHeader && Array.isArray(item.songs)) {
-                currentLiveSetlist = currentLiveSetlist.concat(item.songs);
-            }
-            else if (item.isSong) {
-                currentLiveSetlist.push(item);
-            }
-        });
-    }
-    
-    if (currentLiveSetlist.length === 0) {
-        alert("Este setlist no tiene canciones cargadas o el formato es incorrecto.");
-        return;
-    }
-
-    currentLiveIndex = 0;
-    renderLiveSong(currentLiveIndex);
-    
-    const overlay = document.getElementById('live-mode-overlay');
-    overlay.classList.add('show');
-    
+    if (Array.isArray(setlistData)) { setlistData.forEach(item => { if (item.isSetHeader && Array.isArray(item.songs)) currentLiveSetlist = currentLiveSetlist.concat(item.songs); else if (item.isSong) currentLiveSetlist.push(item); }); }
+    if (currentLiveSetlist.length === 0) { alert("Setlist vacío."); return; }
+    currentLiveIndex = 0; renderLiveSong(currentLiveIndex);
+    document.getElementById('live-mode-overlay').classList.add('show');
     requestWakeLock();
 }
-
 function renderLiveSong(index) {
-    const song = currentLiveSetlist[index];
-    if (!song) return;
-
+    const song = currentLiveSetlist[index]; if (!song) return;
     document.getElementById('live-counter').textContent = `${index + 1} / ${currentLiveSetlist.length}`;
-    
     const titleEl = document.getElementById('live-song-title');
-    // decodeHtmlEntities ya se aplicó al displayName al cargar, así que aquí sale bien
     titleEl.textContent = song.displayName;
-    if (song.displayName.length > 20) { titleEl.style.fontSize = "2.5em"; } 
-    else { titleEl.style.fontSize = "3.5em"; }
-
-    // --- CORRECCIÓN AQUÍ: Decodificamos los caracteres raros en Key y Tempo ---
+    if (song.displayName.length > 20) titleEl.style.fontSize = "2.5em"; else titleEl.style.fontSize = "3.5em";
     const cleanKey = decodeHtmlEntities(song.key || '-');
     const cleanTempo = decodeHtmlEntities(song.tempo || '-');
-    // --------------------------------------------------------------------------
-
     document.getElementById('live-song-key').textContent = `Key: ${cleanKey}`;
     document.getElementById('live-song-tempo').textContent = `${cleanTempo} BPM`;
-
     const nextSong = currentLiveSetlist[index + 1];
     const nextEl = document.getElementById('live-next-song');
-    
-    if (nextSong) {
-        nextEl.textContent = `Siguiente: ${nextSong.displayName}`;
-        nextEl.style.color = '#555';
-    } else {
-        nextEl.textContent = "¡FIN DEL SHOW! 👏";
-        nextEl.style.color = '#0cf'; 
-    }
+    if (nextSong) { nextEl.textContent = `Siguiente: ${nextSong.displayName}`; nextEl.style.color = '#555'; } else { nextEl.textContent = "¡FIN DEL SHOW! 👏"; nextEl.style.color = '#0cf'; }
 }
+document.getElementById('live-close-btn').onclick = () => { document.getElementById('live-mode-overlay').classList.remove('show'); releaseWakeLock(); };
+document.getElementById('live-next-btn').onclick = () => { if (currentLiveIndex < currentLiveSetlist.length - 1) { currentLiveIndex++; renderLiveSong(currentLiveIndex); } };
+document.getElementById('live-prev-btn').onclick = () => { if (currentLiveIndex > 0) { currentLiveIndex--; renderLiveSong(currentLiveIndex); } };
+document.getElementById('live-content-area').onclick = (e) => { const width = window.innerWidth; if (e.clientX > width / 2) { if (currentLiveIndex < currentLiveSetlist.length - 1) { currentLiveIndex++; renderLiveSong(currentLiveIndex); } } else { if (currentLiveIndex > 0) { currentLiveIndex--; renderLiveSong(currentLiveIndex); } } };
 
-document.getElementById('live-close-btn').onclick = () => {
-    document.getElementById('live-mode-overlay').classList.remove('show');
-    releaseWakeLock();
-};
-
-document.getElementById('live-next-btn').onclick = () => {
-    if (currentLiveIndex < currentLiveSetlist.length - 1) {
-        currentLiveIndex++;
-        renderLiveSong(currentLiveIndex);
-    }
-};
-
-document.getElementById('live-prev-btn').onclick = () => {
-    if (currentLiveIndex > 0) {
-        currentLiveIndex--;
-        renderLiveSong(currentLiveIndex);
-    }
-};
-
-document.getElementById('live-content-area').onclick = (e) => {
-    const width = window.innerWidth;
-    if (e.clientX > width / 2) {
-        if (currentLiveIndex < currentLiveSetlist.length - 1) {
-            currentLiveIndex++;
-            renderLiveSong(currentLiveIndex);
-        }
-    } 
-    else {
-        if (currentLiveIndex > 0) {
-            currentLiveIndex--;
-            renderLiveSong(currentLiveIndex);
-        }
-    }
-};
-
-/* ---------- 12. Lógica Calendario Visual (GLOBAL SCOPE FIX) ---------- */
-let currentCalDate = new Date();
-let globalConcertDetails = {}; 
-
-function attachConcertDetailsListener() {
-    if (typeof db !== 'undefined') {
-        try {
-            db.collection('concert_details').onSnapshot(snapshot => {
-                snapshot.forEach(doc => {
-                    globalConcertDetails[doc.id] = doc.data();
-                });
-                renderVisualCalendar(); 
-            });
-        } catch(e) { console.warn("Error attaching concert listener:", e); }
-    }
-}
-
+/* ---------- 12. Lógica Calendario Visual ---------- */
+let currentCalDate = new Date(); let globalConcertDetails = {}; 
+function attachConcertDetailsListener() { if (typeof db !== 'undefined') { try { db.collection('concert_details').onSnapshot(snapshot => { snapshot.forEach(doc => { globalConcertDetails[doc.id] = doc.data(); }); renderVisualCalendar(); }); } catch(e) { } } }
 function renderVisualCalendar() {
     const grid = document.getElementById('calendar-grid-container');
     const monthDisplay = document.getElementById('calendar-month-display');
-    
     if (!grid || !monthDisplay) return;
-
-    grid.innerHTML = ''; 
-    const year = currentCalDate.getFullYear();
-    const month = currentCalDate.getMonth();
-    
+    grid.innerHTML = ''; const year = currentCalDate.getFullYear(); const month = currentCalDate.getMonth();
     const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
     const dayHeaders = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-    
     monthDisplay.textContent = `${monthNames[month]} ${year}`;
-
-    dayHeaders.forEach(day => {
-      const div = document.createElement('div');
-      div.className = 'cal-header';
-      div.textContent = day;
-      grid.appendChild(div);
-    });
-
+    dayHeaders.forEach(day => { const div = document.createElement('div'); div.className = 'cal-header'; div.textContent = day; grid.appendChild(div); });
     const firstDayOfMonth = new Date(year, month, 1);
-    let startDay = firstDayOfMonth.getDay() - 1; 
-    if (startDay === -1) startDay = 6;
+    let startDay = firstDayOfMonth.getDay() - 1; if (startDay === -1) startDay = 6;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
-
     const events = [];
-
-    // --- LÓGICA 1: ENSAYOS ---
-    if (Array.isArray(rehearsals)) {
-      rehearsals.forEach((r, i) => {
-        let missingStr = "";
-        if (r.attendance && Array.isArray(r.attendance)) {
-            const missingNames = r.attendance
-                .filter(a => a.attending === "No")
-                .map(a => {
-                    const u = users.find(user => user.name === a.name);
-                    return u ? u.nickname : a.name;
-                });
-            
-            if (missingNames.length > 0) {
-                missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`;
-            }
-        }
-
-        events.push({
-          dateStr: r.date, 
-          type: 'ensayo',
-          title: `Ensayo (${r.startTime} - ${r.endTime})${missingStr}`,
-          index: i // Index para click handler
-        });
-      });
-    }
-
-    // --- LÓGICA 2: CONCIERTOS ---
+    if (Array.isArray(rehearsals)) { rehearsals.forEach((r, i) => { let missingStr = ""; if (r.attendance && Array.isArray(r.attendance)) { const missingNames = r.attendance.filter(a => a.attending === "No").map(a => { const u = users.find(user => user.name === a.name); return u ? u.nickname : a.name; }); if (missingNames.length > 0) missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`; } events.push({ dateStr: r.date, type: 'ensayo', title: `Ensayo (${r.startTime} - ${r.endTime})${missingStr}`, index: i }); }); }
     const concertRows = document.querySelectorAll('#bandhelper-concerts-container table tbody tr');
     concertRows.forEach(row => {
       const cells = row.cells;
       if (cells.length >= 3) {
-        const dateText = cells[0].textContent.trim(); 
-        const titleText = cells[1].textContent.trim();
-        const locationText = cells[2].textContent.trim(); 
-        
+        const dateText = cells[0].textContent.trim(); const titleText = cells[1].textContent.trim(); const locationText = cells[2].textContent.trim();
         const dateMatch = dateText.match(/(\d{2})\/(\d{2})\/(\d{2})/);
         if (dateMatch) {
-            let y = parseInt(dateMatch[3], 10);
-            y += (y < 70 ? 2000 : 1900);
-            const isoDate = `${y}-${dateMatch[2]}-${dateMatch[1]}`;
-            
-            const dateForId = dateText.split(',')[0].trim();
-            const concertId = sanitizeFirebaseKey(`${dateForId}_${titleText}`);
-            
-            let missingStr = "";
-            const details = globalConcertDetails[concertId];
-
-            if (details && details.attendees) {
-                const missingNames = users
-                    .filter(u => {
-                       const val = u.nickname || u.name;
-                       return !details.attendees.includes(val);
-                    })
-                    .map(u => u.nickname);
-
-                if (missingNames.length > 0) {
-                    missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`;
-                }
-            }
-
-            events.push({
-              dateStr: isoDate,
-              type: 'concierto',
-              title: `${titleText}${missingStr}`,
-              rawDate: dateText,
-              rawTitle: titleText,
-              rawLoc: locationText,
-              id: concertId
-            });
+            let y = parseInt(dateMatch[3], 10); y += (y < 70 ? 2000 : 1900); const isoDate = `${y}-${dateMatch[2]}-${dateMatch[1]}`;
+            const dateForId = dateText.split(',')[0].trim(); const concertId = sanitizeFirebaseKey(`${dateForId}_${titleText}`);
+            let missingStr = ""; const details = globalConcertDetails[concertId];
+            if (details && details.attendees) { const missingNames = users.filter(u => { const val = u.nickname || u.name; return !details.attendees.includes(val); }).map(u => u.nickname); if (missingNames.length > 0) missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`; }
+            events.push({ dateStr: isoDate, type: 'concierto', title: `${titleText}${missingStr}`, rawDate: dateText, rawTitle: titleText, rawLoc: locationText, id: concertId });
         }
       }
     });
-
-    for (let i = 0; i < startDay; i++) {
-      const div = document.createElement('div');
-      div.className = 'cal-day other-month';
-      grid.appendChild(div);
-    }
-
+    for (let i = 0; i < startDay; i++) { const div = document.createElement('div'); div.className = 'cal-day other-month'; grid.appendChild(div); }
     for (let day = 1; day <= daysInMonth; day++) {
-      const div = document.createElement('div');
-      div.className = 'cal-day';
-      
-      if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
-        div.classList.add('today');
-      }
-
-      const numDiv = document.createElement('div');
-      numDiv.className = 'cal-day-number';
-      numDiv.textContent = day;
-      div.appendChild(numDiv);
-
+      const div = document.createElement('div'); div.className = 'cal-day';
+      if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) div.classList.add('today');
+      const numDiv = document.createElement('div'); numDiv.className = 'cal-day-number'; numDiv.textContent = day; div.appendChild(numDiv);
       const currentIso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const dayEvents = events.filter(e => e.dateStr === currentIso);
-      
       dayEvents.forEach(evt => {
-        const evtDiv = document.createElement('div');
-        evtDiv.className = `cal-event type-${evt.type}`; 
-        evtDiv.innerHTML = evt.title; 
-        
-        // Click para Conciertos
-        if (evt.type === 'concierto') {
-            evtDiv.style.cursor = 'pointer';
-            evtDiv.title = "Click para ver detalles y asistencia";
-            evtDiv.onclick = (e) => {
-                e.stopPropagation();
-                openConcertDetailModal(evt.id, evt.rawDate, evt.rawTitle, evt.rawLoc);
-            };
-        }
-
-        // Click para Ensayos (NUEVO)
-        if (evt.type === 'ensayo') {
-            evtDiv.style.cursor = 'pointer';
-            evtDiv.title = "Click para ver notas del ensayo";
-            evtDiv.onclick = (e) => {
-                e.stopPropagation();
-                openRehearsalDetailsModal(evt.index);
-            };
-        }
-        
+        const evtDiv = document.createElement('div'); evtDiv.className = `cal-event type-${evt.type}`; evtDiv.innerHTML = evt.title;
+        if (evt.type === 'concierto') { evtDiv.style.cursor = 'pointer'; evtDiv.onclick = (e) => { e.stopPropagation(); openConcertDetailModal(evt.id, evt.rawDate, evt.rawTitle, evt.rawLoc); }; }
+        if (evt.type === 'ensayo') { evtDiv.style.cursor = 'pointer'; evtDiv.onclick = (e) => { e.stopPropagation(); openRehearsalDetailsModal(evt.index); }; }
         div.appendChild(evtDiv);
       });
-
       grid.appendChild(div);
     }
   }
 
-
-/* ---------- 13. Carga inicial & Lógica Audio Global y Splash ---------- */
+/* ---------- 13. Carga inicial ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
-  
-  // Clean previous optimization attempt that failed
-  
-  /* --- Inicialización de Firebase Diferida --- */
   try {
       if (typeof firebase !== 'undefined') {
-          firebase.initializeApp(firebaseConfig); 
-          db = firebase.firestore(); 
-          firebase.firestore().enablePersistence().catch(err => console.warn(err));
-          attachSuggestionsListener(); // Attach listener now that DB is ready
-          attachConcertDetailsListener(); // NEW: Attach concert listener
-          // START SESSION
-          setTimeout(initSession, 1500); // Wait for auth state or just start
+          firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => console.warn(err));
+          attachSuggestionsListener(); attachConcertDetailsListener();
+          setTimeout(initSession, 1500);
       } else {
-          // If firebase script hasn't loaded yet due to defer, wait a bit
           const checkFirebase = setInterval(() => {
               if (typeof firebase !== 'undefined') {
-                  clearInterval(checkFirebase);
-                  firebase.initializeApp(firebaseConfig);
-                  db = firebase.firestore();
-                  firebase.firestore().enablePersistence().catch(err => console.warn(err));
-                  attachSuggestionsListener();
-                  attachConcertDetailsListener(); // NEW
-                  // Trigger data load
-                  loadAllData();
-                  setTimeout(initSession, 1500);
+                  clearInterval(checkFirebase); firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => console.warn(err));
+                  attachSuggestionsListener(); attachConcertDetailsListener(); loadAllData(); setTimeout(initSession, 1500);
               }
           }, 100);
       }
-  } catch(e) { console.error("Firebase init error:", e); }
+  } catch(e) { }
 
-  // --- Lógica de Audio Global START ---
-  const siteAudioElement = document.getElementById('site-audio');
-  const siteAudioControlButton = document.getElementById('site-audio-control-button'); 
-  const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; // TUS CANCIONES
-  let currentSiteSongIndex = -1; 
-  let siteAudioFadeInterval = null;
-  const SITE_AUDIO_FADE_DURATION = 500; 
-  const SITE_AUDIO_TARGET_VOLUME = 0.8; 
-
-  function stopSiteAudioFade() {
-    if (siteAudioFadeInterval) {
-      clearInterval(siteAudioFadeInterval);
-      siteAudioFadeInterval = null;
-    }
-  }
-
-  function fadeInSiteAudio(audio, duration, targetVolume) {
-    stopSiteAudioFade();
-    if (!audio) return; 
-    if (audio.muted) { 
-      audio.volume = 0; 
-      audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio (muted):", e));
-      return;
-    }
-    audio.volume = 0;
-    if (audio.paused) { // Solo llama a play si está pausado
-        audio.play().catch(e => console.warn("Error al reproducir en fadeInSiteAudio:", e));
-    }
-    
-    let step = targetVolume / (duration / 50);
-    let currentVolume = 0;
-    siteAudioFadeInterval = setInterval(() => {
-      currentVolume += step;
-      if (currentVolume >= targetVolume) {
-        if(audio) audio.volume = targetVolume; 
-        stopSiteAudioFade();
-      } else if (audio) { 
-        audio.volume = currentVolume;
-      } else { 
-        stopSiteAudioFade();
-      }
-    }, 50);
-  }
-
-  function fadeOutSiteAudio(audio, duration, callback) {
-    stopSiteAudioFade();
-    if (!audio) { if (callback) callback(); return; }
-
-    if (audio.paused || audio.volume < 0.01) { 
-      if (!audio.paused) audio.pause();
-      audio.volume = 0; 
-      if (callback) callback();
-      return;
-    }
-    
-    let currentVolume = audio.volume;
-    let step = currentVolume / (duration / 50);
-    siteAudioFadeInterval = setInterval(() => {
-      currentVolume -= step;
-      if (currentVolume <= 0.01) { 
-        if (audio) {
-            audio.volume = 0;
-            audio.pause();
-        }
-        stopSiteAudioFade();
-        if (callback) callback();
-      } else if (audio) {
-        audio.volume = currentVolume;
-      } else {
-        stopSiteAudioFade();
-      }
-    }, 50);
-  }
-
-  function playNextSiteSong(audioElement) {
-    if (!audioElement || siteAudioSongs.length === 0) return;
-    currentSiteSongIndex = (currentSiteSongIndex + 1) % siteAudioSongs.length;
-    audioElement.src = siteAudioSongs[currentSiteSongIndex];
-    audioElement.load();
-
-    const eventName = 'canplaythrough';
-    
-    // Eliminamos cualquier listener previo para 'canplaythrough' para evitar duplicados
-    const playWhenReadyHandler = () => {
-      if (audioElement) { 
-        fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME);
-      }
-    };
-    audioElement.addEventListener(eventName, playWhenReadyHandler, { once: true });
-  }
-
+  const siteAudioElement = document.getElementById('site-audio'); const siteAudioControlButton = document.getElementById('site-audio-control-button'); const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; let currentSiteSongIndex = -1; let siteAudioFadeInterval = null; const SITE_AUDIO_FADE_DURATION = 500; const SITE_AUDIO_TARGET_VOLUME = 0.8; 
+  function stopSiteAudioFade() { if (siteAudioFadeInterval) { clearInterval(siteAudioFadeInterval); siteAudioFadeInterval = null; } }
+  function fadeInSiteAudio(audio, duration, targetVolume) { stopSiteAudioFade(); if (!audio) return; if (audio.muted) { audio.volume = 0; audio.play().catch(e => {}); return; } audio.volume = 0; if (audio.paused) audio.play().catch(e => {}); let step = targetVolume / (duration / 50); let currentVolume = 0; siteAudioFadeInterval = setInterval(() => { currentVolume += step; if (currentVolume >= targetVolume) { if(audio) audio.volume = targetVolume; stopSiteAudioFade(); } else if (audio) audio.volume = currentVolume; else stopSiteAudioFade(); }, 50); }
+  function fadeOutSiteAudio(audio, duration, callback) { stopSiteAudioFade(); if (!audio) { if (callback) callback(); return; } if (audio.paused || audio.volume < 0.01) { if (!audio.paused) audio.pause(); audio.volume = 0; if (callback) callback(); return; } let currentVolume = audio.volume; let step = currentVolume / (duration / 50); siteAudioFadeInterval = setInterval(() => { currentVolume -= step; if (currentVolume <= 0.01) { if (audio) { audio.volume = 0; audio.pause(); } stopSiteAudioFade(); if (callback) callback(); } else if (audio) audio.volume = currentVolume; else stopSiteAudioFade(); }, 50); }
+  function playNextSiteSong(audioElement) { if (!audioElement || siteAudioSongs.length === 0) return; currentSiteSongIndex = (currentSiteSongIndex + 1) % siteAudioSongs.length; audioElement.src = siteAudioSongs[currentSiteSongIndex]; audioElement.load(); audioElement.addEventListener('canplaythrough', () => { if (audioElement) fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME); }, { once: true }); }
   if (siteAudioElement && siteAudioControlButton) {
-    const iconMuted = siteAudioControlButton.querySelector('.icon-muted');
-    const iconUnmuted = siteAudioControlButton.querySelector('.icon-unmuted');
-
-    const updateSiteAudioMuteButton = () => {
-      if (!siteAudioElement || !iconMuted || !iconUnmuted || !siteAudioControlButton) return;
-      if (siteAudioElement.muted) {
-        iconMuted.style.display = 'inline';
-        iconUnmuted.style.display = 'none';
-        siteAudioControlButton.title = "Activar sonido";
-      } else {
-        iconMuted.style.display = 'none';
-        iconUnmuted.style.display = 'inline';
-        siteAudioControlButton.title = "Desactivar sonido";
-      }
-    };
-
-    siteAudioElement.muted = true; 
-    siteAudioElement.loop = false; 
-    updateSiteAudioMuteButton();
-    siteAudioControlButton.style.display = 'flex'; 
-
-    currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length);
-    siteAudioElement.src = siteAudioSongs[currentSiteSongIndex];
-    siteAudioElement.load(); 
-    
-    siteAudioElement.addEventListener('ended', () => {
-      fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => {
-        playNextSiteSong(siteAudioElement);
-      });
-    });
-
-    siteAudioControlButton.addEventListener('click', () => {
-      if (!siteAudioElement) return;
-      const wasMuted = siteAudioElement.muted;
-      siteAudioElement.muted = !siteAudioElement.muted;
-      updateSiteAudioMuteButton();
-
-      if (!siteAudioElement.muted) { 
-          if (siteAudioElement.paused || wasMuted) { 
-              if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused){
-                   fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME);
-              } else { 
-                  siteAudioElement.volume = 0; 
-                  fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); 
-              }
-          }
-      } else { 
-        stopSiteAudioFade(); 
-      }
-    });
+    const iconMuted = siteAudioControlButton.querySelector('.icon-muted'); const iconUnmuted = siteAudioControlButton.querySelector('.icon-unmuted');
+    const updateSiteAudioMuteButton = () => { if (!siteAudioElement || !iconMuted || !iconUnmuted || !siteAudioControlButton) return; if (siteAudioElement.muted) { iconMuted.style.display = 'inline'; iconUnmuted.style.display = 'none'; siteAudioControlButton.title = "Activar sonido"; } else { iconMuted.style.display = 'none'; iconUnmuted.style.display = 'inline'; siteAudioControlButton.title = "Desactivar sonido"; } };
+    siteAudioElement.muted = true; siteAudioElement.loop = false; updateSiteAudioMuteButton(); siteAudioControlButton.style.display = 'flex'; 
+    currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length); siteAudioElement.src = siteAudioSongs[currentSiteSongIndex]; siteAudioElement.load(); 
+    siteAudioElement.addEventListener('ended', () => { fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => { playNextSiteSong(siteAudioElement); }); });
+    siteAudioControlButton.addEventListener('click', () => { if (!siteAudioElement) return; const wasMuted = siteAudioElement.muted; siteAudioElement.muted = !siteAudioElement.muted; updateSiteAudioMuteButton(); if (!siteAudioElement.muted) { if (siteAudioElement.paused || wasMuted) { if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused) fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); else { siteAudioElement.volume = 0; fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); } } } else stopSiteAudioFade(); });
   }
-  // --- Lógica de Audio Global END ---
 
-
-  // --- Splash Screen Visual Logic START ---
-  const splashScreen = document.getElementById('splash-screen');
-  if (splashScreen) {
-    // OPTIMIZACIÓN: Reducir tiempo de splash para sensación de velocidad
-    const visibleDuration = 100; // Casi instantáneo si el navegador está listo
-    const exitAnimationDuration = 500; 
-
-    setTimeout(() => {
-      splashScreen.classList.add('hidden');
-      setTimeout(() => {
-        if (splashScreen.parentNode) {
-           splashScreen.style.display = 'none';
-        }
-      }, exitAnimationDuration);
-    }, visibleDuration);
-  }
-  // --- Splash Screen Visual Logic END ---
-
-  console.log("[DOMContentLoaded] Iniciando carga de la aplicación.");
+  const splashScreen = document.getElementById('splash-screen'); if (splashScreen) { setTimeout(() => { splashScreen.classList.add('hidden'); setTimeout(() => { if (splashScreen.parentNode) splashScreen.style.display = 'none'; }, 500); }, 100); }
   updateConnectionStatus();
 
   async function loadAllData() {
       try {
-          console.log("[DOMContentLoaded] Cargando configuración de setlists, usuarios y ensayos...");
-          // IMPORTANTE: Cargar librería Jukebox
           if(window.loadJukeboxLibrary) {
-              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary()]);
+              await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary(), window.loadPdfLibrary(), window.loadMasterDocs()]);
           } else {
-              // Fallback si el script tarda en cargar
-              setTimeout(() => { 
-                  if(window.loadJukeboxLibrary) window.loadJukeboxLibrary();
-              }, 1000);
+              setTimeout(() => { if(window.loadJukeboxLibrary) window.loadJukeboxLibrary(); if(window.loadPdfLibrary) window.loadPdfLibrary(); if(window.loadMasterDocs) window.loadMasterDocs(); }, 1000);
               await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals()]);
           }
-          console.log("[DOMContentLoaded] Configuración, usuarios, ensayos y Jukebox cargados.");
-      } catch (e) { console.error("[DOMContentLoaded] Error en carga inicial de Firestore:", e); }
-
-      // --- CARGA DE ANÁLISIS ---
-      // Aseguramos que se carguen los análisis
-      if(window.loadAnalysisData) {
-          window.loadAnalysisData();
-      } else {
-          setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
-      }
-      
-      // Load Setlists into Global Variables
-      try {  
-        console.log("[DOMContentLoaded] Cargando primer setlist...");
-        window.globalItems1 = await cargarPrimerSetlist();  
-        console.log("[DOMContentLoaded] Primer setlist cargado:", window.globalItems1 ? window.globalItems1.length : 0, "bloques/items.");
-      } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Ensayo:", e); }
-      
-      try {  
-        console.log("[DOMContentLoaded] Cargando segundo setlist...");
-        window.globalItems2 = await cargarSegundoSetlist();  
-        console.log("[DOMContentLoaded] Segundo setlist cargado:", window.globalItems2 ? window.globalItems2.length : 0, "bloques/items.");
-      } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Próx. Concierto:", e); }
-      
-      try {  
-        console.log("[DOMContentLoaded] Cargando setlist estrella...");
-        window.globalItemsStar = await cargarStarSetlist();  
-        console.log("[DOMContentLoaded] Setlist estrella cargado:", window.globalItemsStar ? window.globalItemsStar.length : 0, "bloques/items.");
-      } catch (e) { console.error("[DOMContentLoaded] Fallo carga Setlist Estrella:", e); }
-
-      // Setup download buttons once data is likely ready
-      document.getElementById("download-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo."); };
-      document.getElementById("download-basic-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genBasicPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("No hay elementos en Setlist Ensayo para PDF básico."); };
-      
-      document.getElementById("download-btn-2").onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto."); };
-      document.getElementById("download-basic-btn-2").onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genBasicPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("No hay elementos en Setlist Próx. Concierto para PDF básico."); };
-      
-      document.getElementById("download-btn-star").onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella."); };
-      document.getElementById("download-basic-btn-star").onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genBasicPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("No hay elementos en Setlist Estrella para PDF básico."); };
-
-      // Setup personal PDF buttons
+      } catch (e) { }
+      if(window.loadAnalysisData) window.loadAnalysisData(); else setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
+      try { window.globalItems1 = await cargarPrimerSetlist(); } catch (e) { }
+      try { window.globalItems2 = await cargarSegundoSetlist(); } catch (e) { }
+      try { window.globalItemsStar = await cargarStarSetlist(); } catch (e) { }
+      document.getElementById("download-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("Vacío."); };
+      document.getElementById("download-basic-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genBasicPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("Vacío."); };
+      document.getElementById("download-btn-2").onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("Vacío."); };
+      document.getElementById("download-basic-btn-2").onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genBasicPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("Vacío."); };
+      document.getElementById("download-btn-star").onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("Vacío."); };
+      document.getElementById("download-basic-btn-star").onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genBasicPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("Vacío."); };
       const setupPersonalPdfBtn = (btnId, items, name) => {
           const btn = document.getElementById(btnId);
           if(btn) btn.onclick = () => {
               if (items && items.length > 0) {
-                  const fontSizeInput = prompt("PDF Personal - Introduce el tamaño de letra para los títulos de las canciones (ej: 12, 14, 16):", "14");
+                  const fontSizeInput = prompt("PDF Personal - Tamaño letra títulos (ej: 14):", "14");
                   if (fontSizeInput) {
                       const fontSize = parseInt(fontSizeInput, 10);
-                      if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) {
-                          genPersonalPDF(items, name, name, fontSize);
-                      } else {
-                          alert("Tamaño de letra inválido. Por favor, introduce un número entre 8 y 30.");
-                      }
+                      if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) genPersonalPDF(items, name, name, fontSize); else alert("Inválido.");
                   }
-              } else {
-                  alert("No hay elementos para generar un PDF personal.");
-              }
+              } else alert("Vacío.");
           };
       };
-      
       setupPersonalPdfBtn("download-personal-btn", window.globalItems1, setlistConfig.setlist1.name);
       setupPersonalPdfBtn("download-personal-btn-2", window.globalItems2, setlistConfig.setlist2.name);
       setupPersonalPdfBtn("download-personal-btn-star", window.globalItemsStar, setlistConfig.setlistStar.name);
   }
-  
-  // Si Firebase ya estaba cargado por cache, iniciamos. Si no, el interval de arriba lo hará.
-  if (typeof firebase !== 'undefined') {
-      loadAllData();
-  }
-
-  const prevBtn = document.getElementById('prev-month-btn');
-  const nextBtn = document.getElementById('next-month-btn');
-  
-  if(prevBtn) {
-      const newPrev = prevBtn.cloneNode(true);
-      prevBtn.parentNode.replaceChild(newPrev, prevBtn);
-      newPrev.addEventListener('click', () => {
-        currentCalDate.setMonth(currentCalDate.getMonth() - 1);
-        renderVisualCalendar();
-      });
-  }
-  
-  if(nextBtn) {
-      const newNext = nextBtn.cloneNode(true);
-      nextBtn.parentNode.replaceChild(newNext, nextBtn);
-      newNext.addEventListener('click', () => {
-        currentCalDate.setMonth(currentCalDate.getMonth() + 1);
-        renderVisualCalendar();
-      });
-  }
-
-  renderVisualCalendar(); 
-  setTimeout(renderVisualCalendar, 2000); 
-  setTimeout(renderVisualCalendar, 5000);
-
-  console.log("[DOMContentLoaded] Carga de la aplicación completada.");
+  if (typeof firebase !== 'undefined') loadAllData();
+  const prevBtn = document.getElementById('prev-month-btn'); const nextBtn = document.getElementById('next-month-btn');
+  if(prevBtn) { const newPrev = prevBtn.cloneNode(true); prevBtn.parentNode.replaceChild(newPrev, prevBtn); newPrev.addEventListener('click', () => { currentCalDate.setMonth(currentCalDate.getMonth() - 1); renderVisualCalendar(); }); }
+  if(nextBtn) { const newNext = nextBtn.cloneNode(true); nextBtn.parentNode.replaceChild(newNext, nextBtn); newNext.addEventListener('click', () => { currentCalDate.setMonth(currentCalDate.getMonth() + 1); renderVisualCalendar(); }); }
+  renderVisualCalendar(); setTimeout(renderVisualCalendar, 2000); setTimeout(renderVisualCalendar, 5000);
 });
 </script>
 </body>
