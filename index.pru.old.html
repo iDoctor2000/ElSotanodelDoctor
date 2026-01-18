@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -483,6 +484,46 @@
         align-items: center; justify-content: center; padding: 0; 
     }
 
+       /* --- TUNER POPUP (NUEVO) --- */
+    #tuner-popup {
+        position: fixed; top: 70px; right: 20px; width: 260px;
+        background: rgba(20, 20, 20, 0.95); 
+        border: 1px solid #0cf; border-radius: 12px;
+        padding: 15px; z-index: 11000; /* Z-index alto para asegurar visibilidad */
+        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        display: none; flex-direction: column; align-items: center; gap: 10px;
+        backdrop-filter: blur(10px);
+        transform-origin: top right;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    #tuner-popup.visible { display: flex !important; }
+    
+    .tuner-display-area { 
+        width: 100%; height: 100px; background: #111; 
+        border: 1px solid #333; border-radius: 8px; position: relative; 
+        overflow: hidden; margin-bottom: 10px;
+    }
+    .tuner-needle {
+        position: absolute; bottom: 0; left: 50%; width: 4px; height: 80%; /* Aguja más visible */
+        background: #0cf; transform-origin: bottom center;
+        transition: left 0.1s ease-out;
+        box-shadow: 0 0 5px #0cf;
+        border-radius: 2px;
+    }
+    .tuner-note { 
+        font-size: 3em; font-weight: bold; color: #fff; 
+        text-align: center; margin-top: 10px; z-index: 2; position: relative;
+        text-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+    .tuner-freq { font-size: 0.9em; color: #aaa; font-family: monospace; }
+    .tuner-msg { font-size: 0.7em; color: #666; margin: 5px 0 0 0; text-align: center; }
+    
+    /* Status colors */
+    #tuner-popup.tuner-status-perfect .tuner-note { color: #0f0; text-shadow: 0 0 10px #0f0; }
+    #tuner-popup.tuner-status-perfect .tuner-needle { background: #0f0; box-shadow: 0 0 5px #0f0; }
+    
+    #tuner-popup.tuner-status-flat .tuner-note { color: #0cf; } /* Flat is blueish/cyan */
+    #tuner-popup.tuner-status-sharp .tuner-note { color: #f55; } /* Sharp is red */
     @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
 
     @media(max-width:768px){
@@ -517,6 +558,8 @@
       
       /* Metrónomo móvil */
       #metronome-popup { right: 10px; left: 10px; width: auto; top: 65px; }
+      /* Afinador móvil */
+      #tuner-popup { right: 10px; left: 10px; width: auto; top: 65px; }
     }
 
     #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
@@ -705,6 +748,13 @@
 
     <!-- ZONA DERECHA: BOTONES -->
     <div class="header-controls-right">
+        <!-- BOTÓN AFINADOR (NUEVO) -->
+        <button id="tuner-toggle-btn" class="header-icon-btn" title="Afinador">
+            <svg viewBox="0 0 24 24">
+                <path d="M15 2H9v2H7v6c0 2.76 2.24 5 5 5s5-2.24 5-5V4h-2V2zm0 8c0 1.66-1.34 3-3 3s-3-1.34-3-3V4h6v6z M11 14v8h2v-8h-2z" fill="currentColor"/>
+            </svg>
+        </button>
+
         <!-- BOTÓN METRÓNOMO (NUEVO) -->
         <button id="metronome-toggle-btn" class="header-icon-btn" title="Metrónomo">
             <!-- Icono sencillo tipo triángulo -->
@@ -753,6 +803,16 @@
      
      <!-- BOTÓN TAP (NUEVO) -->
      <button id="metro-tap-btn" class="metronome-tap-btn">TAP</button>
+  </div>
+
+  <!-- POPUP DEL AFINADOR (Oculto por defecto) -->
+  <div id="tuner-popup">
+     <div class="tuner-display-area">
+         <div class="tuner-note" id="tuner-note">--</div>
+         <div class="tuner-needle" id="tuner-needle"></div>
+     </div>
+     <div class="tuner-freq" id="tuner-freq">0.0 Hz</div>
+     <p style="font-size:0.7em; color:#666; margin:5px 0 0 0;">Asegúrate de permitir el micrófono.</p>
   </div>
 
   <div id="overlay"></div>
@@ -1136,6 +1196,7 @@
 
   <script src="jukebox.js"></script>
   <script src="metronome.js"></script>
+  <script src="tuner.js"></script>
   <script src="analisis.js"></script> <!-- Nuevo script añadido -->
 
 <script>
