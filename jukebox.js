@@ -1,3 +1,4 @@
+
 /* 
    JUKEBOX.JS
    Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
@@ -86,6 +87,7 @@ window.injectJukeboxStyles = function() {
             gap: 6px;
             transition: all 0.2s ease;
             background: rgba(0,0,0,0.2);
+            white-space: nowrap; /* Evitar que el texto del botón se rompa feo */
         }
         .jukebox-tool-btn:hover { background: rgba(0, 204, 255, 0.15); border-color: #0cf; color: #fff; }
         .jukebox-tool-btn.active { background: #0cf; color: #000; border-color: #0cf; box-shadow: 0 0 8px rgba(0,204,255,0.4); }
@@ -248,12 +250,45 @@ window.injectJukeboxStyles = function() {
         #jukebox-player-bar.minimized .jukebox-controls { gap: 15px; }
         #jukebox-player-bar.minimized .jukebox-control-btn svg { width: 24px; height: 24px; } 
 
-        @media(max-width: 768px) {
-            #jukebox-player-bar.minimized { padding: 10px !important; }
-            #jukebox-player-bar.minimized .jukebox-song-title { font-size: 0.9em; max-width: 140px; }
-            #jukebox-tools-row { gap: 6px; justify-content: space-around; }
-            .jukebox-tool-btn { padding: 6px 8px; font-size: 0.8em; }
-            .jb-volume-slider { width: 80px; }
+        /* --- RESPONSIVE ADJUSTMENTS --- */
+        @media(max-width: 480px) {
+            /* Ajustes generales Jukebox en Móvil */
+            #jukebox-player-bar { 
+                padding: 10px; 
+                width: 98%; 
+                top: 55%; /* Un poco más abajo para dar espacio */
+            }
+            .jukebox-song-title { font-size: 1em; max-width: 75%; }
+            
+            /* Ajustes Controles Principales */
+            .jukebox-controls { gap: 12px; }
+            .jukebox-control-btn svg { width: 28px; height: 28px; }
+            
+            /* Ajustes Barra Herramientas */
+            #jukebox-tools-row { 
+                gap: 5px; 
+                justify-content: space-evenly; 
+            }
+            .jukebox-tool-btn { 
+                padding: 5px 8px; 
+                font-size: 0.8em; 
+                flex-grow: 1; /* Botones crecen para llenar huecos */
+                justify-content: center;
+            }
+            
+            /* Ajustes Loop */
+            .jukebox-loop-area { gap: 5px; }
+            .loop-btn { padding: 4px 8px; font-size: 0.8em; }
+            .jukebox-loop-display { min-width: 50px; font-size: 0.8em; }
+            
+            /* Ajustes Volumen en Móvil */
+            .jukebox-volume-group { margin-left: 0; flex-grow: 1; justify-content: center; }
+            .jb-volume-slider { width: 70px; }
+            
+            /* Ajustes Minimizado en Móvil */
+            #jukebox-player-bar.minimized { padding: 8px 10px !important; }
+            #jukebox-player-bar.minimized .jukebox-song-title { font-size: 0.85em; max-width: 120px; }
+            #jukebox-player-bar.minimized .jukebox-controls { gap: 10px; }
         }
     `;
 
@@ -518,12 +553,24 @@ window.loadJukeboxLibrary = async function() {
     try {
         if (typeof window.loadDoc === 'function') {
             const data = await window.withRetry(() => window.loadDoc("intranet", "jukebox_library", { mapping: {}, markers: {}, offsets: {}, notes: {}, pitch: {}, related: {} }));
-            window.jukeboxLibrary = data.mapping || {};
+            
+            // Detección de Estructura Antigua vs Nueva
+            // Antigua: data = { "Song Name": "URL", ... } (sin mapping)
+            // Nueva: data = { mapping: { ... }, markers: { ... }, ... }
+            
+            if (data.mapping) {
+                window.jukeboxLibrary = data.mapping || {};
+            } else {
+                // Asumimos que es antigua si no tiene 'mapping' pero tiene claves
+                console.log("Detectada estructura antigua Jukebox. Migrando al vuelo...");
+                window.jukeboxLibrary = data || {};
+            }
+
             jukeboxMarkers = data.markers || {};
             jukeboxOffsets = data.offsets || {};
             jukeboxNotes = data.notes || {};
             jukeboxPitch = data.pitch || {}; 
-            // Fix: Asegurar que related es un objeto, no un array (por si acaso datos antiguos)
+            
             if(Array.isArray(data.related)) {
                  jukeboxRelated = {};
             } else {
@@ -537,14 +584,15 @@ window.loadJukeboxLibrary = async function() {
 window.saveJukeboxLibrary = async function() {
     try {
         if (typeof window.saveDoc === 'function') {
+            // Guardamos siempre con estructura nueva
             await window.withRetry(() => window.saveDoc("intranet", "jukebox_library", { 
                 mapping: window.jukeboxLibrary,
                 markers: jukeboxMarkers,
                 offsets: jukeboxOffsets,
                 notes: jukeboxNotes,
                 pitch: jukeboxPitch,
-                related: jukeboxRelated // Guardar relacionados
-            }));
+                related: jukeboxRelated 
+            }, true)); // true = merge
             return true;
         }
     } catch (e) { console.error("Error guardando Jukebox:", e); return false; }
