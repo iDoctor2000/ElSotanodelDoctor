@@ -127,6 +127,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
     }
+
+    // 4. NUEVO: Listeners para la nueva pantalla de visualización
+    const btnOpenRehearsals = document.getElementById('btn-open-rehearsals-view');
+    if(btnOpenRehearsals) {
+        btnOpenRehearsals.onclick = () => {
+            if(window.openConfigScreen) window.openConfigScreen("rehearsals-view-screen");
+        };
+    }
+
+    const btnCloseRehearsalsView = document.getElementById('close-rehearsals-view');
+    if(btnCloseRehearsalsView) {
+        btnCloseRehearsalsView.onclick = () => {
+            document.getElementById("rehearsals-view-screen").style.display = "none";
+        };
+    }
 });
 
 // --- FUNCIONES LÓGICAS ---
