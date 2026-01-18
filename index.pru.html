@@ -367,7 +367,7 @@
 
     /* --- JUKEBOX POPUP (POPUP FLOTANTE) --- */
     #jukebox-player-bar {
-        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
         width: 95%; max-width: 450px;
         background: rgba(20, 20, 20, 0.98); 
         border: 1px solid #0cf;
@@ -383,7 +383,6 @@
     }
     #jukebox-player-bar.visible { 
         opacity: 1; visibility: visible; pointer-events: all;
-        transform: translate(-50%, -50%) scale(1);
     }
     
     .jukebox-info { display: flex; align-items: center; width: 100%; justify-content: space-between; margin-bottom: 15px; }
@@ -613,6 +612,15 @@
       #metronome-popup { right: 10px; left: 10px; width: auto; top: 65px; }
       /* Afinador móvil */
       #tuner-popup { right: 10px; left: 10px; width: auto; top: 65px; }
+    }
+
+    /* FIX: MOVIL MUY PEQUEÑO (< 380px) */
+    @media(max-width:380px) {
+        .logo img.logo-main { width: 90px; }
+        .header-icon-btn { width: 32px; height: 32px; padding: 5px; }
+        .hamburger { width: 32px; height: 32px; }
+        .header-controls-right { gap: 5px; }
+        .header-left { gap: 5px; }
     }
 
     #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
