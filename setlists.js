@@ -1,976 +1,1760 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="El Sótano">
+  <link rel="manifest" href="manifest.json">
+   
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  
+  <!-- VIEWPORT CORREGIDO: Bloqueo de zoom y ajuste fit -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <meta charset="UTF-8" />
+  <title>El Sótano del Doctor – Intranet</title>
 
-/* 
-   SETLISTS.JS
-   Gestión de repertorios, renderizado de tablas, 
-   generación de PDFs y gestión de enlaces (Jukebox/PDF/MasterDocs).
-*/
+  <link rel="icon" type="image/x-icon" href="assets/favicon_ElSotanoDr.ico">
+  
+  <meta property="og:title"        content="El Sótano del Doctor – Intranet">
+  <meta property="og:description"  content="Banda de rock y versiones. Intranet de gestión.">
+  <meta property="og:image"        content="assets/logo_negro copia.jpg">
 
-console.log("--- SETLISTS.JS CARGADO ---");
+  <!-- OPTIMIZACIÓN: Preconectar a dominios externos para acelerar la carga -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  <link rel="preconnect" href="https://www.youtube.com">
+  <link rel="preconnect" href="https://www.bandhelper.com">
 
-// Variables Globales de Setlists
-window.globalItems1 = [];
-window.globalItems2 = [];
-window.globalItemsStar = [];
-window.pdfLibrary = {};
-window.masterDocs = { setlist1: {}, setlist2: {}, setlistStar: {} }; 
+  <!-- OPTIMIZACIÓN: 'defer' permite que el HTML se muestre sin esperar a los scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" defer></script>
+  <!-- YouTube API -->
+  <script src="https://www.youtube.com/iframe_api" defer></script>
 
-// Configuración por defecto
-let setlistConfig = {
-    setlist1: { name: "Setlist Predeterminado Ensayo", url: "URL_POR_CONFIGURAR_1" },
-    setlist2: { name: "Setlist Predeterminado Próximo Concierto", url: "URL_POR_CONFIGURAR_2" },
-    setlistStar: { name: "Setlist Predeterminado Concierto Estrella", url: "URL_POR_CONFIGURAR_STAR" }
+  <style>
+    *,*::before,*::after{box-sizing:border-box}
+    
+    /* FONDO CON PROFUNDIDAD Y BLOQUEO DE SCROLL LATERAL/ZOOM */
+    html,body {
+        margin:0; padding:0; 
+        overflow-x:hidden; /* Evita scroll lateral */
+        width: 100%;
+        /* FIX iOS: Usar min-height en lugar de height fixed evita rebotes y bloqueos */
+        min-height: 100vh;
+        min-height: 100dvh;
+        font-family:Arial,Helvetica,sans-serif; 
+        background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+        background-attachment: fixed;
+        color:#fff;
+        
+        /* PROPIEDADES PARA SENSACIÓN APP NATIVA */
+        touch-action: manipulation;
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* ---------- Splash Screen ---------- */
+    #splash-screen {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background-color: #000000; display: flex; justify-content: center; align-items: center;
+      z-index: 200000; opacity: 1; visibility: visible;
+      transition: opacity 0.5s ease-out, visibility 0.5s linear; /* Transición más rápida */
+    }
+    #splash-screen img {
+      max-width: 60%; max-height: 60%; opacity: 0;
+      transform: scale(0.85) translateY(15px); 
+      animation: splash-image-entry 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes splash-image-entry { to { opacity: 1; transform: scale(1) translateY(0); } }
+    #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    header{
+        background: rgba(17, 17, 17, 0.95); padding:10px 20px; display:flex; align-items:center;
+        justify-content:space-between; position:fixed; top:0; left:0; width:100%; z-index:1000;  
+        border-bottom: 1px solid #222; height: 60px; backdrop-filter: blur(5px);
+    }
+    
+    /* NUEVO LAYOUT HEADER */
+    .header-left { display: flex; align-items: center; gap: 15px; }
+    .logo img.logo-main{ width: 135px; height:auto; vertical-align: middle; }
+    /* Ajuste para que el logo intranet ya no esté absoluto en el centro, sino relativo a la izquierda */
+    .logo-intranet{ height:35px; width:auto; opacity: 0.9; }
+    
+    .header-controls-right { display: flex; align-items: center; gap: 10px; }
+
+    .header-icon-btn { 
+        background: none; border: 1px solid #0cf; color: #0cf; border-radius: 4px; padding: 5px;           
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        width: 37px; height: 37px; transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    .header-icon-btn:hover { background: #333; transform: scale(1.05); }
+    .header-icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+    
+    /* Icono Metrónomo (SVG stroke) */
+    #metronome-toggle-btn svg { fill: none; stroke: currentColor; stroke-width: 2; }
+    
+    #site-audio-control-button { display: none; } 
+
+    .hamburger{
+        cursor:pointer; border:1px solid #0cf; border-radius:4px; padding:5px; display: flex; 
+        flex-direction: column; justify-content: space-around; width: 37px; height: 37px; box-sizing: border-box;
+    }
+    .hamburger div{width:25px;height:3px;background:#0cf;margin:0 auto;} 
+    
+    .sidebar{
+        position:fixed; top:0; left:0; width:280px; height:100vh; background:#1a1a1a; border-right:1px solid #222;
+        padding: 20px; padding-top: calc(60px + 20px); box-shadow:3px 0 15px rgba(0,200,200,.15);  
+        transform:translateX(-100%); transition:transform .3s ease-in-out; z-index:9999; overflow-y: auto;
+    }
+    .sidebar.show{ transform:translateX(0); }
+    .sidebar h2{color:#0cf;margin:0 0 20px 0;}
+    .sidebar a{display:block;color:#fff;text-decoration:none;margin:12px 0;padding:10px 5px;border-bottom:1px solid #333; font-size: 1em;}
+    .sidebar a:last-of-type { border-bottom: none; }
+    .sidebar a:hover{color:#0cf}
+    .sidebar a#menu-second-setlist-section { font-weight: bold; color: #0cf !important; }
+    .sidebar .submenu { margin-left: 15px; margin-top: 10px; }
+    .sidebar .submenu a { padding: 8px 0; font-size: 0.9em; border-top: 1px solid #2a2a2a; border-bottom: none; margin: 5px 0;}
+    .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; }  
+    .sidebar a#menu-config:hover { color: #fff2a7; }
+    
+    #overlay{ position:fixed;top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,.75); z-index:5000; display:none; opacity: 0; transition: opacity .3s ease-in-out; }
+    #overlay.show{display:block; opacity: 1;}
+    
+    main { padding-top: 75px; }
+    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(3px); }
+    .modal-backdrop.show { display: flex; }
+    
+    .modal-content { 
+        background: rgba(26, 26, 26, 0.95); color: #fff; padding: 20px; border-radius: 10px; 
+        box-shadow: 0 0 30px rgba(0,255,255,0.15); border: 1px solid rgba(0, 204, 255, 0.2);
+        width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; 
+    }
+    .modal-content h3 { color: #0cf; margin-top: 0; margin-bottom: 5px; }  
+    .modal-content h4 { color: #0cf; margin-top: 15px; margin-bottom: 10px; }
+    #concert-detail-title-display, #rehearsal-detail-title-display { color: #fff; font-size: 1em; font-weight: normal; margin-top: 0px; margin-bottom: 20px; text-align: left; border-bottom: 1px solid #333; padding-bottom: 10px; padding-left: 0px; }
+    #concert-detail-title-display .concert-date { font-style: italic; font-size: 0.9em; margin-left: 8px; }
+    .modal-content label { display: block; margin: 10px 0 5px; color: #0cf; font-weight: bold; }
+    .modal-content input[type="text"], .modal-content input[type="url"], .modal-content input[type="time"], .modal-content textarea { width: 100%; padding: 10px; background: #222; color: #fff; border: 1px solid #333; border-radius: 5px; margin-bottom: 15px; }
+    .modal-content textarea { min-height: 80px; resize: vertical; }
+    .modal-content button { padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px; margin-top: 10px; }
+    .modal-content button:hover { background: #09b; }
+    .modal-content .modal-close-btn { background: #444; color: #fff; }
+    .modal-content .modal-close-btn:hover { background: #555; }
+    #musicians-attendance-list { border: 1px solid #333; padding: 10px; margin-bottom:15px; }
+    #musicians-attendance-list div { margin-bottom: 8px; display: flex; align-items: center; }
+    #musicians-attendance-list label { color: #fff; margin-left: 8px; font-weight: normal; cursor: pointer; }
+    #musicians-attendance-list input[type="checkbox"] { vertical-align: middle; width: 18px; height: 18px; cursor: pointer; }
+    .modal-field-group { display: flex; gap: 15px; flex-wrap: wrap; }
+    .modal-field-group > div { flex: 1; min-width: 200px; }
+    .modal-field-group input[type="time"] { text-align: left; }
+    .config-screen {
+        display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+        background: rgba(10, 10, 10, 0.95); z-index:10001; overflow-y:auto; padding: 20px; padding-top: calc(60px + 20px); 
+        backdrop-filter: blur(5px);
+    }
+    .config-screen h2{color:#0cf;text-align:center;margin:10px 0 20px;}  
+    .config-screen h3{color:#0cf;margin:20px 0 10px}
+    .config-screen label{display:block;margin:10px 0 5px}
+    .config-screen input,.config-screen select{width:100%;max-width:400px;padding:10px;background:#222;color:#fff; border:1px solid #333;border-radius:5px}
+    .config-screen select[multiple] { height: 150px; }
+    .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
+    .config-screen button:hover{background:#09b}
+    .config-screen .close-btn{ position:absolute; top:15px; right:20px; font-size:1.2em;background:none;border:1px solid #0cf; color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer; z-index: 10002; }
+    .config-screen .close-btn:hover{background:#333}
+    main section{max-width:1200px;margin:0 auto;padding:20px}
+    
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual, #suggestions, #analisis { 
+        background: rgba(20, 20, 20, 0.75); 
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
+        padding:20px; border-radius:12px; 
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); 
+        border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
+    }
+    
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2, #analisis h2 { text-align:center;color:#0cf;margin-bottom:5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
+    .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
+    table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
+    thead{background:#222;color:#0cf}
+    th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
+    
+    /* Ajustes columnas setlist - AHORA CON PDF */
+    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6), #setlists table th:nth-child(7),
+    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
+    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7) { text-align: center; }
+    
+    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6), #setlists table td:nth-child(7),
+    #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
+    #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7) { text-align: center; }
+    
+    /* JUKEBOX COLUMNS */
+    th.jukebox-col-header, td.jukebox-col { width: 40px; text-align: center; padding: 5px; }
+    .jukebox-btn {
+        background: transparent; border: 1px solid #333; color: #555;
+        border-radius: 50%; width: 32px; height: 32px; 
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.3s; margin: 0 auto;
+    }
+    .jukebox-btn.active {
+        border-color: #0cf; color: #0cf;
+        box-shadow: 0 0 5px rgba(0, 204, 255, 0.3);
+    }
+    .jukebox-btn.active:hover {
+        background: rgba(0, 204, 255, 0.1); transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(0, 204, 255, 0.6);
+    }
+    .jukebox-btn.inactive {
+        opacity: 0.4; filter: grayscale(100%); border-color: #444;
+    }
+    .jukebox-btn.inactive:hover {
+        opacity: 1; border-color: #666; color: #999;
+    }
+    .jukebox-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* PDF COLUMN STYLES (NUEVO) */
+    th.pdf-col-header, td.pdf-col { width: 40px; text-align: center; padding: 5px; }
+    .pdf-btn {
+        background: transparent; border: 1px solid #333; color: #555;
+        border-radius: 50%; width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.3s; margin: 0 auto;
+    }
+    /* Estilo "Active" en Naranja para diferenciar del audio */
+    .pdf-btn.active {
+        border-color: #ff9800; color: #ff9800; 
+        box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
+    }
+    .pdf-btn.active:hover {
+        background: rgba(255, 152, 0, 0.1); transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(255, 152, 0, 0.6);
+    }
+    .pdf-btn.inactive {
+        opacity: 0.4; filter: grayscale(100%); border-color: #444;
+    }
+    .pdf-btn.inactive:hover {
+        opacity: 1; border-color: #666; color: #999;
+    }
+    .pdf-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* ESTILO BOTÓN GLOBAL MAESTRO (ACTUALIZADO 1, 2, 3) */
+    .master-direct-group { display: inline-flex; gap: 6px; vertical-align: middle; margin-left: 10px; }
+    .master-slot-btn {
+        background: transparent; border: 1px solid #444; color: #666;
+        border-radius: 50%; width: 28px; height: 28px; display: flex;
+        align-items: center; justify-content: center; cursor: pointer;
+        font-weight: bold; font-size: 11px; transition: all 0.3s;
+    }
+    .master-slot-btn.active { 
+        border-color: #ff9800; color: #ff9800; 
+        box-shadow: 0 0 8px rgba(255, 152, 0, 0.4); 
+    }
+    .master-slot-btn:hover { transform: scale(1.1); }
+
+    /* ESTILO BOTÓN GLOBAL MAESTRO LEGACY */
+    .setlist-master-doc-btn {
+        background: transparent; border: 1px solid #444; color: #555;
+        border-radius: 50%; width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.3s;
+    }
+    .setlist-master-doc-btn.has-files {
+        border-color: #ff9800; color: #ff9800;
+        box-shadow: 0 0 8px rgba(255, 152, 0, 0.4);
+        animation: pulse-master-orange 2s infinite;
+    }
+    @keyframes pulse-master-orange { 0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); } }
+
+    /* SLOTS MODAL DOCUMENTOS */
+    .master-doc-slot { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #333; }
+    .master-doc-slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .master-doc-slot-title { color: #ff9800; font-weight: bold; font-size: 0.9em; }
+    .master-doc-slot input { margin-bottom: 8px !important; }
+
+    /* PREVIEW DIA */
+    .day-preview-text { color: #0cf; font-weight: bold; margin-left: 10px; font-style: italic; font-size: 0.9em; }
+
+    /* METRONOME COLUMN & BUTTON (ACTUALIZADO) */
+    th.metronome-col-header, td.metronome-col { width: 40px; text-align: center; padding: 5px; }
+    
+    /* Estilo base (Gris/Apagado - No hay tempo) */
+    .metronome-table-btn {
+        background: transparent; border: 1px solid #333; color: #555;
+        border-radius: 50%; width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto; 
+        cursor: default; /* No clicable por defecto si no hay tempo */
+        transition: all 0.3s;
+    }
+    .metronome-table-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+    /* Estado: Tiene tempo (Azul - Como auriculares) */
+    .metronome-table-btn.has-tempo {
+        border-color: #0cf; color: #0cf;
+        cursor: pointer; /* Clicable */
+        box-shadow: 0 0 5px rgba(0, 204, 255, 0.3);
+    }
+    .metronome-table-btn.has-tempo:hover {
+        background: rgba(0, 204, 255, 0.1); transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(0, 204, 255, 0.6);
+    }
+
+    /* Estado: Reproduciendo (Rojo pulsante) - Sobrescribe el azul */
+    .metronome-table-btn.active-metronome {
+        background: rgba(255, 85, 85, 0.2); border-color: #ff5555 !important; color: #ff5555 !important;
+        box-shadow: 0 0 8px rgba(255, 85, 85, 0.6);
+        animation: pulse-metro 1s infinite;
+        cursor: pointer;
+    }
+    @keyframes pulse-metro { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+
+    .break-row td { font-style: italic; color: #ccc; background-color: #161616; }
+    .break-row td:first-child { color: #777; text-align: center; }
+    .break-row td:nth-child(3), .break-row td:nth-child(4), .break-row td:nth-child(5), .break-row td:nth-child(6) { text-align: center; }
+    .set-header-row td { font-weight: bold; text-align: center; background-color: #383838; color: #0cf; padding-top: 12px; padding-bottom: 12px; border-top: 1px solid #505050 !important; border-bottom: 1px solid #505050 !important; }
+    th.calendar-col-header, td.calendar-col { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
+    th.details-col-header { width: 50px; text-align: center; padding-left: 5px; padding-right: 5px; }
+    tr:nth-child(even):not(.set-header-row):not(.break-row){background: rgba(26, 26, 26, 0.6);}
+    .download-btn, .live-mode-btn {display:inline-block;margin:20px 5px 0;padding:10px 20px;font-size:1em;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
+    .download-btn:hover{background:#09b}
+    .live-mode-btn { background: #ff0055; color: #fff; border: 1px solid #ff0055; }
+    .live-mode-btn:hover { background: #cc0044; }
+
+    #total-time, #total-time-star, #total-time-2{color:#0cf;margin-top:10px;text-align:center}
+    footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
+    .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 0; vertical-align: middle; }
+    .calendar-btn svg { fill: #0cf; width: 20px; height: 20px; }
+    .calendar-btn:hover svg { fill: #09b; }
+    .details-btn { font-size: 1.5em; color: #0cf; }
+    .details-btn:hover { color: #09b; }
+    .delete-user, .edit-user, .delete-rehearsal, .clear-attendance, .edit-rehearsal, .copy-rehearsal { padding: 5px 10px; margin: 0 5px; background: #f00; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .edit-user, .edit-rehearsal, .copy-rehearsal { background: #0cf; color: #000; }
+    .clear-attendance { background: #ff9800; }
+    .delete-user, .delete-rehearsal:hover { background: #d00; }
+    .edit-user:hover, .edit-rehearsal:hover, .copy-rehearsal:hover { background: #09b; }
+    .clear-attendance:hover { background: #e68900; }
+    #cancel-edit-user, #cancel-edit-rehearsal { background: #666; color: #fff; }
+    #cancel-edit-user:hover, #cancel-edit-rehearsal:hover { background: #555; }
+    .attendance-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .attendance-form select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; }
+    .attendance-form button { padding: 5px 10px; background: #0cf; color: #000; border: none; border-radius: 4px; cursor: pointer; }
+    .attendance-form button:hover { background: #09b; }
+    .attendance-summary { margin-top: 10px; font-size: 0.9em; }
+    .attendance-summary span { display: block; }
+    .attending-yes { color: #0cf; }
+    .attending-no { color: #f00; }
+    .rehearsal-duration { display: block; font-size: 0.9em; color: #aaa; }
+    #connection-status { position: fixed; top: calc(60px + 5px); right: 10px; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 5px 10px; border-radius: 5px; font-size: 0.9em; z-index: 10000; display: none; }
+    #connection-status.offline { background: #f00; }
+    #connection-status.retrying { background: #ff9800; }
+    .success-message { color: #0cf; margin-top: 10px; text-align: center; }
+    .error-message { color: #f00; margin-top: 10px; text-align: center; }
+    .stats-table { margin-bottom: 40px; }
+    .stats-table h3 { color: #0cf; margin: 20px 0 10px; text-align: center; }
+    .stats-filter { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .stats-filter label { color: #0cf; }
+    .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
+    #firebase-critical-error-banner { background-color: red; color: white; padding: 15px; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 100001; font-weight: bold; }
+
+    /* --- JUKEBOX POPUP (POPUP FLOTANTE) --- */
+    #jukebox-player-bar {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+        width: 95%; max-width: 450px;
+        background: rgba(20, 20, 20, 0.98); 
+        border: 1px solid #0cf;
+        border-radius: 12px;
+        padding: 20px; 
+        z-index: 11000; 
+        display: flex; 
+        opacity: 0; visibility: hidden; pointer-events: none; /* Hidden logic */
+        flex-direction: column; align-items: center;
+        box-shadow: 0 0 50px rgba(0,0,0,0.8), 0 0 15px rgba(0,204,255,0.3);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #jukebox-player-bar.visible { 
+        opacity: 1; visibility: visible; pointer-events: all;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    
+    .jukebox-info { display: flex; align-items: center; width: 100%; justify-content: space-between; margin-bottom: 15px; }
+    .jukebox-song-title { color: #fff; font-weight: bold; font-size: 1.1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; text-shadow: 0 0 5px rgba(0,204,255,0.5); }
+    .jukebox-controls { display: flex; gap: 20px; align-items: center; }
+    .jukebox-control-btn { background: none; border: none; color: #0cf; cursor: pointer; padding: 5px; }
+    .jukebox-control-btn:hover { color: #fff; transform: scale(1.2); }
+    .jukebox-control-btn svg { width: 32px; height: 32px; fill: currentColor; }
+    .jukebox-progress-container { width: 100%; display: flex; align-items: center; gap: 10px; color: #aaa; font-size: 0.9em; margin-top: 15px; }
+    .jukebox-progress-bar { flex-grow: 1; cursor: pointer; -webkit-appearance: none; height: 6px; background: #333; border-radius: 3px; }
+    .jukebox-progress-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #0cf; border-radius: 50%; cursor: pointer; box-shadow: 0 0 5px #0cf; }
+    .jukebox-close-btn { font-size: 1.5em; color: #aaa; background:none; border:none; cursor:pointer; padding:0 5px; }
+    .jukebox-close-btn:hover { color: #fff; }
+
+    /* LOOP CONTROLS POPUP */
+    .jukebox-loop-area { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; width: 100%; justify-content: center; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; }
+    .jukebox-loop-display { font-size: 0.9em; font-family: monospace; color: #0cf; min-width: 70px; text-align: center; white-space: nowrap; }
+    .loop-btn { background: #111; border: 1px solid #555; color: #aaa; padding: 5px 10px; border-radius: 6px; font-size: 0.9em; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: all 0.2s; }
+    .loop-btn.active { border-color: #0cf; color: #0cf; background: rgba(0,204,255,0.1); box-shadow: 0 0 8px rgba(0,204,255,0.3); }
+    .loop-btn svg { width: 16px; height: 16px; fill: currentColor; }
+    .loop-btn:hover { color: #fff; border-color: #777; background: #222; }
+    .loop-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* MARKERS AREA (NUEVO) */
+    .jukebox-markers-area { width: 100%; margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; }
+    .markers-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .markers-header span { font-size: 0.9em; color: #0cf; font-weight: bold; }
+    #jb-add-marker { background: #0cf; color: #000; border: none; border-radius: 4px; width: 24px; height: 24px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    #jb-add-marker:hover { background: #fff; }
+    .markers-list { max-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+    .marker-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 5px 8px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+    .marker-item:hover { background: rgba(255,255,255,0.1); }
+    .marker-info { display: flex; align-items: center; gap: 8px; flex-grow: 1; overflow: hidden; }
+    .marker-time { font-family: monospace; color: #0cf; font-size: 0.85em; background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 3px; }
+    .marker-label { font-size: 0.9em; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .marker-del-btn { background: none; border: none; color: #666; font-size: 1.2em; cursor: pointer; padding: 0 5px; }
+    .marker-del-btn:hover { color: #f55; }
+
+
+    /* Estilos para el modo Iframe (Google Drive) */
+    #jukebox-iframe-container { width: 100%; height: 80px; display: none; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+    #jukebox-iframe-container iframe { width: 100%; height: 100%; border: none; background: transparent; }
+
+    /* --- METRÓNOMO POPUP --- */
+    #metronome-popup {
+        position: fixed; top: 70px; right: 20px; width: 260px;
+        background: rgba(20, 20, 20, 0.95); 
+        border: 1px solid #0cf; border-radius: 12px;
+        padding: 15px; z-index: 2000;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        display: none; flex-direction: column; align-items: center; gap: 10px;
+        backdrop-filter: blur(10px);
+        transform-origin: top right;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    #metronome-popup.visible { display: flex; }
+    
+    .metronome-bpm-display { font-size: 2.5em; font-weight: bold; color: #fff; font-family: monospace; }
+    .metronome-bpm-label { font-size: 0.8em; color: #aaa; margin-top: -5px; }
+    .metronome-slider { width: 100%; margin: 10px 0; -webkit-appearance: none; background: #333; height: 5px; border-radius: 3px; }
+    .metronome-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; background: #0cf; border-radius: 50%; cursor: pointer; }
+    
+    .metronome-controls { display: flex; gap: 15px; width: 100%; justify-content: center; align-items: center; }
+    .metronome-btn-circle { width: 35px; height: 35px; border-radius: 50%; border: 1px solid #444; background: #222; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .metronome-btn-circle:hover { background: #333; border-color: #666; }
+    .metronome-play-btn { width: 50px; height: 50px; border-radius: 50%; background: #0cf; border: none; color: #000; font-size: 1.2em; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0,204,255,0.4); }
+    .metronome-play-btn:hover { background: #fff; transform: scale(1.05); }
+    .metronome-play-btn.playing { background: #ff3333; color: #fff; animation: pulse-red 1s infinite; }
+    
+    /* BOTÓN TAP (NUEVO) */
+    .metronome-tap-btn {
+        margin-top: 5px;
+        width: 60px;
+        height: 60px;
+        background: #0cf; /* Azul corporativo */
+        border: none;
+        border-radius: 8px;
+        color: #000;
+        font-weight: bold;
+        font-size: 1.1em;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0,204,255,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.1s, background 0.1s;
+    }
+    .metronome-tap-btn:active {
+        transform: scale(0.95);
+        background: #fff;
+    }
+
+    /* ESTILOS TABLA LOGS EXPANDIBLE */
+    #access-logs-table .log-row { cursor: pointer; transition: background 0.2s; }
+    #access-logs-table .log-row:hover { background: rgba(255,255,255,0.05); }
+    #access-logs-table .log-details-row { display: none; background: rgba(0,0,0,0.3); }
+    #access-logs-table .log-details-row.show { display: table-row; }
+    .log-details-content { padding: 10px; font-size: 0.9em; color: #ccc; }
+    .log-event-item { border-left: 2px solid #0cf; padding-left: 8px; margin-bottom: 4px; }
+    .expand-btn { 
+        background: none; border: 1px solid #444; color: #0cf; border-radius: 4px; 
+        width: 24px; height: 24px; cursor: pointer; font-weight: bold; display: inline-flex; 
+        align-items: center; justify-content: center; padding: 0; 
+    }
+
+       /* --- TUNER POPUP (NUEVO) --- */
+    #tuner-popup {
+        position: fixed; top: 70px; right: 20px; width: 260px;
+        background: rgba(20, 20, 20, 0.95); 
+        border: 1px solid #0cf; border-radius: 12px;
+        padding: 15px; z-index: 11000; /* Z-index alto para asegurar visibilidad */
+        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        display: none; flex-direction: column; align-items: center; gap: 10px;
+        backdrop-filter: blur(10px);
+        transform-origin: top right;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    #tuner-popup.visible { display: flex !important; }
+    
+    .tuner-display-area { 
+        width: 100%; height: 100px; background: #111; 
+        border: 1px solid #333; border-radius: 8px; position: relative; 
+        overflow: hidden; margin-bottom: 10px;
+    }
+    .tuner-needle {
+        position: absolute; bottom: 0; left: 50%; width: 4px; height: 80%; /* Aguja más visible */
+        background: #0cf; transform-origin: bottom center;
+        transition: left 0.1s ease-out;
+        box-shadow: 0 0 5px #0cf;
+        border-radius: 2px;
+    }
+    .tuner-note { 
+        font-size: 3em; font-weight: bold; color: #fff; 
+        text-align: center; margin-top: 10px; z-index: 2; position: relative;
+        text-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+    .tuner-freq { font-size: 0.9em; color: #aaa; font-family: monospace; }
+    .tuner-msg { font-size: 0.7em; color: #666; margin: 5px 0 0 0; text-align: center; }
+    
+    /* Status colors */
+    #tuner-popup.tuner-status-perfect .tuner-note { color: #0f0; text-shadow: 0 0 10px #0f0; }
+    #tuner-popup.tuner-status-perfect .tuner-needle { background: #0f0; box-shadow: 0 0 5px #0f0; }
+    
+    #tuner-popup.tuner-status-flat .tuner-note { color: #0cf; } /* Flat is blueish/cyan */
+    #tuner-popup.tuner-status-sharp .tuner-note { color: #f55; } /* Sharp is red */
+    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
+
+    @media(max-width:768px){
+      header { height: 55px; padding: 8px 10px; }  
+      .logo img.logo-main{ width: 110px; }
+      /* Ajuste logo intranet móvil */
+      .logo-intranet{ height:25px; margin-left: 5px; }
+      .header-icon-btn { width: 35px; height: 35px; padding: 6px; }
+      .hamburger { width: 35px; height: 35px; }
+      .hamburger div{width:20px;}
+      .sidebar{ width:260px; padding-top: calc(55px + 15px); }
+      main { padding-top: 65px; }
+      .config-screen { padding-top: calc(55px + 15px); }
+      .config-screen .close-btn{ top:10px; right:15px; }
+      #connection-status { top: calc(55px + 5px); right: 5px; font-size: 0.8em; }
+      .attendance-form { flex-direction: column; align-items: flex-start; }
+      .attendance-form select { width: 100%; }
+      .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
+      .table-wrapper { overflow-x: hidden; }  
+      table { width: 100%; min-width: unset; font-size: 0.85em; }
+      th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
+      th.calendar-col-header, td.calendar-col, th.details-col-header { width: 40px; padding: 8px 2px;}  
+      #second-setlist .table-wrapper table, #star-setlist .table-wrapper table { min-width: unset; }
+      .stats-table table { font-size: 0.85em; }
+      .modal-content { width: 95%; padding: 15px; }  
+      .modal-field-group { flex-direction: column; }  
+      
+      /* Ajustes Popup en móvil */
+      #jukebox-player-bar { width: 95%; padding: 15px; max-width: none; }
+      .jukebox-loop-area { flex-wrap: wrap; }
+      .jukebox-control-btn svg { width: 28px; height: 28px; }
+      
+      /* Metrónomo móvil */
+      #metronome-popup { right: 10px; left: 10px; width: auto; top: 65px; }
+      /* Afinador móvil */
+      #tuner-popup { right: 10px; left: 10px; width: auto; top: 65px; }
+    }
+
+    #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
+    .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #fff; }
+    .calendar-controls button { background: rgba(34, 34, 34, 0.8); border: 1px solid #0cf; color: #0cf; padding: 5px 15px; border-radius: 4px; cursor: pointer; transition: all 0.2s;}
+    .calendar-controls button:hover { background: #0cf; color: #000; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; background: transparent; border: none; }
+    .cal-header { background: rgba(26, 26, 26, 0.8); color: #0cf; text-align: center; padding: 10px 0; font-weight: bold; font-size: 0.9em; border-radius: 4px; }
+    .cal-day { background: rgba(0, 0, 0, 0.5); min-height: 100px; padding: 5px; position: relative; display: flex; flex-direction: column; gap: 2px; border-radius: 4px; border: 1px solid #333; }
+    .cal-day.other-month { background: rgba(0, 0, 0, 0.2); opacity: 0.5; border: none; }
+    .cal-day.today { border: 1px solid #0cf; background: rgba(0, 204, 255, 0.05); }
+    .cal-day-number { font-size: 0.8em; color: #777; align-self: flex-end; margin-bottom: 5px; }
+    .cal-event { font-size: 0.75em; padding: 3px 5px; border-radius: 3px; margin-bottom: 3px; word-wrap: break-word; line-height: 1.2; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.2s ease, filter 0.2s ease; }
+    .cal-event:hover { transform: scale(1.02) translateY(-1px); filter: brightness(1.2); z-index: 5; }
+    .cal-event.type-ensayo { color: #ff9999; border-left: 3px solid #ff3333; background: linear-gradient(90deg, rgba(255, 0, 0, 0.15) 0%, rgba(255,0,0,0.05) 100%); }
+    .cal-event.type-concierto { color: #ffff99; border-left: 3px solid #ffff00; background: linear-gradient(90deg, rgba(255, 255, 0, 0.15) 0%, rgba(255,255,0,0.05) 100%); }
+
+    @media(max-width:768px){ .cal-day { min-height: 70px; font-size: 0.9em; } .cal-event { font-size: 0.7em; } .cal-header { font-size: 0.7em; padding: 5px 0; } }
+
+    .suggestion-form { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
+    .suggestion-form-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    .suggestion-form-row input { flex: 1; min-width: 150px; }
+    .suggestions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .suggestion-card { background: rgba(30, 30, 30, 0.6); border: 1px solid rgba(0, 204, 255, 0.1); border-radius: 8px; padding: 15px; position: relative; transition: transform 0.2s; display: flex; flex-direction: column; }
+    .suggestion-card:hover { transform: translateY(-3px); background: rgba(40, 40, 40, 0.8); border-color: rgba(0, 204, 255, 0.3); }
+    .suggestion-header { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px; }
+    .suggestion-title { font-size: 1.1em; font-weight: bold; color: #fff; margin-bottom: 2px; }
+    .suggestion-artist { color: #0cf; font-size: 0.9em; margin-bottom: 5px; }
+    .suggestion-meta { font-size: 0.75em; color: #888; font-style: italic; }
+    .suggestion-body { flex-grow: 1; margin-bottom: 10px; }
+    .star-rating-display { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
+    .star-rating-display .avg-score { font-size: 1.2em; font-weight: bold; color: #FFD700; }
+    .star-rating-display .star-visual { color: #555; font-size: 1.2em; }
+    .star-visual.filled { color: #FFD700; }
+    .voting-area { background: rgba(0,0,0,0.3); padding: 8px; border-radius: 5px; text-align: center; }
+    .voting-label { font-size: 0.8em; color: #aaa; margin-bottom: 5px; display:block; }
+    .interactive-stars { display: inline-flex; gap: 5px; cursor: pointer; }
+    .interactive-star { font-size: 1.5em; color: #555; transition: color 0.2s; }
+    .interactive-star:hover, .interactive-star.active { color: #FFD700; }
+    .interactive-stars.voted { pointer-events: none; opacity: 0.8; }
+    .interactive-stars.voted .interactive-star.active { color: #FFD700; }
+    .voters-details { margin-top: 10px; font-size: 0.8em; color: #ccc; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px; display: none; }
+    .voters-details.show { display: block; }
+    .toggle-voters-btn { background: none; border: none; color: #0cf; font-size: 0.8em; cursor: pointer; padding: 0; margin-top: 5px; text-decoration: underline; }
+    #user-identity-selector { background: #222; color: #fff; border: 1px solid #0cf; padding: 5px; border-radius: 4px; margin-bottom: 15px; width: 100%; max-width: 300px; }
+    .admin-badge { background: red; color: white; font-size: 0.7em; padding: 2px 5px; border-radius: 3px; margin-left: 5px; }
+    .deleted-row { background: rgba(255, 0, 0, 0.1); color: #aaa; }
+
+    /* --- ESTILOS MODO DIRECTO --- */
+    #live-mode-overlay {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: #000; z-index: 999999;
+        display: none; flex-direction: column; color: #fff;
+    }
+    #live-mode-overlay.show { display: flex; }
+    .live-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #333; }
+    .live-counter { color: #888; font-size: 1.2em; }
+    .live-close-btn { background: none; border: 1px solid #555; color: #aaa; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2em; cursor: pointer; }
+    .live-content { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+    .live-song-title { font-size: 3.5em; font-weight: bold; color: #fff; margin-bottom: 20px; line-height: 1.1; text-shadow: 0 0 10px rgba(0,204,255,0.3); }
+    .live-song-meta { font-size: 2em; color: #FFD700; display: flex; gap: 30px; margin-bottom: 40px; }
+    .live-next-song { color: #555; font-size: 1.2em; margin-top: auto; }
+    .live-controls { display: flex; height: 100px; border-top: 1px solid #333; }
+    .live-control-btn { flex: 1; background: #111; border: none; color: #0cf; font-size: 2em; cursor: pointer; border-right: 1px solid #333; }
+    .live-control-btn:last-child { border-right: none; }
+    .live-control-btn:active { background: #222; }
+    @media(max-width:768px){
+        .live-song-title { font-size: 2.2em; }
+        .live-song-meta { font-size: 1.5em; flex-direction: column; gap: 10px; }
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+  }
+}
+</script>
+</head>
+
+<body>
+  <div id="splash-screen">
+    <img src="assets/Logo Sobre negro1.png" alt="Cargando El Sótano del Doctor...">
+  </div>
+  <div id="firebase-critical-error-banner" style="display:none;">
+    ERROR CRÍTICO: La configuración de Firebase no es válida o es un placeholder. La aplicación puede no funcionar correctamente. Contacta al administrador.
+  </div>
+  <div id="connection-status"></div>
+
+  <div id="live-mode-overlay">
+      <div class="live-header">
+          <div class="live-counter" id="live-counter">1 / 20</div>
+          <button class="live-close-btn" id="live-close-btn">✕</button>
+      </div>
+      <div class="live-content" id="live-content-area">
+          <div class="live-song-title" id="live-song-title">Título Canción</div>
+          <div class="live-song-meta">
+              <span id="live-song-key">Key: A</span>
+              <span id="live-song-tempo">120 BPM</span>
+          </div>
+          <div class="live-next-song" id="live-next-song">Siguiente: Otra canción</div>
+      </div>
+      <div class="live-controls">
+          <button class="live-control-btn" id="live-prev-btn">⏮ Anterior</button>
+          <button class="live-control-btn" id="live-next-btn">Siguiente ⏭</button>
+      </div>
+  </div>
+
+  <!-- JUKEBOX PLAYER BAR (POPUP) -->
+  <div id="jukebox-player-bar">
+    <div class="jukebox-info">
+        <span id="jukebox-current-title" class="jukebox-song-title">No hay canción seleccionada</span>
+        <button class="jukebox-close-btn" id="jukebox-close-player" title="Cerrar Player">✕</button>
+    </div>
+    
+    <!-- NUEVO: CONTROLES DE BUCLE A-B (Arriba de los controles principales) -->
+    <div class="jukebox-loop-area">
+        <button class="loop-btn" id="jb-loop-a" title="Marcar Inicio (A)">
+            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+            A
+        </button>
+        <span class="jukebox-loop-display" id="jb-loop-status"></span>
+        <button class="loop-btn" id="jb-loop-b" title="Marcar Fin (B)" disabled>
+            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" transform="scale(-1,1) translate(-24,0)"/></svg>
+            B
+        </button>
+        <button class="loop-btn" id="jb-loop-clear" title="Borrar Bucle" style="border-color:#f55; color:#f55; display:none;">✕</button>
+    </div>
+
+    <!-- CONTROLES ESTÁNDAR (YouTube / HTML5) -->
+    <div class="jukebox-controls" id="jukebox-std-controls">
+        <button class="jukebox-control-btn" id="jb-rewind">
+        <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+        </button>
+        <button class="jukebox-control-btn" id="jb-play-pause">
+            <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="icon-pause" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </button>
+        <button class="jukebox-control-btn" id="jb-stop">
+            <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+        </button>
+        <button class="jukebox-control-btn" id="jb-forward">
+        <svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+        </button>
+    </div>
+
+    <div class="jukebox-progress-container" id="jukebox-std-progress">
+        <span id="jb-current-time">0:00</span>
+        <input type="range" id="jb-progress" class="jukebox-progress-bar" value="0" min="0" max="100" step="0.1">
+        <span id="jb-total-time">0:00</span>
+    </div>
+    
+    <!-- SECCIÓN DE MARCADORES (NUEVO) -->
+    <div class="jukebox-markers-area" id="jukebox-markers-area">
+       <div class="markers-header">
+          <span>Marcadores</span>
+          <button id="jb-add-marker" title="Añadir marcador en posición actual">+</button>
+       </div>
+       <div id="jb-markers-list" class="markers-list">
+          <!-- Items dinámicos -->
+       </div>
+    </div>
+    
+    <!-- IFRAME CONTAINER (Solo fallback) -->
+    <div id="jukebox-iframe-container">
+        <iframe id="jb-iframe" src="" allow="autoplay"></iframe>
+    </div>
+
+    <!-- Hidden elements for logic -->
+    <audio id="jukebox-audio-element" style="display:none;"></audio>
+    <div id="youtube-player-placeholder" style="position:absolute; top:-9999px; left:-9999px;"></div>
+  </div>
+
+  <header>
+    <!-- ZONA IZQUIERDA: LOGOS AGRUPADOS -->
+    <div class="header-left">
+        <div class="logo">
+          <img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main">
+        </div>
+        <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
+    </div>
+
+    <!-- ZONA DERECHA: BOTONES -->
+    <div class="header-controls-right">
+        <!-- BOTÓN AFINADOR (NUEVO) -->
+        <button id="tuner-toggle-btn" class="header-icon-btn" title="Afinador">
+            <svg viewBox="0 0 24 24">
+                <path d="M15 2H9v2H7v6c0 2.76 2.24 5 5 5s5-2.24 5-5V4h-2V2zm0 8c0 1.66-1.34 3-3 3s-3-1.34-3-3V4h6v6z M11 14v8h2v-8h-2z" fill="currentColor"/>
+            </svg>
+        </button>
+
+        <!-- BOTÓN METRÓNOMO (NUEVO) -->
+        <button id="metronome-toggle-btn" class="header-icon-btn" title="Metrónomo">
+            <!-- Icono sencillo tipo triángulo -->
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/> 
+            </svg>
+        </button>
+
+        <button id="site-audio-control-button" class="header-icon-btn" title="Activar sonido"> 
+            <svg class="icon-muted" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16.5 12A4.5 4.5 0 0012 7.5v2.14l4.5 4.5zm2.51.53l-1.06-1.06-1.06 1.06a1 1 0 01-1.41 0l-.7-.71a1 1 0 010-1.41l1.06-1.06-1.06-1.06a1 1 0 010-1.41l.7-.71a1 1 0 011.41 0l1.06 1.06 1.06-1.06a1 1 0 011.41 0l.71.71a1 1 0 010 1.41l-1.06 1.06 1.06 1.06a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41 0z"/>
+            </svg>
+            <svg class="icon-unmuted" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+                <path d="M12.4 4.42a1.19 1.19 0 00-1.75 1.05v13.1a1.19 1.19 0 001.75 1.05l4.91-3.3H19a1 1 0 001-1.07V9.72a1 1 0 00-1-1.07h-1.66zm6.1 2.51a6.73 6.73 0 010 10.14M16 9.48a3.23 3.23 0 010 5M4 9.72v4.56a1 1 0 001 1h2.34l4.91 3.3A1.19 1.19 0 0014 17.55V6.45a1.19 1.19 0 00-1.75-1.05L7.34 8.65H5a1 1 0 00-1 1.07z"/>
+            </svg>
+        </button>
+        
+        <button id="header-calendar-btn" class="header-icon-btn" title="Calendario Mensual">
+             <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
+             </svg>
+        </button>
+        
+        <div class="hamburger" id="hamburger-btn"><div></div><div></div><div></div></div>
+    </div>
+  </header>
+
+  <!-- POPUP DEL METRÓNOMO (Oculto por defecto) -->
+  <div id="metronome-popup">
+     <div class="metronome-bpm-display"><span id="metro-bpm-val">120</span> <span style="font-size:0.4em; color:#aaa;">BPM</span></div>
+     <!-- Slider BPM -->
+     <input type="range" id="metro-bpm-slider" class="metronome-slider" min="40" max="240" value="120">
+     
+     <div class="metronome-controls">
+         <button class="metronome-btn-circle" id="metro-minus">-</button>
+         
+         <button class="metronome-play-btn" id="metro-play-btn">
+             <!-- Icono Play -->
+             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" id="metro-icon-play"><path d="M8 5v14l11-7z"/></svg>
+             <!-- Icono Stop -->
+             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" id="metro-icon-stop" style="display:none;"><path d="M6 6h12v12H6z"/></svg>
+         </button>
+         
+         <button class="metronome-btn-circle" id="metro-plus">+</button>
+     </div>
+     
+     <!-- BOTÓN TAP (NUEVO) -->
+     <button id="metro-tap-btn" class="metronome-tap-btn">TAP</button>
+  </div>
+
+  <!-- POPUP DEL AFINADOR (Oculto por defecto) -->
+  <div id="tuner-popup">
+     <div class="tuner-display-area">
+         <div class="tuner-note" id="tuner-note">--</div>
+         <div class="tuner-needle" id="tuner-needle"></div>
+     </div>
+     <div class="tuner-freq" id="tuner-freq">0.0 Hz</div>
+     <p style="font-size:0.7em; color:#666; margin:5px 0 0 0;">Asegúrate de permitir el micrófono.</p>
+  </div>
+
+  <div id="overlay"></div>
+  <nav class="sidebar" id="sidebar-menu">
+    <h2>Menú</h2>
+    <a href="#setlists" id="menu-rehearsals-setlist-section">Setlist Próximo Ensayo</a>
+    <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
+    <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
+    <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
+    <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
+    <a href="#vista-calendario-mensual" id="menu-calendar-view">Calendario Mensual</a>
+    <a href="#suggestions" id="menu-suggestions">Propuestas de Canciones</a>
+    <a href="#analisis" id="menu-analisis-section">Análisis / Debriefing</a>
+    <a href="#" id="menu-stats">Estadísticas</a>
+    <a href="#" id="menu-user-list-display">Usuarios Registrados</a>  
+    <a href="#" id="menu-config">Configuración</a>
+    <div class="submenu" id="config-submenu" style="display: none;">
+      <a href="#" id="menu-setlist-config">Configurar Setlists</a>
+      <a href="#" id="menu-user-mgmt">Gestión de Usuarios</a>
+      <a href="#" id="menu-rehearsal">Asignar Ensayos</a>
+      <a href="#" id="menu-admin-suggestions">Gestión de Propuestas</a>
+      <a href="#" id="menu-jukebox-mgmt">Gestión Jukebox</a>
+      <a href="#" id="menu-pdf-mgmt">Gestión de Partituras (PDF)</a>
+      <a href="#" id="menu-master-docs-mgmt">Gestión Documentación Maestra</a> <!-- NUEVO MENU DOCS -->
+      <a href="#" id="menu-access-logs" style="color:#0cf;">Registro de Accesos</a>
+      <a href="#" id="menu-enroll-biometry" style="color:#FFD700; font-weight: bold; border-top: 1px solid #444; margin-top: 10px;">🛡️ Activar FaceID / Huella</a>
+    </div>
+    <a href="#" id="menu-cerrar">Cerrar Menú</a>
+  </nav>
+
+  <!-- CRITICAL UI SCRIPT: Makes menu interactive immediately while heavy scripts load below -->
+  <script id="critical-ui-script">
+      (function() {
+          var sidebar = document.getElementById("sidebar-menu");
+          var overlay = document.getElementById("overlay");
+          var hamburger = document.getElementById("hamburger-btn");
+          var closeBtn = document.getElementById("menu-cerrar");
+          var calendarBtn = document.getElementById("header-calendar-btn");
+          
+          function closeMenu() {
+              sidebar.classList.remove("show");
+              overlay.classList.remove("show");
+              document.querySelectorAll(".config-screen").forEach(function(s){s.style.display="none"});
+              document.querySelectorAll(".modal-backdrop").forEach(function(s){s.classList.remove("show")});
+              document.body.style.overflow = '';
+          }
+
+          if(hamburger) {
+              hamburger.onclick = function() {
+                  sidebar.classList.add("show");
+                  overlay.classList.add("show");
+              };
+          }
+          if(closeBtn) {
+              closeBtn.onclick = function(e) {
+                  e.preventDefault();
+                  closeMenu();
+              };
+          }
+          if(overlay) {
+              overlay.onclick = closeMenu;
+          }
+          if(calendarBtn) {
+              calendarBtn.onclick = function() {
+                   closeMenu();
+                   var target = document.getElementById('vista-calendario-mensual');
+                   if(target) { 
+                       var headerOffset = 60; 
+                       var elementPosition = target.getBoundingClientRect().top; 
+                       var offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10; 
+                       window.scrollTo({top: offsetPosition, behavior: "smooth"}); 
+                   }
+              };
+          }
+      })();
+  </script>
+
+  <div id="concert-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Detalles del Concierto</h3><h4 id="concert-detail-title-display"></h4><input type="hidden" id="concert-detail-id"><label for="concert-detail-location">Detalles adicionales de la ubicación:</label><textarea id="concert-detail-location"></textarea><label for="concert-detail-gmaps-link">Enlace de Google Maps (Lugar Evento):</label><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;"><input type="url" id="concert-detail-gmaps-link" placeholder="https://maps.app.goo.gl/example" style="flex-grow: 1; margin-bottom: 0;"><button id="open-gmaps-link-btn" style="display:none; padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; line-height: 1.5;">Abrir Mapa</button></div><div class="modal-field-group"><div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div><div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div></div><div class="modal-field-group"><div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div><div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div></div><label for="concert-detail-notes">Notas generales:</label><textarea id="concert-detail-notes"></textarea><label for="concert-detail-sound-company">Empresa de Sonorización:</label><input type="text" id="concert-detail-sound-company" placeholder="Nombre de la empresa o técnico externo"><h4>Músicos Asistentes</h4><div id="musicians-attendance-list"></div><h4>Técnicos Responsables</h4><div id="technicians-attendance-list" style="border: 1px solid #333; padding: 10px; margin-bottom:15px;"></div><button id="save-concert-details">Guardar Detalles</button><button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button><p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
+  <div id="rehearsal-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Información del Ensayo</h3><h4 id="rehearsal-detail-title-display"></h4><input type="hidden" id="rehearsal-detail-index"><label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label><textarea id="rehearsal-notes" style="min-height: 400px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea><button id="save-rehearsal-details">Guardar Información</button><button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button><p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
+  <div id="setlist-config-screen" class="config-screen"><button class="close-btn" id="close-setlist-config">Cerrar</button><h2>Configuración de Setlists</h2><h3>Setlist Próximo Ensayo</h3><label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025"><label>ID/URL feed</label><input id="setlist1-url" placeholder="URL"><h3>Setlist Próximo Concierto</h3><label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad"><label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa"><h3>Setlist Concierto Estrella</h3><label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025"><label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL"><button id="guardar-setlist-config">Guardar Configuración</button><p id="setlist-message" class="error-message"></p></div>
+  
+  <!-- MASTER DOCS MGMT SCREEN -->
+  <div id="master-docs-mgmt-screen" class="config-screen">
+      <button class="close-btn" id="close-master-docs-mgmt">Cerrar</button>
+      <h2>Gestión Documentación Maestra</h2>
+      <p style="color:#aaa; text-align:center;">Limpia o revisa los archivos globales asociados a cada setlist.</p>
+      <div class="table-wrapper">
+          <table id="master-docs-mgmt-table">
+              <thead><tr><th>Setlist</th><th>Archivos Activos</th><th>Acciones</th></tr></thead>
+              <tbody id="master-docs-mgmt-body"></tbody>
+          </table>
+      </div>
+  </div>
+
+  <!-- JUKEBOX MGMT SCREEN -->
+  <div id="jukebox-mgmt-screen" class="config-screen">
+      <button class="close-btn" id="close-jukebox-mgmt">Cerrar</button>
+      <h2>Gestión Jukebox</h2>
+      <p style="color:#aaa; text-align:center;">Listado de canciones que tienen un enlace de audio asignado.</p>
+      <div class="table-wrapper">
+          <table id="jukebox-mgmt-table">
+              <thead><tr><th>Canción (ID)</th><th>Enlace</th><th>Acciones</th></tr></thead>
+              <tbody id="jukebox-mgmt-body"></tbody>
+          </table>
+      </div>
+  </div>
+
+  <!-- PDF MGMT SCREEN -->
+  <div id="pdf-mgmt-screen" class="config-screen">
+      <button class="close-btn" id="close-pdf-mgmt">Cerrar</button>
+      <h2>Gestión de Partituras (PDF)</h2>
+      <p style="color:#aaa; text-align:center;">Listado de canciones que tienen un enlace a documento asignado.</p>
+      <div class="table-wrapper">
+          <table id="pdf-mgmt-table">
+              <thead><tr><th>Canción (ID)</th><th>Enlace Documento</th><th>Acciones</th></tr></thead>
+              <tbody id="pdf-mgmt-body"></tbody>
+          </table>
+      </div>
+  </div>
+
+  <!-- ACCESS LOGS SCREEN -->
+  <div id="access-logs-screen" class="config-screen">
+      <button class="close-btn" id="close-access-logs">Cerrar</button>
+      <h2>Registro de Accesos</h2>
+      <p style="color:#aaa; text-align:center;">Últimos accesos a la Intranet (Expandir + para ver detalle).</p>
+      <div class="table-wrapper">
+          <table id="access-logs-table" style="font-size:0.8em; width:100%;">
+              <thead><tr><th>Fecha</th><th>Usuario</th><th>Duración</th><th></th></tr></thead>
+              <tbody id="access-logs-body"></tbody>
+          </table>
+      </div>
+  </div>
+
+  <!-- MASTER DOCS MODAL (NUEVO) -->
+  <div id="master-docs-modal" class="modal-backdrop">
+      <div class="modal-content" style="max-width: 500px;">
+          <h3>Documentación: <span id="master-docs-setlist-name" style="color:#fff;"></span></h3>
+          <p id="master-docs-admin-hint" style="font-size:0.8em; color:#888; margin-bottom:15px; display:none;">(Modo Administrador: Puedes editar nombres y enlaces)</p>
+          
+          <div id="master-docs-slots-container">
+              <!-- Slot 1 -->
+              <div class="master-doc-slot">
+                  <div class="master-doc-slot-header">
+                      <span class="master-doc-slot-title">Archivo 1</span>
+                      <button id="master-btn-view-1" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+                  </div>
+                  <div class="admin-only" style="display:none;">
+                      <input type="text" id="master-name-1" placeholder="Nombre (Ej: Guion del Show)">
+                      <input type="url" id="master-url-1" placeholder="URL (Dropbox, Drive...)">
+                      <button id="master-save-1" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 1</button>
+                  </div>
+                  <div class="user-view" id="master-display-1" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div>
+              </div>
+              <!-- Slot 2 -->
+              <div class="master-doc-slot">
+                  <div class="master-doc-slot-header">
+                      <span class="master-doc-slot-title">Archivo 2</span>
+                      <button id="master-btn-view-2" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+                  </div>
+                  <div class="admin-only" style="display:none;">
+                      <input type="text" id="master-name-2" placeholder="Nombre (Ej: Notas Técnicas)">
+                      <input type="url" id="master-url-2" placeholder="URL">
+                      <button id="master-save-2" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 2</button>
+                  </div>
+                  <div class="user-view" id="master-display-2" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div>
+              </div>
+              <!-- Slot 3 -->
+              <div class="master-doc-slot">
+                  <div class="master-doc-slot-header">
+                      <span class="master-doc-slot-title">Archivo 3</span>
+                      <button id="master-btn-view-3" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+                  </div>
+                  <div class="admin-only" style="display:none;">
+                      <input type="text" id="master-name-3" placeholder="Nombre (Ej: Speech)">
+                      <input type="url" id="master-url-3" placeholder="URL">
+                      <button id="master-save-3" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 3</button>
+                  </div>
+                  <div class="user-view" id="master-display-3" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div>
+              </div>
+          </div>
+
+          <div style="text-align:right; margin-top:15px;">
+              <button id="close-master-docs-modal" class="modal-close-btn">Cerrar</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- JUKEBOX EDIT MODAL -->
+  <div id="jukebox-edit-modal" class="modal-backdrop">
+      <div class="modal-content" style="max-width: 500px;">
+         <h3>Jukebox: <span id="jb-modal-songname" style="color:#fff;"></span></h3>
+         
+         <label for="jb-modal-url-input">Enlace de Audio (YouTube, MP3, Drive):</label>
+         <input type="text" id="jb-modal-url-input" placeholder="Pegar URL aquí para activar el audio...">
+         <p style="font-size:0.8em; color:#888; margin-top:5px;">* Soporta YouTube y Google Drive (modo vista previa)</p>
+
+         <div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;">
+            <div>
+                <button id="jb-modal-cancel-btn" class="modal-close-btn">Cancelar</button>
+                <button id="jb-modal-save-btn">Guardar</button>
+            </div>
+         </div>
+      </div>
+  </div>
+
+  <!-- PDF EDIT MODAL -->
+  <div id="pdf-edit-modal" class="modal-backdrop">
+      <div class="modal-content" style="max-width: 500px;">
+         <h3>Partitura: <span id="pdf-modal-songname" style="color:#fff;"></span></h3>
+         
+         <label for="pdf-modal-url-input">Enlace del Documento (Dropbox, Drive, etc):</label>
+         <input type="text" id="pdf-modal-url-input" placeholder="Pegar URL del PDF aquí...">
+         
+         <div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;">
+            <div>
+                <button id="pdf-modal-cancel-btn" class="modal-close-btn">Cancelar</button>
+                <button id="pdf-modal-save-btn">Guardar</button>
+            </div>
+         </div>
+      </div>
+  </div>
+
+  <!-- MARKER INPUT MODAL -->
+  <div id="marker-input-modal" class="modal-backdrop" style="z-index: 12000;">
+      <div class="modal-content" style="max-width: 400px;">
+          <h3>Nuevo Marcador</h3>
+          <label for="marker-name-input">Nombre del marcador:</label>
+          <input type="text" id="marker-name-input" placeholder="Ej: Solo de guitarra">
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+              <button id="cancel-marker-btn" class="modal-close-btn">Cancelar</button>
+              <button id="confirm-marker-btn">Guardar</button>
+          </div>
+      </div>
+  </div>
+  
+  <!-- NUEVOS MODALES PARA ANÁLISIS -->
+  <div id="analisis-config-modal" class="modal-backdrop">
+      <div class="modal-content" style="max-width: 450px;">
+          <h3>Configurar Análisis</h3>
+          <label for="analisis-config-title">Título (Concierto / Ensayo):</label>
+          <input type="text" id="analisis-config-title" placeholder="Ej: Concierto Sala X - 12/10/2023">
+          
+          <label for="analisis-config-url">URL de Audio (Dropbox, Drive, MP3):</label>
+          <input type="url" id="analisis-config-url" placeholder="https://...">
+
+          <div style="display:flex; justify-content:space-between; margin-top:20px;">
+              <button id="analisis-delete-btn" style="background:#ff3333;">Eliminar</button>
+              <div>
+                  <button id="analisis-config-close" class="modal-close-btn">Cancelar</button>
+                  <button id="analisis-config-save">Guardar</button>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <div id="analisis-notes-modal" class="modal-backdrop">
+      <div class="modal-content">
+          <h3>Notas de Debriefing</h3>
+          <h4 id="analisis-notes-display-title" style="color:#0cf; margin-top:0;"></h4>
+          <textarea id="analisis-notes-textarea" style="min-height:300px;" placeholder="Escribe aquí las conclusiones, fallos a corregir o cosas a destacar..."></textarea>
+          <div style="text-align:right;">
+              <button id="analisis-notes-close" class="modal-close-btn">Cerrar</button>
+              <button id="analisis-notes-save">Guardar Notas</button>
+          </div>
+      </div>
+  </div>
+
+  <div id="user-mgmt-screen" class="config-screen"><button class="close-btn" id="close-user-mgmt">Cerrar</button><h2>Gestión de Usuarios</h2><label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label><select id="user-role" multiple><option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option><option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option><option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option><option value="Coros">Coros</option><option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option><option value="Técnico de Luces">Técnico de Luces</option><option value="Montador">Montador</option><option value="Road Manager">Road Manager</option><option value="Backliner">Backliner</option></select><button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button><p id="user-message" class="error-message"></p><table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table></div>
+  <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha <span id="rehearsal-day-preview" class="day-preview-text"></span></label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
+  <div id="admin-suggestions-screen" class="config-screen"><button class="close-btn" id="close-admin-suggestions">Cerrar</button><h2>Gestión de Propuestas (Admin)</h2><p style="color:#aaa; text-align:center;">Aquí puedes ver el historial y eliminar propuestas inadecuadas.</p><div class="table-wrapper"><table id="admin-suggestions-table"><thead><tr><th>Canción</th><th>Propuesta por</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="admin-suggestions-body"></tbody></table></div></div>
+  <div id="suggestions-screen" class="config-screen"><button class="close-btn" id="close-suggestions">Cerrar</button><h2>Propuestas de Canciones</h2><div style="text-align:center; margin-bottom:20px;"><label for="user-identity-selector" style="color:#0cf; font-weight:bold; display:block; margin-bottom:5px;">¿Quién eres? (Necesario para proponer y votar)</label><select id="user-identity-selector"><option value="" disabled selected>-- Selecciona tu nombre --</option></select></div><div class="suggestion-form"><h4 style="color:#fff; margin-top:0;">Nueva Propuesta</h4><div class="suggestion-form-row"><input type="text" id="suggestion-title" placeholder="Título de la canción"><input type="text" id="suggestion-artist" placeholder="Artista / Banda original"></div><div class="suggestion-form-row"><input type="url" id="suggestion-link" placeholder="Enlace (Spotify/Youtube) - Opcional"><button id="add-suggestion-btn" style="width:auto; flex:0 0 150px;">Proponer</button></div><p id="suggestion-message" class="error-message" style="text-align:left; margin:0;"></p></div><div class="suggestions-grid" id="suggestions-container"></div></div>
+  <div id="stats-screen" class="config-screen"><button class="close-btn" id="close-stats">Cerrar</button><h2>Estadísticas</h2><div class="stats-filter"><label>Filtrar por mes:</label><select id="stats-month-filter"><option value="all">Todos los meses</option></select></div><div class="stats-table"><h3>Tiempo Ensayado por Mes</h3><table id="time-per-month-table"><thead><tr><th>Mes</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-month-body"></tbody></table></div><div class="stats-table"><h3>Tiempo Ensayado por Usuario</h3><table id="time-per-user-table"><thead><tr><th>Usuario</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-user-body"></tbody></table></div><div class="stats-table"><h3>Ensayos Pasados</h3><div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Asistencias</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div></div></div>
+  <div id="user-list-screen" class="config-screen"><button class="close-btn" id="close-user-list-screen">Cerrar</button><h2>Usuarios Registrados</h2><div class="table-wrapper" style="padding: 0 10px;"><table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table></div></div>
+
+  <main>
+    <section id="setlists">
+      <h2>
+          Setlist Próximo Ensayo 
+          <div class="master-direct-group">
+              <button class="master-slot-btn" id="master-slot-setlist1-1" onclick="handleMasterDirectClick('setlist1', 1, 'Setlist Ensayo')" title="Doc 1">1</button>
+              <button class="master-slot-btn" id="master-slot-setlist1-2" onclick="handleMasterDirectClick('setlist1', 2, 'Setlist Ensayo')" title="Doc 2">2</button>
+              <button class="master-slot-btn" id="master-slot-setlist1-3" onclick="handleMasterDirectClick('setlist1', 3, 'Setlist Ensayo')" title="Doc 3">3</button>
+          </div>
+      </h2>
+      <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
+      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
+      <div style="text-align: center;">
+        <button class="download-btn" id="download-btn">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
+        <button class="download-btn" id="download-personal-btn">PDF Personal</button>
+        <button class="live-mode-btn" onclick="startLiveMode(globalItems1)">Modo Show 🎤</button>
+      </div>
+      <p id="total-time"></p>
+    </section>
+    <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th class="details-col-header">Info</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
+    <section id="second-setlist">
+      <h2>
+          Setlist Próximo Concierto
+          <div class="master-direct-group">
+              <button class="master-slot-btn" id="master-slot-setlist2-1" onclick="handleMasterDirectClick('setlist2', 1, 'Setlist Próximo Concierto')" title="Doc 1">1</button>
+              <button class="master-slot-btn" id="master-slot-setlist2-2" onclick="handleMasterDirectClick('setlist2', 2, 'Setlist Próximo Concierto')" title="Doc 2">2</button>
+              <button class="master-slot-btn" id="master-slot-setlist2-3" onclick="handleMasterDirectClick('setlist2', 3, 'Setlist Próximo Concierto')" title="Doc 3">3</button>
+          </div>
+      </h2>
+      <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
+      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
+      <div style="text-align: center;">
+        <button class="download-btn" id="download-btn-2">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
+        <button class="download-btn" id="download-personal-btn-2">PDF Personal</button>
+        <button class="live-mode-btn" onclick="startLiveMode(globalItems2)">Modo Show 🎤</button>
+      </div>
+      <p id="total-time-2"></p>
+    </section>
+    <section id="star-setlist">
+      <h2>
+          Setlist Concierto Estrella
+          <div class="master-direct-group">
+              <button class="master-slot-btn" id="master-slot-setlistStar-1" onclick="handleMasterDirectClick('setlistStar', 1, 'Setlist Concierto Estrella')" title="Doc 1">1</button>
+              <button class="master-slot-btn" id="master-slot-setlistStar-2" onclick="handleMasterDirectClick('setlistStar', 2, 'Setlist Concierto Estrella')" title="Doc 2">2</button>
+              <button class="master-slot-btn" id="master-slot-setlistStar-3" onclick="handleMasterDirectClick('setlistStar', 3, 'Setlist Concierto Estrella')" title="Doc 3">3</button>
+          </div>
+      </h2>
+      <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
+      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
+      <div style="text-align: center;">
+        <button class="download-btn" id="download-btn-star">Pdf Complex</button>
+        <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
+        <button class="download-btn" id="download-personal-btn-star">PDF Personal</button>
+        <button class="live-mode-btn" onclick="startLiveMode(globalItemsStar)">Modo Show 🎤</button>
+      </div>
+      <p id="total-time-star"></p>
+    </section>
+    <section id="calendario"> <h2>Próximos Conciertos</h2> 
+        <div id="bandhelper-concerts-container"> 
+             <p id="bandhelper-loading-message" style="color:#aaa; text-align:center;">Cargando conciertos...</p>
+        </div> 
+    </section>
+
+    <section id="vista-calendario-mensual">
+      <h2>Calendario Mensual</h2>
+      <div class="calendar-controls">
+        <button id="prev-month-btn">< Anterior</button>
+        <h3 id="calendar-month-display" style="margin:0; color:#fff;">Mes Año</h3>
+        <button id="next-month-btn">Siguiente ></button>
+      </div>
+      <div class="calendar-grid" id="calendar-grid-container"></div>
+    </section>
+
+    <!-- NUEVA SECCIÓN ANÁLISIS -->
+    <section id="analisis">
+        <h2>Análisis / Debriefing</h2>
+        <div style="text-align:right; margin-bottom:10px;">
+            <button id="add-analysis-btn" class="download-btn" style="margin:0; font-size:0.9em; padding:8px 15px;">+ Nuevo</button>
+        </div>
+        <div class="table-wrapper">
+            <table id="analisis-table">
+                <thead>
+                    <tr>
+                        <th>Título / Fecha</th>
+                        <th style="width:50px; text-align:center;">Audio</th>
+                        <th style="width:50px; text-align:center;">Notas</th>
+                        <th style="width:50px; text-align:center;">Config</th>
+                    </tr>
+                </thead>
+                <tbody id="analisis-body">
+                    <!-- Contenido dinámico desde analisis.js -->
+                </tbody>
+            </table>
+        </div>
+    </section>
+  </main>
+
+  <!-- FOOTER & SCRIPTS -->
+  <footer>© Año 2025 -iDoctor & El Sótano del Doctor- All Rights Reserved.</footer>
+
+  <audio id="site-audio">
+    <source src="" type="audio/mpeg">
+    Tu navegador no soporta el elemento de audio.
+  </audio>
+
+  <script src="jukebox.js"></script>
+  <script src="metronome.js"></script>
+  <script src="tuner.js"></script>
+  <script src="analisis.js"></script>
+  <script src="ensayos.js"></script>
+  <script src="calendario.js"></script>
+  <script src="setlists.js"></script>
+
+<script>
+// 0. Configuración Global
+const APP_VERSION = "1.2.1";
+let currentSessionId = null;
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",  
+  authDomain: "sotanointranet.firebaseapp.com",
+  projectId: "sotanointranet",
+  storageBucket: "sotanointranet.appspot.com",  
+  messagingSenderId: "756955233128",
+  appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
 
-// Referencias PDF
-const fontDataCache = {}; 
-const PDF_FONT_PATHS = { bleedingCowboys: 'assets/Bleeding_Cowboys.ttf', carnevalee: 'assets/Carnevalee_Freakshow.ttf' };
-const PDF_FONT_NAMES = { bleedingCowboys: "BleedingCowboysCustom", carnevalee: "CarnevaleeCustom" }; 
-const PDF_BACKGROUND_IMAGE_PATH = 'assets/Plantilla_pdf_ESDD_001.png';
-
-// Variables de estado para modales de gestión
-let currentEditingPdfSong = null;
-let currentMasterDocsSetlistKey = null;
-
-// --- 1. CONFIGURACIÓN Y CARGA INICIAL ---
-
-function updateDynamicSetlistTitles(){
-    const t1 = document.getElementById("setlist1-dynamic-name");
-    const t2 = document.getElementById("second-setlist-dynamic-name");
-    const t3 = document.getElementById("star-setlist-dynamic-name");
-    if(t1) t1.textContent = setlistConfig.setlist1.name;
-    if(t2) t2.textContent = setlistConfig.setlist2.name;
-    if(t3) t3.textContent = setlistConfig.setlistStar.name;
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI") { 
+    const banner = document.getElementById('firebase-critical-error-banner'); 
+    if (banner) banner.style.display = 'block'; 
 }
 
-window.loadSetlistConfig = async function(){
-    try {
-        const data = await window.withRetry(() => window.loadDoc("intranet","setlists",{config:setlistConfig}));
-        setlistConfig = {
-            setlist1: data.config?.setlist1 || setlistConfig.setlist1,
-            setlist2: data.config?.setlist2 || setlistConfig.setlist2,
-            setlistStar: data.config?.setlistStar || setlistConfig.setlistStar
-        };
-        updateDynamicSetlistTitles();
-    } catch(e) {
-        console.error("Error al cargar la configuración de setlists:", e);
-        updateDynamicSetlistTitles();
-    }
-}
-
-window.saveSetlistConfig = async function(){
-    updateDynamicSetlistTitles();
-    return await window.withRetry(() => window.saveDoc("intranet", "setlists", { config: setlistConfig }));
-}
-
-// Listeners de Configuración UI
-document.addEventListener("DOMContentLoaded", () => {
-    // Configuración Setlists
-    const menuSetlist = document.getElementById("menu-setlist-config");
-    if(menuSetlist) {
-        menuSetlist.onclick = e => { 
-            e.preventDefault(); 
-            if(window.openConfigScreen("setlist-config-screen")){
-                document.getElementById("setlist1-name").value = setlistConfig.setlist1.name;
-                document.getElementById("setlist1-url").value = setlistConfig.setlist1.url === "URL_POR_CONFIGURAR_1" ? "" : setlistConfig.setlist1.url;
-                document.getElementById("setlist2-name").value = setlistConfig.setlist2.name;
-                const setlist2Url = setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/", "");
-                document.getElementById("setlist2-url").value = setlist2Url === "URL_POR_CONFIGURAR_2" ? "" : setlist2Url;
-                document.getElementById("setlistStar-name").value = setlistConfig.setlistStar.name;
-                document.getElementById("setlistStar-url").value = setlistConfig.setlistStar.url === "URL_POR_CONFIGURAR_STAR" ? "" : setlistConfig.setlistStar.url;
-            }
-        };
-    }
-
-    const closeSetlistConfig = document.getElementById("close-setlist-config");
-    if(closeSetlistConfig) {
-        closeSetlistConfig.onclick = () => { 
-            document.getElementById("setlist-config-screen").style.display = "none"; 
-            document.getElementById("setlist-message").textContent = ""; 
-        };
-    }
-
-    const saveSetlistBtn = document.getElementById("guardar-setlist-config");
-    if(saveSetlistBtn) {
-        saveSetlistBtn.onclick = async () => { 
-            const msg = document.getElementById("setlist-message");
-            msg.textContent = "";
-            const n1 = document.getElementById("setlist1-name").value.trim();
-            const u1 = document.getElementById("setlist1-url").value.trim();
-            const n2 = document.getElementById("setlist2-name").value.trim();
-            const raw2 = document.getElementById("setlist2-url").value.trim();
-            const nStar = document.getElementById("setlistStar-name").value.trim();
-            const uStar = document.getElementById("setlistStar-url").value.trim();
-            
-            if(!n1 || !u1 || !n2 || !raw2 || !nStar || !uStar){
-                msg.className = "error-message";
-                msg.textContent = "Completa todos los campos.";
-                return; 
-            } 
-            
-            try {
-                setlistConfig.setlist1 = { name: n1, url: u1 };
-                setlistConfig.setlist2 = { name: n2, url: raw2.startsWith("http") ? raw2 : `https://www.bandhelper.com/feed/set_list/${raw2}` };
-                setlistConfig.setlistStar = { name: nStar, url: uStar };
-                
-                await window.saveSetlistConfig();
-                await Promise.all([window.cargarPrimerSetlist(), window.cargarSegundoSetlist(), window.cargarStarSetlist()]);
-                document.getElementById("setlist-config-screen").style.display = "none";
-            } catch(e) {
-                msg.className = "error-message";
-                msg.textContent = "Error al guardar: " + e.message;
-            }
-        };
-    }
-
-    // Botones de descarga PDF en la UI principal
-    setupPdfButtons();
-});
-
-function setupPdfButtons() {
-    // Setlist 1
-    const btn1 = document.getElementById("download-btn");
-    if(btn1) btn1.onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("Vacío."); };
-    const btnBasic1 = document.getElementById("download-basic-btn");
-    if(btnBasic1) btnBasic1.onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genBasicPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("Vacío."); };
+// ---------- LOGIC: SESSION TRACKING ----------
+function initSession() {
+    if (typeof db === 'undefined') return;
     
-    // Setlist 2
-    const btn2 = document.getElementById("download-btn-2");
-    if(btn2) btn2.onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("Vacío."); };
-    const btnBasic2 = document.getElementById("download-basic-btn-2");
-    if(btnBasic2) btnBasic2.onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genBasicPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("Vacío."); };
+    currentSessionId = 'sess_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    const userAgent = navigator.userAgent;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(userAgent) ? 'Móvil' : 'PC';
+    const storedUser = localStorage.getItem('elSotanoCurrentUser') || 'Anónimo';
     
-    // Setlist Star
-    const btnStar = document.getElementById("download-btn-star");
-    if(btnStar) btnStar.onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("Vacío."); };
-    const btnBasicStar = document.getElementById("download-basic-btn-star");
-    if(btnBasicStar) btnBasicStar.onclick = () => { if (window.globalItemsStar && window.globalItemsStar.length > 0) genBasicPDF(window.globalItemsStar, setlistConfig.setlistStar.name, setlistConfig.setlistStar.name); else alert("Vacío."); };
-
-    // Personal PDFs
-    setupPersonalPdfBtn("download-personal-btn", () => window.globalItems1, () => setlistConfig.setlist1.name);
-    setupPersonalPdfBtn("download-personal-btn-2", () => window.globalItems2, () => setlistConfig.setlist2.name);
-    setupPersonalPdfBtn("download-personal-btn-star", () => window.globalItemsStar, () => setlistConfig.setlistStar.name);
-}
-
-function setupPersonalPdfBtn(btnId, getItems, getName) {
-    const btn = document.getElementById(btnId);
-    if(btn) btn.onclick = () => {
-        const items = getItems();
-        const name = getName();
-        if (items && items.length > 0) {
-            const fontSizeInput = prompt("PDF Personal - Tamaño letra títulos (ej: 14):", "14");
-            if (fontSizeInput) {
-                const fontSize = parseInt(fontSizeInput, 10);
-                if (!isNaN(fontSize) && fontSize >= 8 && fontSize <= 30) genPersonalPDF(items, name, name, fontSize); 
-                else alert("Inválido.");
-            }
-        } else alert("Vacío.");
-    };
-}
-
-// --- 2. CARGA Y PARSEO DE DATOS (BANDHELPER) ---
-
-async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId, defaultErrorMessage) {
-    const CACHE_KEY = `cache_setlist_${tbodyId}`;
-    let rawData = null;
-    let usedCache = false;
-
-    try {
-        if (!configEntry.url || configEntry.url.startsWith("URL_POR_CONFIGURAR")) { throw new Error("URL no configurada."); }
-        const response = await fetch(configEntry.url);
-        if (!response.ok) throw new Error(`Error API (${response.status})`);
-        rawData = await response.json();
-        localStorage.setItem(CACHE_KEY, JSON.stringify(rawData));
-    } catch (networkError) {
-        console.warn(`[Offline Mode] Falló la descarga para ${tbodyId}. Intentando caché...`, networkError);
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        if (cachedData) {
-            rawData = JSON.parse(cachedData);
-            usedCache = true;
-            const timeEl = document.getElementById(totalTimeId);
-            if(timeEl && timeEl.previousElementSibling && timeEl.previousElementSibling.previousElementSibling) {
-                 const titleEl = timeEl.previousElementSibling.previousElementSibling;
-                 if(titleEl && !titleEl.innerHTML.includes("Offline")) titleEl.innerHTML += " <span style='color:orange; font-size:0.8em;'>(⚠️ Modo Offline)</span>";
-            }
-        } else {
-            return [];
-        }
-    }
-
-    if (!rawData) return [];
-
-    const dataToProcess = Array.isArray(rawData) ? rawData : rawData.items || [];
-    const processedItems = dataToProcess.map(item => {
-        if (!item || item.type !== "song" && item.type !== "set") { return null }
-        let rawDurationValue = parseFloat(item.duration);
-        let durationIsInvalidOrMissing = isNaN(rawDurationValue) || rawDurationValue === 0;
-        if (isNaN(rawDurationValue)) { rawDurationValue = 0; durationIsInvalidOrMissing = true }
-        let durationInSeconds;
-        const itemName = item.name || item.title || (item.type === "song" ? "Canción sin título" : "Set sin nombre");
-        const isBreakByName = /break|descanso|intermedio|pausa|intermission|beer time/i.test(itemName);
-        item.isSong = false; item.isBreak = false; item.isSetHeader = false;
-        if (item.type === "song") { durationInSeconds = rawDurationValue; item.isSong = true; } 
-        else if (item.type === "set") {
-            if (isBreakByName) { item.isBreak = true; if (durationIsInvalidOrMissing) { durationInSeconds = 3 * 60 } else { durationInSeconds = rawDurationValue * 60 } } 
-            else { item.isSetHeader = true; durationInSeconds = rawDurationValue * 60 }
-        } else { durationInSeconds = 0 }
-        item.calculatedDurationSeconds = durationInSeconds;
-        item.displayName = window.decodeHtmlEntities(item.title || item.name || (item.isSong ? "Canción sin título" : item.isBreak ? "Pausa" : "Set"));
-        item.originalJSONDuration = item.duration;
-        return item
-    }).filter(item => item !== null);
-
-    const tbody = document.getElementById(tbodyId);
-    if(tbody) tbody.innerHTML = "";
-    let songCount = 0;
-    const setlistStructure = [];
-    let currentSet = null;
-
-    processedItems.forEach(item => {
-        if (item.isSetHeader) {
-            if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet) }
-            currentSet = { ...item, songs: [], calculatedBlockDurationSeconds: 0 }
-        } else if (item.isBreak) {
-            if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet); currentSet = null }
-            setlistStructure.push(item)
-        } else if (item.isSong) {
-            if (!currentSet) { currentSet = { isSetHeader: true, displayName: "Set General", calculatedDurationSeconds: 0, songs: [], calculatedBlockDurationSeconds: 0 } }
-            currentSet.songs.push(item)
-        }
+    db.collection('access_logs').doc(currentSessionId).set({
+        sessionId: currentSessionId,
+        timestamp: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        userAgent: userAgent,
+        deviceType: isMobile,
+        user: storedUser,
+        version: APP_VERSION,
+        events: [] 
+    }).catch(e => console.warn("Error init session", e));
+    
+    // Track navigation clicks
+    document.querySelectorAll('.sidebar a').forEach(link => {
+        link.addEventListener('click', () => {
+            const sectionName = link.textContent || link.id;
+            logInteraction('NAVEGACION', sectionName);
+        });
     });
-    if (currentSet) { currentSet.calculatedBlockDurationSeconds = currentSet.songs.reduce((sum, song) => sum + (song.calculatedDurationSeconds || 0), 0); setlistStructure.push(currentSet) }
-
-    let totalSecondsOverall = 0;
     
-    // Helper for Jukebox Cell
-    const createJukeboxCell = (songName) => {
-        const cleanName = window.sanitizeFirebaseKey(songName);
-        const url = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : null;
-        const hasLink = !!url;
-        const statusClass = hasLink ? 'active' : 'inactive';
-        const safeName = songName.replace(/'/g, "\\'");
-        
-        const clickAction = hasLink 
-            ? `window.openJukeboxPlayer('${safeName}', '${url}')` 
-            : `openJukeboxEditModal('${safeName}')`;
+    // Track downloads
+    document.querySelectorAll('.download-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            logInteraction('DESCARGA', btn.textContent || btn.id);
+        });
+    });
+}
 
-        return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
+// Global Logging Function
+window.logInteraction = function(type, detail) {
+    if (!currentSessionId || typeof db === 'undefined') return;
+    
+    const eventEntry = {
+        time: new Date().toLocaleTimeString(),
+        type: type,
+        detail: detail
     };
     
-    // Helper for PDF Cell
-    const createPdfCell = (songName) => {
-        const cleanName = window.sanitizeFirebaseKey(songName);
-        const url = window.pdfLibrary ? window.pdfLibrary[cleanName] : null;
-        const hasLink = !!url;
-        const statusClass = hasLink ? 'active' : 'inactive';
-        const safeName = songName.replace(/'/g, "\\'");
-        
-        const clickAction = hasLink 
-            ? `window.openPdfLink('${url}')` 
-            : `openPdfEditModal('${safeName}')`;
+    // Update Firestore
+    db.collection('access_logs').doc(currentSessionId).update({
+        lastActive: new Date().toISOString(),
+        events: firebase.firestore.FieldValue.arrayUnion(eventEntry)
+    }).catch(e => console.warn("Log update failed", e));
+};
 
-        const iconSvg = `<svg viewBox="0 0 24 24"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/><path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>`;
-
-        return `<td class="pdf-col"><button class="pdf-btn ${statusClass}" onclick="${clickAction}">${iconSvg}</button></td>`;
-    };
-
-    // Helper for Metronome Cell
-    const createMetronomeCell = (tempo) => {
-        const tempoStr = window.decodeHtmlEntities(tempo || "-");
-        const match = String(tempoStr).match(/\d+/);
-        
-        const svgIcon = `<svg viewBox="0 0 24 24"><path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/></svg>`;
-
-        if (!match) {
-            return `<td class="metronome-col">
-                <button class="metronome-table-btn" title="Sin tempo definido">
-                    ${svgIcon}
-                </button>
-            </td>`;
+// Render Admin Logs Table
+function renderAccessLogs() {
+    const tbody = document.getElementById('access-logs-body');
+    tbody.innerHTML = "<tr><td colspan='4'>Cargando logs...</td></tr>";
+    
+    db.collection('access_logs').orderBy('timestamp', 'desc').limit(30).get().then(snapshot => {
+        tbody.innerHTML = "";
+        if(snapshot.empty) {
+            tbody.innerHTML = "<tr><td colspan='4'>No hay registros.</td></tr>";
+            return;
         }
         
-        const cleanTempo = match[0];
-        return `<td class="metronome-col">
-            <button class="metronome-table-btn has-tempo" title="Tempo: ${cleanTempo} BPM" onclick="window.toggleMetronomeFromTable('${cleanTempo}', this)">
-                ${svgIcon}
-            </button>
-        </td>`;
-    };
-
-    if (tbody) {
-        setlistStructure.forEach(blockOrItem => {
-            if (blockOrItem.isSetHeader) {
-                const setHeaderTime = window.toHHMM(blockOrItem.calculatedBlockDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="8">${blockOrItem.displayName} (${setHeaderTime})</td></tr>`);
-                totalSecondsOverall += (blockOrItem.calculatedBlockDurationSeconds || 0);
-                blockOrItem.songs.forEach(song => {
-                    songCount++;
-                    const songFormattedTime = window.toMMSS(song.calculatedDurationSeconds || 0);
-                    const jukeboxCell = createJukeboxCell(song.displayName);
-                    const pdfCell = createPdfCell(song.displayName);
-                    const metronomeCell = createMetronomeCell(song.tempo);
-                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${jukeboxCell}${pdfCell}<td>${window.decodeHtmlEntities(song.key || "-")}</td><td>${window.decodeHtmlEntities(song.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
-                })
-            } else if (blockOrItem.isBreak) {
-                const breakFormattedTime = window.toMMSS(blockOrItem.calculatedDurationSeconds || 0);
-                totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="break-row"><td></td><td style="font-style:italic;">${blockOrItem.displayName}</td><td style="text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="font-style:italic; text-align:center;">-</td><td style="text-align:center;">-</td><td style="font-style:italic; text-align:center;">${breakFormattedTime}</td></tr>`)
-            } else if (blockOrItem.isSong) {
-                songCount++;
-                const songFormattedTime = window.toMMSS(blockOrItem.calculatedDurationSeconds || 0);
-                totalSecondsOverall += (blockOrItem.calculatedDurationSeconds || 0);
-                const jukeboxCell = createJukeboxCell(blockOrItem.displayName);
-                const pdfCell = createPdfCell(blockOrItem.displayName);
-                const metronomeCell = createMetronomeCell(blockOrItem.tempo);
-                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${blockOrItem.displayName}</td>${jukeboxCell}${pdfCell}<td>${window.decodeHtmlEntities(blockOrItem.key || "-")}</td><td>${window.decodeHtmlEntities(blockOrItem.tempo || "-")}</td>${metronomeCell}<td>${songFormattedTime}</td></tr>`)
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const date = new Date(data.timestamp).toLocaleString();
+            let userColor = data.user === 'Anónimo' ? '#aaa' : '#0cf';
+            
+            // Calculate Duration
+            let durationStr = "-";
+            if (data.lastActive && data.timestamp) {
+                const start = new Date(data.timestamp);
+                const end = new Date(data.lastActive);
+                const diffMins = Math.round((end - start) / 60000);
+                durationStr = diffMins < 1 ? "< 1 min" : diffMins + " min";
+            }
+            
+            const hasEvents = data.events && data.events.length > 0;
+            const expandBtn = hasEvents ? `<button class="expand-btn" onclick="toggleLogDetails('${data.sessionId}')">+</button>` : '';
+            
+            // Main Row
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr class="log-row">
+                    <td style="font-size:0.9em;">${date}</td>
+                    <td style="color:${userColor}; font-weight:bold;">${data.user} <br><span style="font-size:0.8em; color:#666; font-weight:normal;">${data.deviceType}</span></td>
+                    <td>${durationStr}</td>
+                    <td>${expandBtn}</td>
+                </tr>
+            `);
+            
+            // Details Row (Hidden)
+            if (hasEvents) {
+                let eventsHtml = data.events.map(e => 
+                    `<div class="log-event-item">
+                        <span style="color:#777;">[${e.time}]</span> 
+                        <strong style="color:#0cf;">${e.type}</strong>: ${e.detail}
+                     </div>`
+                ).join('');
+                
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr id="details-${data.sessionId}" class="log-details-row">
+                        <td colspan="4">
+                            <div class="log-details-content">${eventsHtml}</div>
+                        </td>
+                    </tr>
+                `);
             }
         });
-    }
-    
-    let timeText = "Tiempo total del set: " + window.toHHMM(totalSecondsOverall);
-    if(usedCache) timeText += " (Datos guardados)";
-    
-    const timeElem = document.getElementById(totalTimeId);
-    if(timeElem) timeElem.textContent = timeText;
-    return setlistStructure;
-}
-
-window.cargarPrimerSetlist = async () => { window.globalItems1 = await cargarSetlistGenerico(setlistConfig.setlist1, "setlist-body", "total-time", "Error cargando Setlist Próximo Ensayo"); return window.globalItems1; };
-window.cargarSegundoSetlist = async () => { window.globalItems2 = await cargarSetlistGenerico(setlistConfig.setlist2, "second-body", "total-time-2", "Error cargando Setlist Próximo Concierto"); return window.globalItems2; };
-window.cargarStarSetlist = async () => { window.globalItemsStar = await cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella"); return window.globalItemsStar; };
-
-// --- 3. GENERACIÓN DE PDFS (CORE LOGIC) ---
-
-async function loadFontAsBase64(fontPath) { 
-    if(fontDataCache[fontPath]){return fontDataCache[fontPath]}
-    try {
-        const response = await fetch(fontPath);
-        if(!response.ok){throw new Error(`No se pudo cargar la fuente: ${response.statusText} (URL: ${fontPath})`)} 
-        const blob = await response.blob();
-        return new Promise((resolve,reject)=>{
-            const reader = new FileReader();
-            reader.onloadend=()=>{fontDataCache[fontPath]=reader.result.split(',')[1];resolve(fontDataCache[fontPath])};
-            reader.onerror=(error)=>reject(new Error("Error del FileReader al convertir fuente a Base64: "+error.message));
-            reader.readAsDataURL(blob)
-        });
-    } catch(error){
-        console.error(`Error crítico cargando la fuente ${fontPath}:`,error);
-        fontDataCache[fontPath]=null;
-        return null
-    }
-}
-
-async function registerFontWithDoc(doc,fontPath,fontVFSAlias,fontNameInDoc){
-    const fontBase64=await loadFontAsBase64(fontPath);
-    if(fontBase64){
-        try{
-            doc.addFileToVFS(fontVFSAlias,fontBase64);
-            doc.addFont(fontVFSAlias,fontNameInDoc,'normal');
-            console.log(`Fuente ${fontNameInDoc} registrada en jsPDF desde ${fontPath}.`);
-            return true;
-        }catch(fontError){console.error(`Error al registrar la fuente ${fontNameInDoc} en jsPDF:`,fontError)}
-    } else {
-        console.warn(`No se pudo cargar la fuente ${fontPath} para registrarla.`);
-    } 
-    return false;
-}
-
-async function getBackgroundImageDataURL(){
-    return new Promise((resolve,reject)=>{
-        const img=new Image();
-        img.onload=()=>{
-            const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;
-            const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);
-            resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror=(err)=>reject(new Error("Error al cargar la imagen de plantilla: "+(err.message||err.toString())));
-        img.src=PDF_BACKGROUND_IMAGE_PATH;
-        if(img.complete){
-            if(img.naturalHeight!==0){
-                const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;
-                const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'));
-            } else if(img.src){reject(new Error("Imagen de plantilla en caché pero inválida."));}
-        }
+    }).catch(e => {
+        console.error(e);
+        tbody.innerHTML = "<tr><td colspan='4'>Error cargando logs.</td></tr>";
     });
 }
 
-// PDF COMPLEX (Original)
-window.genPDF = async function(setlistStructure, setlistDynamicName, rawFileNameForPdf){
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({orientation:"portrait", unit:"pt", format:"a4"});
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const cleanFileName = window.sanitizeFirebaseKey(rawFileNameForPdf) || "setlist"; 
-    
-    let bleedingCowboysRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.bleedingCowboys, 'Bleeding_Cowboys.ttf', PDF_FONT_NAMES.bleedingCowboys);
-    let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
-    let backgroundImageData = null;
-    
-    try {
-        backgroundImageData = await getBackgroundImageDataURL();
-        doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
-    } catch(e) {
-        console.error("No se pudo añadir la plantilla de fondo al PDF:", e);
-        doc.rect(10, 10, pageWidth-20, pageHeight-20, 'S');
-        doc.setFontSize(10);
-        doc.setTextColor(150,0,0);
-        doc.text("Advertencia: No se pudo cargar la plantilla de fondo.", pageWidth/2, pageHeight/2, {align:"center"});
-    } 
-    
-    doc.setTextColor(0,0,0);
-    const contentMarginTop = 120;
-    const contentMarginSides = 60;
-    const contentMarginBottom = 100;
-    let currentY = contentMarginTop;
-    
-    doc.setFont(bleedingCowboysRegistered ? PDF_FONT_NAMES.bleedingCowboys : "times", 'normal');
-    if(!bleedingCowboysRegistered) doc.setFontType("bold");
-    doc.setFontSize(28);
-    doc.text("SETLIST", pageWidth/2, currentY, {align:"center"});
-    currentY += 28 + 10;
-    
-    doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
-    if(!carnevaleeRegistered) doc.setFontType("bold");
-    doc.setFontSize(22);
-    doc.text(window.decodeHtmlEntities(setlistDynamicName), pageWidth/2, currentY, {align:"center"});
-    currentY += 22 + 5;
-    
-    doc.setFont("times", "italic");
-    doc.setFontSize(10); 
-    
-    let totalOverallSeconds = 0;
-    let totalSongCount = 0;
-    setlistStructure.forEach(blockOrItem => {
-        if(blockOrItem.isSetHeader){
-            totalOverallSeconds += blockOrItem.calculatedBlockDurationSeconds||0;
-            totalSongCount += blockOrItem.songs ? blockOrItem.songs.length : 0;
-        } else if(blockOrItem.isBreak){
-            totalOverallSeconds += blockOrItem.calculatedDurationSeconds||0;
-        } else if(blockOrItem.isSong){
-            totalOverallSeconds += blockOrItem.calculatedDurationSeconds||0;
-            totalSongCount++;
-        }
-    });
-    
-    const totalItemsText = `${totalSongCount} canciones`;
-    doc.text(`${totalItemsText}  |  Tiempo total: ${window.toHHMM(totalOverallSeconds)}`, pageWidth/2, currentY, {align:"center"});
-    currentY += 10 + 20; 
-    
-    const tableFont = "helvetica";
-    const tableHeadFont = "helvetica";
-    let pdfSongNumber = 0;
-    const tableBody = [];
-    
-    setlistStructure.forEach(blockOrItem => {
-        if(blockOrItem.isSetHeader){
-            tableBody.push([{content:`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`, colSpan:5, styles:{halign:'center', fontStyle:'bold', fillColor:[230,230,230], textColor:[0,0,0], fontSize:10}}]);
-            if(blockOrItem.songs){
-                blockOrItem.songs.forEach(song => {
-                    pdfSongNumber++;
-                    tableBody.push([pdfSongNumber, song.displayName, window.decodeHtmlEntities(song.key||"-"), window.decodeHtmlEntities(song.tempo||"-"), window.toMMSS(song.calculatedDurationSeconds||0)]);
-                });
-            }
-        } else if(blockOrItem.isBreak){
-            tableBody.push([
-                {content:"»", styles:{halign:'center', fontStyle:'italic', textColor:[100,100,100]}},
-                {content:blockOrItem.displayName, styles:{fontStyle:'italic', textColor:[80,80,80]}},
-                {content:"-", styles:{halign:'center', fontStyle:'italic', textColor:[150,150,150]}},
-                {content:"-", styles:{halign:'center', fontStyle:'italic', textColor:[150,150,150]}},
-                {content:window.toMMSS(blockOrItem.calculatedDurationSeconds||0), styles:{halign:'center', fontStyle:'italic', textColor:[80,80,80]}}
-            ]);
-        } else if(blockOrItem.isSong){
-            pdfSongNumber++;
-            tableBody.push([pdfSongNumber, blockOrItem.displayName, window.decodeHtmlEntities(blockOrItem.key||"-"), window.decodeHtmlEntities(blockOrItem.tempo||"-"), window.toMMSS(blockOrItem.calculatedDurationSeconds||0)]);
-        }
-    }); 
-    
-    doc.autoTable({
-        startY: currentY,
-        head: [["#", "Título", "Key", "Tempo", "Time"]],
-        body: tableBody,
-        theme: 'grid',
-        headStyles: {fillColor:[200,200,200], textColor:[0,0,0], font:tableHeadFont, fontStyle:'bold', halign:'center', fontSize:10},
-        styles: {font:tableFont, fontSize:9, cellPadding:{top:4, right:5, bottom:4, left:5}, lineColor:[80,80,80], lineWidth:.5, textColor:[0,0,0]},
-        columnStyles: {
-            0: {halign:'center', cellWidth:25, fontSize:9},
-            1: {halign:'left', cellWidth:'auto', fontSize:10},
-            2: {halign:'center', cellWidth:50, fontSize:9},
-            3: {halign:'center', cellWidth:50, fontSize:9},
-            4: {halign:'center', cellWidth:50, fontSize:9}
-        },
-        margin: {top:contentMarginTop, right:contentMarginSides, bottom:contentMarginBottom, left:contentMarginSides},
-        pageBreak: 'auto',
-        didDrawPage: function(data){
-            if(data.pageNumber > 1 && backgroundImageData){
-                doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
-            }
-        }
-    });
-    
-    doc.save(`${cleanFileName}.pdf`);
-}
-
-// PDF BASICO
-window.genBasicPDF = async function(setlistStructure, setlistDynamicName, rawFileNameForPdf){
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({orientation:"portrait", unit:"pt", format:"a4"});
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const cleanFileName = window.sanitizeFirebaseKey(rawFileNameForPdf) || "setlist";
-    
-    let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
-    let backgroundImageData = null;
-    
-    try {
-        backgroundImageData = await getBackgroundImageDataURL();
-        doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
-    } catch(e) {} 
-    
-    doc.setTextColor(0,0,0);
-    const contentMarginTop = 120;
-    const contentMarginBottom = 100;
-    let currentY = contentMarginTop;
-    const setlistNameFontSize = 22;
-    const itemTitleFontSize = 14;
-    const setHeaderFontSize = 16;
-    const itemLineHeight = itemTitleFontSize * 1.6;
-    
-    doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
-    doc.setFontSize(setlistNameFontSize);
-    doc.text(window.decodeHtmlEntities(setlistDynamicName), pageWidth/2, currentY, {align:"center"});
-    currentY += setlistNameFontSize + 30; 
-    
-    setlistStructure.forEach((blockOrItem, idx) => {
-        if(currentY + itemLineHeight * 2.5 > pageHeight - contentMarginBottom){
-            doc.addPage();
-            if(backgroundImageData){ doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight); } 
-            currentY = contentMarginTop;
-        } 
-        
-        if(blockOrItem.isSetHeader){
-            if(idx > 0) currentY += itemLineHeight * .3;
-            doc.setFont("helvetica", 'bold');
-            doc.setFontSize(setHeaderFontSize);
-            doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`, pageWidth/2, currentY, {align:"center"});
-            currentY += setHeaderFontSize * 1.6;
-            if(blockOrItem.songs){
-                blockOrItem.songs.forEach(song => {
-                    if(currentY + itemLineHeight > pageHeight - contentMarginBottom){
-                        doc.addPage();
-                        if(backgroundImageData) doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
-                        currentY = contentMarginTop;
-                    } 
-                    doc.setFont("helvetica", 'normal');
-                    doc.setFontSize(itemTitleFontSize);
-                    doc.text(song.displayName, pageWidth/2, currentY, {align:"center"});
-                    currentY += itemLineHeight;
-                });
-            }
-        } else if(blockOrItem.isBreak){
-            if(idx > 0) currentY += itemLineHeight * .2;
-            doc.setFont("helvetica", 'italic');
-            doc.setFontSize(itemTitleFontSize - 1 > 8 ? itemTitleFontSize - 1 : 8);
-            doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedDurationSeconds||0)})`, pageWidth/2, currentY, {align:"center"});
-            currentY += (itemTitleFontSize - 1 > 8 ? itemTitleFontSize - 1 : 8) * 1.6;
-            if(idx < setlistStructure.length - 1) currentY += itemLineHeight * .2;
-        } else if(blockOrItem.isSong){
-            doc.setFont("helvetica", 'normal');
-            doc.setFontSize(itemTitleFontSize);
-            doc.text(blockOrItem.displayName, pageWidth/2, currentY, {align:"center"});
-            currentY += itemLineHeight;
-        }
-    });
-    doc.save(`${cleanFileName}_Basico.pdf`);
-}
-
-// PDF PERSONAL (Ajustable)
-window.genPersonalPDF = async function(setlistStructure, setlistDynamicName, rawFileNameForPdf, songTitleFontSizeParam){
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({orientation:"portrait", unit:"pt", format:"a4"});
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const songTitleFontSize = parseInt(songTitleFontSizeParam, 10) || 14;
-    const cleanFileName = window.sanitizeFirebaseKey(rawFileNameForPdf) || "setlist";
-    
-    let carnevaleeRegistered = await registerFontWithDoc(doc, PDF_FONT_PATHS.carnevalee, 'Carnevalee_Freakshow.ttf', PDF_FONT_NAMES.carnevalee);
-    let backgroundImageData = null;
-    
-    try {
-        backgroundImageData = await getBackgroundImageDataURL();
-        doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
-    } catch(e) {
-        console.error("No se pudo añadir la plantilla de fondo al PDF Personal:", e);
-        doc.rect(10, 10, pageWidth-20, pageHeight-20, 'S');
-    } 
-    
-    doc.setTextColor(0,0,0);
-    const contentMarginTop = 120;
-    const contentMarginBottom = 100;
-    let currentY = contentMarginTop;
-    const setlistNameFontSize = 22;
-    const setHeaderFontSize = 16;
-    const breakTextFontSize = Math.max(8, songTitleFontSize - 2);
-    const songTitleLineHeight = songTitleFontSize * 1.5;
-    const setHeaderLineHeight = setHeaderFontSize * 1.5;
-    const breakTextLineHeight = breakTextFontSize * 1.5;
-    
-    doc.setFont(carnevaleeRegistered ? PDF_FONT_NAMES.carnevalee : "times", 'normal');
-    doc.setFontSize(setlistNameFontSize);
-    doc.text(window.decodeHtmlEntities(setlistDynamicName), pageWidth/2, currentY, {align:"center"});
-    currentY += setlistNameFontSize + 30; 
-    
-    setlistStructure.forEach((blockOrItem, idx) => {
-        let estimatedBlockHeight = songTitleLineHeight;
-        if(blockOrItem.isSetHeader) estimatedBlockHeight = setHeaderLineHeight + (blockOrItem.songs ? blockOrItem.songs.length : 0);
-        else if(blockOrItem.isBreak) estimatedBlockHeight = breakTextLineHeight;
-        
-        if(currentY + estimatedBlockHeight > pageHeight - contentMarginBottom && idx > 0){
-            doc.addPage();
-            if(backgroundImageData){ doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight); } 
-            currentY = contentMarginTop;
-        } 
-        
-        if(blockOrItem.isSetHeader){
-            if(idx > 0) currentY += songTitleLineHeight * .3;
-            doc.setFont("helvetica", 'bold');
-            doc.setFontSize(setHeaderFontSize);
-            doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedBlockDurationSeconds||0)})`, pageWidth/2, currentY, {align:"center"});
-            currentY += setHeaderLineHeight;
-            if(blockOrItem.songs){
-                blockOrItem.songs.forEach(song => {
-                    if(currentY + songTitleLineHeight > pageHeight - contentMarginBottom){
-                        doc.addPage();
-                        if(backgroundImageData) doc.addImage(backgroundImageData, 'PNG', 0, 0, pageWidth, pageHeight);
-                        currentY = contentMarginTop;
-                    } 
-                    doc.setFont("helvetica", 'normal');
-                    doc.setFontSize(songTitleFontSize);
-                    doc.text(song.displayName, pageWidth/2, currentY, {align:"center"});
-                    currentY += songTitleLineHeight;
-                });
-            }
-        } else if(blockOrItem.isBreak){
-            if(idx > 0) currentY += songTitleLineHeight * .2;
-            doc.setFont("helvetica", 'italic');
-            doc.setFontSize(breakTextFontSize);
-            doc.text(`${blockOrItem.displayName} (${window.toMMSS(blockOrItem.calculatedDurationSeconds||0)})`, pageWidth/2, currentY, {align:"center"});
-            currentY += breakTextLineHeight;
-            if(idx < setlistStructure.length - 1) currentY += songTitleLineHeight * .2;
-        } else if(blockOrItem.isSong){
-            doc.setFont("helvetica", 'normal');
-            doc.setFontSize(songTitleFontSize);
-            doc.text(blockOrItem.displayName, pageWidth/2, currentY, {align:"center"});
-            currentY += songTitleLineHeight;
-        }
-    });
-    doc.save(`${cleanFileName}_Personal_${songTitleFontSize}pt.pdf`);
-}
-
-// --- 4. GESTIÓN DE PDF LIBRARY (ENLACES) ---
-
-window.loadPdfLibrary = async () => {
-     try {
-         const data = await window.withRetry(() => window.loadDoc("intranet", "pdf_library", { library: {} }));
-         window.pdfLibrary = data.library || {};
-     } catch (e) {
-         console.error("Error loading PDF library:", e);
-         window.pdfLibrary = {};
-     }
-}
-
-window.savePdfLibrary = async () => {
-     try {
-         await window.withRetry(() => window.saveDoc("intranet", "pdf_library", { library: window.pdfLibrary }));
-     } catch (e) {
-         console.error("Error saving PDF library:", e);
-         throw e;
-     }
-}
-
-// Eventos de Gestión Masiva PDF
-document.addEventListener("DOMContentLoaded", () => {
-    const menuPdf = document.getElementById("menu-pdf-mgmt");
-    if(menuPdf) {
-        menuPdf.onclick = e => { 
-            e.preventDefault(); 
-            if(window.openConfigScreen) window.openConfigScreen("pdf-mgmt-screen");
-            renderPdfMgmtTable();
-        };
-    }
-    const closePdf = document.getElementById("close-pdf-mgmt");
-    if(closePdf) closePdf.onclick = () => document.getElementById("pdf-mgmt-screen").style.display = "none";
-});
-
-function renderPdfMgmtTable() {
-    const tbody = document.getElementById('pdf-mgmt-body');
-    if(!tbody) return;
-    tbody.innerHTML = "";
-    if(!window.pdfLibrary) return;
-    const keys = Object.keys(window.pdfLibrary).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-    if (keys.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay partituras enlazadas.</td></tr>"; return; }
-    keys.forEach(key => {
-        const url = window.pdfLibrary[key];
-        const displayName = key.replace(/_/g, " "); 
-        const row = `<tr><td>${displayName}</td><td style="font-size:0.8em; color:#aaa; max-width: 200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${url}</td><td><button onclick="window.deletePdfLink('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;">Eliminar</button></td></tr>`;
-        tbody.insertAdjacentHTML('beforeend', row);
-    });
-}
-
-window.deletePdfLink = async function(cleanKey) {
-    if(confirm("¿Eliminar el enlace de esta partitura?")) {
-        delete window.pdfLibrary[cleanKey];
-        await window.savePdfLibrary();
-        renderPdfMgmtTable(); 
-        await Promise.all([window.cargarPrimerSetlist(), window.cargarSegundoSetlist(), window.cargarStarSetlist()]);
-    }
-}
-
-window.openPdfLink = function(url) {
-    window.open(url, '_blank');
-}
-
-window.openPdfEditModal = function(songName) {
-    currentEditingPdfSong = songName;
-    const cleanName = window.sanitizeFirebaseKey(songName);
-    const currentLink = window.pdfLibrary ? window.pdfLibrary[cleanName] : "";
-    const modal = document.getElementById('pdf-edit-modal');
-    if(modal) {
-        document.getElementById('pdf-modal-songname').textContent = songName;
-        document.getElementById('pdf-modal-url-input').value = currentLink || "";
-        modal.classList.add('show');
-    }
-}
-
-// Modal Listeners PDF
-document.addEventListener("DOMContentLoaded", () => {
-    const saveBtn = document.getElementById('pdf-modal-save-btn');
-    if(saveBtn) {
-        saveBtn.onclick = async () => {
-            if(!currentEditingPdfSong) return;
-            const url = document.getElementById('pdf-modal-url-input').value.trim();
-            const cleanName = window.sanitizeFirebaseKey(currentEditingPdfSong);
-            
-            if (window.pdfLibrary) {
-                if (url) {
-                    window.pdfLibrary[cleanName] = url;
-                } else {
-                    delete window.pdfLibrary[cleanName];
-                }
-                
-                await window.savePdfLibrary();
-                await Promise.all([window.cargarPrimerSetlist(), window.cargarSegundoSetlist(), window.cargarStarSetlist()]);
-            }
-            document.getElementById('pdf-edit-modal').classList.remove('show');
-        };
-    }
-    const cancelBtn = document.getElementById('pdf-modal-cancel-btn');
-    if(cancelBtn) cancelBtn.onclick = () => document.getElementById('pdf-edit-modal').classList.remove('show');
-});
-
-// --- 5. GESTIÓN DE MASTER DOCS ---
-
-window.loadMasterDocs = async () => {
-    try {
-        const data = await window.withRetry(() => window.loadDoc("intranet", "master_docs", { docs: { setlist1: {}, setlist2: {}, setlistStar: {} } }));
-        window.masterDocs = data.docs || { setlist1: {}, setlist2: {}, setlistStar: {} };
-        updateMasterDocsVisuals();
-    } catch (e) {
-        console.error("Error loading master docs:", e);
-    }
-}
-
-window.saveMasterDocs = async () => {
-    try {
-        await window.withRetry(() => window.saveDoc("intranet", "master_docs", { docs: window.masterDocs }));
-        updateMasterDocsVisuals();
-    } catch (e) {
-        console.error("Error saving master docs:", e);
-        throw e;
-    }
-}
-
-function updateMasterDocsVisuals() {
-    ['setlist1', 'setlist2', 'setlistStar'].forEach(key => {
-        for(let i=1; i<=3; i++) {
-            const btn = document.getElementById(`master-slot-${key}-${i}`);
-            if(!btn) continue;
-            const setDocs = window.masterDocs[key] || {};
-            const slotData = setDocs['slot' + i];
-            if (slotData && slotData.url) btn.classList.add('active');
-            else btn.classList.remove('active');
-        }
-    });
-}
-
-window.handleMasterDirectClick = (setlistKey, slotNum, displayName) => {
-    const slotData = window.masterDocs[setlistKey]['slot' + slotNum];
-    if (slotData && slotData.url) {
-        window.open(slotData.url, '_blank');
-    } else {
-        window.openMasterDocsModal(setlistKey, displayName);
+window.toggleLogDetails = function(id) {
+    const row = document.getElementById('details-' + id);
+    if (row) {
+        row.classList.toggle('show');
+        const btn = document.querySelector(`button[onclick="toggleLogDetails('${id}')"]`);
+        if(btn) btn.textContent = row.classList.contains('show') ? '-' : '+';
     }
 };
 
-window.openMasterDocsModal = function(setlistKey, displayName) {
-    currentMasterDocsSetlistKey = setlistKey;
-    document.getElementById('master-docs-setlist-name').textContent = displayName;
-    
-    // Auth Check (global var isAuthenticated must come from main scope, assuming global access or passing it)
-    // Since isAuthenticated is in index.html scope, we might need a safer check.
-    // For now we check visibility of admin elements based on previous logic, 
-    // but ideally we should expose isAuthenticated status.
-    const adminHint = document.getElementById('master-docs-admin-hint');
-    const adminAreas = document.querySelectorAll('.admin-only');
-    
-    // Assuming a global isAuthenticated or checking if user management screen is accessible
-    // Simple check: if #config-submenu is visible? No.
-    // Let's assume passed variable or simply check if user can access config.
-    // Hack: We rely on the fact that if they can click buttons they are authenticated for editing context usually.
-    // But for Master Docs, any user can click "1, 2, 3".
-    // We will show admin areas by default hidden, and only show if window.isAuthenticated is true
-    
-    if (window.isAuthenticated) {
-        adminHint.style.display = 'block';
-        adminAreas.forEach(a => a.style.display = 'block');
-    } else {
-        adminHint.style.display = 'none';
-        adminAreas.forEach(a => a.style.display = 'none');
-    }
+/* ---------- 1. Utilidades y Variables Globales ---------- */
+// NOTA: Algunas utilidades ahora están en setlists.js, otras en ensayos.js
+// Helpers básicos que necesita user-mgmt o analisis pueden quedarse aquí o compartirse
 
-    const setDocs = window.masterDocs[setlistKey] || {};
+window.toHours = s => { if (isNaN(s) || s === null || s === undefined) return (0).toFixed(2); return (s / 3600).toFixed(2);};
+window.decodeHtmlEntities = function(text) { if (typeof text !== 'string') return text; const textArea = document.createElement('textarea'); textArea.innerHTML = text; return textArea.value;}
+window.sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
+
+// Métricas tiempo
+window.calculateDuration = (startTime, endTime) => { if (!startTime || !endTime) return 0; const [startH, startM] = startTime.split(":").map(Number); const [endH, endM] = endTime.split(":").map(Number); const startSeconds = startH * 3600 + startM * 60; const endSeconds = endH * 3600 + endM * 60; let duration = endSeconds - startSeconds; if (duration < 0) duration += 24 * 3600; return duration;};
+window.toHHMM = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;};
+window.formatDateWithDay = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]; const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${days[date.getUTCDay()]} ${date.getUTCDate()} de ${months[date.getUTCMonth()]}`;};
+window.getMonthYear = dateStr => { const date = new Date(dateStr + 'T00:00:00Z'); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;};
+
+/* ---------- 1.5. Manejo de conexión ---------- */
+const connectionStatus = document.getElementById("connection-status"); let isOnline = navigator.onLine; 
+function updateConnectionStatus() { isOnline = navigator.onLine; if (!isOnline) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión: Mostrando datos en caché"; connectionStatus.style.display = "block"; } else { connectionStatus.style.display = "none"; } } 
+window.addEventListener("online", updateConnectionStatus); window.addEventListener("offline", updateConnectionStatus); 
+window.withRetry = async function(fn, maxRetries = 3, delay = 2000) { for (let i = 0; i < maxRetries; i++) { try { if (!navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión. Operación podría fallar o usar caché."; connectionStatus.style.display = "block"; } return await fn(); } catch (e) { console.error(`Intento ${i+1} fallido:`, e); if (i === maxRetries - 1 || !navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Error: Operación fallida. " + e.message; connectionStatus.style.display = "block"; throw e; } connectionStatus.className = "retrying"; connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`; connectionStatus.style.display = "block"; await new Promise(resolve => setTimeout(resolve, delay)); } } }
+
+/* ---------- 2. Acceso Firestore ---------- */
+let db; 
+window.loadDoc = async function(collection, docId, fallback) { try { const snap = await db.collection(collection).doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); return fallback; } }
+window.saveDoc = async function(collection, docId, data, merge = false) { try { console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge); await db.collection(collection).doc(docId).set(data, { merge: merge }); console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`); return true; } catch (e) { console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); throw e; } }
+
+/* ---------- 6. Usuarios ---------- */
+window.users = []; let editingUserIndex = null; // USERS AHORA ES GLOBAL
+function renderUsers() { const tbodyMgmt=document.getElementById("user-table-body");const tbodyDisplay=document.getElementById("users-body");if(tbodyMgmt)tbodyMgmt.innerHTML="";if(tbodyDisplay)tbodyDisplay.innerHTML="";if(!Array.isArray(window.users)||window.users.length===0){const emptyMsgMgmt='<tr><td colspan="4">No hay usuarios registrados.</td></tr>';const emptyMsgDisplay='<tr><td colspan="3">No hay usuarios registrados.</td></tr>';if(tbodyMgmt)tbodyMgmt.innerHTML=emptyMsgMgmt;if(tbodyDisplay)tbodyDisplay.innerHTML=emptyMsgDisplay;return} window.users.forEach((u,i)=>{if(!u||typeof u!=='object'||!u.name||!u.nickname||!Array.isArray(u.roles)){console.warn(`Usuario inválido en la posición ${i}:`,u);return} const rolesDisplay=u.roles.join(", ");if(tbodyMgmt){tbodyMgmt.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`)} if(tbodyDisplay){tbodyDisplay.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`)}});if(tbodyMgmt){tbodyMgmt.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{const userIndex=parseInt(btn.dataset.i,10);const userToDelete=window.users[userIndex];if(confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)){if(window.rehearsals) window.rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance=r.attendance.filter(a=>a.name!==userToDelete.name)}});window.users.splice(userIndex,1);await saveUsers();await window.saveRehearsals();window.renderStats()}});tbodyMgmt.querySelectorAll(".edit-user").forEach(btn=>btn.onclick=()=>{editingUserIndex=parseInt(btn.dataset.i,10);const user=window.users[editingUserIndex];document.getElementById("user-name").value=user.name;document.getElementById("user-nickname").value=user.nickname;const roleSelect=document.getElementById("user-role");Array.from(roleSelect.options).forEach(option=>{option.selected=user.roles.includes(option.value)});document.getElementById("add-user").textContent="Guardar Cambios";document.getElementById("cancel-edit-user").style.display="inline-block"})}}
+async function loadUsers() { try { const data = await window.withRetry(() => window.loadDoc("intranet", "users", { users: [] })); window.users = Array.isArray(data.users) ? data.users : []; window.users = window.users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles)); renderUsers(); populateIdentitySelector(); } catch (e) { console.error("Error al cargar usuarios:", e); } }
+async function saveUsers() { try { await window.withRetry(() => window.saveDoc("intranet", "users", { users: window.users })); renderUsers(); window.renderRehearsals(); window.renderStats(); return true; } catch (e) { console.error("Error al guardar usuarios:", e); throw e; } }
+function resetUserForm() { document.getElementById("user-name").value = ""; document.getElementById("user-nickname").value = ""; const roleSelect = document.getElementById("user-role"); Array.from(roleSelect.options).forEach(option => option.selected = false); document.getElementById("add-user").textContent = "Añadir Usuario"; document.getElementById("cancel-edit-user").style.display = "none"; editingUserIndex = null; }
+
+function populateIdentitySelector() {
+    const select = document.getElementById('user-identity-selector');
+    const storedUser = localStorage.getItem('elSotanoCurrentUser');
     
-    for(let i=1; i<=3; i++) {
-        const slot = setDocs['slot' + i] || { name: "", url: "" };
-        
-        document.getElementById('master-name-' + i).value = slot.name || "";
-        document.getElementById('master-url-' + i).value = slot.url || "";
-        
-        const displayEl = document.getElementById('master-display-' + i);
-        const viewBtn = document.getElementById('master-btn-view-' + i);
-        
-        if (slot.url) {
-            displayEl.textContent = slot.name || "Documento sin nombre";
-            displayEl.style.fontStyle = 'normal';
-            displayEl.style.color = '#fff';
-            viewBtn.style.display = 'flex';
-            viewBtn.onclick = () => window.open(slot.url, '_blank');
-        } else {
-            displayEl.textContent = "Vacío";
-            displayEl.style.fontStyle = 'italic';
-            displayEl.style.color = '#777';
-            viewBtn.style.display = 'none';
+    select.innerHTML = '<option value="" disabled selected>-- Selecciona tu nombre --</option>';
+    window.users.sort((a, b) => a.name.localeCompare(b.name)).forEach(u => {
+        const isSelected = storedUser === u.name ? 'selected' : '';
+        select.insertAdjacentHTML('beforeend', `<option value="${u.name}" ${isSelected}>${u.name} (${u.nickname})</option>`);
+    });
+    
+    select.onchange = () => {
+        localStorage.setItem('elSotanoCurrentUser', select.value);
+    };
+}
+
+/* ---------- 8. Estadísticas ---------- */
+function updateMonthFilter() { const select=document.getElementById("stats-month-filter");select.innerHTML='<option value="all">Todos los meses</option>';const now=new Date();const pastRehearsals=window.rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);const months=new Set(pastRehearsals.map(r=>window.getMonthYear(r.date)));Array.from(months).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{select.insertAdjacentHTML("beforeend",`<option value="${month}">${month}</option>`)})}
+function getMonthIndex(monthName) { const months=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];return months.indexOf(monthName)}
+// RENDER STATS AHORA ES GLOBAL
+window.renderStats = function() { const now=new Date();const selectedMonth=document.getElementById("stats-month-filter")?.value||"all";let filteredRehearsals=window.rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);if(selectedMonth!=="all"){filteredRehearsals=filteredRehearsals.filter(r=>window.getMonthYear(r.date)===selectedMonth)} const timePerMonth={};filteredRehearsals.forEach(r=>{const monthYear=window.getMonthYear(r.date);const duration=window.calculateDuration(r.startTime,r.endTime);timePerMonth[monthYear]=(timePerMonth[monthYear]||0)+duration});const tbodyMonth=document.getElementById("time-per-month-body");tbodyMonth.innerHTML="";Object.keys(timePerMonth).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{tbodyMonth.insertAdjacentHTML("beforeend",`<tr><td>${month}</td><td>${window.toHours(timePerMonth[month])}</td></tr>`)}); const timePerUser={};window.users.forEach(user=>{timePerUser[user.name]=0;filteredRehearsals.forEach(r=>{const attendance=r.attendance?.find(a=>a.name===user.name);if(attendance&&attendance.attending==="Sí"){timePerUser[user.name]+=window.calculateDuration(r.startTime,r.endTime)}})});const tbodyUser=document.getElementById("time-per-user-body");tbodyUser.innerHTML="";Object.keys(timePerUser).sort().forEach(user=>{tbodyUser.insertAdjacentHTML("beforeend",`<tr><td>${window.users.find(u=>u.name===user)?.nickname||user}</td><td>${window.toHours(timePerUser[user])}</td></tr>`)}); const tbodyPast=document.getElementById("past-rehearsals-body");tbodyPast.innerHTML="";filteredRehearsals.sort((a,b)=>new Date(b.date+'T'+(b.startTime||'00:00'))-new Date(a.date+'T'+(a.startTime||'00:00')));filteredRehearsals.forEach(r=>{const formattedDate=window.formatDateWithDay(r.date);const durationText=window.toHHMM(window.calculateDuration(r.startTime,r.endTime));const attendance=Array.isArray(r.attendance)?r.attendance:[];const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=window.users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;tbodyPast.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td><td>${summary}</td></tr>`)})}
+
+/* ---------- 11. Menú & pantallas ---------- */
+const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
+function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof window.resetRehearsalForm==="function")window.resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
+document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
+const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
+setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
+setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
+setupMenuLink("menu-suggestions", "suggestions");
+setupMenuLink("menu-analisis-section", "analisis");
+document.getElementById("menu-suggestions").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("suggestions-screen"); renderSuggestions(); };
+document.getElementById("close-suggestions").onclick = () => { document.getElementById("suggestions-screen").style.display = "none"; };
+
+// --- FIX: MENU GESTIÓN PROPUESTAS (ADMIN) ---
+document.getElementById("menu-admin-suggestions").onclick = e => { 
+    e.preventDefault(); 
+    if(window.openConfigScreen("admin-suggestions-screen")) {
+        renderAdminSuggestions();
+    }
+};
+document.getElementById("close-admin-suggestions").onclick = () => { 
+    document.getElementById("admin-suggestions-screen").style.display = "none"; 
+};
+
+// --- LÓGICA BIOMETRÍA ---
+const BIO_STORAGE_KEY = 'elsotano_bio_auth';
+const supportsBiometrics = () => window.PublicKeyCredential && window.isSecureContext;
+
+async function enrollBiometry() {
+    if (!supportsBiometrics()) {
+        alert("Tu navegador o dispositivo no soporta biometría o no estás en una conexión segura (HTTPS).");
+        return;
+    }
+    
+    // Desafío aleatorio para WebAuthn
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+    
+    const createOptions = {
+        publicKey: {
+            challenge: challenge,
+            rp: { name: "El Sótano del Doctor" },
+            user: {
+                id: new Uint8Array(16),
+                name: "admin@sotano.com",
+                displayName: "Admin El Sótano"
+            },
+            pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+            authenticatorSelection: { userVerification: "required" },
+            timeout: 60000
         }
+    };
 
-        const saveBtn = document.getElementById('master-save-' + i);
-        // Remove old listeners to avoid stacking
-        const newSaveBtn = saveBtn.cloneNode(true);
-        saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-        
-        newSaveBtn.onclick = async () => {
-            const newName = document.getElementById('master-name-' + i).value.trim();
-            const newUrl = document.getElementById('master-url-' + i).value.trim();
-            
-            if(!window.masterDocs[setlistKey]) window.masterDocs[setlistKey] = {};
-            window.masterDocs[setlistKey]['slot' + i] = { name: newName, url: newUrl };
-            
-            try {
-                await window.saveMasterDocs();
-                alert("Ranura " + i + " guardada.");
-                window.openMasterDocsModal(setlistKey, displayName); 
-            } catch(e) { alert("Error al guardar: " + e.message); }
-        };
+    try {
+        const credential = await navigator.credentials.create(createOptions);
+        if (credential) {
+            localStorage.setItem(BIO_STORAGE_KEY, 'true');
+            alert("¡Acceso biométrico activado! La próxima vez entrarás con tu cara o huella.");
+        }
+    } catch (err) {
+        console.error("Error enrolando biometría:", err);
+        alert("No se pudo configurar la biometría: " + err.message);
     }
-
-    document.getElementById('master-docs-modal').classList.add('show');
 }
 
-// Modal Master Docs Listeners
-document.addEventListener("DOMContentLoaded", () => {
-    const closeBtn = document.getElementById('close-master-docs-modal');
-    if(closeBtn) closeBtn.onclick = () => document.getElementById('master-docs-modal').classList.remove('show');
+async function verifyBiometry() {
+    if (!localStorage.getItem(BIO_STORAGE_KEY)) return false;
     
-    const menuMaster = document.getElementById("menu-master-docs-mgmt");
-    if(menuMaster) {
-        menuMaster.onclick = e => { 
-            e.preventDefault(); 
-            if(window.openConfigScreen) window.openConfigScreen("master-docs-mgmt-screen");
-            renderMasterDocsMgmtTable();
-        };
-    }
-    const closeMasterMgmt = document.getElementById("close-master-docs-mgmt");
-    if(closeMasterMgmt) closeMasterMgmt.onclick = () => document.getElementById("master-docs-mgmt-screen").style.display = "none";
-});
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+    
+    const getOptions = {
+        publicKey: {
+            challenge: challenge,
+            userVerification: "required",
+            timeout: 60000
+        }
+    };
 
-function renderMasterDocsMgmtTable() {
-    const tbody = document.getElementById('master-docs-mgmt-body');
-    if(!tbody) return;
+    try {
+        const assertion = await navigator.credentials.get(getOptions);
+        return !!assertion;
+    } catch (err) {
+        console.warn("Fallo o cancelación de biometría:", err);
+        return false;
+    }
+}
+
+document.getElementById("menu-config").onclick = async (e) => { 
+    e.preventDefault();
+    const submenu = document.getElementById("config-submenu");
+    
+    if (!isAuthenticated) {
+        // 1. Intentar biometría primero si está activa
+        let bioSuccess = await verifyBiometry();
+        
+        if (bioSuccess) {
+            isAuthenticated = true;
+            submenu.style.display = "block";
+        } else {
+            // 2. Fallback al prompt clásico
+            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
+            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+                isAuthenticated = true;
+                submenu.style.display = "block";
+            } else if (password !== null) {
+                alert("Contraseña incorrecta.");
+            }
+        }
+    } else {
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+    }
+    
+    // Mostrar/Ocultar botón de enrolamiento según disponibilidad
+    const enrollBtn = document.getElementById("menu-enroll-biometry");
+    if (enrollBtn) {
+        enrollBtn.style.display = (supportsBiometrics() && isAuthenticated) ? "block" : "none";
+    }
+};
+
+document.getElementById("menu-enroll-biometry").onclick = (e) => {
+    e.preventDefault();
+    enrollBiometry();
+};
+
+window.openConfigScreen = async (screenId) => { 
+    // Exponer isAuthenticated para otros scripts (master docs modal)
+    window.isAuthenticated = isAuthenticated;
+
+    if(!isAuthenticated && screenId!=='user-list-screen' && screenId!=='stats-screen' && screenId!=='suggestions-screen') {
+        let bioSuccess = await verifyBiometry();
+        if (bioSuccess) {
+            isAuthenticated = true;
+            window.isAuthenticated = true;
+        } else {
+            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
+            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+                isAuthenticated = true;
+                window.isAuthenticated = true;
+            } else {
+                if (password !== null) alert("Contraseña incorrecta.");
+                return false;
+            }
+        }
+    } 
+    if(isAuthenticated || screenId==='user-list-screen' || screenId==='stats-screen' || screenId==='suggestions-screen') {
+        closeAll();
+        const screen = document.getElementById(screenId);
+        if (screen) {
+            screen.style.display = "block";
+            if (screenId === 'user-list-screen') renderUsers();
+            screen.scrollTop = 0;
+        }
+    } 
+    return true;
+}; 
+// --- FIN LÓGICA BIOMETRÍA ---
+
+document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("user-mgmt-screen"); };
+document.getElementById("close-user-mgmt").onclick = () => { document.getElementById("user-mgmt-screen").style.display = "none"; document.getElementById("user-message").textContent = ""; resetUserForm(); };
+document.getElementById("add-user").onclick = async () => { const msg=document.getElementById("user-message");msg.textContent="";const name=document.getElementById("user-name").value.trim(),nickname=document.getElementById("user-nickname").value.trim();const roles=Array.from(document.getElementById("user-role").selectedOptions).map(o=>o.value);if(!name||!nickname||roles.length===0){msg.className="error-message";msg.textContent="Nombre, apodo y rol son obligatorios.";return} try{if(editingUserIndex!==null){const oldName=window.users[editingUserIndex].name;window.users[editingUserIndex]={name,nickname,roles};if(oldName!==name){if(window.rehearsals) window.rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance.forEach(a=>{if(a.name===oldName)a.name=name})}});await window.saveRehearsals()} msg.textContent="Usuario actualizado."}else{window.users.push({name,nickname,roles});msg.textContent="Usuario añadido."} await saveUsers();msg.className="success-message";resetUserForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
+document.getElementById("cancel-edit-user").onclick = () => { resetUserForm(); document.getElementById("user-message").textContent = ""; };
+document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(window.openConfigScreen("stats-screen")){ updateMonthFilter(); window.renderStats(); }};
+document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
+document.getElementById("stats-month-filter").addEventListener("change", window.renderStats);
+document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("user-list-screen"); };
+document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
+
+// --- GESTIÓN DE PROPUESTAS ---
+let suggestions = [];
+function attachSuggestionsListener() {
+    if (typeof db !== 'undefined') {
+        db.collection('suggestions').onSnapshot(snapshot => {
+            suggestions = [];
+            snapshot.forEach(doc => { suggestions.push({ id: doc.id, ...doc.data() }); });
+            renderSuggestions();
+            renderAdminSuggestions();
+        });
+    }
+}
+document.getElementById("add-suggestion-btn").onclick = async () => {
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value;
+    const title = document.getElementById('suggestion-title').value.trim();
+    const artist = document.getElementById('suggestion-artist').value.trim();
+    const link = document.getElementById('suggestion-link').value.trim();
+    const msg = document.getElementById('suggestion-message');
+    msg.textContent = "";
+    if (!currentUser) { alert("Selecciona quién eres."); userSelector.focus(); return; }
+    if (!title || !artist) { msg.textContent = "Título y Artista son obligatorios."; return; }
+    const newSuggestion = { title, artist, link, proposedBy: currentUser, proposedAt: new Date().toISOString(), votes: {}, averageRating: 0, status: 'active' };
+    try { await db.collection('suggestions').add(newSuggestion); document.getElementById('suggestion-title').value = ""; document.getElementById('suggestion-artist').value = ""; document.getElementById('suggestion-link').value = ""; alert("¡Propuesta enviada!"); } catch (e) { msg.textContent = "Error: " + e.message; }
+};
+async function rateSuggestion(id, rating) {
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value;
+    if (!currentUser) { alert("Selecciona quién eres para votar."); document.getElementById('suggestions-screen').scrollTop = 0; return; }
+    const suggestion = suggestions.find(s => s.id === id);
+    if (!suggestion) return;
+    const currentVotes = suggestion.votes || {};
+    if (currentVotes[currentUser] === rating) delete currentVotes[currentUser]; else currentVotes[currentUser] = rating;
+    const scores = Object.values(currentVotes);
+    const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    try { await db.collection('suggestions').doc(id).update({ votes: currentVotes, averageRating: avg }); } catch (e) { console.error("Error al votar:", e); }
+}
+function renderSuggestions() {
+    const container = document.getElementById('suggestions-container');
+    container.innerHTML = "";
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value;
+    const activeSuggestions = suggestions.filter(s => s.status === 'active').sort((a, b) => b.averageRating - a.averageRating);
+    if (activeSuggestions.length === 0) { container.innerHTML = "<p style='color:#888; font-style:italic;'>No hay propuestas activas.</p>"; return; }
+    activeSuggestions.forEach(s => {
+        const date = new Date(s.proposedAt).toLocaleDateString();
+        const votes = s.votes || {};
+        const myVote = currentUser ? votes[currentUser] : 0;
+        const votersCount = Object.keys(votes).length;
+        const hasVoted = myVote > 0;
+        let starsHtml = ''; for (let i = 1; i <= 5; i++) starsHtml += `<span class="star-visual ${i <= Math.round(s.averageRating) ? 'filled' : ''}">★</span>`;
+        let interactiveStarsHtml = '';
+        if (hasVoted) { for (let i = 1; i <= 5; i++) interactiveStarsHtml += `<span class="interactive-star ${i <= myVote ? 'active' : ''}" style="cursor:default; opacity:${i <= myVote ? 1 : 0.3};">★</span>`; }
+        else { for (let i = 1; i <= 5; i++) interactiveStarsHtml += `<span class="interactive-star" onclick="rateSuggestion('${s.id}', ${i})">★</span>`; }
+        let votersDetailsHtml = votersCount > 0 ? `<div class="voters-details" id="voters-${s.id}">${Object.entries(votes).map(([name, score]) => `${name}: ${score}★`).join(', ')}</div>` : `<div class="voters-details" id="voters-${s.id}">Nadie ha votado aún.</div>`;
+        const voteStatusText = hasVoted ? `<span style="color:#FFD700; font-size:0.9em;">Votado (${myVote}/5)</span>` : `<span class="voting-label">Tu Voto:</span>`;
+        const card = document.createElement('div');
+        card.className = 'suggestion-card';
+        card.innerHTML = `<div class="suggestion-header"><div class="suggestion-title">${s.title}</div><div class="suggestion-artist">${s.artist}</div><div class="suggestion-meta">Propuesto por: ${s.proposedBy} el ${date}</div></div><div class="suggestion-body">${s.link ? `<a href="${s.link}" target="_blank" style="color:#0cf; font-size:0.8em;">Escuchar (Link)</a>` : ''}<div style="margin-top:15px;"><div class="star-rating-display"><span class="avg-score">${s.averageRating.toFixed(1)}</span><div style="display:flex;">${starsHtml}</div><span style="font-size:0.8em; color:#888; margin-left:5px;">(${votersCount} votos)</span></div><button class="toggle-voters-btn" onclick="document.getElementById('voters-${s.id}').classList.toggle('show')">Ver votaciones</button>${votersDetailsHtml}</div></div><div class="suggestion-actions"><div class="voting-area">${voteStatusText}<div class="interactive-stars ${hasVoted ? 'voted' : ''}">${interactiveStarsHtml}</div></div></div>`;
+        container.appendChild(card);
+    });
+}
+function renderAdminSuggestions() {
+    const tbody = document.getElementById('admin-suggestions-body');
     tbody.innerHTML = "";
-    
-    const setlistLabels = { setlist1: "Setlist Ensayo", setlist2: "Setlist Concierto", setlistStar: "Setlist Estrella" };
-    
-    ['setlist1', 'setlist2', 'setlistStar'].forEach(key => {
-        const setDocs = window.masterDocs[key] || {};
-        const slotsWithFiles = Object.entries(setDocs).filter(([slotId, data]) => data && data.url);
-        
-        let filesHtml = slotsWithFiles.length > 0 
-            ? slotsWithFiles.map(([slotId, data]) => `<div style="font-size:0.8em; color:#aaa;">- ${data.name || slotId}</div>`).join('')
-            : '<span style="color:#666; font-style:italic;">Sin archivos</span>';
-        
-        const row = `
-            <tr>
-                <td>${setlistLabels[key]}</td>
-                <td>${filesHtml}</td>
-                <td>
-                    <button onclick="window.clearSetlistMasterDocs('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;" ${slotsWithFiles.length === 0 ? 'disabled' : ''}>Limpiar Todo</button>
-                </td>
-            </tr>`;
+    const sorted = [...suggestions].sort((a, b) => new Date(b.proposedAt) - new Date(a.proposedAt));
+    sorted.forEach(s => {
+        const date = new Date(s.proposedAt).toLocaleDateString();
+        const isDeleted = s.status === 'deleted';
+        const rowClass = isDeleted ? 'deleted-row' : '';
+        const statusText = isDeleted ? `Eliminada por ${s.deletedBy || '?'} (${new Date(s.deletedAt).toLocaleDateString()})` : '<span style="color:#0cf">Activa</span>';
+        const actionBtn = isDeleted ? '-' : `<button onclick="deleteSuggestion('${s.id}')" style="background:#ff3333; padding:5px; font-size:0.8em;">Eliminar</button>`;
+        const row = `<tr class="${rowClass}"><td>${s.title} (${s.artist})</td><td>${s.proposedBy}</td><td>${date}</td><td style="font-size:0.8em;">${statusText}</td><td>${actionBtn}</td></tr>`;
         tbody.insertAdjacentHTML('beforeend', row);
     });
 }
-
-window.clearSetlistMasterDocs = async function(setlistKey) {
-    if(confirm("¿Estás seguro de que deseas eliminar TODOS los archivos maestros de este setlist?")) {
-        window.masterDocs[setlistKey] = {};
-        await window.saveMasterDocs();
-        renderMasterDocsMgmtTable();
-    }
+async function deleteSuggestion(id) {
+    const userSelector = document.getElementById('user-identity-selector');
+    const currentUser = userSelector.value || "Admin";
+    if(confirm("¿Seguro que quieres eliminar esta propuesta?")){ try { await db.collection('suggestions').doc(id).update({ status: 'deleted', deletedAt: new Date().toISOString(), deletedBy: currentUser }); alert("Propuesta eliminada."); } catch(e) { alert("Error al eliminar."); } }
 }
 
-// --- 6. GESTIÓN DE ENLACES JUKEBOX (Parte de Gestión, no Player) ---
+/* --- LÓGICA MODO DIRECTO --- */
+let currentLiveSetlist = []; let currentLiveIndex = 0; let wakeLock = null;
+async function requestWakeLock() { try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); console.log('Pantalla mantenida encendida'); } } catch (err) { console.error(`${err.name}, ${err.message}`); } }
+async function releaseWakeLock() { if (wakeLock !== null) { await wakeLock.release(); wakeLock = null; } }
+function startLiveMode(setlistData) {
+    currentLiveSetlist = [];
+    if (Array.isArray(setlistData)) { setlistData.forEach(item => { if (item.isSetHeader && Array.isArray(item.songs)) currentLiveSetlist = currentLiveSetlist.concat(item.songs); else if (item.isSong) currentLiveSetlist.push(item); }); }
+    if (currentLiveSetlist.length === 0) { alert("Setlist vacío."); return; }
+    currentLiveIndex = 0; renderLiveSong(currentLiveIndex);
+    document.getElementById('live-mode-overlay').classList.add('show');
+    requestWakeLock();
+}
+function renderLiveSong(index) {
+    const song = currentLiveSetlist[index]; if (!song) return;
+    document.getElementById('live-counter').textContent = `${index + 1} / ${currentLiveSetlist.length}`;
+    const titleEl = document.getElementById('live-song-title');
+    titleEl.textContent = song.displayName;
+    if (song.displayName.length > 20) titleEl.style.fontSize = "2.5em"; else titleEl.style.fontSize = "3.5em";
+    const cleanKey = window.decodeHtmlEntities(song.key || '-');
+    const cleanTempo = window.decodeHtmlEntities(song.tempo || '-');
+    document.getElementById('live-song-key').textContent = `Key: ${cleanKey}`;
+    document.getElementById('live-song-tempo').textContent = `${cleanTempo} BPM`;
+    const nextSong = currentLiveSetlist[index + 1];
+    const nextEl = document.getElementById('live-next-song');
+    if (nextSong) { nextEl.textContent = `Siguiente: ${nextSong.displayName}`; nextEl.style.color = '#555'; } else { nextEl.textContent = "¡FIN DEL SHOW! 👏"; nextEl.style.color = '#0cf'; }
+}
+document.getElementById('live-close-btn').onclick = () => { document.getElementById('live-mode-overlay').classList.remove('show'); releaseWakeLock(); };
+document.getElementById('live-next-btn').onclick = () => { if (currentLiveIndex < currentLiveSetlist.length - 1) { currentLiveIndex++; renderLiveSong(currentLiveIndex); } };
+document.getElementById('live-prev-btn').onclick = () => { if (currentLiveIndex > 0) { currentLiveIndex--; renderLiveSong(currentLiveIndex); } };
+document.getElementById('live-content-area').onclick = (e) => { const width = window.innerWidth; if (e.clientX > width / 2) { if (currentLiveIndex < currentLiveSetlist.length - 1) { currentLiveIndex++; renderLiveSong(currentLiveIndex); } } else { if (currentLiveIndex > 0) { currentLiveIndex--; renderLiveSong(currentLiveIndex); } } };
 
-// Gestión Masiva Jukebox
-document.addEventListener("DOMContentLoaded", () => {
-    const menuJb = document.getElementById("menu-jukebox-mgmt");
-    if(menuJb) {
-        menuJb.onclick = e => { 
-            e.preventDefault(); 
-            if(window.openConfigScreen) window.openConfigScreen("jukebox-mgmt-screen");
-            renderJukeboxMgmtTable();
-        };
-    }
-    const closeJb = document.getElementById("close-jukebox-mgmt");
-    if(closeJb) closeJb.onclick = () => document.getElementById("jukebox-mgmt-screen").style.display = "none";
+/* ---------- 13. Carga inicial ---------- */
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+      if (typeof firebase !== 'undefined') {
+          firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => console.warn(err));
+          attachSuggestionsListener(); 
+          if(window.attachConcertDetailsListener) window.attachConcertDetailsListener();
+          setTimeout(initSession, 1500);
+      } else {
+          const checkFirebase = setInterval(() => {
+              if (typeof firebase !== 'undefined') {
+                  clearInterval(checkFirebase); firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => console.warn(err));
+                  attachSuggestionsListener(); 
+                  if(window.attachConcertDetailsListener) window.attachConcertDetailsListener();
+                  loadAllData(); setTimeout(initSession, 1500);
+              }
+          }, 100);
+      }
+  } catch(e) { }
+
+  const siteAudioElement = document.getElementById('site-audio'); const siteAudioControlButton = document.getElementById('site-audio-control-button'); const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; let currentSiteSongIndex = -1; let siteAudioFadeInterval = null; const SITE_AUDIO_FADE_DURATION = 500; const SITE_AUDIO_TARGET_VOLUME = 0.8; 
+  function stopSiteAudioFade() { if (siteAudioFadeInterval) { clearInterval(siteAudioFadeInterval); siteAudioFadeInterval = null; } }
+  function fadeInSiteAudio(audio, duration, targetVolume) { stopSiteAudioFade(); if (!audio) return; if (audio.muted) { audio.volume = 0; audio.play().catch(e => {}); return; } audio.volume = 0; if (audio.paused) audio.play().catch(e => {}); let step = targetVolume / (duration / 50); let currentVolume = 0; siteAudioFadeInterval = setInterval(() => { currentVolume += step; if (currentVolume >= targetVolume) { if(audio) audio.volume = targetVolume; stopSiteAudioFade(); } else if (audio) audio.volume = currentVolume; else stopSiteAudioFade(); }, 50); }
+  function fadeOutSiteAudio(audio, duration, callback) { stopSiteAudioFade(); if (!audio) { if (callback) callback(); return; } if (audio.paused || audio.volume < 0.01) { if (!audio.paused) audio.pause(); audio.volume = 0; if (callback) callback(); return; } let currentVolume = audio.volume; let step = currentVolume / (duration / 50); siteAudioFadeInterval = setInterval(() => { currentVolume -= step; if (currentVolume <= 0.01) { if (audio) { audio.volume = 0; audio.pause(); } stopSiteAudioFade(); if (callback) callback(); } else if (audio) audio.volume = currentVolume; else stopSiteAudioFade(); }, 50); }
+  function playNextSiteSong(audioElement) { if (!audioElement || siteAudioSongs.length === 0) return; currentSiteSongIndex = (currentSiteSongIndex + 1) % siteAudioSongs.length; audioElement.src = siteAudioSongs[currentSiteSongIndex]; audioElement.load(); audioElement.addEventListener('canplaythrough', () => { if (audioElement) fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME); }, { once: true }); }
+  if (siteAudioElement && siteAudioControlButton) {
+    const iconMuted = siteAudioControlButton.querySelector('.icon-muted'); const iconUnmuted = siteAudioControlButton.querySelector('.icon-unmuted');
+    const updateSiteAudioMuteButton = () => { if (!siteAudioElement || !iconMuted || !iconUnmuted || !siteAudioControlButton) return; if (siteAudioElement.muted) { iconMuted.style.display = 'inline'; iconUnmuted.style.display = 'none'; siteAudioControlButton.title = "Activar sonido"; } else { iconMuted.style.display = 'none'; iconUnmuted.style.display = 'inline'; siteAudioControlButton.title = "Desactivar sonido"; } };
+    siteAudioElement.muted = true; siteAudioElement.loop = false; updateSiteAudioMuteButton(); siteAudioControlButton.style.display = 'flex'; 
+    currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length); siteAudioElement.src = siteAudioSongs[currentSiteSongIndex]; siteAudioElement.load(); 
+    siteAudioElement.addEventListener('ended', () => { fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => { playNextSiteSong(siteAudioElement); }); });
+    siteAudioControlButton.addEventListener('click', () => { if (!siteAudioElement) return; const wasMuted = siteAudioElement.muted; siteAudioElement.muted = !siteAudioElement.muted; updateSiteAudioMuteButton(); if (!siteAudioElement.muted) { if (siteAudioElement.paused || wasMuted) { if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused) fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); else { siteAudioElement.volume = 0; fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); } } } else stopSiteAudioFade(); });
+  }
+
+  const splashScreen = document.getElementById('splash-screen'); if (splashScreen) { setTimeout(() => { splashScreen.classList.add('hidden'); setTimeout(() => { if (splashScreen.parentNode) splashScreen.style.display = 'none'; }, 500); }, 100); }
+  updateConnectionStatus();
+
+  async function loadAllData() {
+      try {
+          // Robust initialization: Solo intentar cargar si las funciones existen
+          const tasks = [];
+          
+          if(typeof window.loadSetlistConfig === 'function') {
+              tasks.push(window.loadSetlistConfig());
+          } else {
+              console.error("CRÍTICO: setlists.js no se cargó correctamente. loadSetlistConfig no existe.");
+          }
+          
+          if(typeof loadUsers === 'function') tasks.push(loadUsers());
+          if(typeof window.loadRehearsals === 'function') tasks.push(window.loadRehearsals());
+          if(typeof window.loadJukeboxLibrary === 'function') tasks.push(window.loadJukeboxLibrary());
+          if(typeof window.loadPdfLibrary === 'function') tasks.push(window.loadPdfLibrary());
+          if(typeof window.loadMasterDocs === 'function') tasks.push(window.loadMasterDocs());
+          
+          await Promise.all(tasks);
+          
+      } catch (e) { 
+          console.error("Error en carga inicial de datos (Promise.all):", e); 
+      }
+      
+      if(window.loadAnalysisData) window.loadAnalysisData(); else setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
+      
+      // Safety checks for loading specific setlists
+      try { 
+          if(typeof window.cargarPrimerSetlist === 'function') window.globalItems1 = await window.cargarPrimerSetlist(); 
+      } catch (e) { console.error("Error cargarPrimerSetlist:", e); }
+      
+      try { 
+          if(typeof window.cargarSegundoSetlist === 'function') window.globalItems2 = await window.cargarSegundoSetlist(); 
+      } catch (e) { console.error("Error cargarSegundoSetlist:", e); }
+      
+      try { 
+          if(typeof window.cargarStarSetlist === 'function') window.globalItemsStar = await window.cargarStarSetlist(); 
+      } catch (e) { console.error("Error cargarStarSetlist:", e); }
+  }
+  if (typeof firebase !== 'undefined') loadAllData();
 });
-
-function renderJukeboxMgmtTable() {
-    const tbody = document.getElementById('jukebox-mgmt-body');
-    if(!tbody) return;
-    tbody.innerHTML = "";
-    if(!window.jukeboxLibrary) return;
-    const keys = Object.keys(window.jukeboxLibrary).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-    if (keys.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#888;'>No hay canciones con enlace.</td></tr>"; return; }
-    keys.forEach(key => {
-        const url = window.jukeboxLibrary[key];
-        const displayName = key.replace(/_/g, " "); 
-        const row = `<tr><td>${displayName}</td><td style="font-size:0.8em; color:#aaa; max-width: 200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${url}</td><td><button onclick="window.deleteJukeboxLink('${key}')" style="background:#ff3333; color:#fff; padding:5px 10px; font-size:0.8em;">Eliminar</button></td></tr>`;
-        tbody.insertAdjacentHTML('beforeend', row);
-    });
-}
-
-window.deleteJukeboxLink = async function(cleanKey) {
-    if(confirm("¿Eliminar el enlace de esta canción?")) {
-        delete window.jukeboxLibrary[cleanKey];
-        await window.saveJukeboxLibrary();
-        renderJukeboxMgmtTable(); 
-        await Promise.all([window.cargarPrimerSetlist(), window.cargarSegundoSetlist(), window.cargarStarSetlist()]);
-    }
-}
+</script>
+</body>
+</html>
