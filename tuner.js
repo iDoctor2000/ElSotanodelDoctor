@@ -198,7 +198,7 @@ console.log("--- TUNER.JS ANALOG EDITION CARGADO ---");
         // Construcción HTML con Imagen
         popup.innerHTML = `
             <div class="tuner-header">
-                <span style="color:#666; font-size:0.8em; font-weight:bold;">TUNER PRO</span>
+                <span style="color:#666; font-size:0.8em; font-weight:bold;">iDoctor TUNER PRO</span>
                 <div class="tuner-mode-switch">
                     <button class="tuner-mode-btn active" id="btn-mode-auto">AUTO</button>
                     <button class="tuner-mode-btn" id="btn-mode-manual">MANUAL</button>
