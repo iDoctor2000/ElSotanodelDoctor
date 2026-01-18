@@ -1,446 +1,566 @@
 /*
-  TUNER.JS - EL SÓTANO DEL DOCTOR
-  Afinador Cromático "All-in-One".
-  Versión Robusta: Usa MutationObserver para inyectar la interfaz 
-  en cuanto el modal aparece en el DOM.
+    TUNER.JS - PRO VERSION (Self-Contained & Gauge Style)
+    Características:
+    - Inyección automática de estilos y HTML.
+    - Modo Auto (Default) con visualización tipo "Gauge" (arco de colores).
+    - Modo Manual con selector de cuerdas y generador de tonos.
+    - Soporte Guitarra, Bajo (4/5), Ukelele.
 */
 
+console.log("--- TUNER.JS GAUGE EDITION CARGADO ---");
+
 (function() {
-    // --- VARIABLES GLOBALES ---
     let audioContext = null;
     let analyser = null;
-    let mediaStreamSource = null;
-    let isTuning = false;
-    let rafID = null;
-    let buflen = 2048;
-    let buf = new Float32Array(buflen);
-    let filterNode = null; 
-
-    // Referencias DOM
-    let tunerModal = null;
-    let noteElem = null;
-    let freqElem = null;
-    let needleElem = null;
-    let statusText = null;
-    let gaugeElem = null;
-    let canvas = null;
-    let canvasCtx = null;
-    let stringContainer = null;
+    let microphoneStream = null;
+    let tunerInterval = null;
+    let isTunerRunning = false;
+    let activeOscillator = null; 
     
-    // Lógica Afinación
-    let currentTuningKey = "standard";
-    let targetNoteMode = "AUTO"; 
-    let smoothedPitch = 0;
-    let smoothedAngle = 0;
+    // Estado
+    let isManualMode = false; // Por defecto Automático
+    let currentInstrument = 'guitar';
 
-    // Lógica Metrónomo
-    let metroContext = null;
-    let isMetroPlaying = false;
-    let metroBpm = 120;
-    let nextNoteTime = 0.0;
-    let timerID = null;
-
-    // Presets
-    const defaultTunings = {
-        "standard": { name: "Estandar", strings: { "E2": 82.41, "A2": 110.00, "D3": 146.83, "G3": 196.00, "B3": 246.94, "E4": 329.63 } },
-        "drop_d": { name: "Drop D", strings: { "D2": 73.42, "A2": 110.00, "D3": 146.83, "G3": 196.00, "B3": 246.94, "E4": 329.63 } },
-        "half_step": { name: "Half-Step Down", strings: { "Eb2": 77.78, "Ab2": 103.83, "Db3": 138.59, "Gb3": 185.00, "Bb3": 233.08, "eb4": 311.13 } },
-        "open_g": { name: "Open G", strings: { "D2": 73.42, "G2": 98.00, "D3": 146.83, "G3": 196.00, "B3": 246.94, "D4": 293.66 } }
-    };
-    let customTunings = {};
+    // Configuración Audio
+    const buflen = 2048;
+    const buf = new Float32Array(buflen);
+    const MIN_VOLUME_THRESHOLD = 0.01; // Sensibilidad
+    
     const noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
-    // --- 1. INYECCIÓN DE ESTILOS ---
+    // Datos de Instrumentos
+    const instruments = {
+        guitar: {
+            name: "Guitarra",
+            strings: [
+                { note: "E2", freq: 82.41 }, { note: "A2", freq: 110.00 }, { note: "D3", freq: 146.83 },
+                { note: "G3", freq: 196.00 }, { note: "B3", freq: 246.94 }, { note: "E4", freq: 329.63 }
+            ]
+        },
+        bass: {
+            name: "Bajo (4)",
+            strings: [
+                { note: "E1", freq: 41.20 }, { note: "A1", freq: 55.00 },
+                { note: "D2", freq: 73.42 }, { note: "G2", freq: 98.00 }
+            ]
+        },
+        bass5: {
+            name: "Bajo (5)",
+            strings: [
+                { note: "B0", freq: 30.87 }, { note: "E1", freq: 41.20 }, { note: "A1", freq: 55.00 },
+                { note: "D2", freq: 73.42 }, { note: "G2", freq: 98.00 }
+            ]
+        },
+        ukulele: {
+            name: "Ukelele",
+            strings: [
+                { note: "G4", freq: 392.00 }, { note: "C4", freq: 261.63 },
+                { note: "E4", freq: 329.63 }, { note: "A4", freq: 440.00 }
+            ]
+        }
+    };
 
-    function injectTunerStyles() {
-        if(document.getElementById('tuner-injected-styles')) return;
-        const css = `
-            #tuner-visualizer { width: 100%; height: 60px; background: #000; border: 1px solid #333; border-radius: 6px; margin-bottom: 10px; display: block; }
-            .tuner-section { margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; width: 100%; box-sizing: border-box; }
-            .tuner-section h4 { margin: 0 0 10px 0; color: #0cf; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
-            #string-buttons-container { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 10px; }
-            .string-btn { background: #222; color: #aaa; border: 1px solid #444; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; font-size: 0.8em; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
-            .string-btn:hover { border-color: #fff; color: #fff; }
-            .string-btn.active { background: #0cf; color: #000; border-color: #0cf; font-weight: bold; box-shadow: 0 0 10px rgba(0, 204, 255, 0.4); }
-            .tuning-controls { display: flex; gap: 5px; justify-content: center; margin-bottom: 10px; width: 100%; }
-            #tuning-select { background: #111; color: #fff; border: 1px solid #333; padding: 5px; border-radius: 4px; font-size: 0.9em; flex-grow: 1; }
-            .icon-btn { background: #333; border: none; color: #fff; width: 30px; height: 30px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-            .metro-ui { display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; width: 100%; }
-            .metro-header { display: flex; justify-content: space-between; align-items: center; color: #ddd; font-size: 0.9em; }
-            .metro-bpm-val { color: #0cf; font-weight: bold; font-family: monospace; font-size: 1.2em; }
-            .metro-controls { display: flex; align-items: center; gap: 10px; }
-            .metro-slider { flex-grow: 1; accent-color: #0cf; cursor: pointer; }
-            .metro-play-btn { background: #0cf; color: #000; border: none; border-radius: 4px; padding: 10px; font-weight: bold; cursor: pointer; }
-            #custom-tuning-editor { 
-                display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-                background: rgba(10,10,10,0.98); z-index: 10; padding: 20px; 
-                flex-direction: column; align-items: center; justify-content: center; 
-            }
-            #custom-tuning-editor.show { display: flex; }
-            .custom-note-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin: 15px 0; }
-            .custom-note-grid input { width: 100%; padding: 5px; background: #222; color: #fff; border: 1px solid #444; text-align: center; }
-        `;
-        const style = document.createElement('style');
-        style.id = 'tuner-injected-styles';
-        style.innerHTML = css;
-        document.head.appendChild(style);
+    // --- INYECCIÓN DE ASSETS (CSS y HTML) ---
+    function injectTunerAssets() {
+        if (!document.getElementById('tuner-injected-styles')) {
+            const css = `
+                #tuner-popup {
+                    position: fixed; top: 70px; right: 20px; width: 340px;
+                    background: #1a1a1a; 
+                    border: 1px solid #333; border-radius: 16px;
+                    padding: 20px; z-index: 11000;
+                    box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+                    display: none; flex-direction: column; align-items: center;
+                    font-family: 'Segoe UI', sans-serif;
+                    user-select: none;
+                }
+                #tuner-popup.visible { display: flex !important; }
+
+                /* HEADER: SWITCH MANUAL/AUTO */
+                .tuner-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+                .tuner-mode-switch {
+                    background: #333; border-radius: 20px; padding: 3px; display: flex; cursor: pointer;
+                }
+                .tuner-mode-btn {
+                    padding: 4px 12px; border-radius: 16px; border: none; background: transparent;
+                    color: #888; font-size: 0.75em; font-weight: bold; transition: all 0.2s;
+                }
+                .tuner-mode-btn.active { background: #0cf; color: #000; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+                /* GAUGE AREA (ARCO) */
+                .tuner-gauge-wrap {
+                    position: relative; width: 280px; height: 140px; 
+                    overflow: hidden; margin-bottom: 10px;
+                }
+                .tuner-ticks {
+                    position: absolute; bottom: 0; left: 50%; width: 240px; height: 240px;
+                    transform: translateX(-50%); border-radius: 50%;
+                }
+                .tuner-tick {
+                    position: absolute; top: 0; left: 50%; width: 6px; height: 25px;
+                    background: #333; transform-origin: center 120px;
+                    border-radius: 3px; transition: background 0.1s;
+                }
+                /* Colores de los ticks (definidos por JS o CSS nth-child) */
+                
+                /* BIG NOTE DISPLAY */
+                .tuner-note-display {
+                    position: absolute; bottom: 0; left: 0; width: 100%; text-align: center;
+                }
+                .tuner-main-note {
+                    font-size: 5em; font-weight: bold; color: #fff; line-height: 1;
+                    text-shadow: 0 5px 20px rgba(0,0,0,0.5);
+                }
+                .tuner-octave { font-size: 0.4em; color: #888; margin-left: 2px; }
+                .tuner-status-text {
+                    font-size: 0.9em; color: #00e676; margin-top: -5px; height: 20px;
+                    text-transform: uppercase; letter-spacing: 1px; font-weight: bold;
+                    opacity: 0; transition: opacity 0.2s;
+                }
+                .tuner-status-text.visible { opacity: 1; }
+
+                /* MICROPHONE VISUALIZER */
+                .tuner-mic-viz {
+                    display: flex; gap: 4px; align-items: flex-end; height: 20px; margin-top: 10px;
+                }
+                .tuner-mic-bar {
+                    width: 4px; background: #555; border-radius: 2px; height: 4px;
+                    transition: height 0.1s, background-color 0.1s;
+                }
+
+                /* MANUAL CONTROLS (HIDDEN BY DEFAULT) */
+                .tuner-manual-panel {
+                    width: 100%; display: none; flex-direction: column; gap: 10px; margin-top: 10px;
+                    border-top: 1px solid #333; padding-top: 15px;
+                    animation: slideDown 0.3s ease;
+                }
+                .tuner-manual-panel.visible { display: flex; }
+                
+                .tuner-select {
+                    width: 100%; background: #222; color: #eee; border: 1px solid #444; 
+                    padding: 8px; border-radius: 6px; outline: none;
+                }
+                .tuner-strings-grid { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+                .tuner-string-btn {
+                    width: 40px; height: 40px; border-radius: 50%;
+                    background: #222; border: 2px solid #444; color: #aaa;
+                    font-weight: bold; font-size: 1em; cursor: pointer;
+                    display: flex; align-items: center; justify-content: center;
+                    transition: all 0.2s;
+                }
+                .tuner-string-btn:hover { border-color: #fff; color: #fff; }
+                .tuner-string-btn.active {
+                    background: #0cf; border-color: #0cf; color: #000;
+                    box-shadow: 0 0 15px rgba(0, 204, 255, 0.4); transform: scale(1.1);
+                }
+
+                @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+            `;
+            const style = document.createElement('style');
+            style.id = 'tuner-injected-styles';
+            style.innerHTML = css;
+            document.head.appendChild(style);
+        }
+
+        if (!document.getElementById('tuner-popup')) {
+            const popup = document.createElement('div');
+            popup.id = 'tuner-popup';
+            document.body.appendChild(popup);
+        }
     }
-
-    // --- 2. INYECCIÓN HTML ---
 
     function injectTunerHTML() {
-        tunerModal = document.getElementById('tuner-modal');
-        if(!tunerModal) return false;
+        const popup = document.getElementById('tuner-popup');
+        if(!popup) return;
 
-        const contentDiv = tunerModal.querySelector('.modal-content');
-        if(!contentDiv) return false;
-
-        if(!document.getElementById('tuner-visualizer')) {
-            const cvs = document.createElement('canvas');
-            cvs.id = 'tuner-visualizer';
-            cvs.width = 300; 
-            cvs.height = 60;
-            const displayDiv = contentDiv.querySelector('.tuner-display');
-            displayDiv.insertBefore(cvs, displayDiv.firstChild);
-        }
-
-        if(!document.getElementById('tuning-manager-section')) {
-            const div = document.createElement('div');
-            div.id = 'tuning-manager-section';
-            div.className = 'tuner-section';
-            div.innerHTML = `
-                <h4>Afinación</h4>
-                <div class="tuning-controls">
-                    <select id="tuning-select"></select>
-                    <button id="tuning-add-btn" class="icon-btn" title="Crear">+</button>
-                    <button id="tuning-delete-btn" class="icon-btn" title="Borrar" style="background:#522; display:none;">×</button>
+        // Construcción HTML
+        popup.innerHTML = `
+            <div class="tuner-header">
+                <span style="color:#666; font-size:0.8em;">iDoctor TUNER PRO</span>
+                <div class="tuner-mode-switch">
+                    <button class="tuner-mode-btn active" id="btn-mode-auto">AUTO</button>
+                    <button class="tuner-mode-btn" id="btn-mode-manual">MANUAL</button>
                 </div>
-                <div id="string-buttons-container"></div>
-            `;
-            const closeBtn = document.getElementById('close-tuner-btn');
-            contentDiv.insertBefore(div, closeBtn);
-        }
+            </div>
 
-        if(!document.getElementById('metronome-section')) {
-            const div = document.createElement('div');
-            div.id = 'metronome-section';
-            div.className = 'tuner-section';
-            div.innerHTML = `
-                <h4>Metrónomo</h4>
-                <div class="metro-ui">
-                    <div class="metro-header">
-                        <span id="metro-bpm-display" class="metro-bpm-val">120 BPM</span>
-                    </div>
-                    <div class="metro-controls">
-                        <button id="metro-down" class="icon-btn">-</button>
-                        <input type="range" id="metro-slider" class="metro-slider" min="40" max="240" value="120">
-                        <button id="metro-up" class="icon-btn">+</button>
-                    </div>
-                    <button id="metro-play" class="metro-play-btn">PLAY</button>
+            <!-- GAUGE VISUALIZATION -->
+            <div class="tuner-gauge-wrap">
+                <div class="tuner-ticks" id="tuner-ticks-container">
+                    <!-- Ticks generados por JS -->
                 </div>
-            `;
-            const closeBtn = document.getElementById('close-tuner-btn');
-            contentDiv.insertBefore(div, closeBtn);
-        }
-
-        if(!document.getElementById('custom-tuning-editor')) {
-            const overlay = document.createElement('div');
-            overlay.id = 'custom-tuning-editor';
-            overlay.innerHTML = `
-                <h3>Nueva Afinación</h3>
-                <input type="text" id="custom-tuning-name" placeholder="Nombre (ej: Drop D)" style="width:100%; padding:10px; margin-bottom:10px; background:#222; color:#fff; border:1px solid #444;">
-                <div class="custom-note-grid">
-                    ${Array.from({length:6}, (_,i)=> `<input type="text" class="custom-note-input" placeholder="Nota ${i+1}">`).join('')}
+                <div class="tuner-note-display">
+                    <div class="tuner-main-note" id="tuner-note-char">--<span class="tuner-octave"></span></div>
+                    <div class="tuner-status-text" id="tuner-status">IN TUNE!</div>
                 </div>
-                <div style="display:flex; gap:10px; margin-top:15px;">
-                    <button id="save-custom-tuning" style="padding:10px 20px; background:#0cf; border:none; border-radius:5px; font-weight:bold;">Guardar</button>
-                    <button id="cancel-custom-tuning" style="padding:10px 20px; background:#444; border:none; border-radius:5px; color:#fff;">Cancelar</button>
-                </div>
-            `;
-            contentDiv.appendChild(overlay);
+            </div>
+
+            <!-- MICROPHONE VISUALIZER -->
+            <div class="tuner-mic-viz" id="tuner-mic-viz">
+                <span class="tuner-mic-bar"></span><span class="tuner-mic-bar"></span>
+                <span class="tuner-mic-bar"></span><span class="tuner-mic-bar"></span>
+                <span class="tuner-mic-bar"></span>
+                <span style="font-size:12px; color:#666; margin-left:5px;">🎤</span>
+            </div>
+
+            <!-- MANUAL CONTROLS -->
+            <div class="tuner-manual-panel" id="tuner-manual-panel">
+                <select id="tuner-instrument-select" class="tuner-select">
+                    <option value="guitar">🎸 Guitarra</option>
+                    <option value="bass">🎸 Bajo (4)</option>
+                    <option value="bass5">🎸 Bajo (5)</option>
+                    <option value="ukulele">🏝️ Ukelele</option>
+                </select>
+                <div class="tuner-strings-grid" id="tuner-strings-area"></div>
+            </div>
+        `;
+
+        // Generar Ticks (Segmentos del arco)
+        const ticksContainer = document.getElementById('tuner-ticks-container');
+        const totalTicks = 21; // Impar para tener centro exacto
+        const startAngle = -90; 
+        const endAngle = 90;
+        const step = (endAngle - startAngle) / (totalTicks - 1);
+
+        for (let i = 0; i < totalTicks; i++) {
+            const tick = document.createElement('div');
+            tick.className = 'tuner-tick';
+            tick.dataset.index = i;
+            // Rotación
+            const rotation = startAngle + (i * step);
+            tick.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+            
+            // Colores por defecto (apagados)
+            tick.style.background = '#333';
+            
+            ticksContainer.appendChild(tick);
         }
 
-        bindDynamicEvents();
-        return true;
-    }
+        // Event Listeners
+        document.getElementById('btn-mode-auto').onclick = () => setMode(false);
+        document.getElementById('btn-mode-manual').onclick = () => setMode(true);
 
-    function initTunerSystem() {
-        injectTunerStyles();
-        const injected = injectTunerHTML();
-
-        if(!injected) {
-            const observer = new MutationObserver((mutations, obs) => {
-                if(document.getElementById('tuner-modal')) {
-                    if(injectTunerHTML()) obs.disconnect();
-                }
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
-        }
-
-        const openBtn = document.getElementById('header-tuner-btn');
-        if(openBtn) openBtn.onclick = startTuning;
-    }
-
-    function bindDynamicEvents() {
-        noteElem = document.getElementById('tuner-note');
-        freqElem = document.getElementById('tuner-freq');
-        needleElem = document.getElementById('tuner-needle');
-        statusText = document.getElementById('tuner-status-text');
-        gaugeElem = document.querySelector('.tuner-gauge');
-        canvas = document.getElementById('tuner-visualizer');
-        if(canvas) canvasCtx = canvas.getContext('2d');
-        stringContainer = document.getElementById('string-buttons-container');
-
-        const closeBtn = document.getElementById('close-tuner-btn');
-        if(closeBtn) closeBtn.onclick = stopAll;
-
-        const select = document.getElementById('tuning-select');
-        const addBtn = document.getElementById('tuning-add-btn');
-        const saveCustom = document.getElementById('save-custom-tuning');
-        const cancelCustom = document.getElementById('cancel-custom-tuning');
-        const delBtn = document.getElementById('tuning-delete-btn');
-
-        if(select) select.onchange = (e) => {
-            currentTuningKey = e.target.value;
-            targetNoteMode = "AUTO";
+        const select = document.getElementById('tuner-instrument-select');
+        select.value = currentInstrument;
+        select.addEventListener('change', (e) => {
+            currentInstrument = e.target.value;
             renderStringButtons();
-            updateDeleteButton();
-        };
-        if(addBtn) addBtn.onclick = () => document.getElementById('custom-tuning-editor').classList.add('show');
-        if(cancelCustom) cancelCustom.onclick = () => document.getElementById('custom-tuning-editor').classList.remove('show');
-        if(saveCustom) saveCustom.onclick = saveCustomTuning;
-        if(delBtn) delBtn.onclick = deleteCurrentTuning;
+        });
 
-        const mPlay = document.getElementById('metro-play');
-        const mUp = document.getElementById('metro-up');
-        const mDown = document.getElementById('metro-down');
-        const mSlide = document.getElementById('metro-slider');
-        
-        if(mPlay) mPlay.onclick = toggleMetronome;
-        if(mUp) mUp.onclick = () => changeBpm(5);
-        if(mDown) mDown.onclick = () => changeBpm(-5);
-        if(mSlide) mSlide.oninput = (e) => {
-            metroBpm = parseInt(e.target.value, 10);
-            updateMetroDisplay();
-        };
-
-        loadCustomTunings();
-        populateTuningSelect();
         renderStringButtons();
     }
 
-    function stopAll() {
-        stopTuner();
-        if(isMetroPlaying) toggleMetronome();
+    function renderStringButtons() {
+        const container = document.getElementById('tuner-strings-area');
+        if(!container) return;
+        container.innerHTML = "";
+
+        const data = instruments[currentInstrument];
+        data.strings.forEach(s => {
+            const btn = document.createElement('button');
+            btn.className = 'tuner-string-btn';
+            btn.textContent = s.note.replace(/[0-9]/g, ''); 
+            btn.onclick = () => playReferenceTone(s.freq, btn);
+            container.appendChild(btn);
+        });
     }
 
-    // --- 3. LÓGICA DE AFINACIÓN ---
+    function setMode(manual) {
+        isManualMode = manual;
+        const btnAuto = document.getElementById('btn-mode-auto');
+        const btnManual = document.getElementById('btn-mode-manual');
+        const manualPanel = document.getElementById('tuner-manual-panel');
+        const noteChar = document.getElementById('tuner-note-char');
+        const status = document.getElementById('tuner-status');
+        const gauge = document.getElementById('tuner-ticks-container');
 
-    async function startTuning() {
-        if(isTuning) return;
-        tunerModal = document.getElementById('tuner-modal');
-        if(tunerModal) tunerModal.classList.add('show');
+        if(manual) {
+            btnAuto.classList.remove('active');
+            btnManual.classList.add('active');
+            manualPanel.classList.add('visible');
+            noteChar.innerHTML = '<span style="font-size:0.5em; color:#888;">MANUAL</span>';
+            status.style.opacity = 0;
+            // Apagar gauge en manual
+            Array.from(gauge.children).forEach(t => t.style.background = '#222');
+        } else {
+            btnAuto.classList.add('active');
+            btnManual.classList.remove('active');
+            manualPanel.classList.remove('visible');
+            noteChar.innerHTML = '--';
+            // Parar tono si suena
+            if(activeOscillator) {
+                activeOscillator.stop();
+                activeOscillator = null;
+                document.querySelectorAll('.tuner-string-btn').forEach(b => b.classList.remove('active'));
+            }
+        }
+    }
+
+    function playReferenceTone(freq, btnElement) {
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
+        if (activeOscillator) {
+            activeOscillator.stop();
+            activeOscillator = null;
+        }
+
+        const allBtns = document.querySelectorAll('.tuner-string-btn');
+        allBtns.forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        osc.type = 'triangle'; // Onda un poco más rica
+        osc.frequency.value = freq;
+        
+        gain.gain.setValueAtTime(0, audioContext.currentTime);
+        gain.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 3.0);
+
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+
+        osc.start();
+        osc.stop(audioContext.currentTime + 3.0);
+        
+        activeOscillator = osc;
+        setTimeout(() => { if(btnElement) btnElement.classList.remove('active'); }, 3000);
+    }
+
+    function initTuner() {
+        injectTunerAssets();
+        const toggleBtn = document.getElementById('tuner-toggle-btn');
+        if (toggleBtn) {
+            toggleBtn.removeEventListener('click', handleToggleClick); 
+            toggleBtn.addEventListener('click', handleToggleClick);
+            injectTunerHTML(); 
+        } else {
+            setTimeout(initTuner, 1000);
+        }
+    }
+
+    function handleToggleClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isTunerRunning) stopTuner(); else startTuner();
+    }
+
+    async function startTuner() {
+        const popup = document.getElementById('tuner-popup');
+        const toggleBtn = document.getElementById('tuner-toggle-btn');
+
+        if (!popup) { injectTunerAssets(); return; }
+
+        isTunerRunning = true;
+        popup.classList.add('visible');
+        
+        if(toggleBtn) {
+            toggleBtn.style.backgroundColor = '#0cf';
+            toggleBtn.style.color = '#000';
+            toggleBtn.style.boxShadow = '0 0 10px #0cf';
+        }
+
+        // Default to Auto
+        setMode(false); 
+
         try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioContext = new AudioContext();
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error("Micrófono no soportado.");
+            }
+
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
             if (audioContext.state === 'suspended') await audioContext.resume();
 
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: {
-                echoCancellation: false, noiseSuppression: false, autoGainControl: false 
-            }});
-
-            mediaStreamSource = audioContext.createMediaStreamSource(stream);
+            microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false } });
+            
+            const source = audioContext.createMediaStreamSource(microphoneStream);
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 2048;
+            source.connect(analyser);
 
-            filterNode = audioContext.createBiquadFilter();
-            filterNode.type = 'lowpass';
-            filterNode.frequency.value = 1000;
-
-            mediaStreamSource.connect(filterNode);
-            filterNode.connect(analyser);
-            
-            isTuning = true;
-            if(statusText) statusText.textContent = "Toca una cuerda...";
             updatePitch();
 
         } catch (err) {
-            console.error("Error micrófono:", err);
-            alert("Acceso al micrófono denegado.");
-            stopTuner();
+            console.error("Error Tuner:", err);
+            document.getElementById('tuner-note-char').textContent = "ERR";
+            setTimeout(stopTuner, 3000); 
         }
     }
 
     function stopTuner() {
-        isTuning = false;
-        if (rafID) window.cancelAnimationFrame(rafID);
-        if (mediaStreamSource) mediaStreamSource.mediaStream.getTracks().forEach(track => track.stop());
-        if (audioContext) audioContext.close();
-        if(tunerModal) tunerModal.classList.remove('show');
+        isTunerRunning = false;
+        const popup = document.getElementById('tuner-popup');
+        const toggleBtn = document.getElementById('tuner-toggle-btn');
+        
+        if(popup) popup.classList.remove('visible');
+        if(toggleBtn) {
+            toggleBtn.style.backgroundColor = '';
+            toggleBtn.style.color = '';
+            toggleBtn.style.boxShadow = '';
+        }
+
+        if (tunerInterval) {
+            cancelAnimationFrame(tunerInterval);
+            tunerInterval = null;
+        }
+        if (microphoneStream) {
+            microphoneStream.getTracks().forEach(track => track.stop());
+            microphoneStream = null;
+        }
+        if (activeOscillator) {
+            activeOscillator.stop();
+            activeOscillator = null;
+        }
     }
 
     function updatePitch() {
-        if(!isTuning) return;
-        
-        const bufferLength = analyser.fftSize;
-        const dataArray = new Uint8Array(bufferLength);
-        analyser.getByteTimeDomainData(dataArray);
-
-        if(canvasCtx) {
-            canvasCtx.fillStyle = '#000';
-            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-            canvasCtx.lineWidth = 2; canvasCtx.strokeStyle = '#0cf';
-            canvasCtx.beginPath();
-            let sliceWidth = canvas.width / bufferLength;
-            let x = 0;
-            for(let i = 0; i < bufferLength; i++) {
-                let v = dataArray[i] / 128.0;
-                let y = v * canvas.height / 2;
-                if(i===0) canvasCtx.moveTo(x,y); else canvasCtx.lineTo(x,y);
-                x += sliceWidth;
-            }
-            canvasCtx.stroke();
-        }
+        if (!isTunerRunning || !analyser) return;
 
         analyser.getFloatTimeDomainData(buf);
-        const ac = autoCorrelate(buf, audioContext.sampleRate);
+        
+        // Volumen para visualizador
+        let sum = 0;
+        for(let i=0; i<buf.length; i++) sum += buf[i]*buf[i];
+        let rms = Math.sqrt(sum / buf.length);
+        updateMicVisualizer(rms);
 
-        if (ac !== -1) {
-            smoothedPitch += (ac - smoothedPitch) * 0.15;
-            const strings = getCurrentStrings();
-            let noteName = "", detune = 0, note = 0;
-
-            if (targetNoteMode !== "AUTO") {
-                const targetFreq = strings[targetNoteMode];
-                detune = 1200 * Math.log2(smoothedPitch / targetFreq);
-                noteName = targetNoteMode;
+        if (!isManualMode) {
+            const ac = autoCorrelate(buf, audioContext.sampleRate);
+            if (ac !== -1) {
+                const pitch = ac;
+                const note = noteFromPitch(pitch);
+                const detune = centsOffFromPitch(pitch, note);
+                updateUI(note, detune);
             } else {
-                note = Math.round(12 * (Math.log(smoothedPitch / 440) / Math.log(2))) + 69;
-                noteName = noteStrings[note % 12];
-                detune = Math.floor(1200 * Math.log(smoothedPitch / (440 * Math.pow(2, (note - 69) / 12))) / Math.log(2));
+                // Decay si no hay sonido
+                dimGauge();
             }
-
-            if(noteElem) noteElem.textContent = noteName.replace(/[0-9]/g, ''); 
-            if(freqElem) freqElem.textContent = Math.round(smoothedPitch) + " Hz";
-
-            smoothedAngle += (detune * 0.9 - smoothedAngle) * 0.1;
-            if(needleElem) needleElem.style.transform = `translateX(-50%) rotate(${Math.max(-50, Math.min(50, smoothedAngle))}deg)`;
-
-            if(noteElem) noteElem.style.color = Math.abs(detune) < 5 ? "#0f0" : "#f00";
         }
-        rafID = window.requestAnimationFrame(updatePitch);
+
+        tunerInterval = requestAnimationFrame(updatePitch);
+    }
+
+    function updateMicVisualizer(volume) {
+        const bars = document.querySelectorAll('.tuner-mic-bar');
+        const sensitivity = 5; 
+        bars.forEach((bar, idx) => {
+            // Animación simple escalonada
+            let h = Math.min(100, volume * 300 * (idx+1));
+            bar.style.height = Math.max(4, h/sensitivity) + 'px';
+            bar.style.background = h > 10 ? '#0cf' : '#555';
+        });
     }
 
     function autoCorrelate(buf, sampleRate) {
-        let size = buf.length, rms = 0;
+        let size = buf.length;
+        let rms = 0;
         for (let i = 0; i < size; i++) rms += buf[i] * buf[i];
-        if (Math.sqrt(rms / size) < 0.01) return -1;
+        rms = Math.sqrt(rms / size);
+
+        if (rms < MIN_VOLUME_THRESHOLD) return -1;
+
+        let r1 = 0, r2 = size - 1, thres = 0.2;
+        for (let i = 0; i < size / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+        for (let i = 1; i < size / 2; i++) if (Math.abs(buf[size - i]) < thres) { r2 = size - i; break; }
+
+        buf = buf.slice(r1, r2);
+        size = buf.length;
+
         const c = new Array(size).fill(0);
-        for (let i = 0; i < size; i++) for (let j = 0; j < size - i; j++) c[i] = c[i] + buf[j] * buf[j + i];
-        let d = 0; while (c[d] > c[d + 1]) d++;
+        for (let i = 0; i < size; i++) 
+            for (let j = 0; j < size - i; j++) c[i] = c[i] + buf[j] * buf[j + i];
+
+        let d = 0;
+        while (c[d] > c[d + 1]) d++;
         let maxval = -1, maxpos = -1;
-        for (let i = d; i < size; i++) if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
-        return sampleRate / maxpos;
+        for (let i = d; i < size; i++) {
+            if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
+        }
+        let T0 = maxpos;
+
+        const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+        const a = (x1 + x3 - 2 * x2) / 2;
+        const b = (x3 - x1) / 2;
+        if (a) T0 = T0 - b / (2 * a);
+
+        return sampleRate / T0;
     }
 
-    // --- 4. GESTIÓN DE PRESETS ---
-    function loadCustomTunings() {
-        const s = localStorage.getItem('esdd_custom_tunings');
-        if(s) customTunings = JSON.parse(s);
+    function noteFromPitch(frequency) {
+        const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
+        return Math.round(noteNum) + 69;
     }
-    function populateTuningSelect() {
-        const select = document.getElementById('tuning-select');
-        if(!select) return; select.innerHTML = '';
-        const grp = document.createElement('optgroup'); grp.label = "Predeterminadas";
-        Object.keys(defaultTunings).forEach(k => {
-            const o = document.createElement('option'); o.value = k; o.textContent = defaultTunings[k].name;
-            grp.appendChild(o);
-        });
-        select.appendChild(grp);
-        if(Object.keys(customTunings).length > 0) {
-            const grpC = document.createElement('optgroup'); grpC.label = "Mis Afinaciones";
-            Object.keys(customTunings).forEach(k => {
-                const o = document.createElement('option'); o.value = k; o.textContent = customTunings[k].name;
-                grpC.appendChild(o);
-            });
-            select.appendChild(grpC);
-        }
-        select.value = currentTuningKey;
-    }
-    function getCurrentStrings() { return (defaultTunings[currentTuningKey] || customTunings[currentTuningKey] || defaultTunings["standard"]).strings; }
-    function renderStringButtons() {
-        if(!stringContainer) return; stringContainer.innerHTML = '';
-        const strings = getCurrentStrings();
-        const auto = document.createElement('button');
-        auto.className = `string-btn ${targetNoteMode === 'AUTO' ? 'active' : ''}`;
-        auto.textContent = 'A'; auto.onclick = () => { targetNoteMode = "AUTO"; renderStringButtons(); };
-        stringContainer.appendChild(auto);
-        Object.keys(strings).forEach(k => {
-            const btn = document.createElement('button');
-            btn.className = `string-btn ${targetNoteMode === k ? 'active' : ''}`;
-            btn.textContent = k.replace(/[0-9]/, ''); 
-            btn.onclick = () => { targetNoteMode = k; renderStringButtons(); };
-            stringContainer.appendChild(btn);
-        });
-    }
-    function saveCustomTuning() {
-        const name = document.getElementById('custom-tuning-name').value.trim();
-        const inputs = document.querySelectorAll('.custom-note-input');
-        if(!name) return alert("Nombre obligatorio");
-        let strings = {};
-        inputs.forEach((inp, i) => {
-            if(inp.value) strings[inp.value] = 440 * Math.pow(2, (i-9)/12); // Simplificación freq para ejemplo
-        });
-        const id = "c_" + Date.now();
-        customTunings[id] = { name, strings };
-        localStorage.setItem('esdd_custom_tunings', JSON.stringify(customTunings));
-        populateTuningSelect();
-        document.getElementById('custom-tuning-editor').classList.remove('show');
-    }
-    function deleteCurrentTuning() {
-        if(customTunings[currentTuningKey] && confirm("¿Borrar?")) {
-            delete customTunings[currentTuningKey];
-            localStorage.setItem('esdd_custom_tunings', JSON.stringify(customTunings));
-            currentTuningKey = "standard"; populateTuningSelect(); renderStringButtons(); updateDeleteButton();
-        }
-    }
-    function updateDeleteButton() {
-        const btn = document.getElementById('tuning-delete-btn');
-        if(btn) btn.style.display = customTunings[currentTuningKey] ? 'flex' : 'none';
-    }
+    function frequencyFromNoteNumber(note) { return 440 * Math.pow(2, (note - 69) / 12); }
+    function centsOffFromPitch(frequency, note) { return Math.floor(1200 * Math.log(frequency / frequencyFromNoteNumber(note)) / Math.log(2)); }
 
-    // --- 5. METRÓNOMO ---
-    function toggleMetronome() {
-        isMetroPlaying = !isMetroPlaying;
-        const btn = document.getElementById('metro-play');
-        if(isMetroPlaying) {
-            btn.textContent = "STOP"; btn.style.background = "#f33";
-            if(!metroContext) metroContext = new AudioContext();
-            nextNoteTime = metroContext.currentTime; scheduler();
+    // --- LÓGICA DE VISUALIZACIÓN GAUGE ---
+    function updateUI(noteNum, cents) {
+        const noteChar = document.getElementById('tuner-note-char');
+        const status = document.getElementById('tuner-status');
+        const ticks = document.querySelectorAll('.tuner-tick');
+        
+        const noteName = noteStrings[noteNum % 12];
+        const octave = Math.floor(noteNum / 12) - 1;
+
+        noteChar.innerHTML = `${noteName}<span class="tuner-octave">${octave}</span>`;
+
+        // 21 Ticks. Centro es index 10.
+        // Rango de cents: -50 a +50.
+        // Mapa: -50 -> Index 0, 0 -> Index 10, +50 -> Index 20
+        let tickIndex = Math.round(10 + (cents / 5)); // Cada tick son 5 cents
+        tickIndex = Math.max(0, Math.min(20, tickIndex));
+
+        // Actualizar colores de los ticks
+        ticks.forEach((tick, i) => {
+            // Distancia al tick activo
+            const dist = Math.abs(i - tickIndex);
+            
+            if (dist === 0) {
+                // Tick Activo
+                if (Math.abs(cents) < 5) tick.style.background = '#00e676'; // Verde perfecto
+                else if (Math.abs(cents) < 15) tick.style.background = '#ffea00'; // Amarillo
+                else tick.style.background = '#ff3d00'; // Rojo
+                tick.style.boxShadow = `0 0 10px ${tick.style.background}`;
+                tick.style.height = '35px'; // Crece un poco
+            } else if (dist === 1) {
+                // Ticks adyacentes (estela)
+                tick.style.background = '#555';
+                tick.style.boxShadow = 'none';
+                tick.style.height = '25px';
+            } else {
+                // Ticks inactivos
+                tick.style.background = '#222';
+                tick.style.boxShadow = 'none';
+                tick.style.height = '25px';
+            }
+        });
+
+        // Status Text
+        if (Math.abs(cents) < 5) {
+            status.textContent = "IN TUNE!";
+            status.style.color = "#00e676";
+            status.classList.add('visible');
+            noteChar.style.color = "#00e676";
         } else {
-            btn.textContent = "PLAY"; btn.style.background = "#0cf";
-            window.clearTimeout(timerID);
+            status.classList.remove('visible');
+            noteChar.style.color = "#fff";
         }
-    }
-    function scheduler() {
-        while (nextNoteTime < metroContext.currentTime + 0.1) {
-            const osc = metroContext.createOscillator();
-            const gain = metroContext.createGain();
-            osc.connect(gain); gain.connect(metroContext.destination);
-            osc.frequency.value = 1000; gain.gain.setValueAtTime(1, nextNoteTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, nextNoteTime + 0.05);
-            osc.start(nextNoteTime); osc.stop(nextNoteTime + 0.05);
-            nextNoteTime += (60.0 / metroBpm);
-        }
-        timerID = window.setTimeout(scheduler, 25);
-    }
-    function changeBpm(delta) { metroBpm = Math.min(240, Math.max(40, metroBpm + delta)); updateMetroDisplay(); }
-    function updateMetroDisplay() {
-        document.getElementById('metro-bpm-display').textContent = metroBpm + " BPM";
-        document.getElementById('metro-slider').value = metroBpm;
     }
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initTunerSystem);
-    else initTunerSystem();
+    function dimGauge() {
+        const ticks = document.querySelectorAll('.tuner-tick');
+        ticks.forEach(t => {
+            t.style.background = '#222';
+            t.style.height = '25px';
+            t.style.boxShadow = 'none';
+        });
+        document.getElementById('tuner-status').classList.remove('visible');
+        // Mantener la última nota visible pero atenuada
+    }
+
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initTuner); } 
+    else { initTuner(); }
+    setTimeout(initTuner, 1000);
+    window.closeTuner = stopTuner;
+
 })();
