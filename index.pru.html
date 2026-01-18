@@ -39,26 +39,26 @@
   <style>
     *,*::before,*::after{box-sizing:border-box}
     
-    /* FIX SCROLL BRAVE/CHROME: Evitar overflow en html y moverlo a body si es necesario, 
-       o simplemente asegurar que overflow-x hidden no bloquee el scroll vertical */
+    /* FIX SCROLL BRAVE/CHROME: */
     html {
-        height: 100%;
-        overflow-y: auto; /* Asegura scroll vertical */
+        /* Eliminamos height: 100% fijo para permitir scroll natural */
+        overflow-y: scroll; /* Fuerza barra vertical siempre para evitar saltos */
+        overflow-x: hidden;
     }
     
     body {
         margin:0; padding:0; 
         width: 100%;
         min-height: 100vh;
-        /* Permitir scroll vertical en cuerpo, bloquear horizontal */
         overflow-x:hidden; 
         font-family:Arial,Helvetica,sans-serif; 
         background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
         background-attachment: fixed;
         color:#fff;
+        position: relative;
         
         /* PROPIEDADES PARA SENSACIÓN APP NATIVA */
-        touch-action: manipulation; /* Permite scroll y zoom pinch, bloquea doble tap zoom */
+        touch-action: manipulation; 
         -webkit-tap-highlight-color: transparent;
     }
     
