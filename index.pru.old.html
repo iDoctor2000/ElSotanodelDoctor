@@ -423,54 +423,102 @@
     #jukebox-iframe-container { width: 100%; height: 80px; display: none; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
     #jukebox-iframe-container iframe { width: 100%; height: 100%; border: none; background: transparent; }
 
-    /* --- METRÓNOMO POPUP --- */
+    /* --- METRÓNOMO POPUP (REDISEÑADO) --- */
     #metronome-popup {
-        position: fixed; top: 70px; right: 20px; width: 260px;
-        background: rgba(20, 20, 20, 0.95); 
-        border: 1px solid #0cf; border-radius: 12px;
-        padding: 15px; z-index: 2000;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-        display: none; flex-direction: column; align-items: center; gap: 10px;
-        backdrop-filter: blur(10px);
+        position: fixed; top: 70px; right: 20px; width: 280px;
+        background: rgba(18, 18, 18, 0.85); /* Fondo glass oscuro */
+        border: 2px solid #333; 
+        border-radius: 20px;
+        padding: 20px; z-index: 2000;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05);
+        display: none; flex-direction: column; align-items: center; gap: 15px;
+        backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
         transform-origin: top right;
-        transition: transform 0.2s ease, opacity 0.2s ease;
+        transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease, border-color 0.1s ease;
     }
     #metronome-popup.visible { display: flex; }
     
-    .metronome-bpm-display { font-size: 2.5em; font-weight: bold; color: #fff; font-family: monospace; }
-    .metronome-bpm-label { font-size: 0.8em; color: #aaa; margin-top: -5px; }
-    .metronome-slider { width: 100%; margin: 10px 0; -webkit-appearance: none; background: #333; height: 5px; border-radius: 3px; }
-    .metronome-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; background: #0cf; border-radius: 50%; cursor: pointer; }
+    /* Efecto de parpadeo en el borde (Visual Beat) */
+    #metronome-popup.beat-flash {
+        border-color: #0cf;
+        box-shadow: 0 0 20px rgba(0, 204, 255, 0.4);
+    }
+
+    .metronome-bpm-display { 
+        font-size: 3.5em; font-weight: 800; color: #fff; font-family: monospace; 
+        line-height: 1; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    .metronome-bpm-label { 
+        font-size: 0.7em; color: #0cf; font-weight: bold; letter-spacing: 2px; margin-top: -5px; 
+    }
     
-    .metronome-controls { display: flex; gap: 15px; width: 100%; justify-content: center; align-items: center; }
-    .metronome-btn-circle { width: 35px; height: 35px; border-radius: 50%; border: 1px solid #444; background: #222; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-    .metronome-btn-circle:hover { background: #333; border-color: #666; }
-    .metronome-play-btn { width: 50px; height: 50px; border-radius: 50%; background: #0cf; border: none; color: #000; font-size: 1.2em; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0,204,255,0.4); }
-    .metronome-play-btn:hover { background: #fff; transform: scale(1.05); }
-    .metronome-play-btn.playing { background: #ff3333; color: #fff; animation: pulse-red 1s infinite; }
+    /* NUEVO: Visualizador de puntos (LEDs) */
+    .metronome-led-container {
+        display: flex; gap: 8px; margin-bottom: 5px;
+    }
+    .metronome-led {
+        width: 12px; height: 12px; border-radius: 50%;
+        background: #333; border: 1px solid #444;
+        transition: background 0.1s, box-shadow 0.1s;
+    }
+    .metronome-led.active {
+        background: #0cf; box-shadow: 0 0 10px #0cf; border-color: #fff;
+    }
+    .metronome-led.active-accent {
+        background: #ff0055; box-shadow: 0 0 10px #ff0055; border-color: #fff;
+    }
+
+    /* Slider Estilizado */
+    .metronome-slider { 
+        width: 100%; margin: 5px 0; -webkit-appearance: none; 
+        background: transparent; height: 30px; cursor: pointer; 
+    }
+    .metronome-slider::-webkit-slider-runnable-track {
+        width: 100%; height: 6px; background: #333; border-radius: 3px;
+    }
+    .metronome-slider::-webkit-slider-thumb { 
+        -webkit-appearance: none; height: 24px; width: 24px; 
+        border-radius: 50%; background: #0cf; 
+        margin-top: -9px; box-shadow: 0 0 10px rgba(0,204,255,0.5); 
+        border: 2px solid #fff; transition: transform 0.1s;
+    }
+    .metronome-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
     
-    /* BOTÓN TAP (NUEVO) */
+    /* Controles */
+    .metronome-controls { display: flex; gap: 20px; width: 100%; justify-content: center; align-items: center; margin-top: 5px; }
+    
+    .metronome-btn-circle { 
+        width: 45px; height: 45px; border-radius: 50%; 
+        border: 1px solid #444; background: rgba(255,255,255,0.05); 
+        color: #aaa; cursor: pointer; display: flex; 
+        align-items: center; justify-content: center; 
+        font-weight: bold; font-size: 1.2em;
+        transition: all 0.2s;
+    }
+    .metronome-btn-circle:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #666; }
+    .metronome-btn-circle:active { transform: scale(0.95); }
+
+    .metronome-play-btn { 
+        width: 70px; height: 70px; border-radius: 50%; 
+        background: #0cf; border: none; color: #000; 
+        font-size: 1.5em; cursor: pointer; display: flex; 
+        align-items: center; justify-content: center; 
+        box-shadow: 0 0 20px rgba(0,204,255,0.3); 
+        transition: all 0.2s;
+    }
+    .metronome-play-btn:hover { background: #fff; transform: scale(1.05); box-shadow: 0 0 30px rgba(0,204,255,0.5); }
+    .metronome-play-btn.playing { background: #ff3333; color: #fff; box-shadow: 0 0 20px rgba(255, 51, 51, 0.4); }
+    
+    /* BOTÓN TAP */
     .metronome-tap-btn {
-        margin-top: 5px;
-        width: 60px;
-        height: 60px;
-        background: #0cf; /* Azul corporativo */
-        border: none;
-        border-radius: 8px;
-        color: #000;
-        font-weight: bold;
-        font-size: 1.1em;
-        cursor: pointer;
-        box-shadow: 0 0 10px rgba(0,204,255,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.1s, background 0.1s;
+        margin-top: 15px; width: 100%; height: 50px;
+        background: #0cf; border: none; border-radius: 12px;
+        color: #000; font-weight: 800; font-size: 1.2em; letter-spacing: 1px;
+        cursor: pointer; box-shadow: 0 5px 15px rgba(0,204,255,0.2);
+        display: flex; align-items: center; justify-content: center;
+        transition: transform 0.1s, background 0.1s, box-shadow 0.1s;
     }
-    .metronome-tap-btn:active {
-        transform: scale(0.95);
-        background: #fff;
-    }
+    .metronome-tap-btn:active { transform: scale(0.98); background: #fff; box-shadow: 0 2px 10px rgba(255,255,255,0.3); }
 
     /* ESTILOS TABLA LOGS EXPANDIBLE */
     #access-logs-table .log-row { cursor: pointer; transition: background 0.2s; }
@@ -786,7 +834,17 @@
   <!-- POPUP DEL METRÓNOMO (Oculto por defecto) -->
   <div id="metronome-popup">
      <div class="metronome-bpm-display"><span id="metro-bpm-val">120</span> <span style="font-size:0.4em; color:#aaa;">BPM</span></div>
-     <!-- Slider BPM -->
+     <div class="metronome-bpm-label">TEMPO</div>
+     
+     <!-- LEDs Visuales (Nuevo) -->
+     <div class="metronome-led-container">
+         <div class="metronome-led" id="metro-led-1"></div>
+         <div class="metronome-led" id="metro-led-2"></div>
+         <div class="metronome-led" id="metro-led-3"></div>
+         <div class="metronome-led" id="metro-led-4"></div>
+     </div>
+
+     <!-- Slider BPM Estilizado -->
      <input type="range" id="metro-bpm-slider" class="metronome-slider" min="40" max="240" value="120">
      
      <div class="metronome-controls">
@@ -803,7 +861,7 @@
      </div>
      
      <!-- BOTÓN TAP (NUEVO) -->
-     <button id="metro-tap-btn" class="metronome-tap-btn">TAP</button>
+     <button id="metro-tap-btn" class="metronome-tap-btn">TAP TEMPO</button>
   </div>
 
   <!-- POPUP DEL AFINADOR (Oculto por defecto) -->
@@ -1757,4 +1815,206 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 </script>
 </body>
-</html>
+</html>--- START OF FILE analisis.js ---
+
+
+/* 
+   ANALISIS.JS (MEJORADO)
+   Gestión de debriefing, notas de conciertos y enlace de audios grabados.
+*/
+
+console.log("--- ANALISIS.JS CARGADO ---");
+
+// Variables globales análisis
+let analysisData = {}; 
+// Estructura: { id_unico: { title, date, notes, audioUrl, ... } }
+
+window.loadAnalysisData = async function() {
+    try {
+        const data = await window.withRetry(() => window.loadDoc("intranet", "analysis", { items: {} }));
+        analysisData = data.items || {};
+        console.log(`Datos de Análisis cargados: ${Object.keys(analysisData).length}`);
+        renderAnalysisTable();
+    } catch (e) {
+        console.error("Error loading Analysis data:", e);
+    }
+};
+
+window.saveAnalysisData = async function() {
+    try {
+        await window.withRetry(() => window.saveDoc("intranet", "analysis", { items: analysisData }, true));
+        renderAnalysisTable();
+    } catch (e) {
+        console.error("Error saving Analysis data:", e);
+        alert("Error al guardar: " + e.message);
+    }
+};
+
+// UI & Render
+function renderAnalysisTable() {
+    const tbody = document.getElementById('analisis-body');
+    if(!tbody) return;
+    tbody.innerHTML = "";
+
+    const keys = Object.keys(analysisData).sort((a,b) => {
+        // Ordenar por fecha decreciente (si existe) o nombre
+        const itemA = analysisData[a];
+        const itemB = analysisData[b];
+        return (itemB.date || "").localeCompare(itemA.date || "") || (itemB.created || "").localeCompare(itemA.created || "");
+    });
+
+    if (keys.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#888;'>No hay análisis registrados.</td></tr>";
+        return;
+    }
+
+    keys.forEach(key => {
+        const item = analysisData[key];
+        const hasAudio = !!item.audioUrl;
+        const hasNotes = !!item.notes;
+        
+        // Iconos estado
+        const audioIcon = hasAudio 
+            ? `<button onclick="window.playAnalysisAudio('${key}')" class="jukebox-btn active" title="Reproducir"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>` 
+            : `<span style="color:#444;">-</span>`;
+            
+        const notesIcon = `<button onclick="window.openAnalysisNotes('${key}')" class="jukebox-btn ${hasNotes ? 'active' : ''}" style="border-radius:4px; width:auto; padding:0 10px;" title="Ver/Editar Notas">${hasNotes ? '📝 Ver' : '➕ Añadir'}</button>`;
+        
+        const configBtn = `<button onclick="window.openAnalysisConfig('${key}')" class="jukebox-btn" title="Configurar"><svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></button>`;
+
+        const row = `
+            <tr>
+                <td><strong>${item.title}</strong><br><span style="font-size:0.8em; color:#aaa;">${item.date || ""}</span></td>
+                <td style="text-align:center;">${audioIcon}</td>
+                <td style="text-align:center;">${notesIcon}</td>
+                <td style="text-align:center;">${configBtn}</td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+}
+
+// --- ACCIONES ---
+
+// 1. Crear Nuevo
+document.addEventListener("DOMContentLoaded", () => {
+    const btnNew = document.getElementById('add-analysis-btn');
+    if(btnNew) {
+        btnNew.onclick = () => {
+            const title = prompt("Título del Análisis (ej: Concierto Sala X):");
+            if(title) {
+                const id = "an_" + Date.now();
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0];
+                
+                analysisData[id] = {
+                    title: title,
+                    date: dateStr,
+                    created: now.toISOString(),
+                    audioUrl: "",
+                    notes: ""
+                };
+                window.saveAnalysisData();
+            }
+        };
+    }
+});
+
+// 2. Configurar (Editar titulo, url, borrar)
+let currentConfigId = null;
+window.openAnalysisConfig = function(id) {
+    currentConfigId = id;
+    const item = analysisData[id];
+    const modal = document.getElementById('analisis-config-modal');
+    if(!modal) return;
+
+    document.getElementById('analisis-config-title').value = item.title || "";
+    document.getElementById('analisis-config-url').value = item.audioUrl || "";
+    
+    // Configurar botones del modal dinámicamente para no acumular listeners
+    const saveBtn = document.getElementById('analisis-config-save');
+    const delBtn = document.getElementById('analisis-delete-btn');
+    
+    // Clonar para limpiar listeners previos
+    const newSave = saveBtn.cloneNode(true);
+    saveBtn.parentNode.replaceChild(newSave, saveBtn);
+    
+    const newDel = delBtn.cloneNode(true);
+    delBtn.parentNode.replaceChild(newDel, delBtn);
+
+    newSave.onclick = () => {
+        if(analysisData[currentConfigId]) {
+            analysisData[currentConfigId].title = document.getElementById('analisis-config-title').value.trim();
+            analysisData[currentConfigId].audioUrl = document.getElementById('analisis-config-url').value.trim();
+            window.saveAnalysisData();
+            modal.classList.remove('show');
+        }
+    };
+
+    newDel.onclick = () => {
+        if(confirm("¿Eliminar este análisis y sus notas?")) {
+            delete analysisData[currentConfigId];
+            window.saveAnalysisData();
+            modal.classList.remove('show');
+        }
+    };
+
+    modal.classList.add('show');
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    const closeConf = document.getElementById('analisis-config-close');
+    if(closeConf) closeConf.onclick = () => document.getElementById('analisis-config-modal').classList.remove('show');
+});
+
+
+// 3. Notas
+let currentNotesId = null;
+window.openAnalysisNotes = function(id) {
+    currentNotesId = id;
+    const item = analysisData[id];
+    const modal = document.getElementById('analisis-notes-modal');
+    if(!modal) return;
+
+    document.getElementById('analisis-notes-display-title').textContent = item.title;
+    document.getElementById('analisis-notes-textarea').value = item.notes || "";
+    
+    modal.classList.add('show');
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    const saveNotes = document.getElementById('analisis-notes-save');
+    const closeNotes = document.getElementById('analisis-notes-close');
+    
+    if(saveNotes) {
+        saveNotes.onclick = () => {
+            if(currentNotesId && analysisData[currentNotesId]) {
+                analysisData[currentNotesId].notes = document.getElementById('analisis-notes-textarea').value;
+                window.saveAnalysisData();
+                document.getElementById('analisis-notes-modal').classList.remove('show');
+            }
+        };
+    }
+    if(closeNotes) closeNotes.onclick = () => document.getElementById('analisis-notes-modal').classList.remove('show');
+});
+
+
+// 4. Reproducir Audio (Usando el Jukebox Engine)
+window.playAnalysisAudio = function(id) {
+    const item = analysisData[id];
+    if(item && item.audioUrl) {
+        // Usamos el Jukebox global para reproducir
+        // Pasamos isRelated=true para que no intente buscar en la playlist principal y no rompa el contexto
+        // Pero queremos que muestre el título del análisis
+        
+        // Truco: Abrimos el player como si fuera un "Extra" para aprovechar la UI flotante
+        if(typeof window.openJukeboxPlayer === 'function') {
+            window.openJukeboxPlayer(item.title, item.audioUrl, true);
+        } else {
+            window.open(item.audioUrl, '_blank');
+        }
+    } else {
+        alert("No hay audio configurado.");
+    }
+};
+```
