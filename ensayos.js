@@ -200,11 +200,29 @@ window.renderRehearsals = function() {
         // Tabla Principal (Solo futuros u hoy)
         const rehearsalDate = new Date(r.date + 'T00:00:00Z');
         if(rehearsalDate >= today){
-            // Usamos window.generateICS que debe estar expuesta en index.html
-            const calendarCell = `<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='window.generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
-            const detailsCell = `<td class="details-col-header"><button class="details-btn" onclick="window.openRehearsalDetailsModal(${i})" title="Notas del Ensayo">➡️</button></td>`;
+            // Construcción de botones
+            const calendarBtnContent = `<button class="calendar-btn" title="Añadir a mi calendario" onclick='window.generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button>`;
+            const detailsBtnContent = `<button class="details-btn" onclick="window.openRehearsalDetailsModal(${i})" title="Notas del Ensayo">➡️</button>`;
             
-            tbodyMain.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}${detailsCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`);
+            // Fila con data-labels para Responsive Card View
+            const rowHtml = `
+            <tr>
+                <td data-label="Fecha">${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td>
+                <td data-label="Hora">${r.startTime} - ${r.endTime}</td>
+                <td data-label="Lugar">${r.location}</td>
+                <td data-label="Cal" class="calendar-col">${calendarBtnContent}</td>
+                <td data-label="Info" class="details-col-header">${detailsBtnContent}</td>
+                <td data-label="Asistencia">
+                    <div class="attendance-form">
+                        <select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select>
+                        <select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select>
+                        <button class="confirm-attendance" data-i="${i}">Confirmar</button>
+                    </div>
+                    ${summary}
+                </td>
+            </tr>`;
+            
+            tbodyMain.insertAdjacentHTML("beforeend", rowHtml);
         }
     }); 
 
