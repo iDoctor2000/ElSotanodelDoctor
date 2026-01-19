@@ -1856,22 +1856,50 @@ document.getElementById('live-content-area').onclick = (e) => { const width = wi
 /* ---------- 13. Carga inicial ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-      if (typeof firebase !== 'undefined') {
-          firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => console.warn(err));
-          attachSuggestionsListener(); 
-          if(window.attachConcertDetailsListener) window.attachConcertDetailsListener();
-          setTimeout(initSession, 1500);
-      } else {
-          const checkFirebase = setInterval(() => {
-              if (typeof firebase !== 'undefined') {
-                  clearInterval(checkFirebase); firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => console.warn(err));
-                  attachSuggestionsListener(); 
-                  if(window.attachConcertDetailsListener) window.attachConcertDetailsListener();
-                  loadAllData(); setTimeout(initSession, 1500);
+      // Definir la lógica de inicio seguro (race-condition proof)
+      const initApp = () => {
+          // Si Firebase o Setlists no están listos, abortar y esperar al intervalo
+          if (typeof firebase === 'undefined') return false;
+          if (typeof window.loadSetlistConfig !== 'function') return false;
+
+          try {
+              if (!firebase.apps.length) {
+                  firebase.initializeApp(firebaseConfig);
+                  db = firebase.firestore(); 
+                  
+                  // Manejo silencioso de la persistencia para evitar spam en consola
+                  firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(err => {
+                      if (err.code === 'failed-precondition') {
+                          // Múltiples pestañas abiertas
+                          console.log("Aviso: Persistencia offline deshabilitada (múltiples pestañas).");
+                      } else if (err.code === 'unimplemented') {
+                          console.log("Aviso: El navegador no soporta persistencia.");
+                      }
+                  });
               }
+              
+              attachSuggestionsListener(); 
+              if(window.attachConcertDetailsListener) window.attachConcertDetailsListener();
+              
+              // Cargar todo ahora que sabemos que setlists.js existe
+              loadAllData(); 
+              
+              setTimeout(initSession, 1500);
+              return true;
+          } catch(e) {
+              console.error("Error initializing Firebase/App:", e);
+              return false;
+          }
+      };
+
+      // Intentar iniciar. Si falla, usar setInterval.
+      if (!initApp()) {
+          const checkReady = setInterval(() => {
+              if (initApp()) clearInterval(checkReady);
           }, 100);
       }
-  } catch(e) { }
+
+  } catch(e) { console.error("Critical Init Error:", e); }
 
   const siteAudioElement = document.getElementById('site-audio'); const siteAudioControlButton = document.getElementById('site-audio-control-button'); const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; let currentSiteSongIndex = -1; let siteAudioFadeInterval = null; const SITE_AUDIO_FADE_DURATION = 500; const SITE_AUDIO_TARGET_VOLUME = 0.8; 
   function stopSiteAudioFade() { if (siteAudioFadeInterval) { clearInterval(siteAudioFadeInterval); siteAudioFadeInterval = null; } }
@@ -1898,7 +1926,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           if(typeof window.loadSetlistConfig === 'function') {
               tasks.push(window.loadSetlistConfig());
           } else {
-              console.error("CRÍTICO: setlists.js no se cargó correctamente. loadSetlistConfig no existe.");
+              // Este error ya no debería saltar gracias al initApp robusto
+              console.warn("loadSetlistConfig aún no disponible (reintentando en background...)");
           }
           
           if(typeof loadUsers === 'function') tasks.push(loadUsers());
@@ -1931,9 +1960,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       } catch (e) { console.error("Error cargarStarSetlist:", e); }
   }
   
-  // CORRECCIÓN: No llamar a loadAllData() si Firebase no está listo.
-  // Dejar que el setInterval se encargue.
-  if (typeof firebase !== 'undefined') loadAllData();
+  // ELIMINADO: La llamada inmediata que causaba el error crítico.
+  // if (typeof firebase !== 'undefined') loadAllData(); 
 });
 </script>
 </body>
