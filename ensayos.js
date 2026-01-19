@@ -36,8 +36,10 @@ window.renderRehearsals = function() {
     if(tbodyMgmt) tbodyMgmt.innerHTML = "";
     if(tbodyMain) tbodyMain.innerHTML = "";
     
+    // Fix: Comparar solo fechas en formato string YYYY-MM-DD para evitar problemas de zona horaria
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // 'en-CA' devuelve formato YYYY-MM-DD
+    const todayStr = now.toLocaleDateString('en-CA');
 
     // Ordenar ensayos por fecha (más reciente primero para admin, más próximo primero para view)
     window.rehearsals.sort((a, b) => new Date(a.date + 'T' + a.startTime) - new Date(b.date + 'T' + b.startTime));
@@ -74,12 +76,8 @@ window.renderRehearsals = function() {
         }
 
         // Tabla Principal (Solo futuros u hoy)
-        const rehearsalDate = new Date(r.date + 'T00:00:00Z');
-        
-        // Ajuste de zona horaria simple: Si es hoy, lo mostramos aunque haya pasado la hora por poco
-        // Para ser estrictos: new Date(r.date + 'T' + r.endTime) >= now
-        
-        if(rehearsalDate >= today){
+        // Usamos comparación de cadenas para robustez
+        if(r.date >= todayStr){
             // Construcción de botones
             const detailsBtnContent = `<button class="details-btn" onclick="window.openRehearsalDetailsModal(${i})" title="Notas del Ensayo">➡️</button>`;
             
