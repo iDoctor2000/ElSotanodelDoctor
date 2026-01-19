@@ -2,10 +2,10 @@
 /* 
    ENSAYOS.JS
    Gestión de ensayos, asistencias y panel de administración.
-   AHORA SIN COLUMNA DE CALENDARIO EN LA VISTA PRINCIPAL.
+   VERSION ROBUSTA CON LOGS DE DEPURACIÓN
 */
 
-console.log("--- ENSAYOS.JS CARGADO ---");
+console.log("--- ENSAYOS.JS CARGADO (v10 Debug) ---");
 
 // Variable Global
 window.rehearsals = [];
@@ -36,8 +36,9 @@ window.renderRehearsals = function() {
     if(tbodyMgmt) tbodyMgmt.innerHTML = "";
     if(tbodyMain) tbodyMain.innerHTML = "";
     
+    console.log(`Renderizando ensayos... Total en memoria: ${window.rehearsals.length}`);
+
     // --- FIX FECHAS: Comparación estricta de días locales ---
-    // Creamos "hoy" a las 00:00:00 hora local para comparar sin horas
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -48,7 +49,7 @@ window.renderRehearsals = function() {
         return new Date(y, m - 1, d); 
     };
 
-    // Ordenar ensayos por fecha (más próximo primero para view)
+    // Ordenar ensayos por fecha
     window.rehearsals.sort((a, b) => {
         const dateA = new Date(a.date + 'T' + (a.startTime || '00:00'));
         const dateB = new Date(b.date + 'T' + (b.startTime || '00:00'));
@@ -56,7 +57,7 @@ window.renderRehearsals = function() {
     });
 
     if (window.rehearsals.length === 0) {
-        const emptyRow = '<tr><td colspan="6" style="text-align:center;">No hay ensayos programados.</td></tr>';
+        const emptyRow = '<tr><td colspan="6" style="text-align:center;">No hay ensayos programados (Lista vacía).</td></tr>';
         if(tbodyMgmt) tbodyMgmt.innerHTML = emptyRow;
         if(tbodyMain) tbodyMain.innerHTML = emptyRow;
         return;
@@ -89,12 +90,15 @@ window.renderRehearsals = function() {
         // Tabla Principal (Solo futuros u hoy)
         const rLocal = parseLocalDate(r.date);
         
-        if (rLocal && rLocal >= today) {
-            // Construcción de botones
+        // Log para depurar por qué no salen
+        const isFuture = rLocal && rLocal >= today;
+        if (!isFuture) {
+            console.log(`Ocultando ensayo pasado: ${r.date} (Hoy es: ${today.toLocaleDateString()})`);
+        }
+
+        if (isFuture) {
             const detailsBtnContent = `<button class="details-btn" onclick="window.openRehearsalDetailsModal(${i})" title="Notas del Ensayo">➡️</button>`;
             
-            // Fila ESTÁNDAR (5 COLUMNAS: Fecha, Hora, Lugar, Info, Asistencia)
-            // Se usa <br> en la hora para que quede stacked si es necesario o un guion
             const rowHtml = `
             <tr>
                 <td>${formattedDate}<br><span class="rehearsal-duration">(${durationText})</span></td>
@@ -111,7 +115,7 @@ window.renderRehearsals = function() {
                 </td>
             </tr>`;
             
-            tbodyMain.insertAdjacentHTML("beforeend", rowHtml);
+            if(tbodyMain) tbodyMain.insertAdjacentHTML("beforeend", rowHtml);
         }
     }); 
 
@@ -132,7 +136,6 @@ window.renderRehearsals = function() {
             document.getElementById("rehearsal-end-time").value = r.endTime;
             document.getElementById("rehearsal-location").value = r.location;
             
-            // Preview del día
             const dateInput = document.getElementById("rehearsal-date");
             if(dateInput) dateInput.dispatchEvent(new Event('change'));
 
@@ -142,13 +145,10 @@ window.renderRehearsals = function() {
         tbodyMgmt.querySelectorAll(".copy-rehearsal").forEach(btn => btn.onclick = () => {
             const idx = parseInt(btn.dataset.i, 10);
             const r = window.rehearsals[idx];
-            
-            // Prellenar formulario pero sin ID de edición (es nuevo)
-            document.getElementById("rehearsal-date").value = ""; // Fecha vacía para obligar a elegir nueva
+            document.getElementById("rehearsal-date").value = ""; 
             document.getElementById("rehearsal-start-time").value = r.startTime;
             document.getElementById("rehearsal-end-time").value = r.endTime;
             document.getElementById("rehearsal-location").value = r.location;
-            
             alert("Datos copiados al formulario. Selecciona la nueva fecha.");
             document.getElementById("rehearsal-date").focus();
         });
@@ -178,27 +178,21 @@ window.renderRehearsals = function() {
             }
             
             if(!window.rehearsals[i].attendance) window.rehearsals[i].attendance = [];
-            
-            // Remover entrada anterior si existe
             window.rehearsals[i].attendance = window.rehearsals[i].attendance.filter(a => a.name !== userName);
-            // Añadir nueva
             window.rehearsals[i].attendance.push({ name: userName, attending: attending });
             
             await window.saveRehearsals();
             alert("Asistencia guardada.");
         });
         
-        // Auto-seleccionar nombre si ya se ha usado antes
         const storedUser = localStorage.getItem('elSotanoCurrentUser');
         if(storedUser) {
             tbodyMain.querySelectorAll(".attendance-user").forEach(select => {
-                // Verificar si la opción existe antes de seleccionarla
                 const option = select.querySelector(`option[value="${storedUser}"]`);
                 if(option) select.value = storedUser;
             });
         }
         
-        // Guardar nombre al cambiar
         tbodyMain.querySelectorAll(".attendance-user").forEach(select => {
             select.addEventListener('change', (e) => {
                 localStorage.setItem('elSotanoCurrentUser', e.target.value);
@@ -209,8 +203,24 @@ window.renderRehearsals = function() {
 
 window.loadRehearsals = async function() {
     try {
-        const data = await window.withRetry(() => window.loadDoc("intranet", "rehearsals", { items: [] }));
-        window.rehearsals = Array.isArray(data.items) ? data.items : [];
+        // Carga con fallback vacío
+        const data = await window.withRetry(() => window.loadDoc("intranet", "rehearsals", {}));
+        
+        console.log("Raw Data from Firestore (rehearsals):", data);
+
+        // LÓGICA ROBUSTA PARA ENCONTRAR EL ARRAY
+        if (Array.isArray(data)) {
+            window.rehearsals = data;
+        } else if (data && Array.isArray(data.items)) {
+            window.rehearsals = data.items;
+        } else if (data && Array.isArray(data.rehearsals)) {
+            window.rehearsals = data.rehearsals;
+        } else {
+            window.rehearsals = [];
+            console.warn("No se encontró array de ensayos válido en la respuesta DB.");
+        }
+
+        console.log(`Ensayos cargados en memoria: ${window.rehearsals.length}`);
         window.renderRehearsals();
     } catch (e) {
         console.error("Error al cargar ensayos:", e);
@@ -219,10 +229,11 @@ window.loadRehearsals = async function() {
 
 window.saveRehearsals = async function() {
     try {
+        // Guardamos bajo 'items' para estandarizar, pero 'load' lee ambos por si acaso
         await window.withRetry(() => window.saveDoc("intranet", "rehearsals", { items: window.rehearsals }));
         window.renderRehearsals();
-        window.renderStats(); // Actualizar estadísticas
-        if(window.renderVisualCalendar) window.renderVisualCalendar(); // Actualizar calendario
+        window.renderStats(); 
+        if(window.renderVisualCalendar) window.renderVisualCalendar();
         return true;
     } catch (e) {
         console.error("Error al guardar ensayos:", e);
@@ -230,13 +241,13 @@ window.saveRehearsals = async function() {
     }
 };
 
+// ... Resto del código de UI (Formulario, Modales, etc) ...
 // Lógica de Formulario Admin
 document.addEventListener("DOMContentLoaded", () => {
     const addBtn = document.getElementById("add-rehearsal");
     const cancelBtn = document.getElementById("cancel-edit-rehearsal");
     const msg = document.getElementById("rehearsal-message");
     
-    // Preview del día de la semana al cambiar fecha
     const dateInput = document.getElementById("rehearsal-date");
     const dayPreview = document.getElementById("rehearsal-day-preview");
     
@@ -267,7 +278,6 @@ document.addEventListener("DOMContentLoaded", () => {
             
             try {
                 if(editingRehearsalIndex !== null) {
-                    // Mantener asistencias y notas al editar
                     const existing = window.rehearsals[editingRehearsalIndex];
                     window.rehearsals[editingRehearsalIndex] = {
                         ...existing,
@@ -298,7 +308,6 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
     
-    // Gestión del menú lateral
     const menuReh = document.getElementById("menu-rehearsal");
     const closeReh = document.getElementById("close-rehearsal");
     if(menuReh) {
@@ -315,19 +324,16 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
     
-    // View Screen Open Button (Home Page - Flecha)
     const openViewBtn = document.getElementById("btn-open-rehearsals-view");
     if(openViewBtn) {
         openViewBtn.onclick = () => {
              if(window.openConfigScreen) {
                  window.openConfigScreen("rehearsals-view-screen");
-                 // Forzar renderizado para asegurar datos frescos
                  if(window.renderRehearsals) window.renderRehearsals();
              }
         };
     }
 
-    // View Screen Close
     const closeView = document.getElementById("close-rehearsals-view");
     if(closeView) closeView.onclick = () => document.getElementById("rehearsals-view-screen").style.display = "none";
 });
@@ -349,7 +355,6 @@ window.resetRehearsalForm = function() {
     editingRehearsalIndex = null;
 };
 
-// Detalles del Ensayo (Notas)
 window.openRehearsalDetailsModal = function(index) {
     if(!rehearsalDetailsModal) return;
     
@@ -399,7 +404,6 @@ async function saveRehearsalDetailsLogic() {
     }
 }
 
-// Función ICS simplificada (Aunque ya no se use en la tabla, útil tenerla por si acaso)
 window.generateICS = function(title, date, time, location, description, durationSeconds) {
     const startDateTime = new Date(`${date}T${time}:00`);
     const endDateTime = new Date(startDateTime.getTime() + durationSeconds * 1000);
