@@ -1,4 +1,5 @@
 
+
 /* 
    JUKEBOX.JS
    Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
@@ -420,6 +421,18 @@ window.injectExtraControls = function() {
         playlistBtn.title = "Ver/Ocultar lista de reproducción";
         playlistBtn.onclick = window.togglePlaylistPanel;
         toolsRow.appendChild(playlistBtn);
+    }
+
+    // NUEVO BOTÓN: DOWNLOAD / SOURCE ACCESS
+    if (!document.getElementById('jb-download-btn')) {
+        const downloadBtn = document.createElement('button');
+        downloadBtn.id = 'jb-download-btn';
+        downloadBtn.className = 'jukebox-tool-btn';
+        // Icono de descarga / enlace externo
+        downloadBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Acceder';
+        downloadBtn.title = "Descargar audio o abrir fuente original (Dropbox/Drive/YouTube)";
+        downloadBtn.onclick = window.accessCurrentSource;
+        toolsRow.appendChild(downloadBtn);
     }
 
     // NUEVO BOTÓN: EXTRAS (RELATED)
@@ -1211,6 +1224,47 @@ window.playPrevTrack = function() {
         const prevSong = jukeboxPlaylist[currentPlaylistIndex];
         console.log("Reproduciendo anterior:", prevSong.title);
         window.openJukeboxPlayer(prevSong.title, prevSong.url);
+    }
+};
+
+/* --- ACCESS SOURCE / DOWNLOAD (NUEVO) --- */
+window.accessCurrentSource = function() {
+    if(!currentSongKey || !window.jukeboxLibrary[currentSongKey]) {
+        alert("No hay canción seleccionada o no tiene enlace asociado.");
+        return;
+    }
+    
+    const url = window.jukeboxLibrary[currentSongKey];
+    
+    // 1. Google Drive
+    if (url.includes("drive.google.com")) {
+        let directLink = window.convertDriveToDirectLink(url);
+        if(directLink) {
+             // Abrir en nueva pestaña fuerza la descarga en muchos navegadores para Drive
+             window.open(directLink, '_blank');
+        } else {
+             // Fallback: abrir carpeta/preview
+             window.open(url, '_blank');
+        }
+    } 
+    // 2. Dropbox
+    else if (url.includes("dropbox.com")) {
+        let downloadUrl = url;
+        if(downloadUrl.includes("dl=0")) {
+            downloadUrl = downloadUrl.replace("dl=0", "dl=1");
+        } else if(!downloadUrl.includes("dl=1")) {
+            if(downloadUrl.includes("?")) downloadUrl += "&dl=1";
+            else downloadUrl += "?dl=1";
+        }
+        window.open(downloadUrl, '_blank');
+    }
+    // 3. YouTube (Abrir vídeo original)
+    else if (url.includes("youtube.com") || url.includes("youtu.be")) {
+        window.open(url, '_blank');
+    } 
+    // 4. Genérico (MP3 directo u otros)
+    else {
+        window.open(url, '_blank');
     }
 };
 
