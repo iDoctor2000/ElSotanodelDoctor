@@ -135,7 +135,7 @@
     .modal-backdrop { 
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
         background: rgba(0,0,0,0.85); 
-        z-index: 20000; /* Increased to stay on top */
+        z-index: 20000; /* Increased to stay on top of config screens */
         justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(3px); 
     }
     .modal-backdrop.show { display: flex; }
@@ -602,9 +602,9 @@
       .attendance-form select { width: 100%; }
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
       /* FIX: Enable scroll by default for all tables in mobile */
-      .table-wrapper { overflow-x: auto; }  
+      .table-wrapper { overflow-x: auto; width: 100%; display: block; }  
       table { width: 100%; min-width: unset; font-size: 0.85em; }
-      th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
+      th, td { padding: 8px 4px; white-space: normal; word-wrap: break-word; max-width: 150px; }
       th.calendar-col-header, td.calendar-col, th.details-col-header { width: 40px; padding: 8px 2px;}  
       #second-setlist .table-wrapper table, #star-setlist .table-wrapper table { min-width: unset; }
       .stats-table table { font-size: 0.85em; }
@@ -621,20 +621,6 @@
       /* Afinador móvil */
       #tuner-popup { right: 10px; left: 10px; width: auto; top: 65px; }
 
-      /* --- CARD VIEW FOR REHEARSALS (Responsive) --- */
-      #rehearsals-view-screen .table-wrapper { overflow-x: visible; } /* Cards don't need horizontal scroll */
-      #rehearsals-view-screen table { border-collapse: separate; border-spacing: 0 15px; background: transparent; }
-      #rehearsals-view-screen thead { display: none; }
-      #rehearsals-view-screen tbody tr {
-          display: block;
-          background: rgba(30, 30, 30, 0.8);
-          border: 1px solid #444;
-          border-radius: 12px;
-          padding: 10px;
-          margin-bottom: 15px;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      }
-      
       /* ESTILOS ESPECÍFICOS PARA MÓVIL EN TABLA DE ENSAYOS (EVITAR CORTE) */
       #rehearsals-view-screen .table-wrapper {
           overflow-x: auto !important;
@@ -650,33 +636,6 @@
           word-break: break-word; /* Romper palabras largas */
           white-space: normal;
       }
-      
-      #rehearsals-view-screen td:last-child { border-bottom: none; display: block; text-align: left; }
-      
-      #rehearsals-view-screen td::before {
-          content: attr(data-label);
-          color: #0cf;
-          font-weight: bold;
-          text-align: left;
-          margin-right: 10px;
-          flex-shrink: 0;
-      }
-      
-      /* Adjust specific cells */
-      #rehearsals-view-screen td[data-label="Cal"], 
-      #rehearsals-view-screen td[data-label="Info"] {
-          justify-content: space-between;
-      }
-      
-      /* Attendance form adjustment in card view */
-      #rehearsals-view-screen .attendance-form {
-          margin-top: 5px;
-          width: 100%;
-          flex-direction: column;
-          align-items: stretch;
-      }
-      #rehearsals-view-screen .attendance-form select { margin-bottom: 8px; }
-      #rehearsals-view-screen .attendance-summary { text-align: left; margin-top: 10px; }
     }
 
     /* FIX: MOVIL MUY PEQUEÑO (< 380px) */
