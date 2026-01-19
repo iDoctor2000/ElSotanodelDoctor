@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -74,15 +75,23 @@
       transform: scale(0.85) translateY(15px); 
       animation: splash-image-entry 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
-    /* BOTÓN DE CIERRE MANUAL DEL SPLASH (FALLBACK) */
+    
+    /* BOTÓN DE CIERRE MANUAL DEL SPLASH (CSS PURO - NO DEPENDE DE JS) */
     #force-close-splash {
         position: absolute; top: 30px; right: 30px;
         background: rgba(255, 255, 255, 0.2); color: white;
         border: 1px solid rgba(255, 255, 255, 0.5);
-        border-radius: 50%; width: 40px; height: 40px;
-        font-size: 20px; cursor: pointer; display: none; /* Se muestra via JS si tarda */
+        border-radius: 50%; width: 45px; height: 45px;
+        font-size: 24px; cursor: pointer; 
         z-index: 200001;
+        
+        /* MAGIA: Aparece solo a los 4 segundos via CSS */
+        opacity: 0;
+        animation: fadeInButton 0.5s ease 4s forwards;
+        pointer-events: auto;
     }
+    @keyframes fadeInButton { to { opacity: 1; } }
+    
     @keyframes splash-image-entry { to { opacity: 1; transform: scale(1) translateY(0); } }
     #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
@@ -1399,19 +1408,21 @@ function hideSplashScreen() {
 }
 
 // 1. Lógica del botón de cierre manual (fallback)
-if(forceCloseBtn) {
-    forceCloseBtn.onclick = function() {
-        console.warn("Usuario forzó el cierre del Splash Screen.");
-        hideSplashScreen();
-    };
-}
-
-// 2. Temporizador de seguridad: Si en 3.5 segundos no carga, mostramos el botón "X"
-setTimeout(() => {
-    if (splashScreen && !splashScreen.classList.contains('hidden') && forceCloseBtn) {
-        forceCloseBtn.style.display = 'block';
+// Usamos window.onload para asegurarnos de que el botón existe si el DOM tardó
+window.addEventListener('load', () => {
+    const btn = document.getElementById('force-close-splash');
+    if(btn) {
+        btn.onclick = function() {
+            console.warn("Usuario forzó el cierre del Splash Screen.");
+            hideSplashScreen();
+        };
     }
-}, 3500);
+    
+    // SAFETY NET: Si por alguna razón loadAllData falló catastróficamente,
+    // ocultar pantalla a los 2 segundos de carga completa de la ventana.
+    setTimeout(hideSplashScreen, 2000);
+});
+
 
 if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI") { 
     const banner = document.getElementById('firebase-critical-error-banner'); 
@@ -1948,14 +1959,18 @@ document.addEventListener("DOMContentLoaded", async () => {
           if(typeof window.loadMasterDocs === 'function') tasks.push(window.loadMasterDocs());
           if(typeof window.loadSongNotes === 'function') tasks.push(window.loadSongNotes());
           
-          // Esperar a que todo cargue
-          await Promise.all(tasks);
+          // CRÍTICO: Timeout Race
+          // Si la carga tarda más de 2 segundos (por bloqueo de red o firebase), terminamos la espera.
+          const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Esperamos a que todo cargue O a que pase el tiempo
+          await Promise.race([Promise.all(tasks), timeoutPromise]);
           
       } catch (e) { 
           console.error("Error no fatal en carga inicial de datos:", e); 
       } finally {
           // --- ESTO ES LO IMPORTANTE ---
-          // Pase lo que pase (éxito o error), ocultamos la pantalla de carga.
+          // Pase lo que pase (éxito, error o timeout), ocultamos la pantalla de carga.
           hideSplashScreen();
       }
       
