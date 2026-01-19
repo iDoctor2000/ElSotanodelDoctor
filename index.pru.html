@@ -1317,13 +1317,13 @@
   </audio>
 
   <!-- SE AÑADE VERSIÓN PARA FORZAR RECARGA Y EVITAR CACHÉ HTML -->
-  <script src="jukebox.js?v=2"></script>
-  <script src="metronome.js?v=2"></script>
-  <script src="tuner.js?v=2"></script>
-  <script src="analisis.js?v=2"></script>
-  <script src="ensayos.js?v=2"></script>
-  <script src="calendario.js?v=2"></script>
-  <script src="setlists.js?v=2"></script>
+  <script src="jukebox.js?v=3"></script>
+  <script src="metronome.js?v=3"></script>
+  <script src="tuner.js?v=3"></script>
+  <script src="analisis.js?v=3"></script>
+  <script src="ensayos.js?v=3"></script>
+  <script src="calendario.js?v=3"></script>
+  <script src="setlists.js?v=3"></script>
 
 <script>
 // 0. Configuración Global
@@ -1884,6 +1884,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           if(typeof window.cargarStarSetlist === 'function') window.globalItemsStar = await window.cargarStarSetlist(); 
       } catch (e) { console.error("Error cargarStarSetlist:", e); }
   }
+  
+  // CORRECCIÓN: No llamar a loadAllData() si Firebase no está listo.
+  // Dejar que el setInterval se encargue.
   if (typeof firebase !== 'undefined') loadAllData();
 });
 </script>
