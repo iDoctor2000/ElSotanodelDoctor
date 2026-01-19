@@ -74,23 +74,6 @@
       transform: scale(0.85) translateY(15px); 
       animation: splash-image-entry 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
-    
-    /* BOTÓN DE CIERRE MANUAL DEL SPLASH (CSS PURO - NO DEPENDE DE JS) */
-    #force-close-splash {
-        position: absolute; top: 30px; right: 30px;
-        background: rgba(255, 255, 255, 0.2); color: white;
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        border-radius: 50%; width: 45px; height: 45px;
-        font-size: 24px; cursor: pointer; 
-        z-index: 200001;
-        
-        /* MAGIA: Aparece solo a los 4 segundos via CSS */
-        opacity: 0;
-        animation: fadeInButton 0.5s ease 4s forwards;
-        pointer-events: auto;
-    }
-    @keyframes fadeInButton { to { opacity: 1; } }
-    
     @keyframes splash-image-entry { to { opacity: 1; transform: scale(1) translateY(0); } }
     #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
@@ -211,14 +194,14 @@
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
     
-    /* Ajustes columnas setlist - AHORA CON PDF Y NOTAS */
-    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6), #setlists table th:nth-child(7), #setlists table th:nth-child(8),
-    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7), #second-setlist table td:nth-child(8),
-    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7), #star-setlist table td:nth-child(8) { text-align: center; }
+    /* Ajustes columnas setlist - AHORA CON PDF */
+    #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6), #setlists table th:nth-child(7),
+    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
+    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7) { text-align: center; }
     
-    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6), #setlists table td:nth-child(7), #setlists table td:nth-child(8),
-    #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7), #second-setlist table td:nth-child(8),
-    #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7), #star-setlist table td:nth-child(8) { text-align: center; }
+    #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6), #setlists table td:nth-child(7),
+    #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
+    #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7) { text-align: center; }
     
     /* JUKEBOX COLUMNS */
     th.jukebox-col-header, td.jukebox-col { width: 40px; text-align: center; padding: 5px; }
@@ -268,29 +251,6 @@
         opacity: 1; border-color: #666; color: #999;
     }
     .pdf-btn svg { width: 18px; height: 18px; fill: currentColor; }
-
-    /* NOTES COLUMN STYLES (HOJA Y LAPIZ) */
-    th.notes-col-header, td.notes-col { width: 40px; text-align: center; padding: 5px; }
-    .notes-btn {
-        background: transparent; border: 1px solid #333; color: #555;
-        border-radius: 50%; width: 32px; height: 32px;
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer; transition: all 0.3s; margin: 0 auto;
-    }
-    /* Estilo "Active" en Verde */
-    .notes-btn.active {
-        border-color: #00e676; color: #00e676; 
-        box-shadow: 0 0 5px rgba(0, 230, 118, 0.3);
-    }
-    .notes-btn.active:hover {
-        background: rgba(0, 230, 118, 0.1); transform: scale(1.1);
-        box-shadow: 0 0 10px rgba(0, 230, 118, 0.6);
-    }
-    .notes-btn.inactive:hover {
-        opacity: 1; border-color: #00e676; color: #00e676;
-    }
-    .notes-btn svg { width: 18px; height: 18px; fill: currentColor; }
-
 
     /* ESTILO BOTÓN GLOBAL MAESTRO (ACTUALIZADO 1, 2, 3) */
     .master-direct-group { display: inline-flex; gap: 6px; vertical-align: middle; margin-left: 10px; }
@@ -772,8 +732,6 @@
 <body>
   <div id="splash-screen">
     <img src="assets/Logo Sobre negro1.png" alt="Cargando El Sótano del Doctor...">
-    <!-- BOTÓN DE EMERGENCIA PARA CERRAR SPLASH SI SE CUELGA -->
-    <button id="force-close-splash" title="Cerrar pantalla de carga">✕</button>
   </div>
   <div id="firebase-critical-error-banner" style="display:none;">
     ERROR CRÍTICO: La configuración de Firebase no es válida o es un placeholder. La aplicación puede no funcionar correctamente. Contacta al administrador.
@@ -1022,7 +980,7 @@
       })();
   </script>
 
-  <div id="concert-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Detalles del Concierto</h3><h4 id="concert-detail-title-display"></h4><input type="hidden" id="concert-detail-id"><label for="concert-detail-location">Detalles adicionales de la ubicación:</label><textarea id="concert-detail-location"></textarea><label for="concert-detail-gmaps-link">Enlace de Google Maps (Lugar Evento):</label><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;"><input type="url" id="concert-detail-gmaps-link" placeholder="https://maps.app.goo.gl/example" style="flex-grow: 1; margin-bottom: 0;"><button id="open-gmaps-link-btn" style="display:none; padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; line-height: 1.5;">Abrir Mapa</button></div><div class="modal-field-group"><div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div><div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div></div><div class="modal-field-group"><div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div><div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div></div><label for="concert-detail-notes">Notas generales:</label><textarea id="concert-detail-notes"></textarea><label for="concert-detail-sound-company">Empresa de Sonorización:</label><input type="text" id="concert-detail-sound-company" placeholder="Nombre de la empresa o técnico externo"><h4>Músicos Asistentes</h4><div id="musicians-attendance-list"></div><h4>Técnicos Responsables</h4><div id="technicians-attendance-list" style="border: 1px solid #333; padding: 10px; margin-bottom:15px;</div><button id="save-concert-details">Guardar Detalles</button><button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button><p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
+  <div id="concert-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Detalles del Concierto</h3><h4 id="concert-detail-title-display"></h4><input type="hidden" id="concert-detail-id"><label for="concert-detail-location">Detalles adicionales de la ubicación:</label><textarea id="concert-detail-location"></textarea><label for="concert-detail-gmaps-link">Enlace de Google Maps (Lugar Evento):</label><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;"><input type="url" id="concert-detail-gmaps-link" placeholder="https://maps.app.goo.gl/example" style="flex-grow: 1; margin-bottom: 0;"><button id="open-gmaps-link-btn" style="display:none; padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; line-height: 1.5;">Abrir Mapa</button></div><div class="modal-field-group"><div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div><div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div></div><div class="modal-field-group"><div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div><div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div></div><label for="concert-detail-notes">Notas generales:</label><textarea id="concert-detail-notes"></textarea><label for="concert-detail-sound-company">Empresa de Sonorización:</label><input type="text" id="concert-detail-sound-company" placeholder="Nombre de la empresa o técnico externo"><h4>Músicos Asistentes</h4><div id="musicians-attendance-list"></div><h4>Técnicos Responsables</h4><div id="technicians-attendance-list" style="border: 1px solid #333; padding: 10px; margin-bottom:15px;"></div><button id="save-concert-details">Guardar Detalles</button><button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button><p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="rehearsal-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Información del Ensayo</h3><h4 id="rehearsal-detail-title-display"></h4><input type="hidden" id="rehearsal-detail-index"><label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label><textarea id="rehearsal-notes" style="min-height: 400px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea><button id="save-rehearsal-details">Guardar Información</button><button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button><p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="setlist-config-screen" class="config-screen"><button class="close-btn" id="close-setlist-config">Cerrar</button><h2>Configuración de Setlists</h2><h3>Setlist Próximo Ensayo</h3><label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025"><label>ID/URL feed</label><input id="setlist1-url" placeholder="URL"><h3>Setlist Próximo Concierto</h3><label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad"><label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa"><h3>Setlist Concierto Estrella</h3><label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025"><label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL"><button id="guardar-setlist-config">Guardar Configuración</button><p id="setlist-message" class="error-message"></p></div>
   
@@ -1167,18 +1125,6 @@
       </div>
   </div>
 
-  <!-- SONG NOTES MODAL (NUEVO) -->
-  <div id="song-notes-modal" class="modal-backdrop">
-      <div class="modal-content" style="max-width: 500px;">
-         <h3>Notas: <span id="song-notes-title" style="color:#0cf;"></span></h3>
-         <textarea id="song-notes-input" style="min-height: 200px; font-size:1em;" placeholder="Escribe aquí notas sobre la estructura, cambios, paradas, etc..."></textarea>
-         <div style="margin-top:20px; text-align:right;">
-             <button id="song-notes-cancel-btn" class="modal-close-btn">Cancelar</button>
-             <button id="song-notes-save-btn">Guardar Notas</button>
-         </div>
-      </div>
-  </div>
-
   <!-- MARKER INPUT MODAL -->
   <div id="marker-input-modal" class="modal-backdrop" style="z-index: 12000;">
       <div class="modal-content" style="max-width: 400px;">
@@ -1264,7 +1210,7 @@
           </div>
       </h2>
       <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th class="notes-col-header">📄</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
@@ -1284,7 +1230,7 @@
           </div>
       </h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th class="notes-col-header">📄</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
+      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-2">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
@@ -1303,7 +1249,7 @@
           </div>
       </h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th class="notes-col-header">📄</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
+      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-star">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
@@ -1370,20 +1316,19 @@
     Tu navegador no soporta el elemento de audio.
   </audio>
 
-  <!-- SE AÑADE DEFER A TODOS LOS SCRIPTS PARA GARANTIZAR ORDEN DE EJECUCIÓN -->
-  <script src="jukebox.js?v=11" defer></script>
-  <script src="metronome.js?v=10" defer></script>
-  <script src="tuner.js?v=10" defer></script>
-  <script src="analisis.js?v=10" defer></script>
-  <script src="ensayos.js?v=11" defer></script>
-  <script src="calendario.js?v=10" defer></script>
-  <script src="setlists.js?v=11" defer></script>
+  <!-- SE AÑADE VERSIÓN PARA FORZAR RECARGA Y EVITAR CACHÉ HTML -->
+  <script src="jukebox.js?v=8"></script>
+  <script src="metronome.js?v=8"></script>
+  <script src="tuner.js?v=8"></script>
+  <script src="analisis.js?v=8"></script>
+  <script src="ensayos.js?v=9"></script>
+  <script src="calendario.js?v=8"></script>
+  <script src="setlists.js?v=8"></script>
 
 <script>
 // 0. Configuración Global
-const APP_VERSION = "1.2.4";
+const APP_VERSION = "1.2.2";
 let currentSessionId = null;
-let safetyTimer = null; // Variable global para el timeout de seguridad
 
 const firebaseConfig = {
   apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",  
@@ -1393,36 +1338,6 @@ const firebaseConfig = {
   messagingSenderId: "756955233128",
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
-
-// --- CONTROL DE PANTALLA DE CARGA (SPLASH SCREEN) ---
-const splashScreen = document.getElementById('splash-screen');
-const forceCloseBtn = document.getElementById('force-close-splash');
-
-function hideSplashScreen() {
-    if (splashScreen && !splashScreen.classList.contains('hidden')) {
-        splashScreen.classList.add('hidden');
-        setTimeout(() => { 
-            if (splashScreen.parentNode) splashScreen.style.display = 'none'; 
-        }, 500); // Esperar transición CSS
-    }
-}
-
-// 1. Lógica del botón de cierre manual (fallback)
-// Usamos window.onload para asegurarnos de que el botón existe si el DOM tardó
-window.addEventListener('load', () => {
-    const btn = document.getElementById('force-close-splash');
-    if(btn) {
-        btn.onclick = function() {
-            console.warn("Usuario forzó el cierre del Splash Screen.");
-            hideSplashScreen();
-        };
-    }
-    
-    // SAFETY NET: Si por alguna razón loadAllData falló catastróficamente,
-    // ocultar pantalla a los 3.5 segundos de carga completa de la ventana.
-    safetyTimer = setTimeout(hideSplashScreen, 3500);
-});
-
 
 if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI") { 
     const banner = document.getElementById('firebase-critical-error-banner'); 
@@ -1908,15 +1823,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                   clearInterval(checkFirebase); firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => console.warn(err));
                   attachSuggestionsListener(); 
                   if(window.attachConcertDetailsListener) window.attachConcertDetailsListener();
-                  
-                  // Lanzamos carga de datos
-                  loadAllData();
-                  
-                  setTimeout(initSession, 1500);
+                  loadAllData(); setTimeout(initSession, 1500);
               }
           }, 100);
       }
-  } catch(e) { console.error("Error init firebase wrapper", e); }
+  } catch(e) { }
 
   const siteAudioElement = document.getElementById('site-audio'); const siteAudioControlButton = document.getElementById('site-audio-control-button'); const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; let currentSiteSongIndex = -1; let siteAudioFadeInterval = null; const SITE_AUDIO_FADE_DURATION = 500; const SITE_AUDIO_TARGET_VOLUME = 0.8; 
   function stopSiteAudioFade() { if (siteAudioFadeInterval) { clearInterval(siteAudioFadeInterval); siteAudioFadeInterval = null; } }
@@ -1932,61 +1843,51 @@ document.addEventListener("DOMContentLoaded", async () => {
     siteAudioControlButton.addEventListener('click', () => { if (!siteAudioElement) return; const wasMuted = siteAudioElement.muted; siteAudioElement.muted = !siteAudioElement.muted; updateSiteAudioMuteButton(); if (!siteAudioElement.muted) { if (siteAudioElement.paused || wasMuted) { if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused) fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); else { siteAudioElement.volume = 0; fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); } } } else stopSiteAudioFade(); });
   }
 
-  // --- LOGICA DE CARGA DE DATOS PRINCIPAL ---
-  
-  // Función asíncrona para cargar todos los datos en paralelo
-  async function loadAllData() {
-      // 1. Verificar dependencias críticas antes de empezar
-      if (typeof window.loadSetlistConfig !== 'function') {
-          console.warn("setlists.js aún no está listo. Reintentando en breve...");
-          // Si setlists.js no ha cargado, esperamos un poco y volvemos a llamar a loadAllData.
-          // NO usamos return aquí para no romper la cadena de promesas si fuera llamada desde fuera,
-          // pero como es la función raíz, el setTimeout funciona bien.
-          setTimeout(loadAllData, 200);
-          return;
-      }
+  const splashScreen = document.getElementById('splash-screen'); if (splashScreen) { setTimeout(() => { splashScreen.classList.add('hidden'); setTimeout(() => { if (splashScreen.parentNode) splashScreen.style.display = 'none'; }, 500); }, 100); }
+  updateConnectionStatus();
 
+  async function loadAllData() {
       try {
+          // Robust initialization: Solo intentar cargar si las funciones existen
           const tasks = [];
           
-          // Añadir tareas de carga a la cola
-          tasks.push(window.loadSetlistConfig());
+          if(typeof window.loadSetlistConfig === 'function') {
+              tasks.push(window.loadSetlistConfig());
+          } else {
+              console.error("CRÍTICO: setlists.js no se cargó correctamente. loadSetlistConfig no existe.");
+          }
           
           if(typeof loadUsers === 'function') tasks.push(loadUsers());
           if(typeof window.loadRehearsals === 'function') tasks.push(window.loadRehearsals());
           if(typeof window.loadJukeboxLibrary === 'function') tasks.push(window.loadJukeboxLibrary());
           if(typeof window.loadPdfLibrary === 'function') tasks.push(window.loadPdfLibrary());
           if(typeof window.loadMasterDocs === 'function') tasks.push(window.loadMasterDocs());
-          if(typeof window.loadSongNotes === 'function') tasks.push(window.loadSongNotes());
           
-          // Esperar a que todo cargue
           await Promise.all(tasks);
           
       } catch (e) { 
-          console.error("Error no fatal en carga inicial de datos:", e); 
-      } finally {
-          // --- CORRECCIÓN CRÍTICA ---
-          // Limpiar el timer global si existe para evitar llamadas dobles
-          if (safetyTimer) clearTimeout(safetyTimer);
-          hideSplashScreen();
+          console.error("Error en carga inicial de datos (Promise.all):", e); 
       }
       
-      // Cargas secundarias que no bloquean la interfaz
-      if(window.loadAnalysisData) window.loadAnalysisData();
+      if(window.loadAnalysisData) window.loadAnalysisData(); else setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
       
-      // Cargar setlists específicos (pueden tardar más, no bloquean Splash)
-      try { if(typeof window.cargarPrimerSetlist === 'function') window.cargarPrimerSetlist(); } catch(e){}
-      try { if(typeof window.cargarSegundoSetlist === 'function') window.cargarSegundoSetlist(); } catch(e){}
-      try { if(typeof window.cargarStarSetlist === 'function') window.cargarStarSetlist(); } catch(e){}
+      // Safety checks for loading specific setlists
+      try { 
+          if(typeof window.cargarPrimerSetlist === 'function') window.globalItems1 = await window.cargarPrimerSetlist(); 
+      } catch (e) { console.error("Error cargarPrimerSetlist:", e); }
+      
+      try { 
+          if(typeof window.cargarSegundoSetlist === 'function') window.globalItems2 = await window.cargarSegundoSetlist(); 
+      } catch (e) { console.error("Error cargarSegundoSetlist:", e); }
+      
+      try { 
+          if(typeof window.cargarStarSetlist === 'function') window.globalItemsStar = await window.cargarStarSetlist(); 
+      } catch (e) { console.error("Error cargarStarSetlist:", e); }
   }
   
-  updateConnectionStatus();
-  
-  // Iniciar carga si Firebase ya está listo (cacheado o script rápido)
-  if (typeof firebase !== 'undefined') {
-      loadAllData();
-  }
-  // Si no, el setInterval de arriba se encargará.
+  // CORRECCIÓN: No llamar a loadAllData() si Firebase no está listo.
+  // Dejar que el setInterval se encargue.
+  if (typeof firebase !== 'undefined') loadAllData();
 });
 </script>
 </body>
