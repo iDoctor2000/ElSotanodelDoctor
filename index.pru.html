@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!-- CORRECCIÓN: Meta tags para PWA (Apple y Estándar) para evitar warnings -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="El Sótano">
   <link rel="manifest" href="manifest.json">
-   
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   
-  <!-- VIEWPORT CORREGIDO: Bloqueo de zoom y ajuste fit -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   
   <meta charset="UTF-8" />
@@ -22,52 +19,32 @@
   <meta property="og:description"  content="Banda de rock y versiones. Intranet de gestión.">
   <meta property="og:image"        content="assets/logo_negro copia.jpg">
 
-  <!-- OPTIMIZACIÓN: Preconectar a dominios externos para acelerar la carga -->
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="preconnect" href="https://www.gstatic.com">
   <link rel="preconnect" href="https://www.youtube.com">
   <link rel="preconnect" href="https://www.bandhelper.com">
 
-  <!-- OPTIMIZACIÓN: 'defer' permite que el HTML se muestre sin esperar a los scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" defer></script>
-  <!-- YouTube API -->
   <script src="https://www.youtube.com/iframe_api" defer></script>
 
   <style>
     *,*::before,*::after{box-sizing:border-box}
-    
-    /* FIX SCROLL BRAVE/CHROME: */
-    html {
-        /* Eliminamos height: 100% fijo para permitir scroll natural */
-        overflow-y: scroll; /* Fuerza barra vertical siempre para evitar saltos */
-        overflow-x: hidden;
-    }
-    
+    html { overflow-y: scroll; overflow-x: hidden; }
     body {
-        margin:0; padding:0; 
-        width: 100%;
-        min-height: 100vh;
-        overflow-x:hidden; 
+        margin:0; padding:0; width: 100%; min-height: 100vh; overflow-x:hidden; 
         font-family:Arial,Helvetica,sans-serif; 
         background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
-        background-attachment: fixed;
-        color:#fff;
-        position: relative;
-        
-        /* PROPIEDADES PARA SENSACIÓN APP NATIVA */
-        touch-action: manipulation; 
-        -webkit-tap-highlight-color: transparent;
+        background-attachment: fixed; color:#fff; position: relative;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
     }
-    
-    /* ---------- Splash Screen ---------- */
     #splash-screen {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background-color: #000000; display: flex; justify-content: center; align-items: center;
       z-index: 200000; opacity: 1; visibility: visible;
-      transition: opacity 0.5s ease-out, visibility 0.5s linear; /* Transición más rápida */
+      transition: opacity 0.5s ease-out, visibility 0.5s linear;
     }
     #splash-screen img {
       max-width: 60%; max-height: 60%; opacity: 0;
@@ -82,15 +59,10 @@
         justify-content:space-between; position:fixed; top:0; left:0; width:100%; z-index:1000;  
         border-bottom: 1px solid #222; height: 60px; backdrop-filter: blur(5px);
     }
-    
-    /* NUEVO LAYOUT HEADER */
     .header-left { display: flex; align-items: center; gap: 15px; }
     .logo img.logo-main{ width: 135px; height:auto; vertical-align: middle; }
-    /* Ajuste para que el logo intranet ya no esté absoluto en el centro, sino relativo a la izquierda */
     .logo-intranet{ height:35px; width:auto; opacity: 0.9; }
-    
     .header-controls-right { display: flex; align-items: center; gap: 10px; }
-
     .header-icon-btn { 
         background: none; border: 1px solid #0cf; color: #0cf; border-radius: 4px; padding: 5px;           
         cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -98,18 +70,13 @@
     }
     .header-icon-btn:hover { background: #333; transform: scale(1.05); }
     .header-icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
-    
-    /* Icono Metrónomo (SVG stroke) */
     #metronome-toggle-btn svg { fill: none; stroke: currentColor; stroke-width: 2; }
-    
     #site-audio-control-button { display: none; } 
-
     .hamburger{
         cursor:pointer; border:1px solid #0cf; border-radius:4px; padding:5px; display: flex; 
         flex-direction: column; justify-content: space-around; width: 37px; height: 37px; box-sizing: border-box;
     }
     .hamburger div{width:25px;height:3px;background:#0cf;margin:0 auto;} 
-    
     .sidebar{
         position:fixed; top:0; left:0; width:280px; height:100vh; background:#1a1a1a; border-right:1px solid #222;
         padding: 20px; padding-top: calc(60px + 20px); box-shadow:3px 0 15px rgba(0,200,200,.15);  
@@ -125,21 +92,15 @@
     .sidebar .submenu a { padding: 8px 0; font-size: 0.9em; border-top: 1px solid #2a2a2a; border-bottom: none; margin: 5px 0;}
     .sidebar a#menu-config { color: #FFD700; font-weight: bold; margin-top:15px; }  
     .sidebar a#menu-config:hover { color: #fff2a7; }
-    
     #overlay{ position:fixed;top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,.75); z-index:5000; display:none; opacity: 0; transition: opacity .3s ease-in-out; }
     #overlay.show{display:block; opacity: 1;}
-    
     main { padding-top: 75px; }
-    
-    /* MODAL BACKDROP Z-INDEX FIX: Must be higher than config-screen (10001) */
     .modal-backdrop { 
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-        background: rgba(0,0,0,0.85); 
-        z-index: 20000; /* Increased to stay on top of config screens */
+        background: rgba(0,0,0,0.85); z-index: 20000; 
         justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(3px); 
     }
     .modal-backdrop.show { display: flex; }
-    
     .modal-content { 
         background: rgba(26, 26, 26, 0.95); color: #fff; padding: 20px; border-radius: 10px; 
         box-shadow: 0 0 30px rgba(0,255,255,0.15); border: 1px solid rgba(0, 204, 255, 0.2);
@@ -162,7 +123,6 @@
     #musicians-attendance-list input[type="checkbox"] { vertical-align: middle; width: 18px; height: 18px; cursor: pointer; }
     .modal-field-group { display: flex; gap: 15px; flex-wrap: wrap; }
     .modal-field-group > div { flex: 1; min-width: 200px; }
-    .modal-field-group input[type="time"] { text-align: left; }
     .config-screen {
         display:none; position:fixed; top:0; left:0; width:100%; height:100%;
         background: rgba(10, 10, 10, 0.95); z-index:10001; overflow-y:auto; padding: 20px; padding-top: calc(60px + 20px); 
@@ -178,32 +138,23 @@
     .config-screen .close-btn{ position:absolute; top:15px; right:20px; font-size:1.2em;background:none;border:1px solid #0cf; color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer; z-index: 10002; }
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
-    
     #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #rehearsals-preview, #vista-calendario-mensual, #suggestions, #analisis { 
-        background: rgba(20, 20, 20, 0.75); 
-        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
-        padding:20px; border-radius:12px; 
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); 
+        background: rgba(20, 20, 20, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
+        padding:20px; border-radius:12px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); 
         border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
     }
-    
     #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #rehearsals-preview h2, #suggestions h2, #analisis h2 { text-align:center;color:#0cf;margin-bottom:5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
     table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
-    
-    /* Ajustes columnas setlist - CORREGIDO: Centrado de cabeceras en todos los setlists */
     #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6), #setlists table th:nth-child(7),
     #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #second-setlist table th:nth-child(6), #second-setlist table th:nth-child(7),
     #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5), #star-setlist table th:nth-child(6), #star-setlist table th:nth-child(7) { text-align: center; }
-    
     #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6), #setlists table td:nth-child(7),
     #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
     #star-setlist table td:nth-child(3), #star-setlist table td:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7) { text-align: center; }
-    
-    /* JUKEBOX COLUMNS */
     th.jukebox-col-header, td.jukebox-col { width: 40px; text-align: center; padding: 5px; }
     .jukebox-btn {
         background: transparent; border: 1px solid #333; color: #555;
@@ -211,23 +162,11 @@
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; transition: all 0.3s; margin: 0 auto;
     }
-    .jukebox-btn.active {
-        border-color: #0cf; color: #0cf;
-        box-shadow: 0 0 5px rgba(0, 204, 255, 0.3);
-    }
-    .jukebox-btn.active:hover {
-        background: rgba(0, 204, 255, 0.1); transform: scale(1.1);
-        box-shadow: 0 0 10px rgba(0, 204, 255, 0.6);
-    }
-    .jukebox-btn.inactive {
-        opacity: 0.4; filter: grayscale(100%); border-color: #444;
-    }
-    .jukebox-btn.inactive:hover {
-        opacity: 1; border-color: #666; color: #999;
-    }
+    .jukebox-btn.active { border-color: #0cf; color: #0cf; box-shadow: 0 0 5px rgba(0, 204, 255, 0.3); }
+    .jukebox-btn.active:hover { background: rgba(0, 204, 255, 0.1); transform: scale(1.1); box-shadow: 0 0 10px rgba(0, 204, 255, 0.6); }
+    .jukebox-btn.inactive { opacity: 0.4; filter: grayscale(100%); border-color: #444; }
+    .jukebox-btn.inactive:hover { opacity: 1; border-color: #666; color: #999; }
     .jukebox-btn svg { width: 18px; height: 18px; fill: currentColor; }
-
-    /* PDF COLUMN STYLES */
     th.pdf-col-header, td.pdf-col { width: 40px; text-align: center; padding: 5px; }
     .pdf-btn {
         background: transparent; border: 1px solid #333; color: #555;
@@ -235,23 +174,11 @@
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; transition: all 0.3s; margin: 0 auto;
     }
-    .pdf-btn.active {
-        border-color: #ff9800; color: #ff9800; 
-        box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
-    }
-    .pdf-btn.active:hover {
-        background: rgba(255, 152, 0, 0.1); transform: scale(1.1);
-        box-shadow: 0 0 10px rgba(255, 152, 0, 0.6);
-    }
-    .pdf-btn.inactive {
-        opacity: 0.4; filter: grayscale(100%); border-color: #444;
-    }
-    .pdf-btn.inactive:hover {
-        opacity: 1; border-color: #666; color: #999;
-    }
+    .pdf-btn.active { border-color: #ff9800; color: #ff9800; box-shadow: 0 0 5px rgba(255, 152, 0, 0.3); }
+    .pdf-btn.active:hover { background: rgba(255, 152, 0, 0.1); transform: scale(1.1); box-shadow: 0 0 10px rgba(255, 152, 0, 0.6); }
+    .pdf-btn.inactive { opacity: 0.4; filter: grayscale(100%); border-color: #444; }
+    .pdf-btn.inactive:hover { opacity: 1; border-color: #666; color: #999; }
     .pdf-btn svg { width: 18px; height: 18px; fill: currentColor; }
-
-    /* NOTES COLUMN STYLES (AMARILLO) - NUEVO */
     th.notes-col-header, td.notes-col { width: 40px; text-align: center; padding: 5px; }
     .notes-btn {
         background: transparent; border: 1px solid #333; color: #555;
@@ -259,24 +186,11 @@
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; transition: all 0.3s; margin: 0 auto;
     }
-    .notes-btn.active {
-        border-color: #FFD700; color: #FFD700; 
-        box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
-    }
-    .notes-btn.active:hover {
-        background: rgba(255, 215, 0, 0.1); transform: scale(1.1);
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
-    }
-    .notes-btn.inactive {
-        opacity: 0.4; filter: grayscale(100%); border-color: #444;
-    }
-    .notes-btn.inactive:hover {
-        opacity: 1; border-color: #666; color: #999;
-    }
+    .notes-btn.active { border-color: #FFD700; color: #FFD700; box-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+    .notes-btn.active:hover { background: rgba(255, 215, 0, 0.1); transform: scale(1.1); box-shadow: 0 0 10px rgba(255, 215, 0, 0.6); }
+    .notes-btn.inactive { opacity: 0.4; filter: grayscale(100%); border-color: #444; }
+    .notes-btn.inactive:hover { opacity: 1; border-color: #666; color: #999; }
     .notes-btn svg { width: 18px; height: 18px; fill: currentColor; }
-
-
-    /* ESTILO BOTÓN GLOBAL MAESTRO (ACTUALIZADO 1, 2, 3) */
     .master-direct-group { display: inline-flex; gap: 6px; vertical-align: middle; margin-left: 10px; }
     .master-slot-btn {
         background: transparent; border: 1px solid #444; color: #666;
@@ -284,13 +198,8 @@
         align-items: center; justify-content: center; cursor: pointer;
         font-weight: bold; font-size: 11px; transition: all 0.3s;
     }
-    .master-slot-btn.active { 
-        border-color: #ff9800; color: #ff9800; 
-        box-shadow: 0 0 8px rgba(255, 152, 0, 0.4); 
-    }
+    .master-slot-btn.active { border-color: #ff9800; color: #ff9800; box-shadow: 0 0 8px rgba(255, 152, 0, 0.4); }
     .master-slot-btn:hover { transform: scale(1.1); }
-
-    /* ESTILO BOTÓN GLOBAL MAESTRO LEGACY */
     .setlist-master-doc-btn {
         background: transparent; border: 1px solid #444; color: #555;
         border-radius: 50%; width: 32px; height: 32px;
@@ -303,51 +212,26 @@
         animation: pulse-master-orange 2s infinite;
     }
     @keyframes pulse-master-orange { 0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); } }
-
-    /* SLOTS MODAL DOCUMENTOS */
     .master-doc-slot { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #333; }
     .master-doc-slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .master-doc-slot-title { color: #ff9800; font-weight: bold; font-size: 0.9em; }
     .master-doc-slot input { margin-bottom: 8px !important; }
-
-    /* PREVIEW DIA */
     .day-preview-text { color: #0cf; font-weight: bold; margin-left: 10px; font-style: italic; font-size: 0.9em; }
-
-    /* METRONOME COLUMN & BUTTON (ACTUALIZADO) */
     th.metronome-col-header, td.metronome-col { width: 40px; text-align: center; padding: 5px; }
-    
-    /* Estilo base (Gris/Apagado - No hay tempo) */
     .metronome-table-btn {
         background: transparent; border: 1px solid #333; color: #555;
         border-radius: 50%; width: 32px; height: 32px;
         display: flex; align-items: center; justify-content: center;
-        margin: 0 auto; 
-        cursor: default; /* No clicable por defecto si no hay tempo */
-        transition: all 0.3s;
+        margin: 0 auto; cursor: default; transition: all 0.3s;
     }
     .metronome-table-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
-
-    /* Estado: Tiene tempo (Azul - Como auriculares) */
-    .metronome-table-btn.has-tempo {
-        border-color: #0cf; color: #0cf;
-        cursor: pointer; /* Clicable */
-        box-shadow: 0 0 5px rgba(0, 204, 255, 0.3);
-    }
-    .metronome-table-btn.has-tempo:hover {
-        background: rgba(0, 204, 255, 0.1); transform: scale(1.1);
-        box-shadow: 0 0 10px rgba(0, 204, 255, 0.6);
-    }
-
-    /* Estado: Reproduciendo (Rojo pulsante) - Sobrescribe el azul */
+    .metronome-table-btn.has-tempo { border-color: #0cf; color: #0cf; cursor: pointer; box-shadow: 0 0 5px rgba(0, 204, 255, 0.3); }
+    .metronome-table-btn.has-tempo:hover { background: rgba(0, 204, 255, 0.1); transform: scale(1.1); box-shadow: 0 0 10px rgba(0, 204, 255, 0.6); }
     .metronome-table-btn.active-metronome {
         background: rgba(255, 85, 85, 0.2); border-color: #ff5555 !important; color: #ff5555 !important;
-        box-shadow: 0 0 8px rgba(255, 85, 85, 0.6);
-        animation: pulse-metro 1s infinite;
-        cursor: pointer;
+        box-shadow: 0 0 8px rgba(255, 85, 85, 0.6); animation: pulse-metro 1s infinite; cursor: pointer;
     }
     @keyframes pulse-metro { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-
-
     .break-row td { font-style: italic; color: #ccc; background-color: #161616; }
     .break-row td:first-child { color: #777; text-align: center; }
     .break-row td:nth-child(3), .break-row td:nth-child(4), .break-row td:nth-child(5), .break-row td:nth-child(6) { text-align: center; }
@@ -359,7 +243,6 @@
     .download-btn:hover{background:#09b}
     .live-mode-btn { background: #ff0055; color: #fff; border: 1px solid #ff0055; }
     .live-mode-btn:hover { background: #cc0044; }
-
     #total-time, #total-time-star, #total-time-2{color:#0cf;margin-top:10px;text-align:center}
     footer{background:#111;color:#888;text-align:center;padding:10px;border-top:1px solid #222}
     .calendar-btn, .details-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 0; vertical-align: middle; }
@@ -395,27 +278,15 @@
     .stats-filter label { color: #0cf; }
     .stats-filter select { padding: 5px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: auto; max-width: 200px; }
     #firebase-critical-error-banner { background-color: red; color: white; padding: 15px; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 100001; font-weight: bold; }
-
-    /* --- JUKEBOX POPUP (POPUP FLOTANTE) --- */
     #jukebox-player-bar {
         position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 95%; max-width: 450px;
-        background: rgba(20, 20, 20, 0.98); 
-        border: 1px solid #0cf;
-        border-radius: 12px;
-        padding: 20px; 
-        z-index: 11000; 
-        display: flex; 
-        opacity: 0; visibility: hidden; pointer-events: none; /* Hidden logic */
-        flex-direction: column; align-items: center;
-        box-shadow: 0 0 50px rgba(0,0,0,0.8), 0 0 15px rgba(0,204,255,0.3);
-        backdrop-filter: blur(10px);
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        width: 95%; max-width: 450px; background: rgba(20, 20, 20, 0.98); 
+        border: 1px solid #0cf; border-radius: 12px; padding: 20px; z-index: 11000; 
+        display: flex; opacity: 0; visibility: hidden; pointer-events: none;
+        flex-direction: column; align-items: center; box-shadow: 0 0 50px rgba(0,0,0,0.8), 0 0 15px rgba(0,204,255,0.3);
+        backdrop-filter: blur(10px); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    #jukebox-player-bar.visible { 
-        opacity: 1; visibility: visible; pointer-events: all;
-    }
-    
+    #jukebox-player-bar.visible { opacity: 1; visibility: visible; pointer-events: all; }
     .jukebox-info { display: flex; align-items: center; width: 100%; justify-content: space-between; margin-bottom: 15px; }
     .jukebox-song-title { color: #fff; font-weight: bold; font-size: 1.1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; text-shadow: 0 0 5px rgba(0,204,255,0.5); }
     .jukebox-controls { display: flex; gap: 20px; align-items: center; }
@@ -427,8 +298,6 @@
     .jukebox-progress-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #0cf; border-radius: 50%; cursor: pointer; box-shadow: 0 0 5px #0cf; }
     .jukebox-close-btn { font-size: 1.5em; color: #aaa; background:none; border:none; cursor:pointer; padding:0 5px; }
     .jukebox-close-btn:hover { color: #fff; }
-
-    /* LOOP CONTROLS POPUP */
     .jukebox-loop-area { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; width: 100%; justify-content: center; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; }
     .jukebox-loop-display { font-size: 0.9em; font-family: monospace; color: #0cf; min-width: 70px; text-align: center; white-space: nowrap; }
     .loop-btn { background: #111; border: 1px solid #555; color: #aaa; padding: 5px 10px; border-radius: 6px; font-size: 0.9em; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: all 0.2s; }
@@ -436,8 +305,6 @@
     .loop-btn svg { width: 16px; height: 16px; fill: currentColor; }
     .loop-btn:hover { color: #fff; border-color: #777; background: #222; }
     .loop-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-    /* MARKERS AREA (NUEVO) */
     .jukebox-markers-area { width: 100%; margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; }
     .markers-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .markers-header span { font-size: 0.9em; color: #0cf; font-weight: bold; }
@@ -451,168 +318,64 @@
     .marker-label { font-size: 0.9em; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .marker-del-btn { background: none; border: none; color: #666; font-size: 1.2em; cursor: pointer; padding: 0 5px; }
     .marker-del-btn:hover { color: #f55; }
-
-
-    /* Estilos para el modo Iframe (Google Drive) */
     #jukebox-iframe-container { width: 100%; height: 80px; display: none; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
     #jukebox-iframe-container iframe { width: 100%; height: 100%; border: none; background: transparent; }
-
-    /* --- METRÓNOMO POPUP (REDISEÑADO) --- */
     #metronome-popup {
         position: fixed; top: 70px; right: 20px; width: 280px;
-        background: rgba(18, 18, 18, 0.85); /* Fondo glass oscuro */
-        border: 2px solid #333; 
-        border-radius: 20px;
-        padding: 20px; z-index: 2000;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05);
+        background: rgba(18, 18, 18, 0.85); border: 2px solid #333; border-radius: 20px;
+        padding: 20px; z-index: 2000; box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05);
         display: none; flex-direction: column; align-items: center; gap: 15px;
         backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-        transform-origin: top right;
-        transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease, border-color 0.1s ease;
+        transform-origin: top right; transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease, border-color 0.1s ease;
     }
     #metronome-popup.visible { display: flex; }
-    
-    /* Efecto de parpadeo en el borde (Visual Beat) */
-    #metronome-popup.beat-flash {
-        border-color: #0cf;
-        box-shadow: 0 0 20px rgba(0, 204, 255, 0.4);
-    }
-
-    .metronome-bpm-display { 
-        font-size: 3.5em; font-weight: 800; color: #fff; font-family: monospace; 
-        line-height: 1; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
-    .metronome-bpm-label { 
-        font-size: 0.7em; color: #0cf; font-weight: bold; letter-spacing: 2px; margin-top: -5px; 
-    }
-    
-    /* NUEVO: Visualizador de puntos (LEDs) */
-    .metronome-led-container {
-        display: flex; gap: 8px; margin-bottom: 5px;
-    }
-    .metronome-led {
-        width: 12px; height: 12px; border-radius: 50%;
-        background: #333; border: 1px solid #444;
-        transition: background 0.1s, box-shadow 0.1s;
-    }
-    .metronome-led.active {
-        background: #0cf; box-shadow: 0 0 10px #0cf; border-color: #fff;
-    }
-    .metronome-led.active-accent {
-        background: #ff0055; box-shadow: 0 0 10px #ff0055; border-color: #fff;
-    }
-
-    /* Slider Estilizado */
-    .metronome-slider { 
-        width: 100%; margin: 5px 0; -webkit-appearance: none; 
-        background: transparent; height: 30px; cursor: pointer; 
-    }
-    .metronome-slider::-webkit-slider-runnable-track {
-        width: 100%; height: 6px; background: #333; border-radius: 3px;
-    }
-    .metronome-slider::-webkit-slider-thumb { 
-        -webkit-appearance: none; height: 24px; width: 24px; 
-        border-radius: 50%; background: #0cf; 
-        margin-top: -9px; box-shadow: 0 0 10px rgba(0,204,255,0.5); 
-        border: 2px solid #fff; transition: transform 0.1s;
-    }
+    #metronome-popup.beat-flash { border-color: #0cf; box-shadow: 0 0 20px rgba(0, 204, 255, 0.4); }
+    .metronome-bpm-display { font-size: 3.5em; font-weight: 800; color: #fff; font-family: monospace; line-height: 1; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+    .metronome-bpm-label { font-size: 0.7em; color: #0cf; font-weight: bold; letter-spacing: 2px; margin-top: -5px; }
+    .metronome-led-container { display: flex; gap: 8px; margin-bottom: 5px; }
+    .metronome-led { width: 12px; height: 12px; border-radius: 50%; background: #333; border: 1px solid #444; transition: background 0.1s, box-shadow 0.1s; }
+    .metronome-led.active { background: #0cf; box-shadow: 0 0 10px #0cf; border-color: #fff; }
+    .metronome-led.active-accent { background: #ff0055; box-shadow: 0 0 10px #ff0055; border-color: #fff; }
+    .metronome-slider { width: 100%; margin: 5px 0; -webkit-appearance: none; background: transparent; height: 30px; cursor: pointer; }
+    .metronome-slider::-webkit-slider-runnable-track { width: 100%; height: 6px; background: #333; border-radius: 3px; }
+    .metronome-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #0cf; margin-top: -9px; box-shadow: 0 0 10px rgba(0,204,255,0.5); border: 2px solid #fff; transition: transform 0.1s; }
     .metronome-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
-    
-    /* Controles */
     .metronome-controls { display: flex; gap: 20px; width: 100%; justify-content: center; align-items: center; margin-top: 5px; }
-    
-    .metronome-btn-circle { 
-        width: 45px; height: 45px; border-radius: 50%; 
-        border: 1px solid #444; background: rgba(255,255,255,0.05); 
-        color: #aaa; cursor: pointer; display: flex; 
-        align-items: center; justify-content: center; 
-        font-weight: bold; font-size: 1.2em;
-        transition: all 0.2s;
-    }
+    .metronome-btn-circle { width: 45px; height: 45px; border-radius: 50%; border: 1px solid #444; background: rgba(255,255,255,0.05); color: #aaa; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2em; transition: all 0.2s; }
     .metronome-btn-circle:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #666; }
     .metronome-btn-circle:active { transform: scale(0.95); }
-
-    .metronome-play-btn { 
-        width: 70px; height: 70px; border-radius: 50%; 
-        background: #0cf; border: none; color: #000; 
-        font-size: 1.5em; cursor: pointer; display: flex; 
-        align-items: center; justify-content: center; 
-        box-shadow: 0 0 20px rgba(0,204,255,0.3); 
-        transition: all 0.2s;
-    }
+    .metronome-play-btn { width: 70px; height: 70px; border-radius: 50%; background: #0cf; border: none; color: #000; font-size: 1.5em; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0,204,255,0.3); transition: all 0.2s; }
     .metronome-play-btn:hover { background: #fff; transform: scale(1.05); box-shadow: 0 0 30px rgba(0,204,255,0.5); }
     .metronome-play-btn.playing { background: #ff3333; color: #fff; box-shadow: 0 0 20px rgba(255, 51, 51, 0.4); }
-    
-    /* BOTÓN TAP */
-    .metronome-tap-btn {
-        margin-top: 15px; width: 100%; height: 50px;
-        background: #0cf; border: none; border-radius: 12px;
-        color: #000; font-weight: 800; font-size: 1.2em; letter-spacing: 1px;
-        cursor: pointer; box-shadow: 0 5px 15px rgba(0,204,255,0.2);
-        display: flex; align-items: center; justify-content: center;
-        transition: transform 0.1s, background 0.1s, box-shadow 0.1s;
-    }
+    .metronome-tap-btn { margin-top: 15px; width: 100%; height: 50px; background: #0cf; border: none; border-radius: 12px; color: #000; font-weight: 800; font-size: 1.2em; letter-spacing: 1px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,204,255,0.2); display: flex; align-items: center; justify-content: center; transition: transform 0.1s, background 0.1s, box-shadow 0.1s; }
     .metronome-tap-btn:active { transform: scale(0.98); background: #fff; box-shadow: 0 2px 10px rgba(255,255,255,0.3); }
-
-    /* ESTILOS TABLA LOGS EXPANDIBLE */
     #access-logs-table .log-row { cursor: pointer; transition: background 0.2s; }
     #access-logs-table .log-row:hover { background: rgba(255,255,255,0.05); }
     #access-logs-table .log-details-row { display: none; background: rgba(0,0,0,0.3); }
     #access-logs-table .log-details-row.show { display: table-row; }
     .log-details-content { padding: 10px; font-size: 0.9em; color: #ccc; }
     .log-event-item { border-left: 2px solid #0cf; padding-left: 8px; margin-bottom: 4px; }
-    .expand-btn { 
-        background: none; border: 1px solid #444; color: #0cf; border-radius: 4px; 
-        width: 24px; height: 24px; cursor: pointer; font-weight: bold; display: inline-flex; 
-        align-items: center; justify-content: center; padding: 0; 
-    }
-
-       /* --- TUNER POPUP (NUEVO) --- */
+    .expand-btn { background: none; border: 1px solid #444; color: #0cf; border-radius: 4px; width: 24px; height: 24px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
     #tuner-popup {
         position: fixed; top: 70px; right: 20px; width: 260px;
-        background: rgba(20, 20, 20, 0.95); 
-        border: 1px solid #0cf; border-radius: 12px;
-        padding: 15px; z-index: 11000; /* Z-index alto para asegurar visibilidad */
-        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        background: rgba(20, 20, 20, 0.95); border: 1px solid #0cf; border-radius: 12px;
+        padding: 15px; z-index: 11000; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         display: none; flex-direction: column; align-items: center; gap: 10px;
-        backdrop-filter: blur(10px);
-        transform-origin: top right;
-        transition: transform 0.2s ease, opacity 0.2s ease;
+        backdrop-filter: blur(10px); transform-origin: top right; transition: transform 0.2s ease, opacity 0.2s ease;
     }
     #tuner-popup.visible { display: flex !important; }
-    
-    .tuner-display-area { 
-        width: 100%; height: 100px; background: #111; 
-        border: 1px solid #333; border-radius: 8px; position: relative; 
-        overflow: hidden; margin-bottom: 10px;
-    }
-    .tuner-needle {
-        position: absolute; bottom: 0; left: 50%; width: 4px; height: 80%; /* Aguja más visible */
-        background: #0cf; transform-origin: bottom center;
-        transition: left 0.1s ease-out;
-        box-shadow: 0 0 5px #0cf;
-        border-radius: 2px;
-    }
-    .tuner-note { 
-        font-size: 3em; font-weight: bold; color: #fff; 
-        text-align: center; margin-top: 10px; z-index: 2; position: relative;
-        text-shadow: 0 0 10px rgba(0,0,0,0.8);
-    }
+    .tuner-display-area { width: 100%; height: 100px; background: #111; border: 1px solid #333; border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 10px; }
+    .tuner-needle { position: absolute; bottom: 0; left: 50%; width: 4px; height: 80%; background: #0cf; transform-origin: bottom center; transition: left 0.1s ease-out; box-shadow: 0 0 5px #0cf; border-radius: 2px; }
+    .tuner-note { font-size: 3em; font-weight: bold; color: #fff; text-align: center; margin-top: 10px; z-index: 2; position: relative; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
     .tuner-freq { font-size: 0.9em; color: #aaa; font-family: monospace; }
     .tuner-msg { font-size: 0.7em; color: #666; margin: 5px 0 0 0; text-align: center; }
-    
-    /* Status colors */
     #tuner-popup.tuner-status-perfect .tuner-note { color: #0f0; text-shadow: 0 0 10px #0f0; }
     #tuner-popup.tuner-status-perfect .tuner-needle { background: #0f0; box-shadow: 0 0 5px #0f0; }
-    
-    #tuner-popup.tuner-status-flat .tuner-note { color: #0cf; } /* Flat is blueish/cyan */
-    #tuner-popup.tuner-status-sharp .tuner-note { color: #f55; } /* Sharp is red */
-    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
-
+    #tuner-popup.tuner-status-flat .tuner-note { color: #0cf; }
+    #tuner-popup.tuner-status-sharp .tuner-note { color: #f55; }
     @media(max-width:768px){
       header { height: 55px; padding: 8px 10px; }  
       .logo img.logo-main{ width: 110px; }
-      /* Ajuste logo intranet móvil */
       .logo-intranet{ height:25px; margin-left: 5px; }
       .header-icon-btn { width: 35px; height: 35px; padding: 6px; }
       .hamburger { width: 35px; height: 35px; }
@@ -625,7 +388,6 @@
       .attendance-form { flex-direction: column; align-items: flex-start; }
       .attendance-form select { width: 100%; }
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
-      /* FIX: Enable scroll by default for all tables in mobile */
       .table-wrapper { overflow-x: auto; width: 100%; display: block; }  
       table { width: 100%; min-width: unset; font-size: 0.85em; }
       th, td { padding: 8px 4px; white-space: normal; word-wrap: break-word; max-width: 150px; }
@@ -634,35 +396,15 @@
       .stats-table table { font-size: 0.85em; }
       .modal-content { width: 95%; padding: 15px; }  
       .modal-field-group { flex-direction: column; }  
-      
-      /* Ajustes Popup en móvil */
       #jukebox-player-bar { width: 95%; padding: 15px; max-width: none; }
       .jukebox-loop-area { flex-wrap: wrap; }
       .jukebox-control-btn svg { width: 28px; height: 28px; }
-      
-      /* Metrónomo móvil */
       #metronome-popup { right: 10px; left: 10px; width: auto; top: 65px; }
-      /* Afinador móvil */
       #tuner-popup { right: 10px; left: 10px; width: auto; top: 65px; }
-
-      /* ESTILOS ESPECÍFICOS PARA MÓVIL EN TABLA DE ENSAYOS (EVITAR CORTE) */
-      #rehearsals-view-screen .table-wrapper {
-          overflow-x: auto !important;
-          width: 100%;
-          -webkit-overflow-scrolling: touch;
-      }
-      #rehearsals-view-screen table {
-          min-width: 100%; /* Asegura que ocupe al menos el ancho */
-      }
-      #rehearsals-view-screen td {
-          padding: 6px 4px; /* Reducir padding lateral */
-          font-size: 0.8em; /* Fuente un poco más pequeña */
-          word-break: break-word; /* Romper palabras largas */
-          white-space: normal;
-      }
+      #rehearsals-view-screen .table-wrapper { overflow-x: auto !important; width: 100%; -webkit-overflow-scrolling: touch; }
+      #rehearsals-view-screen table { min-width: 100%; }
+      #rehearsals-view-screen td { padding: 6px 4px; font-size: 0.8em; word-break: break-word; white-space: normal; }
     }
-
-    /* FIX: MOVIL MUY PEQUEÑO (< 380px) */
     @media(max-width:380px) {
         .logo img.logo-main { width: 90px; }
         .header-icon-btn { width: 32px; height: 32px; padding: 5px; }
@@ -670,7 +412,6 @@
         .header-controls-right { gap: 5px; }
         .header-left { gap: 5px; }
     }
-
     #vista-calendario-mensual h2 { text-align: center; color: #0cf; margin-bottom: 20px; }
     .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #fff; }
     .calendar-controls button { background: rgba(34, 34, 34, 0.8); border: 1px solid #0cf; color: #0cf; padding: 5px 15px; border-radius: 4px; cursor: pointer; transition: all 0.2s;}
@@ -685,9 +426,7 @@
     .cal-event:hover { transform: scale(1.02) translateY(-1px); filter: brightness(1.2); z-index: 5; }
     .cal-event.type-ensayo { color: #ff9999; border-left: 3px solid #ff3333; background: linear-gradient(90deg, rgba(255, 0, 0, 0.15) 0%, rgba(255,0,0,0.05) 100%); }
     .cal-event.type-concierto { color: #ffff99; border-left: 3px solid #ffff00; background: linear-gradient(90deg, rgba(255, 255, 0, 0.15) 0%, rgba(255,255,0,0.05) 100%); }
-
     @media(max-width:768px){ .cal-day { min-height: 70px; font-size: 0.9em; } .cal-event { font-size: 0.7em; } .cal-header { font-size: 0.7em; padding: 5px 0; } }
-
     .suggestion-form { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
     .suggestion-form-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
     .suggestion-form-row input { flex: 1; min-width: 150px; }
@@ -716,8 +455,6 @@
     #user-identity-selector { background: #222; color: #fff; border: 1px solid #0cf; padding: 5px; border-radius: 4px; margin-bottom: 15px; width: 100%; max-width: 300px; }
     .admin-badge { background: red; color: white; font-size: 0.7em; padding: 2px 5px; border-radius: 3px; margin-left: 5px; }
     .deleted-row { background: rgba(255, 0, 0, 0.1); color: #aaa; }
-
-    /* --- ESTILOS MODO DIRECTO --- */
     #live-mode-overlay {
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
         background: #000; z-index: 999999;
@@ -781,14 +518,12 @@
       </div>
   </div>
 
-  <!-- JUKEBOX PLAYER BAR (POPUP) -->
   <div id="jukebox-player-bar">
     <div class="jukebox-info">
         <span id="jukebox-current-title" class="jukebox-song-title">No hay canción seleccionada</span>
         <button class="jukebox-close-btn" id="jukebox-close-player" title="Cerrar Player">✕</button>
     </div>
     
-    <!-- NUEVO: CONTROLES DE BUCLE A-B (Arriba de los controles principales) -->
     <div class="jukebox-loop-area">
         <button class="loop-btn" id="jb-loop-a" title="Marcar Inicio (A)">
             <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
@@ -802,7 +537,6 @@
         <button class="loop-btn" id="jb-loop-clear" title="Borrar Bucle" style="border-color:#f55; color:#f55; display:none;">✕</button>
     </div>
 
-    <!-- CONTROLES ESTÁNDAR (YouTube / HTML5) -->
     <div class="jukebox-controls" id="jukebox-std-controls">
         <button class="jukebox-control-btn" id="jb-rewind">
         <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
@@ -825,29 +559,24 @@
         <span id="jb-total-time">0:00</span>
     </div>
     
-    <!-- SECCIÓN DE MARCADORES (NUEVO) -->
     <div class="jukebox-markers-area" id="jukebox-markers-area">
        <div class="markers-header">
           <span>Marcadores</span>
           <button id="jb-add-marker" title="Añadir marcador en posición actual">+</button>
        </div>
        <div id="jb-markers-list" class="markers-list">
-          <!-- Items dinámicos -->
        </div>
     </div>
     
-    <!-- IFRAME CONTAINER (Solo fallback) -->
     <div id="jukebox-iframe-container">
         <iframe id="jb-iframe" src="" allow="autoplay"></iframe>
     </div>
 
-    <!-- Hidden elements for logic -->
     <audio id="jukebox-audio-element" style="display:none;"></audio>
     <div id="youtube-player-placeholder" style="position:absolute; top:-9999px; left:-9999px;"></div>
   </div>
 
   <header>
-    <!-- ZONA IZQUIERDA: LOGOS AGRUPADOS -->
     <div class="header-left">
         <div class="logo">
           <img src="assets/logo_blanco.png" alt="Logo El Sótano del Doctor" class="logo-main">
@@ -855,18 +584,14 @@
         <img src="assets/logointranet.png" alt="Logo Intranet El Sótano del Doctor" class="logo-intranet">
     </div>
 
-    <!-- ZONA DERECHA: BOTONES -->
     <div class="header-controls-right">
-        <!-- BOTÓN AFINADOR (NUEVO) -->
         <button id="tuner-toggle-btn" class="header-icon-btn" title="Afinador">
             <svg viewBox="0 0 24 24">
                 <path d="M15 2H9v2H7v6c0 2.76 2.24 5 5 5s5-2.24 5-5V4h-2V2zm0 8c0 1.66-1.34 3-3 3s-3-1.34-3-3V4h6v6z M11 14v8h2v-8h-2z" fill="currentColor"/>
             </svg>
         </button>
 
-        <!-- BOTÓN METRÓNOMO (NUEVO) -->
         <button id="metronome-toggle-btn" class="header-icon-btn" title="Metrónomo">
-            <!-- Icono sencillo tipo triángulo -->
             <svg viewBox="0 0 24 24">
                 <path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/> 
             </svg>
@@ -891,30 +616,20 @@
     </div>
   </header>
 
-  <!-- POPUP DEL METRÓNOMO (Oculto por defecto) -->
   <div id="metronome-popup">
      <div class="metronome-bpm-display"><span id="metro-bpm-val">120</span> <span style="font-size:0.4em; color:#aaa;">BPM</span></div>
-     <!-- Slider BPM -->
      <input type="range" id="metro-bpm-slider" class="metronome-slider" min="40" max="240" value="120">
-     
      <div class="metronome-controls">
          <button class="metronome-btn-circle" id="metro-minus">-</button>
-         
          <button class="metronome-play-btn" id="metro-play-btn">
-             <!-- Icono Play -->
              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" id="metro-icon-play"><path d="M8 5v14l11-7z"/></svg>
-             <!-- Icono Stop -->
              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" id="metro-icon-stop" style="display:none;"><path d="M6 6h12v12H6z"/></svg>
          </button>
-         
          <button class="metronome-btn-circle" id="metro-plus">+</button>
      </div>
-     
-     <!-- BOTÓN TAP (NUEVO) -->
      <button id="metro-tap-btn" class="metronome-tap-btn">TAP</button>
   </div>
 
-  <!-- POPUP DEL AFINADOR (Oculto por defecto) -->
   <div id="tuner-popup">
      <div class="tuner-display-area">
          <div class="tuner-note" id="tuner-note">--</div>
@@ -945,14 +660,13 @@
       <a href="#" id="menu-admin-suggestions">Gestión de Propuestas</a>
       <a href="#" id="menu-jukebox-mgmt">Gestión Jukebox</a>
       <a href="#" id="menu-pdf-mgmt">Gestión de Partituras (PDF)</a>
-      <a href="#" id="menu-master-docs-mgmt">Gestión Documentación Maestra</a> <!-- NUEVO MENU DOCS -->
+      <a href="#" id="menu-master-docs-mgmt">Gestión Documentación Maestra</a>
       <a href="#" id="menu-access-logs" style="color:#0cf;">Registro de Accesos</a>
       <a href="#" id="menu-enroll-biometry" style="color:#FFD700; font-weight: bold; border-top: 1px solid #444; margin-top: 10px;">🛡️ Activar FaceID / Huella</a>
     </div>
     <a href="#" id="menu-cerrar">Cerrar Menú</a>
   </nav>
 
-  <!-- CRITICAL UI SCRIPT: Makes menu interactive immediately while heavy scripts load below -->
   <script id="critical-ui-script">
       (function() {
           var sidebar = document.getElementById("sidebar-menu");
@@ -1002,193 +716,16 @@
   <div id="concert-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Detalles del Concierto</h3><h4 id="concert-detail-title-display"></h4><input type="hidden" id="concert-detail-id"><label for="concert-detail-location">Detalles adicionales de la ubicación:</label><textarea id="concert-detail-location"></textarea><label for="concert-detail-gmaps-link">Enlace de Google Maps (Lugar Evento):</label><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;"><input type="url" id="concert-detail-gmaps-link" placeholder="https://maps.app.goo.gl/example" style="flex-grow: 1; margin-bottom: 0;"><button id="open-gmaps-link-btn" style="display:none; padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; line-height: 1.5;">Abrir Mapa</button></div><div class="modal-field-group"><div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div><div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div></div><div class="modal-field-group"><div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div><div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div></div><label for="concert-detail-notes">Notas generales:</label><textarea id="concert-detail-notes"></textarea><label for="concert-detail-sound-company">Empresa de Sonorización:</label><input type="text" id="concert-detail-sound-company" placeholder="Nombre de la empresa o técnico externo"><h4>Músicos Asistentes</h4><div id="musicians-attendance-list"></div><h4>Técnicos Responsables</h4><div id="technicians-attendance-list" style="border: 1px solid #333; padding: 10px; margin-bottom:15px;"></div><button id="save-concert-details">Guardar Detalles</button><button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button><p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="rehearsal-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Información del Ensayo</h3><h4 id="rehearsal-detail-title-display"></h4><input type="hidden" id="rehearsal-detail-index"><label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label><textarea id="rehearsal-notes" style="min-height: 400px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea><button id="save-rehearsal-details">Guardar Información</button><button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button><p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="setlist-config-screen" class="config-screen"><button class="close-btn" id="close-setlist-config">Cerrar</button><h2>Configuración de Setlists</h2><h3>Setlist Próximo Ensayo</h3><label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025"><label>ID/URL feed</label><input id="setlist1-url" placeholder="URL"><h3>Setlist Próximo Concierto</h3><label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad"><label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa"><h3>Setlist Concierto Estrella</h3><label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025"><label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL"><button id="guardar-setlist-config">Guardar Configuración</button><p id="setlist-message" class="error-message"></p></div>
-  
-  <!-- MASTER DOCS MGMT SCREEN -->
-  <div id="master-docs-mgmt-screen" class="config-screen">
-      <button class="close-btn" id="close-master-docs-mgmt">Cerrar</button>
-      <h2>Gestión Documentación Maestra</h2>
-      <p style="color:#aaa; text-align:center;">Limpia o revisa los archivos globales asociados a cada setlist.</p>
-      <div class="table-wrapper">
-          <table id="master-docs-mgmt-table">
-              <thead><tr><th>Setlist</th><th>Archivos Activos</th><th>Acciones</th></tr></thead>
-              <tbody id="master-docs-mgmt-body"></tbody>
-          </table>
-      </div>
-  </div>
-
-  <!-- JUKEBOX MGMT SCREEN -->
-  <div id="jukebox-mgmt-screen" class="config-screen">
-      <button class="close-btn" id="close-jukebox-mgmt">Cerrar</button>
-      <h2>Gestión Jukebox</h2>
-      <p style="color:#aaa; text-align:center;">Listado de canciones que tienen un enlace de audio asignado.</p>
-      <div class="table-wrapper">
-          <table id="jukebox-mgmt-table">
-              <thead><tr><th>Canción (ID)</th><th>Enlace</th><th>Acciones</th></tr></thead>
-              <tbody id="jukebox-mgmt-body"></tbody>
-          </table>
-      </div>
-  </div>
-
-  <!-- PDF MGMT SCREEN -->
-  <div id="pdf-mgmt-screen" class="config-screen">
-      <button class="close-btn" id="close-pdf-mgmt">Cerrar</button>
-      <h2>Gestión de Partituras (PDF)</h2>
-      <p style="color:#aaa; text-align:center;">Listado de canciones que tienen un enlace a documento asignado.</p>
-      <div class="table-wrapper">
-          <table id="pdf-mgmt-table">
-              <thead><tr><th>Canción (ID)</th><th>Enlace Documento</th><th>Acciones</th></tr></thead>
-              <tbody id="pdf-mgmt-body"></tbody>
-          </table>
-      </div>
-  </div>
-
-  <!-- ACCESS LOGS SCREEN -->
-  <div id="access-logs-screen" class="config-screen">
-      <button class="close-btn" id="close-access-logs">Cerrar</button>
-      <h2>Registro de Accesos</h2>
-      <p style="color:#aaa; text-align:center;">Últimos accesos a la Intranet (Expandir + para ver detalle).</p>
-      <div class="table-wrapper">
-          <table id="access-logs-table" style="font-size:0.8em; width:100%;">
-              <thead><tr><th>Fecha</th><th>Usuario</th><th>Duración</th><th></th></tr></thead>
-              <tbody id="access-logs-body"></tbody>
-          </table>
-      </div>
-  </div>
-
-  <!-- MASTER DOCS MODAL (NUEVO) -->
-  <div id="master-docs-modal" class="modal-backdrop">
-      <div class="modal-content" style="max-width: 500px;">
-          <h3>Documentación: <span id="master-docs-setlist-name" style="color:#fff;"></span></h3>
-          <p id="master-docs-admin-hint" style="font-size:0.8em; color:#888; margin-bottom:15px; display:none;">(Modo Administrador: Puedes editar nombres y enlaces)</p>
-          
-          <div id="master-docs-slots-container">
-              <!-- Slot 1 -->
-              <div class="master-doc-slot">
-                  <div class="master-doc-slot-header">
-                      <span class="master-doc-slot-title">Archivo 1</span>
-                      <button id="master-btn-view-1" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
-                  </div>
-                  <div class="admin-only" style="display:none;">
-                      <input type="text" id="master-name-1" placeholder="Nombre (Ej: Guion del Show)">
-                      <input type="url" id="master-url-1" placeholder="URL (Dropbox, Drive...)">
-                      <button id="master-save-1" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 1</button>
-                  </div>
-                  <div class="user-view" id="master-display-1" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div>
-              </div>
-              <!-- Slot 2 -->
-              <div class="master-doc-slot">
-                  <div class="master-doc-slot-header">
-                      <span class="master-doc-slot-title">Archivo 2</span>
-                      <button id="master-btn-view-2" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
-                  </div>
-                  <div class="admin-only" style="display:none;">
-                      <input type="text" id="master-name-2" placeholder="Nombre (Ej: Notas Técnicas)">
-                      <input type="url" id="master-url-2" placeholder="URL">
-                      <button id="master-save-2" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 2</button>
-                  </div>
-                  <div class="user-view" id="master-display-2" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div>
-              </div>
-              <!-- Slot 3 -->
-              <div class="master-doc-slot">
-                  <div class="master-doc-slot-header">
-                      <span class="master-doc-slot-title">Archivo 3</span>
-                      <button id="master-btn-view-3" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
-                  </div>
-                  <div class="admin-only" style="display:none;">
-                      <input type="text" id="master-name-3" placeholder="Nombre (Ej: Speech)">
-                      <input type="url" id="master-url-3" placeholder="URL">
-                      <button id="master-save-3" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 3</button>
-                  </div>
-                  <div class="user-view" id="master-display-3" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div>
-              </div>
-          </div>
-
-          <div style="text-align:right; margin-top:15px;">
-              <button id="close-master-docs-modal" class="modal-close-btn">Cerrar</button>
-          </div>
-      </div>
-  </div>
-
-  <!-- JUKEBOX EDIT MODAL -->
-  <div id="jukebox-edit-modal" class="modal-backdrop">
-      <div class="modal-content" style="max-width: 500px;">
-         <h3>Jukebox: <span id="jb-modal-songname" style="color:#fff;"></span></h3>
-         
-         <label for="jb-modal-url-input">Enlace de Audio (YouTube, MP3, Drive):</label>
-         <input type="text" id="jb-modal-url-input" placeholder="Pegar URL aquí para activar el audio...">
-         <p style="font-size:0.8em; color:#888; margin-top:5px;">* Soporta YouTube y Google Drive (modo vista previa)</p>
-
-         <div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;">
-            <div>
-                <button id="jb-modal-cancel-btn" class="modal-close-btn">Cancelar</button>
-                <button id="jb-modal-save-btn">Guardar</button>
-            </div>
-         </div>
-      </div>
-  </div>
-
-  <!-- PDF EDIT MODAL -->
-  <div id="pdf-edit-modal" class="modal-backdrop">
-      <div class="modal-content" style="max-width: 500px;">
-         <h3>Partitura: <span id="pdf-modal-songname" style="color:#fff;"></span></h3>
-         
-         <label for="pdf-modal-url-input">Enlace del Documento (Dropbox, Drive, etc):</label>
-         <input type="text" id="pdf-modal-url-input" placeholder="Pegar URL del PDF aquí...">
-         
-         <div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;">
-            <div>
-                <button id="pdf-modal-cancel-btn" class="modal-close-btn">Cancelar</button>
-                <button id="pdf-modal-save-btn">Guardar</button>
-            </div>
-         </div>
-      </div>
-  </div>
-
-  <!-- MARKER INPUT MODAL -->
-  <div id="marker-input-modal" class="modal-backdrop" style="z-index: 12000;">
-      <div class="modal-content" style="max-width: 400px;">
-          <h3>Nuevo Marcador</h3>
-          <label for="marker-name-input">Nombre del marcador:</label>
-          <input type="text" id="marker-name-input" placeholder="Ej: Solo de guitarra">
-          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-              <button id="cancel-marker-btn" class="modal-close-btn">Cancelar</button>
-              <button id="confirm-marker-btn">Guardar</button>
-          </div>
-      </div>
-  </div>
-  
-  <!-- NUEVOS MODALES PARA ANÁLISIS -->
-  <div id="analisis-config-modal" class="modal-backdrop">
-      <div class="modal-content" style="max-width: 450px;">
-          <h3>Configurar Análisis</h3>
-          <label for="analisis-config-title">Título (Concierto / Ensayo):</label>
-          <input type="text" id="analisis-config-title" placeholder="Ej: Concierto Sala X - 12/10/2023">
-          
-          <label for="analisis-config-url">URL de Audio (Dropbox, Drive, MP3):</label>
-          <input type="url" id="analisis-config-url" placeholder="https://...">
-
-          <div style="display:flex; justify-content:space-between; margin-top:20px;">
-              <button id="analisis-delete-btn" style="background:#ff3333;">Eliminar</button>
-              <div>
-                  <button id="analisis-config-close" class="modal-close-btn">Cancelar</button>
-                  <button id="analisis-config-save">Guardar</button>
-              </div>
-          </div>
-      </div>
-  </div>
-
-  <div id="analisis-notes-modal" class="modal-backdrop">
-      <div class="modal-content">
-          <h3>Notas de Debriefing</h3>
-          <h4 id="analisis-notes-display-title" style="color:#0cf; margin-top:0;"></h4>
-          <textarea id="analisis-notes-textarea" style="min-height:300px;" placeholder="Escribe aquí las conclusiones, fallos a corregir o cosas a destacar..."></textarea>
-          <div style="text-align:right;">
-              <button id="analisis-notes-close" class="modal-close-btn">Cerrar</button>
-              <button id="analisis-notes-save">Guardar Notas</button>
-          </div>
-      </div>
-  </div>
-
+  <div id="master-docs-mgmt-screen" class="config-screen"><button class="close-btn" id="close-master-docs-mgmt">Cerrar</button><h2>Gestión Documentación Maestra</h2><div class="table-wrapper"><table id="master-docs-mgmt-table"><thead><tr><th>Setlist</th><th>Archivos Activos</th><th>Acciones</th></tr></thead><tbody id="master-docs-mgmt-body"></tbody></table></div></div>
+  <div id="jukebox-mgmt-screen" class="config-screen"><button class="close-btn" id="close-jukebox-mgmt">Cerrar</button><h2>Gestión Jukebox</h2><div class="table-wrapper"><table id="jukebox-mgmt-table"><thead><tr><th>Canción (ID)</th><th>Enlace</th><th>Acciones</th></tr></thead><tbody id="jukebox-mgmt-body"></tbody></table></div></div>
+  <div id="pdf-mgmt-screen" class="config-screen"><button class="close-btn" id="close-pdf-mgmt">Cerrar</button><h2>Gestión de Partituras (PDF)</h2><div class="table-wrapper"><table id="pdf-mgmt-table"><thead><tr><th>Canción (ID)</th><th>Enlace Documento</th><th>Acciones</th></tr></thead><tbody id="pdf-mgmt-body"></tbody></table></div></div>
+  <div id="access-logs-screen" class="config-screen"><button class="close-btn" id="close-access-logs">Cerrar</button><h2>Registro de Accesos</h2><div class="table-wrapper"><table id="access-logs-table" style="font-size:0.8em; width:100%;"><thead><tr><th>Fecha</th><th>Usuario</th><th>Duración</th><th></th></tr></thead><tbody id="access-logs-body"></tbody></table></div></div>
+  <div id="master-docs-modal" class="modal-backdrop"><div class="modal-content" style="max-width: 500px;"><h3>Documentación: <span id="master-docs-setlist-name" style="color:#fff;"></span></h3><p id="master-docs-admin-hint" style="font-size:0.8em; color:#888; margin-bottom:15px; display:none;">(Modo Administrador: Puedes editar nombres y enlaces)</p><div id="master-docs-slots-container"><div class="master-doc-slot"><div class="master-doc-slot-header"><span class="master-doc-slot-title">Archivo 1</span><button id="master-btn-view-1" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button></div><div class="admin-only" style="display:none;"><input type="text" id="master-name-1" placeholder="Nombre (Ej: Guion del Show)"><input type="url" id="master-url-1" placeholder="URL (Dropbox, Drive...)"><button id="master-save-1" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 1</button></div><div class="user-view" id="master-display-1" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div></div><div class="master-doc-slot"><div class="master-doc-slot-header"><span class="master-doc-slot-title">Archivo 2</span><button id="master-btn-view-2" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button></div><div class="admin-only" style="display:none;"><input type="text" id="master-name-2" placeholder="Nombre (Ej: Notas Técnicas)"><input type="url" id="master-url-2" placeholder="URL"><button id="master-save-2" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 2</button></div><div class="user-view" id="master-display-2" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div></div><div class="master-doc-slot"><div class="master-doc-slot-header"><span class="master-doc-slot-title">Archivo 3</span><button id="master-btn-view-3" class="pdf-btn active" style="width:28px; height:28px; display:none;"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button></div><div class="admin-only" style="display:none;"><input type="text" id="master-name-3" placeholder="Nombre (Ej: Speech)"><input type="url" id="master-url-3" placeholder="URL"><button id="master-save-3" style="margin-top:0; padding:5px 10px; font-size:0.8em;">Guardar Ranura 3</button></div><div class="user-view" id="master-display-3" style="color:#ddd; font-style:italic; font-size:0.9em;">Vacío</div></div></div><div style="text-align:right; margin-top:15px;"><button id="close-master-docs-modal" class="modal-close-btn">Cerrar</button></div></div></div>
+  <div id="jukebox-edit-modal" class="modal-backdrop"><div class="modal-content" style="max-width: 500px;"><h3>Jukebox: <span id="jb-modal-songname" style="color:#fff;"></span></h3><label for="jb-modal-url-input">Enlace de Audio (YouTube, MP3, Drive):</label><input type="text" id="jb-modal-url-input" placeholder="Pegar URL aquí para activar el audio..."><p style="font-size:0.8em; color:#888; margin-top:5px;">* Soporta YouTube y Google Drive (modo vista previa)</p><div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;"><div><button id="jb-modal-cancel-btn" class="modal-close-btn">Cancelar</button><button id="jb-modal-save-btn">Guardar</button></div></div></div></div>
+  <div id="pdf-edit-modal" class="modal-backdrop"><div class="modal-content" style="max-width: 500px;"><h3>Partitura: <span id="pdf-modal-songname" style="color:#fff;"></span></h3><label for="pdf-modal-url-input">Enlace del Documento (Dropbox, Drive, etc):</label><input type="text" id="pdf-modal-url-input" placeholder="Pegar URL del PDF aquí..."><div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;"><div><button id="pdf-modal-cancel-btn" class="modal-close-btn">Cancelar</button><button id="pdf-modal-save-btn">Guardar</button></div></div></div></div>
+  <div id="marker-input-modal" class="modal-backdrop" style="z-index: 12000;"><div class="modal-content" style="max-width: 400px;"><h3>Nuevo Marcador</h3><label for="marker-name-input">Nombre del marcador:</label><input type="text" id="marker-name-input" placeholder="Ej: Solo de guitarra"><div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;"><button id="cancel-marker-btn" class="modal-close-btn">Cancelar</button><button id="confirm-marker-btn">Guardar</button></div></div></div>
+  <div id="analisis-config-modal" class="modal-backdrop"><div class="modal-content" style="max-width: 450px;"><h3>Configurar Análisis</h3><label for="analisis-config-title">Título (Concierto / Ensayo):</label><input type="text" id="analisis-config-title" placeholder="Ej: Concierto Sala X - 12/10/2023"><label for="analisis-config-url">URL de Audio (Dropbox, Drive, MP3):</label><input type="url" id="analisis-config-url" placeholder="https://..."><div style="display:flex; justify-content:space-between; margin-top:20px;"><button id="analisis-delete-btn" style="background:#ff3333;">Eliminar</button><div><button id="analisis-config-close" class="modal-close-btn">Cancelar</button><button id="analisis-config-save">Guardar</button></div></div></div></div>
+  <div id="analisis-notes-modal" class="modal-backdrop"><div class="modal-content"><h3>Notas de Debriefing</h3><h4 id="analisis-notes-display-title" style="color:#0cf; margin-top:0;"></h4><textarea id="analisis-notes-textarea" style="min-height:300px;" placeholder="Escribe aquí las conclusiones, fallos a corregir o cosas a destacar..."></textarea><div style="text-align:right;"><button id="analisis-notes-close" class="modal-close-btn">Cerrar</button><button id="analisis-notes-save">Guardar Notas</button></div></div></div>
   <div id="user-mgmt-screen" class="config-screen"><button class="close-btn" id="close-user-mgmt">Cerrar</button><h2>Gestión de Usuarios</h2><label>Nombre</label><input id="user-name" placeholder="Nombre"><label>Apodo</label><input id="user-nickname" placeholder="Apodo (corto)"><label>Roles</label><select id="user-role" multiple><option value="Batería">Batería</option><option value="Teclados">Teclados</option><option value="Voz">Voz</option><option value="Guitarra eléctrica">Guitarra eléctrica</option><option value="Guitarra Acústica">Guitarra Acústica</option><option value="Bajo">Bajo</option><option value="Percusión">Percusión</option><option value="Saxo">Saxo</option><option value="Coros">Coros</option><option value="Dirección Musical">Dirección Musical</option><option value="Técnico de Sonido">Técnico de Sonido</option><option value="Técnico de Luces">Técnico de Luces</option><option value="Montador">Montador</option><option value="Road Manager">Road Manager</option><option value="Backliner">Backliner</option></select><button id="add-user">Añadir Usuario</button><button id="cancel-edit-user" style="display:none;">Cancelar Edición</button><p id="user-message" class="error-message"></p><table id="user-table"><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th><th>Acciones</th></tr></thead><tbody id="user-table-body"></tbody></table></div>
   <div id="rehearsal-screen" class="config-screen"><button class="close-btn" id="close-rehearsal">Cerrar</button><h2>Asignación de Ensayos</h2><label>Fecha <span id="rehearsal-day-preview" class="day-preview-text"></span></label><input type="date" id="rehearsal-date"><label>Hora Inicio</label><input type="time" id="rehearsal-start-time"><label>Hora Fin</label><input type="time" id="rehearsal-end-time"><label>Lugar</label><input id="rehearsal-location" placeholder="Ej: Estudio 1"><button id="add-rehearsal">Añadir Ensayo</button><button id="cancel-edit-rehearsal" style="display:none;">Cancelar Edición</button><p id="rehearsal-message" class="error-message"></p><table id="rehearsal-table"><thead><tr><th>Fecha</th><th>Hora Inicio</th><th>Hora Fin</th><th>Lugar</th><th>Asistencias</th><th>Acciones</th></tr></thead><tbody id="rehearsal-table-body"></tbody></table></div>
   <div id="admin-suggestions-screen" class="config-screen"><button class="close-btn" id="close-admin-suggestions">Cerrar</button><h2>Gestión de Propuestas (Admin)</h2><p style="color:#aaa; text-align:center;">Aquí puedes ver el historial y eliminar propuestas inadecuadas.</p><div class="table-wrapper"><table id="admin-suggestions-table"><thead><tr><th>Canción</th><th>Propuesta por</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="admin-suggestions-body"></tbody></table></div></div>
@@ -1271,7 +808,6 @@
       <div class="calendar-grid" id="calendar-grid-container"></div>
     </section>
 
-    <!-- NUEVA SECCIÓN ANÁLISIS -->
     <section id="analisis">
         <h2>Análisis / Debriefing</h2>
         <div style="text-align:right; margin-bottom:10px;">
@@ -1288,14 +824,12 @@
                     </tr>
                 </thead>
                 <tbody id="analisis-body">
-                    <!-- Contenido dinámico desde analisis.js -->
                 </tbody>
             </table>
         </div>
     </section>
   </main>
 
-  <!-- FOOTER & SCRIPTS -->
   <footer>© Año 2025 -iDoctor & El Sótano del Doctor- All Rights Reserved.</footer>
 
   <audio id="site-audio">
@@ -1307,11 +841,10 @@
   <script src="metronome.js"></script>
   <script src="tuner.js"></script>
   <script src="analisis.js"></script> 
-  <script src="setlists.js"></script> <!-- Ensure setlists.js is loaded -->
+  <script src="setlists.js"></script>
 
 <script>
-// 0. Configuración Global
-const APP_VERSION = "1.2.1";
+const APP_VERSION = "1.2.2";
 let currentSessionId = null;
 
 const firebaseConfig = {
@@ -1323,12 +856,6 @@ const firebaseConfig = {
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
 
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI") { 
-    const banner = document.getElementById('firebase-critical-error-banner'); 
-    if (banner) banner.style.display = 'block'; 
-}
-
-// ---------- LOGIC: SESSION TRACKING ----------
 function initSession() {
     if (typeof db === 'undefined') return;
     
@@ -1348,7 +875,6 @@ function initSession() {
         events: [] 
     }).catch(e => console.warn("Error init session", e));
     
-    // Track navigation clicks
     document.querySelectorAll('.sidebar a').forEach(link => {
         link.addEventListener('click', () => {
             const sectionName = link.textContent || link.id;
@@ -1356,7 +882,6 @@ function initSession() {
         });
     });
     
-    // Track downloads
     document.querySelectorAll('.download-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             logInteraction('DESCARGA', btn.textContent || btn.id);
@@ -1364,24 +889,15 @@ function initSession() {
     });
 }
 
-// Global Logging Function
 window.logInteraction = function(type, detail) {
     if (!currentSessionId || typeof db === 'undefined') return;
-    
-    const eventEntry = {
-        time: new Date().toLocaleTimeString(),
-        type: type,
-        detail: detail
-    };
-    
-    // Update Firestore
+    const eventEntry = { time: new Date().toLocaleTimeString(), type: type, detail: detail };
     db.collection('access_logs').doc(currentSessionId).update({
         lastActive: new Date().toISOString(),
         events: firebase.firestore.FieldValue.arrayUnion(eventEntry)
     }).catch(e => console.warn("Log update failed", e));
 };
 
-// Render Admin Logs Table
 function renderAccessLogs() {
     const tbody = document.getElementById('access-logs-body');
     tbody.innerHTML = "<tr><td colspan='4'>Cargando logs...</td></tr>";
@@ -1397,8 +913,6 @@ function renderAccessLogs() {
             const data = doc.data();
             const date = new Date(data.timestamp).toLocaleString();
             let userColor = data.user === 'Anónimo' ? '#aaa' : '#0cf';
-            
-            // Calculate Duration
             let durationStr = "-";
             if (data.lastActive && data.timestamp) {
                 const start = new Date(data.timestamp);
@@ -1410,7 +924,6 @@ function renderAccessLogs() {
             const hasEvents = data.events && data.events.length > 0;
             const expandBtn = hasEvents ? `<button class="expand-btn" onclick="toggleLogDetails('${data.sessionId}')">+</button>` : '';
             
-            // Main Row
             tbody.insertAdjacentHTML('beforeend', `
                 <tr class="log-row">
                     <td style="font-size:0.9em;">${date}</td>
@@ -1420,22 +933,9 @@ function renderAccessLogs() {
                 </tr>
             `);
             
-            // Details Row (Hidden)
             if (hasEvents) {
-                let eventsHtml = data.events.map(e => 
-                    `<div class="log-event-item">
-                        <span style="color:#777;">[${e.time}]</span> 
-                        <strong style="color:#0cf;">${e.type}</strong>: ${e.detail}
-                     </div>`
-                ).join('');
-                
-                tbody.insertAdjacentHTML('beforeend', `
-                    <tr id="details-${data.sessionId}" class="log-details-row">
-                        <td colspan="4">
-                            <div class="log-details-content">${eventsHtml}</div>
-                        </td>
-                    </tr>
-                `);
+                let eventsHtml = data.events.map(e => `<div class="log-event-item"><span style="color:#777;">[${e.time}]</span> <strong style="color:#0cf;">${e.type}</strong>: ${e.detail}</div>`).join('');
+                tbody.insertAdjacentHTML('beforeend', `<tr id="details-${data.sessionId}" class="log-details-row"><td colspan="4"><div class="log-details-content">${eventsHtml}</div></td></tr>`);
             }
         });
     }).catch(e => {
@@ -1453,10 +953,6 @@ window.toggleLogDetails = function(id) {
     }
 };
 
-/* ---------- 1. Utilidades y Variables Globales ---------- */
-// window.globalItemsX are now managed in setlists.js but we keep reference if needed
-// window.pdfLibrary etc are in setlists.js
-
 const parseDuration = str => { if (!str) return 0; if (str.includes(":")) { const [m, s = 0] = str.split(":").map(Number); return m * 60 + s; } const n = parseInt(str, 10); return isNaN(n) ? 0 : n;};
 const toMMSS = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;};
 const toHHMM = s => { if (isNaN(s) || s === null || s === undefined) s = 0; const totalSeconds = Math.round(s); const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;};
@@ -1469,18 +965,15 @@ function generateICS(title, date, startTime, location, description = "", duratio
 const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
 const sanitizeForPdfFilename = (str) => (str || "setlist").replace(/[\\/:*?"<>|#$.[\]]/g, '_').replace(/\s+/g, '_');
 
-/* ---------- 1.5. Manejo de conexión ---------- */
 const connectionStatus = document.getElementById("connection-status"); let isOnline = navigator.onLine; 
 function updateConnectionStatus() { isOnline = navigator.onLine; if (!isOnline) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión: Mostrando datos en caché"; connectionStatus.style.display = "block"; } else { connectionStatus.style.display = "none"; } } 
 window.addEventListener("online", updateConnectionStatus); window.addEventListener("offline", updateConnectionStatus); 
 window.withRetry = async function(fn, maxRetries = 3, delay = 2000) { for (let i = 0; i < maxRetries; i++) { try { if (!navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Sin conexión. Operación podría fallar o usar caché."; connectionStatus.style.display = "block"; } return await fn(); } catch (e) { console.error(`Intento ${i+1} fallido:`, e); if (i === maxRetries - 1 || !navigator.onLine) { connectionStatus.className = "offline"; connectionStatus.textContent = "Error: Operación fallida. " + e.message; connectionStatus.style.display = "block"; throw e; } connectionStatus.className = "retrying"; connectionStatus.textContent = `Reintentando (${i + 1}/${maxRetries})...`; connectionStatus.style.display = "block"; await new Promise(resolve => setTimeout(resolve, delay)); } } }
 
-/* ---------- 2. Acceso Firestore ---------- */
 let db; 
 window.loadDoc = async function(collection, docId, fallback) { try { const snap = await db.collection(collection).doc(docId).get(); return snap.exists ? snap.data() : fallback; } catch (e) { console.error(`Error al cargar documento ${collection}/${docId}:`, e.message, e); return fallback; } }
 window.saveDoc = async function(collection, docId, data, merge = false) { try { console.log(`Firestore: Guardando en ${collection}/${docId}. Datos:`, JSON.parse(JSON.stringify(data)), "Con merge:", merge); await db.collection(collection).doc(docId).set(data, { merge: merge }); console.log(`Firestore: Guardado de ${collection}/${docId} exitoso con merge=${merge}`); return true; } catch (e) { console.error(`Error al guardar documento ${collection}/${docId} con merge=${merge}:`, e.message, e); throw e; } }
 
-/* ---------- 6. Usuarios ---------- */
 let users = []; let editingUserIndex = null; const excludedRehearsalUsers = ["Ximo", "Ginés Torres"];  
 function renderUsers() { const tbodyMgmt=document.getElementById("user-table-body");const tbodyDisplay=document.getElementById("users-body");if(tbodyMgmt)tbodyMgmt.innerHTML="";if(tbodyDisplay)tbodyDisplay.innerHTML="";if(!Array.isArray(users)||users.length===0){const emptyMsgMgmt='<tr><td colspan="4">No hay usuarios registrados.</td></tr>';const emptyMsgDisplay='<tr><td colspan="3">No hay usuarios registrados.</td></tr>';if(tbodyMgmt)tbodyMgmt.innerHTML=emptyMsgMgmt;if(tbodyDisplay)tbodyDisplay.innerHTML=emptyMsgDisplay;return} users.forEach((u,i)=>{if(!u||typeof u!=='object'||!u.name||!u.nickname||!Array.isArray(u.roles)){console.warn(`Usuario inválido en la posición ${i}:`,u);return} const rolesDisplay=u.roles.join(", ");if(tbodyMgmt){tbodyMgmt.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td><td><button data-i="${i}" class="edit-user">Editar</button><button data-i="${i}" class="delete-user">Eliminar</button></td></tr>`)} if(tbodyDisplay){tbodyDisplay.insertAdjacentHTML("beforeend",`<tr><td>${u.name}</td><td>${u.nickname}</td><td>${rolesDisplay}</td></tr>`)}});if(tbodyMgmt){tbodyMgmt.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{const userIndex=parseInt(btn.dataset.i,10);const userToDelete=users[userIndex];if(confirm(`¿Estás seguro de que deseas eliminar al usuario "${userToDelete.name}"? Esto también eliminará sus asistencias asociadas a ensayos y conciertos.`)){rehearsals.forEach(r=>{if(Array.isArray(r.attendance)){r.attendance=r.attendance.filter(a=>a.name!==userToDelete.name)}});users.splice(userIndex,1);await saveUsers();await saveRehearsals();renderStats()}});tbodyMgmt.querySelectorAll(".edit-user").forEach(btn=>btn.onclick=()=>{editingUserIndex=parseInt(btn.dataset.i,10);const user=users[editingUserIndex];document.getElementById("user-name").value=user.name;document.getElementById("user-nickname").value=user.nickname;const roleSelect=document.getElementById("user-role");Array.from(roleSelect.options).forEach(option=>{option.selected=user.roles.includes(option.value)});document.getElementById("add-user").textContent="Guardar Cambios";document.getElementById("cancel-edit-user").style.display="inline-block"})}}
 async function loadUsers() { try { const data = await window.withRetry(() => window.loadDoc("intranet", "users", { users: [] })); users = Array.isArray(data.users) ? data.users : []; users = users.filter(u => u && typeof u === 'object' && u.name && u.nickname && Array.isArray(u.roles)); renderUsers(); populateIdentitySelector(); } catch (e) { console.error("Error al cargar usuarios:", e); } }
@@ -1490,22 +983,15 @@ function resetUserForm() { document.getElementById("user-name").value = ""; docu
 function populateIdentitySelector() {
     const select = document.getElementById('user-identity-selector');
     const storedUser = localStorage.getItem('elSotanoCurrentUser');
-    
     select.innerHTML = '<option value="" disabled selected>-- Selecciona tu nombre --</option>';
     users.sort((a, b) => a.name.localeCompare(b.name)).forEach(u => {
         const isSelected = storedUser === u.name ? 'selected' : '';
         select.insertAdjacentHTML('beforeend', `<option value="${u.name}" ${isSelected}>${u.name} (${u.nickname})</option>`);
     });
-    
-    select.onchange = () => {
-        localStorage.setItem('elSotanoCurrentUser', select.value);
-    };
+    select.onchange = () => { localStorage.setItem('elSotanoCurrentUser', select.value); };
 }
 
-/* ---------- 7. Ensayos ---------- */
 let rehearsals = []; let editingRehearsalIndex = null;
-
-// Lógica para el preview del día al cambiar fecha
 document.getElementById("rehearsal-date").addEventListener("change", function() {
     const val = this.value;
     const target = document.getElementById("rehearsal-day-preview");
@@ -1518,39 +1004,27 @@ document.getElementById("rehearsal-date").addEventListener("change", function() 
 function renderRehearsals() { 
     const tbodyConfig=document.getElementById("rehearsal-table-body");
     const tbodyMain=document.getElementById("rehearsal-main-body");
-    
-    if(!tbodyConfig||!tbodyMain){console.error("Tablas de ensayos no encontradas en el DOM.");return} 
-    
+    if(!tbodyConfig||!tbodyMain){console.error("Tablas de ensayos no encontradas.");return} 
     rehearsals.sort((a,b)=>new Date(a.date+'T'+(a.startTime||'00:00'))-new Date(b.date+'T'+(b.startTime||'00:00')));
     tbodyConfig.innerHTML=tbodyMain.innerHTML="";
-    
     if(!Array.isArray(rehearsals)||rehearsals.length===0){
-        const emptyMsgConfig='<tr><td colspan="6">No hay ensayos programados.</td></tr>';
-        tbodyConfig.innerHTML=emptyMsgConfig;
-        const emptyMsgMain='<tr><td colspan="6">No hay próximos ensayos.</td></tr>';
-        tbodyMain.innerHTML=emptyMsgMain;
+        tbodyConfig.innerHTML='<tr><td colspan="6">No hay ensayos programados.</td></tr>';
+        tbodyMain.innerHTML='<tr><td colspan="6">No hay próximos ensayos.</td></tr>';
         return
     } 
-    
     const availableUsersForRehearsal=users.filter(user=>!excludedRehearsalUsers.includes(user.name));
     const userOptions=availableUsersForRehearsal.length>0?availableUsersForRehearsal.map(user=>`<option value="${user.name}">${user.nickname||user.name}</option>`).join(""):`<option value="" disabled>No hay usuarios disponibles</option>`;
-    
     const now=new Date();
     const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()); 
-    
     rehearsals.forEach((r,i)=>{
         if(r.time&&(!r.startTime||!r.endTime)){r.startTime=r.time;const[hours,minutes]=r.time.split(":").map(Number);const endHours=(hours+2)%24;r.endTime=`${String(endHours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}`;delete r.time} 
-        
         const formattedDate=formatDateWithDay(r.date);
         const durationSeconds=calculateDuration(r.startTime,r.endTime);
         const durationText=toHHMM(durationSeconds);
         const attendance=Array.isArray(r.attendance)?r.attendance:[];
         const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";
         const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;
-        
-        // Tabla de configuración Admin con botón Copiar
         tbodyConfig.insertAdjacentHTML("beforeend",`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="copy-rehearsal">Copiar</button><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="clear-attendance">Eliminar Asistentes</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`); 
-        
         const rehearsalDate=new Date(r.date+'T00:00:00Z');
         if(rehearsalDate>=today){
             const calendarCell=`<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
@@ -1558,24 +1032,10 @@ function renderRehearsals() {
             tbodyMain.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}${detailsCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`)
         }
     }); 
-
-    // Listeners Admin
-    tbodyConfig.querySelectorAll(".copy-rehearsal").forEach(btn=>btn.onclick=()=>{
-        const index=parseInt(btn.dataset.i,10);
-        const rehearsal=rehearsals[index];
-        document.getElementById("rehearsal-start-time").value = rehearsal.startTime || "";
-        document.getElementById("rehearsal-end-time").value = rehearsal.endTime || "";
-        document.getElementById("rehearsal-location").value = rehearsal.location || "";
-        document.getElementById("rehearsal-date").focus();
-        document.getElementById("rehearsal-screen").scrollTop = 0;
-        // Trigger preview dia si hay fecha
-        document.getElementById("rehearsal-date").dispatchEvent(new Event('change'));
-    });
-
+    tbodyConfig.querySelectorAll(".copy-rehearsal").forEach(btn=>btn.onclick=()=>{ const index=parseInt(btn.dataset.i,10); const rehearsal=rehearsals[index]; document.getElementById("rehearsal-start-time").value = rehearsal.startTime || ""; document.getElementById("rehearsal-end-time").value = rehearsal.endTime || ""; document.getElementById("rehearsal-location").value = rehearsal.location || ""; document.getElementById("rehearsal-date").focus(); document.getElementById("rehearsal-screen").scrollTop = 0; document.getElementById("rehearsal-date").dispatchEvent(new Event('change')); });
     tbodyConfig.querySelectorAll(".edit-rehearsal").forEach(btn=>btn.onclick=()=>{editingRehearsalIndex=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[editingRehearsalIndex];document.getElementById("rehearsal-date").value=rehearsal.date;document.getElementById("rehearsal-start-time").value=rehearsal.startTime;document.getElementById("rehearsal-end-time").value=rehearsal.endTime;document.getElementById("rehearsal-location").value=rehearsal.location;document.getElementById("add-rehearsal").textContent="Guardar Cambios";document.getElementById("cancel-edit-rehearsal").style.display="inline-block";document.getElementById("rehearsal-date").dispatchEvent(new Event('change'));}); 
     tbodyConfig.querySelectorAll(".delete-rehearsal").forEach(btn=>btn.onclick=async()=>{if(confirm("¿Estás seguro de que deseas eliminar este ensayo?")){rehearsals.splice(parseInt(btn.dataset.i,10),1);await saveRehearsals();renderStats()}}); 
     tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn=>btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[index];if(confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)){rehearsal.attendance=[];await saveRehearsals();document.getElementById("rehearsal-message").textContent="Asistencias eliminadas.";renderStats()}}); 
-    
     tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn=>{btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const userSelect=document.querySelector(`.attendance-user[data-i="${index}"]`);const responseSelect=document.querySelector(`.attendance-response[data-i="${index}"]`);const name=userSelect.value;const attending=responseSelect.value;if(!name||!attending){alert("Selecciona nombre y respuesta.");return} const rehearsal=rehearsals[index];const confirmMsg=`${name}, ¿${attending==="Sí"?"ASISTIRÁS":"NO ASISTIRÁS"} al ensayo del ${formatDateWithDay(rehearsal.date)}?`;if(!confirm(confirmMsg))return;if(!Array.isArray(rehearsal.attendance))rehearsal.attendance=[];const existingResponse=rehearsal.attendance.find(a=>a.name===name);if(existingResponse)existingResponse.attending=attending;else rehearsal.attendance.push({name,attending});try{await saveRehearsals();userSelect.value="";responseSelect.value="";renderStats()}catch(e){alert("Error al guardar asistencia: "+e.message)}}})
 }
 
@@ -1589,23 +1049,14 @@ function openRehearsalDetailsModal(index) {
     document.getElementById('rehearsal-detail-message').textContent = "";
     rehearsalDetailModal.classList.add('show');
 }
-document.getElementById('close-rehearsal-details-modal').onclick = () => {
-    rehearsalDetailModal.classList.remove('show');
-};
+document.getElementById('close-rehearsal-details-modal').onclick = () => { rehearsalDetailModal.classList.remove('show'); };
 document.getElementById('save-rehearsal-details').onclick = async () => {
     const index = parseInt(document.getElementById('rehearsal-detail-index').value, 10);
     const notes = document.getElementById('rehearsal-notes').value;
     const msg = document.getElementById('rehearsal-detail-message');
     if (rehearsals[index]) {
         rehearsals[index].notes = notes;
-        try {
-            await saveRehearsals();
-            msg.textContent = "Información guardada correctamente.";
-            msg.className = "success-message";
-        } catch (e) {
-            msg.textContent = "Error al guardar: " + e.message;
-            msg.className = "error-message";
-        }
+        try { await saveRehearsals(); msg.textContent = "Información guardada correctamente."; msg.className = "success-message"; } catch (e) { msg.textContent = "Error al guardar: " + e.message; msg.className = "error-message"; }
     }
 };
 
@@ -1613,12 +1064,10 @@ async function loadRehearsals() { try { const data = await window.withRetry(() =
 async function saveRehearsals() { try { await window.withRetry(() => window.saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar ensayos:", e); throw e; } }
 function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; document.getElementById("rehearsal-day-preview").textContent = ""; }
 
-/* ---------- 8. Estadísticas ---------- */
 function updateMonthFilter() { const select=document.getElementById("stats-month-filter");select.innerHTML='<option value="all">Todos los meses</option>';const now=new Date();const pastRehearsals=rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);const months=new Set(pastRehearsals.map(r=>getMonthYear(r.date)));Array.from(months).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{select.insertAdjacentHTML("beforeend",`<option value="${month}">${month}</option>`)})}
 function getMonthIndex(monthName) { const months=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];return months.indexOf(monthName)}
 function renderStats() { const now=new Date();const selectedMonth=document.getElementById("stats-month-filter")?.value||"all";let filteredRehearsals=rehearsals.filter(r=>new Date(r.date+'T00:00:00Z')<now);if(selectedMonth!=="all"){filteredRehearsals=filteredRehearsals.filter(r=>getMonthYear(r.date)===selectedMonth)} const timePerMonth={};filteredRehearsals.forEach(r=>{const monthYear=getMonthYear(r.date);const duration=calculateDuration(r.startTime,r.endTime);timePerMonth[monthYear]=(timePerMonth[monthYear]||0)+duration});const tbodyMonth=document.getElementById("time-per-month-body");tbodyMonth.innerHTML="";Object.keys(timePerMonth).sort((a,b)=>new Date(b.split(" ")[1],getMonthIndex(b.split(" ")[0]))-new Date(a.split(" ")[1],getMonthIndex(a.split(" ")[0]))).forEach(month=>{tbodyMonth.insertAdjacentHTML("beforeend",`<tr><td>${month}</td><td>${toHours(timePerMonth[month])}</td></tr>`)}); const timePerUser={};users.forEach(user=>{timePerUser[user.name]=0;filteredRehearsals.forEach(r=>{const attendance=r.attendance?.find(a=>a.name===user.name);if(attendance&&attendance.attending==="Sí"){timePerUser[user.name]+=calculateDuration(r.startTime,r.endTime)}})});const tbodyUser=document.getElementById("time-per-user-body");tbodyUser.innerHTML="";Object.keys(timePerUser).sort().forEach(user=>{tbodyUser.insertAdjacentHTML("beforeend",`<tr><td>${users.find(u=>u.name===user)?.nickname||user}</td><td>${toHours(timePerUser[user])}</td></tr>`)}); const tbodyPast=document.getElementById("past-rehearsals-body");tbodyPast.innerHTML="";filteredRehearsals.sort((a,b)=>new Date(b.date+'T'+(b.startTime||'00:00'))-new Date(a.date+'T'+(a.startTime||'00:00')));filteredRehearsals.forEach(r=>{const formattedDate=formatDateWithDay(r.date);const durationText=toHHMM(calculateDuration(r.startTime,r.endTime));const attendance=Array.isArray(r.attendance)?r.attendance:[];const getAttendeeNicknames=status=>attendance.filter(a=>a.attending===status).map(a=>{const user=users.find(u=>u.name===a.name);return user?user.nickname:a.name}).join(", ")||"Ninguno";const summary=`<div class="attendance-summary"><span class="attending-yes">Asisten: ${getAttendeeNicknames("Sí")}</span><span class="attending-no">No asisten: ${getAttendeeNicknames("No")}</span></div>`;tbodyPast.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td><td>${summary}</td></tr>`)})}
 
-/* ---------- 10. BandHelper & Detalles Concierto ---------- */
 function loadBandHelperWidget() {
     const container = document.getElementById('bandhelper-concerts-container');
     const loadingMessage = document.getElementById('bandhelper-loading-message');
@@ -1630,8 +1079,7 @@ function loadBandHelperWidget() {
     doc.open();
     doc.write(`<head></head><body><script src="https://www.bandhelper.com/widget/calendar/10353?layout=1&range=6"><\/script></body>`);
     doc.close();
-    let attempts = 0;
-    const maxAttempts = 50;
+    let attempts = 0; const maxAttempts = 50;
     const interval = setInterval(() => {
         attempts++;
         const table = doc.querySelector('table');
@@ -1668,6 +1116,140 @@ function processBandHelperTable() {
     const dataRowsSource=table.querySelector("tbody")?Array.from(table.querySelectorAll("tbody tr")):[];
     dataRowsSource.forEach(row=>{const originalCells=Array.from(row.cells);row.innerHTML='';const dateCellFullText=originalCells[0]?.textContent.trim()||"";const eventTitleFromCell=originalCells[1]?.textContent.trim().split('\n')[0].trim()||"Evento Sin Título";const locationText=originalCells[3]?.textContent.trim().split('\n')[0].trim()||originalCells[2]?.textContent.trim().split('\n')[0].trim()||"";row.insertCell().textContent=dateCellFullText;row.insertCell().textContent=eventTitleFromCell;row.insertCell().textContent=locationText;const calendarDisplayCell=row.insertCell();calendarDisplayCell.className="calendar-col";calendarDisplayCell.style.textAlign="center";const detailDisplayCell=row.insertCell();detailDisplayCell.className="details-col-header";detailDisplayCell.style.textAlign="center";const dateForId=dateCellFullText.split(',')[0].trim();const concertId=sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);const detailsBtn=document.createElement("button");detailsBtn.className="details-btn";detailsBtn.innerHTML="➡️";detailsBtn.title="Ver/Editar Detalles del Concierto";detailsBtn.onclick=()=>openConcertDetailModal(concertId,dateCellFullText,eventTitleFromCell,locationText);detailDisplayCell.appendChild(detailsBtn);let icsDate=new Date().toISOString().split('T')[0];let startTimeForICS="20:00";let durationSecondsForICS=2*3600;const dateMatch=dateCellFullText.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(dateMatch){let year=parseInt(dateMatch[3],10);year+=(year<70?2000:1900);icsDate=`${year}-${dateMatch[2]}-${dateMatch[1]}`} const timeRangeMatch=dateCellFullText.match(/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})/);const singleTimeMatch=dateCellFullText.match(/,\s*(\d{1,2}:\d{2})/);if(timeRangeMatch){startTimeForICS=timeRangeMatch[1];durationSecondsForICS=calculateDuration(timeRangeMatch[1],timeRangeMatch[2]);if(durationSecondsForICS<=0)durationSecondsForICS=2*3600}else if(singleTimeMatch){startTimeForICS=singleTimeMatch[1]} const locationForICS=locationText||eventTitleFromCell;const descriptionForICS=`Concierto de El Sótano del Doctor en ${locationForICS}. Evento: ${eventTitleFromCell}.`;const calendarBtn=document.createElement('button');calendarBtn.className='calendar-btn';calendarBtn.title='Añadir a mi calendario';calendarBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg>';calendarBtn.onclick=()=>generateICS(`Concierto: ${eventTitleFromCell}`,icsDate,startTimeForICS,locationForICS,descriptionForICS,durationSecondsForICS);calendarDisplayCell.appendChild(calendarBtn)})
 }
+
+// RESTAURANDO FUNCIÓN CALENDARIO MENSUAL (CRÍTICA PARA EVITAR CRASH)
+let currentDate = new Date();
+function renderVisualCalendar() {
+    const container = document.getElementById("calendar-grid-container");
+    const monthDisplay = document.getElementById("calendar-month-display");
+    if(!container || !monthDisplay) return;
+    
+    container.innerHTML = "";
+    
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    const monthsNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    monthDisplay.textContent = `${monthsNames[month]} ${year}`;
+    
+    // Headers
+    const weekDays = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+    weekDays.forEach(day => {
+        const header = document.createElement("div");
+        header.className = "cal-header";
+        header.textContent = day;
+        container.appendChild(header);
+    });
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    
+    // Ajustar para empezar Lunes (0=Dom, 1=Lun...)
+    let startDayIndex = firstDay.getDay() - 1; 
+    if (startDayIndex === -1) startDayIndex = 6; 
+    
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    
+    // Previous Month Days
+    for (let i = startDayIndex; i > 0; i--) {
+        const d = document.createElement("div");
+        d.className = "cal-day other-month";
+        d.textContent = prevMonthLastDay - i + 1;
+        container.appendChild(d);
+    }
+    
+    const today = new Date();
+    const events = getCalendarEvents(year, month);
+    
+    // Current Month Days
+    for (let i = 1; i <= daysInMonth; i++) {
+        const d = document.createElement("div");
+        d.className = "cal-day";
+        if (year === today.getFullYear() && month === today.getMonth() && i === today.getDate()) {
+            d.classList.add("today");
+        }
+        
+        const num = document.createElement("div");
+        num.className = "cal-day-number";
+        num.textContent = i;
+        d.appendChild(num);
+        
+        // Add events
+        const dayEvents = events.filter(e => e.day === i);
+        dayEvents.sort((a,b) => a.time.localeCompare(b.time));
+        
+        dayEvents.forEach(ev => {
+            const evEl = document.createElement("div");
+            evEl.className = `cal-event type-${ev.type}`;
+            evEl.textContent = `${ev.time} ${ev.title}`;
+            d.appendChild(evEl);
+        });
+        
+        container.appendChild(d);
+    }
+}
+
+function getCalendarEvents(year, month) {
+    const events = [];
+    
+    // 1. Ensayos
+    rehearsals.forEach(r => {
+        const d = new Date(r.date);
+        if (d.getFullYear() === year && d.getMonth() === month) {
+            events.push({
+                day: d.getDate(),
+                time: r.startTime || "",
+                title: `Ensayo (${r.location})`,
+                type: "ensayo"
+            });
+        }
+    });
+    
+    // 2. Conciertos (BandHelper DOM)
+    const bhContainer = document.getElementById('bandhelper-concerts-container');
+    if (bhContainer) {
+        const rows = bhContainer.querySelectorAll("tbody tr");
+        rows.forEach(row => {
+            const cells = row.cells;
+            if (cells.length > 1) {
+                const dateText = cells[0].textContent;
+                const titleText = cells[1].textContent;
+                
+                // Parse DD/MM/YY
+                const match = dateText.match(/(\d{2})\/(\d{2})\/(\d{2})/);
+                if (match) {
+                    const cDay = parseInt(match[1], 10);
+                    const cMonth = parseInt(match[2], 10) - 1;
+                    let cYear = parseInt(match[3], 10);
+                    cYear += (cYear < 70 ? 2000 : 1900);
+                    
+                    if (cYear === year && cMonth === month) {
+                        const timeMatch = dateText.match(/(\d{1,2}:\d{2})/);
+                        const time = timeMatch ? timeMatch[1] : "";
+                        events.push({
+                            day: cDay,
+                            time: time,
+                            title: titleText,
+                            type: "concierto"
+                        });
+                    }
+                }
+            }
+        });
+    }
+    
+    return events;
+}
+
+document.getElementById('prev-month-btn').onclick = () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderVisualCalendar();
+};
+document.getElementById('next-month-btn').onclick = () => {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderVisualCalendar();
+};
 
 const concertDetailModal = document.getElementById('concert-details-modal'); const concertDetailMessage = document.getElementById('concert-detail-message');
 async function openConcertDetailModal(concertId, concertFullDateText, concertTitle, concertLocationOriginal) {
@@ -1792,7 +1374,6 @@ document.getElementById('save-concert-details').onclick = async () => {
 };
 document.getElementById('close-concert-details-modal').onclick = () => { closeAll(); };
 
-/* ---------- 11. Menú & pantallas ---------- */
 const sidebar = document.getElementById("sidebar-menu"), overlay = document.getElementById("overlay"); const PASSWORD = "Sotano2014"; let isAuthenticated = false;
 function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof resetRehearsalForm==="function")resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
@@ -1804,134 +1385,32 @@ setupMenuLink("menu-analisis-section", "analisis");
 document.getElementById("menu-suggestions").onclick = e => { e.preventDefault(); openConfigScreen("suggestions-screen"); renderSuggestions(); };
 document.getElementById("close-suggestions").onclick = () => { document.getElementById("suggestions-screen").style.display = "none"; };
 
-// --- LÓGICA BIOMETRÍA ---
 const BIO_STORAGE_KEY = 'elsotano_bio_auth';
 const supportsBiometrics = () => window.PublicKeyCredential && window.isSecureContext;
 
 async function enrollBiometry() {
-    if (!supportsBiometrics()) {
-        alert("Tu navegador o dispositivo no soporta biometría o no estás en una conexión segura (HTTPS).");
-        return;
-    }
-    
-    // Desafío aleatorio para WebAuthn
-    const challenge = new Uint8Array(32);
-    window.crypto.getRandomValues(challenge);
-    
-    const createOptions = {
-        publicKey: {
-            challenge: challenge,
-            rp: { name: "El Sótano del Doctor" },
-            user: {
-                id: new Uint8Array(16),
-                name: "admin@sotano.com",
-                displayName: "Admin El Sótano"
-            },
-            pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-            authenticatorSelection: { userVerification: "required" },
-            timeout: 60000
-        }
-    };
-
-    try {
-        const credential = await navigator.credentials.create(createOptions);
-        if (credential) {
-            localStorage.setItem(BIO_STORAGE_KEY, 'true');
-            alert("¡Acceso biométrico activado! La próxima vez entrarás con tu cara o huella.");
-        }
-    } catch (err) {
-        console.error("Error enrolando biometría:", err);
-        alert("No se pudo configurar la biometría: " + err.message);
-    }
+    if (!supportsBiometrics()) { alert("Tu navegador o dispositivo no soporta biometría o no estás en una conexión segura (HTTPS)."); return; }
+    const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+    const createOptions = { publicKey: { challenge: challenge, rp: { name: "El Sótano del Doctor" }, user: { id: new Uint8Array(16), name: "admin@sotano.com", displayName: "Admin El Sótano" }, pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }], authenticatorSelection: { userVerification: "required" }, timeout: 60000 } };
+    try { const credential = await navigator.credentials.create(createOptions); if (credential) { localStorage.setItem(BIO_STORAGE_KEY, 'true'); alert("¡Acceso biométrico activado! La próxima vez entrarás con tu cara o huella."); } } catch (err) { console.error("Error enrolando biometría:", err); alert("No se pudo configurar la biometría: " + err.message); }
 }
-
 async function verifyBiometry() {
     if (!localStorage.getItem(BIO_STORAGE_KEY)) return false;
-    
-    const challenge = new Uint8Array(32);
-    window.crypto.getRandomValues(challenge);
-    
-    const getOptions = {
-        publicKey: {
-            challenge: challenge,
-            userVerification: "required",
-            timeout: 60000
-        }
-    };
-
-    try {
-        const assertion = await navigator.credentials.get(getOptions);
-        return !!assertion;
-    } catch (err) {
-        console.warn("Fallo o cancelación de biometría:", err);
-        return false;
-    }
+    const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+    const getOptions = { publicKey: { challenge: challenge, userVerification: "required", timeout: 60000 } };
+    try { const assertion = await navigator.credentials.get(getOptions); return !!assertion; } catch (err) { console.warn("Fallo o cancelación de biometría:", err); return false; }
 }
-
 document.getElementById("menu-config").onclick = async (e) => { 
-    e.preventDefault();
-    const submenu = document.getElementById("config-submenu");
-    
-    if (!isAuthenticated) {
-        // 1. Intentar biometría primero si está activa
-        let bioSuccess = await verifyBiometry();
-        
-        if (bioSuccess) {
-            isAuthenticated = true;
-            submenu.style.display = "block";
-        } else {
-            // 2. Fallback al prompt clásico
-            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
-            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-                isAuthenticated = true;
-                submenu.style.display = "block";
-            } else if (password !== null) {
-                alert("Contraseña incorrecta.");
-            }
-        }
-    } else {
-        submenu.style.display = submenu.style.display === "block" ? "none" : "block";
-    }
-    
-    // Mostrar/Ocultar botón de enrolamiento según disponibilidad
-    const enrollBtn = document.getElementById("menu-enroll-biometry");
-    if (enrollBtn) {
-        enrollBtn.style.display = (supportsBiometrics() && isAuthenticated) ? "block" : "none";
-    }
+    e.preventDefault(); const submenu = document.getElementById("config-submenu");
+    if (!isAuthenticated) { let bioSuccess = await verifyBiometry(); if (bioSuccess) { isAuthenticated = true; submenu.style.display = "block"; } else { const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:"); if (password && password.toLowerCase() === PASSWORD.toLowerCase()) { isAuthenticated = true; submenu.style.display = "block"; } else if (password !== null) { alert("Contraseña incorrecta."); } } } else { submenu.style.display = submenu.style.display === "block" ? "none" : "block"; }
+    const enrollBtn = document.getElementById("menu-enroll-biometry"); if (enrollBtn) { enrollBtn.style.display = (supportsBiometrics() && isAuthenticated) ? "block" : "none"; }
 };
-
-document.getElementById("menu-enroll-biometry").onclick = (e) => {
-    e.preventDefault();
-    enrollBiometry();
-};
-
+document.getElementById("menu-enroll-biometry").onclick = (e) => { e.preventDefault(); enrollBiometry(); };
 const openConfigScreen = async (screenId) => { 
-    if(!isAuthenticated && screenId!=='user-list-screen' && screenId!=='stats-screen' && screenId!=='suggestions-screen') {
-        let bioSuccess = await verifyBiometry();
-        if (bioSuccess) {
-            isAuthenticated = true;
-        } else {
-            const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:");
-            if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
-                isAuthenticated = true;
-            } else {
-                if (password !== null) alert("Contraseña incorrecta.");
-                return false;
-            }
-        }
-    } 
-    if(isAuthenticated || screenId==='user-list-screen' || screenId==='stats-screen' || screenId==='suggestions-screen') {
-        closeAll();
-        const screen = document.getElementById(screenId);
-        if (screen) {
-            screen.style.display = "block";
-            if (screenId === 'user-list-screen') renderUsers();
-            screen.scrollTop = 0;
-        }
-    } 
+    if(!isAuthenticated && screenId!=='user-list-screen' && screenId!=='stats-screen' && screenId!=='suggestions-screen') { let bioSuccess = await verifyBiometry(); if (bioSuccess) { isAuthenticated = true; } else { const password = prompt("iDoctor Dice: ¡¡¡Si no sabes no toques!!! Pon la contraseña:"); if (password && password.toLowerCase() === PASSWORD.toLowerCase()) { isAuthenticated = true; } else { if (password !== null) alert("Contraseña incorrecta."); return false; } } } 
+    if(isAuthenticated || screenId==='user-list-screen' || screenId==='stats-screen' || screenId==='suggestions-screen') { closeAll(); const screen = document.getElementById(screenId); if (screen) { screen.style.display = "block"; if (screenId === 'user-list-screen') renderUsers(); screen.scrollTop = 0; } } 
     return true;
 }; 
-// --- FIN LÓGICA BIOMETRÍA ---
 
 document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault();if(openConfigScreen("setlist-config-screen")){document.getElementById("setlist1-name").value=setlistConfig.setlist1.name;document.getElementById("setlist1-url").value=setlistConfig.setlist1.url==="URL_POR_CONFIGURAR_1"?"":setlistConfig.setlist1.url;document.getElementById("setlist2-name").value=setlistConfig.setlist2.name;const setlist2Url=setlistConfig.setlist2.url.replace("https://www.bandhelper.com/feed/set_list/","");document.getElementById("setlist2-url").value=setlist2Url==="URL_POR_CONFIGURAR_2"?"":setlist2Url;document.getElementById("setlistStar-name").value=setlistConfig.setlistStar.name;document.getElementById("setlistStar-url").value=setlistConfig.setlistStar.url==="URL_POR_CONFIGURAR_STAR"?"":setlistConfig.setlistStar.url}};
 document.getElementById("close-setlist-config").onclick = () => { document.getElementById("setlist-config-screen").style.display = "none"; document.getElementById("setlist-message").textContent = ""; };
@@ -1949,19 +1428,9 @@ document.getElementById("close-stats").onclick = () => document.getElementById("
 document.getElementById("stats-month-filter").addEventListener("change", renderStats);
 document.getElementById("menu-user-list-display").onclick = e => { e.preventDefault(); openConfigScreen("user-list-screen"); };
 document.getElementById("close-user-list-screen").onclick = () => { document.getElementById("user-list-screen").style.display = "none"; };
+document.getElementById("menu-admin-suggestions").onclick = e => { e.preventDefault(); if(openConfigScreen("admin-suggestions-screen")) { renderAdminSuggestions(); }};
+document.getElementById("close-admin-suggestions").onclick = () => { document.getElementById("admin-suggestions-screen").style.display = "none"; };
 
-// --- FIX: MENU GESTIÓN PROPUESTAS (ADMIN) ---
-document.getElementById("menu-admin-suggestions").onclick = e => { 
-    e.preventDefault(); 
-    if(openConfigScreen("admin-suggestions-screen")) {
-        renderAdminSuggestions();
-    }
-};
-document.getElementById("close-admin-suggestions").onclick = () => { 
-    document.getElementById("admin-suggestions-screen").style.display = "none"; 
-};
-
-// --- GESTIÓN DE PROPUESTAS ---
 let suggestions = [];
 function attachSuggestionsListener() {
     if (typeof db !== 'undefined') {
@@ -2043,7 +1512,6 @@ async function deleteSuggestion(id) {
     if(confirm("¿Seguro que quieres eliminar esta propuesta?")){ try { await db.collection('suggestions').doc(id).update({ status: 'deleted', deletedAt: new Date().toISOString(), deletedBy: currentUser }); alert("Propuesta eliminada."); } catch(e) { alert("Error al eliminar."); } }
 }
 
-/* --- LÓGICA MODO DIRECTO (REPARADO Y COMPLETADO) --- */
 let currentLiveSetlist = []; 
 let currentLiveIndex = 0; 
 let wakeLock = null;
@@ -2054,17 +1522,10 @@ async function requestWakeLock() {
             wakeLock = await navigator.wakeLock.request('screen'); 
             console.log('Pantalla mantenida encendida'); 
         } 
-    } catch (err) { 
-        console.error(`${err.name}, ${err.message}`); 
-    } 
+    } catch (err) { console.error(`${err.name}, ${err.message}`); } 
 }
 
-async function releaseWakeLock() { 
-    if (wakeLock !== null) { 
-        await wakeLock.release(); 
-        wakeLock = null; 
-    } 
-}
+async function releaseWakeLock() { if (wakeLock !== null) { await wakeLock.release(); wakeLock = null; } }
 
 window.startLiveMode = function(setlistData) {
     currentLiveSetlist = [];
@@ -2077,20 +1538,12 @@ window.startLiveMode = function(setlistData) {
             }
         });
     }
-
-    if (currentLiveSetlist.length === 0) {
-        alert("El setlist está vacío.");
-        return;
-    }
-
+    if (currentLiveSetlist.length === 0) { alert("El setlist está vacío."); return; }
     currentLiveIndex = 0;
     updateLiveModeUI();
     document.getElementById('live-mode-overlay').classList.add('show');
     requestWakeLock();
-    // Intento de pantalla completa
-    if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(e => console.log(e));
-    }
+    if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen().catch(e => console.log(e)); }
 };
 
 function updateLiveModeUI() {
@@ -2102,103 +1555,70 @@ function updateLiveModeUI() {
     document.getElementById('live-song-tempo').textContent = `Tempo: ${song.tempo || '-'}`;
     
     let nextTitle = "Fin del Show";
-    if (currentLiveIndex < currentLiveSetlist.length - 1) {
-        nextTitle = "Siguiente: " + currentLiveSetlist[currentLiveIndex + 1].displayName;
-    }
+    if (currentLiveIndex < currentLiveSetlist.length - 1) { nextTitle = "Siguiente: " + currentLiveSetlist[currentLiveIndex + 1].displayName; }
     document.getElementById('live-next-song').textContent = nextTitle;
 }
 
-document.getElementById('live-prev-btn').onclick = () => {
-    if (currentLiveIndex > 0) {
-        currentLiveIndex--;
-        updateLiveModeUI();
-    }
-};
-
-document.getElementById('live-next-btn').onclick = () => {
-    if (currentLiveIndex < currentLiveSetlist.length - 1) {
-        currentLiveIndex++;
-        updateLiveModeUI();
-    }
-};
-
+document.getElementById('live-prev-btn').onclick = () => { if (currentLiveIndex > 0) { currentLiveIndex--; updateLiveModeUI(); } };
+document.getElementById('live-next-btn').onclick = () => { if (currentLiveIndex < currentLiveSetlist.length - 1) { currentLiveIndex++; updateLiveModeUI(); } };
 document.getElementById('live-close-btn').onclick = () => {
     document.getElementById('live-mode-overlay').classList.remove('show');
     releaseWakeLock();
-    if (document.exitFullscreen) {
-        document.exitFullscreen().catch(e => console.log(e));
-    }
+    if (document.exitFullscreen) { document.exitFullscreen().catch(e => console.log(e)); }
 };
 
-/* --- REPARACIÓN PDF: CONEXIÓN DE BOTONES --- */
-// Esta función conecta los botones HTML con las funciones de setlists.js
 function setupPdfListeners() {
     console.log("Configurando listeners de PDF...");
-    
-    // Setlist 1 (Ensayo)
     const btn1 = document.getElementById('download-btn');
     const btnBasic1 = document.getElementById('download-basic-btn');
     const btnPersonal1 = document.getElementById('download-personal-btn');
-
     if(btn1) btn1.onclick = () => window.genPDF(window.globalItems1, window.setlistConfig.setlist1.name, "Setlist_Ensayo");
     if(btnBasic1) btnBasic1.onclick = () => window.genBasicPDF(window.globalItems1, window.setlistConfig.setlist1.name, "Setlist_Ensayo");
-    if(btnPersonal1) btnPersonal1.onclick = () => {
-        const size = prompt("Tamaño de fuente (pt):", "12");
-        if(size) window.genPersonalPDF(window.globalItems1, window.setlistConfig.setlist1.name, "Setlist_Ensayo", parseInt(size));
-    };
+    if(btnPersonal1) btnPersonal1.onclick = () => { const size = prompt("Tamaño de fuente (pt):", "12"); if(size) window.genPersonalPDF(window.globalItems1, window.setlistConfig.setlist1.name, "Setlist_Ensayo", parseInt(size)); };
 
-    // Setlist 2 (Concierto)
     const btn2 = document.getElementById('download-btn-2');
     const btnBasic2 = document.getElementById('download-basic-btn-2');
     const btnPersonal2 = document.getElementById('download-personal-btn-2');
-
     if(btn2) btn2.onclick = () => window.genPDF(window.globalItems2, window.setlistConfig.setlist2.name, "Setlist_Concierto");
     if(btnBasic2) btnBasic2.onclick = () => window.genBasicPDF(window.globalItems2, window.setlistConfig.setlist2.name, "Setlist_Concierto");
-    if(btnPersonal2) btnPersonal2.onclick = () => {
-        const size = prompt("Tamaño de fuente (pt):", "12");
-        if(size) window.genPersonalPDF(window.globalItems2, window.setlistConfig.setlist2.name, "Setlist_Concierto", parseInt(size));
-    };
+    if(btnPersonal2) btnPersonal2.onclick = () => { const size = prompt("Tamaño de fuente (pt):", "12"); if(size) window.genPersonalPDF(window.globalItems2, window.setlistConfig.setlist2.name, "Setlist_Concierto", parseInt(size)); };
 
-    // Setlist Estrella
     const btnStar = document.getElementById('download-btn-star');
     const btnBasicStar = document.getElementById('download-basic-btn-star');
     const btnPersonalStar = document.getElementById('download-personal-btn-star');
-
     if(btnStar) btnStar.onclick = () => window.genPDF(window.globalItemsStar, window.setlistConfig.setlistStar.name, "Setlist_Estrella");
     if(btnBasicStar) btnBasicStar.onclick = () => window.genBasicPDF(window.globalItemsStar, window.setlistConfig.setlistStar.name, "Setlist_Estrella");
-    if(btnPersonalStar) btnPersonalStar.onclick = () => {
-        const size = prompt("Tamaño de fuente (pt):", "12");
-        if(size) window.genPersonalPDF(window.globalItemsStar, window.setlistConfig.setlistStar.name, "Setlist_Estrella", parseInt(size));
-    };
+    if(btnPersonalStar) btnPersonalStar.onclick = () => { const size = prompt("Tamaño de fuente (pt):", "12"); if(size) window.genPersonalPDF(window.globalItemsStar, window.setlistConfig.setlistStar.name, "Setlist_Estrella", parseInt(size)); };
 }
 
 /* --- CARGA INICIAL (REPARADA) --- */
 async function loadAllData() {
     try {
         console.log("Iniciando carga de datos...");
+        // 1. CARGA CRÍTICA DE CONFIGURACIÓN Y LIBRERÍAS DE AUDIO *ANTES* DE LOS SETLISTS
+        // Jukebox library debe estar cargada para que los enlaces se rendericen activos.
         await Promise.all([
             window.loadSetlistConfig(),
             window.loadPdfLibrary(),
             window.loadSongNotes(),
             window.loadMasterDocs(),
+            window.loadJukeboxLibrary ? window.loadJukeboxLibrary() : Promise.resolve(), 
             loadUsers(),
             loadRehearsals()
         ]);
         
-        // Cargar setlists después de la config
+        // 2. AHORA QUE TENEMOS JUKEBOX LIBRARY, CARGAMOS LOS SETLISTS
         await Promise.all([
             window.cargarPrimerSetlist(),
             window.cargarSegundoSetlist(),
             window.cargarStarSetlist()
         ]);
         
-        // Jukebox library (si existe en setlists.js o global)
-        if(window.loadJukeboxLibrary) await window.loadJukeboxLibrary();
-        
-        // IMPORTANTE: Conectar botones PDF ahora que el DOM está listo
+        // 3. UI BINDINGS
         setupPdfListeners();
-        
         renderAccessLogs();
+        renderVisualCalendar(); // Restaurado: Calendario Mensual
+        
         document.getElementById("splash-screen").classList.add("hidden");
         console.log("Carga completa.");
     } catch(e) {
@@ -2210,14 +1630,8 @@ async function loadAllData() {
 document.addEventListener("DOMContentLoaded", () => {
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
-    
-    // Iniciar sesión y logs
     initSession();
-    
-    // Cargar datos principales
     loadAllData();
-    
-    // Listeners adicionales
     attachSuggestionsListener();
 });
 </script>
