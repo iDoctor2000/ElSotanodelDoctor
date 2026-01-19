@@ -684,6 +684,46 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Config UI Listeners
     setupConfigUI();
+    
+    // --- 8. AUTO-INICIALIZACIÓN DE BOTONES PDF (Sin tocar HTML) ---
+    console.log("Setlists.js: Inicializando botones de PDF...");
+
+    // Función auxiliar para conectar botón con seguridad
+    const bindBtn = (id, action) => {
+        const btn = document.getElementById(id);
+        if(btn) {
+            // Eliminar listeners previos para evitar duplicados si se recarga
+            const newBtn = btn.cloneNode(true);
+            if(btn.parentNode) {
+                btn.parentNode.replaceChild(newBtn, btn);
+                newBtn.onclick = action;
+            }
+        }
+    };
+
+    // Setlist 1 (Ensayo)
+    bindBtn('download-btn', () => window.genPDF(window.globalItems1, window.setlistConfig.setlist1.name, "Setlist_Ensayo"));
+    bindBtn('download-basic-btn', () => window.genBasicPDF(window.globalItems1, window.setlistConfig.setlist1.name, "Setlist_Ensayo"));
+    bindBtn('download-personal-btn', () => {
+        const size = prompt("Tamaño de fuente (pt):", "12");
+        if(size) window.genPersonalPDF(window.globalItems1, window.setlistConfig.setlist1.name, "Setlist_Ensayo", parseInt(size));
+    });
+
+    // Setlist 2 (Concierto)
+    bindBtn('download-btn-2', () => window.genPDF(window.globalItems2, window.setlistConfig.setlist2.name, "Setlist_Concierto"));
+    bindBtn('download-basic-btn-2', () => window.genBasicPDF(window.globalItems2, window.setlistConfig.setlist2.name, "Setlist_Concierto"));
+    bindBtn('download-personal-btn-2', () => {
+        const size = prompt("Tamaño de fuente (pt):", "12");
+        if(size) window.genPersonalPDF(window.globalItems2, window.setlistConfig.setlist2.name, "Setlist_Concierto", parseInt(size));
+    });
+
+    // Setlist Star
+    bindBtn('download-btn-star', () => window.genPDF(window.globalItemsStar, window.setlistConfig.setlistStar.name, "Setlist_Estrella"));
+    bindBtn('download-basic-btn-star', () => window.genBasicPDF(window.globalItemsStar, window.setlistConfig.setlistStar.name, "Setlist_Estrella"));
+    bindBtn('download-personal-btn-star', () => {
+        const size = prompt("Tamaño de fuente (pt):", "12");
+        if(size) window.genPersonalPDF(window.globalItemsStar, window.setlistConfig.setlistStar.name, "Setlist_Estrella", parseInt(size));
+    });
 });
 
 function setupConfigUI() {
