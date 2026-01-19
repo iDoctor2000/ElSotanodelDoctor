@@ -204,15 +204,15 @@ window.renderRehearsals = function() {
             const calendarBtnContent = `<button class="calendar-btn" title="Añadir a mi calendario" onclick='window.generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button>`;
             const detailsBtnContent = `<button class="details-btn" onclick="window.openRehearsalDetailsModal(${i})" title="Notas del Ensayo">➡️</button>`;
             
-            // Fila con data-labels para Responsive Card View
+            // Fila ESTÁNDAR (Sin Card View)
             const rowHtml = `
             <tr>
-                <td data-label="Fecha">${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td>
-                <td data-label="Hora">${r.startTime} - ${r.endTime}</td>
-                <td data-label="Lugar">${r.location}</td>
-                <td data-label="Cal" class="calendar-col">${calendarBtnContent}</td>
-                <td data-label="Info" class="details-col-header">${detailsBtnContent}</td>
-                <td data-label="Asistencia">
+                <td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td>
+                <td>${r.startTime} - ${r.endTime}</td>
+                <td>${r.location}</td>
+                <td class="calendar-col">${calendarBtnContent}</td>
+                <td class="details-col-header">${detailsBtnContent}</td>
+                <td>
                     <div class="attendance-form">
                         <select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select>
                         <select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select>
