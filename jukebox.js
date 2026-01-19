@@ -428,8 +428,8 @@ window.injectExtraControls = function() {
         const downloadBtn = document.createElement('button');
         downloadBtn.id = 'jb-download-btn';
         downloadBtn.className = 'jukebox-tool-btn';
-        // Icono de descarga / enlace externo
-        downloadBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Acceder';
+        // Icono de descarga / enlace externo - SIN TEXTO
+        downloadBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>';
         downloadBtn.title = "Descargar audio o abrir fuente original (Dropbox/Drive/YouTube)";
         downloadBtn.onclick = window.accessCurrentSource;
         toolsRow.appendChild(downloadBtn);
