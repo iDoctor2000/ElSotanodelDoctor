@@ -1383,6 +1383,7 @@
 // 0. Configuración Global
 const APP_VERSION = "1.2.4";
 let currentSessionId = null;
+let safetyTimer = null; // Variable global para el timeout de seguridad
 
 const firebaseConfig = {
   apiKey: "AIzaSyCEP44xNINCkIejgNvcYafJsALnO0y4dfw",  
@@ -1418,8 +1419,8 @@ window.addEventListener('load', () => {
     }
     
     // SAFETY NET: Si por alguna razón loadAllData falló catastróficamente,
-    // ocultar pantalla a los 2 segundos de carga completa de la ventana.
-    setTimeout(hideSplashScreen, 2000);
+    // ocultar pantalla a los 3.5 segundos de carga completa de la ventana.
+    safetyTimer = setTimeout(hideSplashScreen, 3500);
 });
 
 
@@ -1964,10 +1965,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       } catch (e) { 
           console.error("Error no fatal en carga inicial de datos:", e); 
       } finally {
-          // --- ESTO ES LO IMPORTANTE ---
-          // Pase lo que pase (éxito o error), ocultamos la pantalla de carga.
-          // Limpiamos el timer de seguridad para que no intente ejecutarse luego innecesariamente
-          clearTimeout(safetyForceTimer); 
+          // --- CORRECCIÓN CRÍTICA ---
+          // Limpiar el timer global si existe para evitar llamadas dobles
+          if (safetyTimer) clearTimeout(safetyTimer);
           hideSplashScreen();
       }
       
