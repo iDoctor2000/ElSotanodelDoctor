@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -74,6 +73,15 @@
       max-width: 60%; max-height: 60%; opacity: 0;
       transform: scale(0.85) translateY(15px); 
       animation: splash-image-entry 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    /* BOTÓN DE CIERRE MANUAL DEL SPLASH (FALLBACK) */
+    #force-close-splash {
+        position: absolute; top: 30px; right: 30px;
+        background: rgba(255, 255, 255, 0.2); color: white;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 50%; width: 40px; height: 40px;
+        font-size: 20px; cursor: pointer; display: none; /* Se muestra via JS si tarda */
+        z-index: 200001;
     }
     @keyframes splash-image-entry { to { opacity: 1; transform: scale(1) translateY(0); } }
     #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -756,6 +764,8 @@
 <body>
   <div id="splash-screen">
     <img src="assets/Logo Sobre negro1.png" alt="Cargando El Sótano del Doctor...">
+    <!-- BOTÓN DE EMERGENCIA PARA CERRAR SPLASH SI SE CUELGA -->
+    <button id="force-close-splash" title="Cerrar pantalla de carga">✕</button>
   </div>
   <div id="firebase-critical-error-banner" style="display:none;">
     ERROR CRÍTICO: La configuración de Firebase no es válida o es un placeholder. La aplicación puede no funcionar correctamente. Contacta al administrador.
@@ -1353,17 +1363,17 @@
   </audio>
 
   <!-- SE AÑADE DEFER A TODOS LOS SCRIPTS PARA GARANTIZAR ORDEN DE EJECUCIÓN -->
-  <script src="jukebox.js?v=10" defer></script>
-  <script src="metronome.js?v=9" defer></script>
-  <script src="tuner.js?v=9" defer></script>
-  <script src="analisis.js?v=9" defer></script>
-  <script src="ensayos.js?v=10" defer></script>
-  <script src="calendario.js?v=9" defer></script>
-  <script src="setlists.js?v=10" defer></script>
+  <script src="jukebox.js?v=11" defer></script>
+  <script src="metronome.js?v=10" defer></script>
+  <script src="tuner.js?v=10" defer></script>
+  <script src="analisis.js?v=10" defer></script>
+  <script src="ensayos.js?v=11" defer></script>
+  <script src="calendario.js?v=10" defer></script>
+  <script src="setlists.js?v=11" defer></script>
 
 <script>
 // 0. Configuración Global
-const APP_VERSION = "1.2.3";
+const APP_VERSION = "1.2.4";
 let currentSessionId = null;
 
 const firebaseConfig = {
@@ -1374,6 +1384,34 @@ const firebaseConfig = {
   messagingSenderId: "756955233128",
   appId: "1:756955233128:web:ab36372bdbd895a30e74dd"
 };
+
+// --- CONTROL DE PANTALLA DE CARGA (SPLASH SCREEN) ---
+const splashScreen = document.getElementById('splash-screen');
+const forceCloseBtn = document.getElementById('force-close-splash');
+
+function hideSplashScreen() {
+    if (splashScreen && !splashScreen.classList.contains('hidden')) {
+        splashScreen.classList.add('hidden');
+        setTimeout(() => { 
+            if (splashScreen.parentNode) splashScreen.style.display = 'none'; 
+        }, 500); // Esperar transición CSS
+    }
+}
+
+// 1. Lógica del botón de cierre manual (fallback)
+if(forceCloseBtn) {
+    forceCloseBtn.onclick = function() {
+        console.warn("Usuario forzó el cierre del Splash Screen.");
+        hideSplashScreen();
+    };
+}
+
+// 2. Temporizador de seguridad: Si en 3.5 segundos no carga, mostramos el botón "X"
+setTimeout(() => {
+    if (splashScreen && !splashScreen.classList.contains('hidden') && forceCloseBtn) {
+        forceCloseBtn.style.display = 'block';
+    }
+}, 3500);
 
 if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI") { 
     const banner = document.getElementById('firebase-critical-error-banner'); 
@@ -1860,14 +1898,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                   attachSuggestionsListener(); 
                   if(window.attachConcertDetailsListener) window.attachConcertDetailsListener();
                   
-                  // CORRECCIÓN CRÍTICA: Llamar a loadAllData() cuando firebase está listo
+                  // Lanzamos carga de datos
                   loadAllData();
                   
                   setTimeout(initSession, 1500);
               }
           }, 100);
       }
-  } catch(e) { }
+  } catch(e) { console.error("Error init firebase wrapper", e); }
 
   const siteAudioElement = document.getElementById('site-audio'); const siteAudioControlButton = document.getElementById('site-audio-control-button'); const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; let currentSiteSongIndex = -1; let siteAudioFadeInterval = null; const SITE_AUDIO_FADE_DURATION = 500; const SITE_AUDIO_TARGET_VOLUME = 0.8; 
   function stopSiteAudioFade() { if (siteAudioFadeInterval) { clearInterval(siteAudioFadeInterval); siteAudioFadeInterval = null; } }
@@ -1883,37 +1921,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     siteAudioControlButton.addEventListener('click', () => { if (!siteAudioElement) return; const wasMuted = siteAudioElement.muted; siteAudioElement.muted = !siteAudioElement.muted; updateSiteAudioMuteButton(); if (!siteAudioElement.muted) { if (siteAudioElement.paused || wasMuted) { if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused) fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); else { siteAudioElement.volume = 0; fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); } } } else stopSiteAudioFade(); });
   }
 
-  // --- LOGICA SPLASH SCREEN MODIFICADA ---
-  const splashScreen = document.getElementById('splash-screen');
+  // --- LOGICA DE CARGA DE DATOS PRINCIPAL ---
   
-  // Función para ocultar el Splash Screen suavemente
-  function hideSplashScreen() {
-      if (splashScreen && !splashScreen.classList.contains('hidden')) {
-          splashScreen.classList.add('hidden');
-          setTimeout(() => { 
-              if (splashScreen.parentNode) splashScreen.style.display = 'none'; 
-          }, 500); // Esperar transición CSS
-      }
-  }
-
-  // Temporizador de seguridad: Si por alguna razón los datos no cargan en 4 segundos, forzar ocultar
-  // para que la app no parezca rota.
-  const splashSafetyTimer = setTimeout(hideSplashScreen, 4000);
-
-  updateConnectionStatus();
-
+  // Función asíncrona para cargar todos los datos en paralelo
   async function loadAllData() {
-      try {
-          // Robust initialization: Solo intentar cargar si las funciones existen
-          // REINTENTO SI setlists.js AÚN NO HA CARGADO
-          if(typeof window.loadSetlistConfig !== 'function') {
-              console.warn("setlists.js no está listo, reintentando en 200ms...");
-              setTimeout(loadAllData, 200);
-              return;
-          }
+      // 1. Verificar dependencias críticas antes de empezar
+      if (typeof window.loadSetlistConfig !== 'function') {
+          console.warn("setlists.js aún no está listo. Reintentando en breve...");
+          // Si setlists.js no ha cargado, esperamos un poco y volvemos a llamar a loadAllData.
+          // NO usamos return aquí para no romper la cadena de promesas si fuera llamada desde fuera,
+          // pero como es la función raíz, el setTimeout funciona bien.
+          setTimeout(loadAllData, 200);
+          return;
+      }
 
+      try {
           const tasks = [];
           
+          // Añadir tareas de carga a la cola
           tasks.push(window.loadSetlistConfig());
           
           if(typeof loadUsers === 'function') tasks.push(loadUsers());
@@ -1923,40 +1948,33 @@ document.addEventListener("DOMContentLoaded", async () => {
           if(typeof window.loadMasterDocs === 'function') tasks.push(window.loadMasterDocs());
           if(typeof window.loadSongNotes === 'function') tasks.push(window.loadSongNotes());
           
+          // Esperar a que todo cargue
           await Promise.all(tasks);
           
       } catch (e) { 
-          console.error("Error en carga inicial de datos (Promise.all):", e); 
+          console.error("Error no fatal en carga inicial de datos:", e); 
       } finally {
-          // --- AQUÍ OCURRE LA MAGIA ---
-          // Una vez que Promise.all termina (éxito o fallo), ocultamos la pantalla de carga.
-          clearTimeout(splashSafetyTimer); // Cancelar el timer de seguridad porque ya terminamos
+          // --- ESTO ES LO IMPORTANTE ---
+          // Pase lo que pase (éxito o error), ocultamos la pantalla de carga.
           hideSplashScreen();
       }
       
-      if(window.loadAnalysisData) window.loadAnalysisData(); else setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
+      // Cargas secundarias que no bloquean la interfaz
+      if(window.loadAnalysisData) window.loadAnalysisData();
       
-      // Safety checks for loading specific setlists
-      try { 
-          if(typeof window.cargarPrimerSetlist === 'function') window.globalItems1 = await window.cargarPrimerSetlist(); 
-      } catch (e) { console.error("Error cargarPrimerSetlist:", e); }
-      
-      try { 
-          if(typeof window.cargarSegundoSetlist === 'function') window.globalItems2 = await window.cargarSegundoSetlist(); 
-      } catch (e) { console.error("Error cargarSegundoSetlist:", e); }
-      
-      try { 
-          if(typeof window.cargarStarSetlist === 'function') window.globalItemsStar = await window.cargarStarSetlist(); 
-      } catch (e) { console.error("Error cargarStarSetlist:", e); }
+      // Cargar setlists específicos (pueden tardar más, no bloquean Splash)
+      try { if(typeof window.cargarPrimerSetlist === 'function') window.cargarPrimerSetlist(); } catch(e){}
+      try { if(typeof window.cargarSegundoSetlist === 'function') window.cargarSegundoSetlist(); } catch(e){}
+      try { if(typeof window.cargarStarSetlist === 'function') window.cargarStarSetlist(); } catch(e){}
   }
   
-  // Iniciar carga solo si Firebase está listo.
-  // El setInterval de arriba se encargará si firebase tarda en cargar.
+  updateConnectionStatus();
+  
+  // Iniciar carga si Firebase ya está listo (cacheado o script rápido)
   if (typeof firebase !== 'undefined') {
       loadAllData();
-  } else {
-      // El setInterval superior llamará a loadAllData cuando firebase esté listo
   }
+  // Si no, el setInterval de arriba se encargará.
 });
 </script>
 </body>
