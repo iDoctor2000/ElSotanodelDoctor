@@ -130,14 +130,7 @@
     #overlay.show{display:block; opacity: 1;}
     
     main { padding-top: 75px; }
-    
-    /* MODAL BACKDROP Z-INDEX FIX: Must be higher than config-screen (10001) */
-    .modal-backdrop { 
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-        background: rgba(0,0,0,0.85); 
-        z-index: 20000; /* Increased to stay on top of config screens */
-        justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(3px); 
-    }
+    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(3px); }
     .modal-backdrop.show { display: flex; }
     
     .modal-content { 
@@ -179,7 +172,7 @@
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
     
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #rehearsals-preview, #vista-calendario-mensual, #suggestions, #analisis { 
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual, #suggestions, #analisis { 
         background: rgba(20, 20, 20, 0.75); 
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
         padding:20px; border-radius:12px; 
@@ -187,7 +180,7 @@
         border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
     }
     
-    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #rehearsals-preview h2, #suggestions h2, #analisis h2 { text-align:center;color:#0cf;margin-bottom:5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2, #analisis h2 { text-align:center;color:#0cf;margin-bottom:5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
     table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
@@ -601,10 +594,9 @@
       .attendance-form { flex-direction: column; align-items: flex-start; }
       .attendance-form select { width: 100%; }
       .delete-rehearsal, .clear-attendance, .edit-rehearsal { display: block; margin: 5px 0; width: 100%; }
-      /* FIX: Enable scroll by default for all tables in mobile */
-      .table-wrapper { overflow-x: auto; width: 100%; display: block; }  
+      .table-wrapper { overflow-x: hidden; }  
       table { width: 100%; min-width: unset; font-size: 0.85em; }
-      th, td { padding: 8px 4px; white-space: normal; word-wrap: break-word; max-width: 150px; }
+      th, td { padding: 8px; white-space: normal; word-wrap: break-word; max-width: 150px; }
       th.calendar-col-header, td.calendar-col, th.details-col-header { width: 40px; padding: 8px 2px;}  
       #second-setlist .table-wrapper table, #star-setlist .table-wrapper table { min-width: unset; }
       .stats-table table { font-size: 0.85em; }
@@ -620,22 +612,6 @@
       #metronome-popup { right: 10px; left: 10px; width: auto; top: 65px; }
       /* Afinador móvil */
       #tuner-popup { right: 10px; left: 10px; width: auto; top: 65px; }
-
-      /* ESTILOS ESPECÍFICOS PARA MÓVIL EN TABLA DE ENSAYOS (EVITAR CORTE) */
-      #rehearsals-view-screen .table-wrapper {
-          overflow-x: auto !important;
-          width: 100%;
-          -webkit-overflow-scrolling: touch;
-      }
-      #rehearsals-view-screen table {
-          min-width: 100%; /* Asegura que ocupe al menos el ancho */
-      }
-      #rehearsals-view-screen td {
-          padding: 6px 4px; /* Reducir padding lateral */
-          font-size: 0.8em; /* Fuente un poco más pequeña */
-          word-break: break-word; /* Romper palabras largas */
-          white-space: normal;
-      }
     }
 
     /* FIX: MOVIL MUY PEQUEÑO (< 380px) */
@@ -909,10 +885,10 @@
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
     <a href="#setlists" id="menu-rehearsals-setlist-section">Setlist Próximo Ensayo</a>
+    <a href="#rehearsals" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
-    <a href="#" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#vista-calendario-mensual" id="menu-calendar-view">Calendario Mensual</a>
     <a href="#suggestions" id="menu-suggestions">Propuestas de Canciones</a>
     <a href="#analisis" id="menu-analisis-section">Análisis / Debriefing</a>
@@ -1178,27 +1154,6 @@
   <div id="stats-screen" class="config-screen"><button class="close-btn" id="close-stats">Cerrar</button><h2>Estadísticas</h2><div class="stats-filter"><label>Filtrar por mes:</label><select id="stats-month-filter"><option value="all">Todos los meses</option></select></div><div class="stats-table"><h3>Tiempo Ensayado por Mes</h3><table id="time-per-month-table"><thead><tr><th>Mes</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-month-body"></tbody></table></div><div class="stats-table"><h3>Tiempo Ensayado por Usuario</h3><table id="time-per-user-table"><thead><tr><th>Usuario</th><th>Tiempo Total (horas)</th></tr></thead><tbody id="time-per-user-body"></tbody></table></div><div class="stats-table"><h3>Ensayos Pasados</h3><div class="table-wrapper"><table id="past-rehearsals-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Asistencias</th></tr></thead><tbody id="past-rehearsals-body"></tbody></table></div></div></div>
   <div id="user-list-screen" class="config-screen"><button class="close-btn" id="close-user-list-screen">Cerrar</button><h2>Usuarios Registrados</h2><div class="table-wrapper" style="padding: 0 10px;"><table><thead><tr><th>Nombre</th><th>Apodo</th><th>Roles</th></tr></thead><tbody id="users-body"></tbody></table></div></div>
 
-  <!-- PANTALLA VISUALIZACIÓN ENSAYOS (NUEVO) -->
-  <div id="rehearsals-view-screen" class="config-screen">
-      <button class="close-btn" id="close-rehearsals-view">Cerrar</button>
-      <h2>Próximos Ensayos</h2>
-      <div class="table-wrapper">
-          <table id="rehearsal-main-table">
-              <thead>
-                  <tr>
-                      <th>Fecha</th>
-                      <th>Hora</th>
-                      <th>Lugar</th>
-                      <!-- COLUMNA CALENDARIO ELIMINADA -->
-                      <th class="details-col-header" style="text-align:center;">Info</th>
-                      <th>Confirmar Asistencia</th>
-                  </tr>
-              </thead>
-              <tbody id="rehearsal-main-body"></tbody>
-          </table>
-      </div>
-  </div>
-
   <main>
     <section id="setlists">
       <h2>
@@ -1219,7 +1174,7 @@
       </div>
       <p id="total-time"></p>
     </section>
-    
+    <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th class="details-col-header">Info</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
     <section id="second-setlist">
       <h2>
           Setlist Próximo Concierto
@@ -1258,20 +1213,10 @@
       </div>
       <p id="total-time-star"></p>
     </section>
-    
     <section id="calendario"> <h2>Próximos Conciertos</h2> 
         <div id="bandhelper-concerts-container"> 
              <p id="bandhelper-loading-message" style="color:#aaa; text-align:center;">Cargando conciertos...</p>
         </div> 
-    </section>
-
-    <!-- SECCION ENSAYOS (MOVIDA AQUÍ Y ESTILIZADA) -->
-    <section id="rehearsals-preview">
-        <div style="display:flex; justify-content: flex-start; align-items:center; gap:10px; margin-bottom:5px;">
-            <h2 style="margin:0; color:#0cf;">Próximos Ensayos</h2>
-            <button id="btn-open-rehearsals-view" class="jukebox-btn" style="border-radius:50%; width:32px; height:32px; font-size:1em; border-color:#0cf; color:#0cf;" title="Ver todos los ensayos">➔</button>
-        </div>
-        <p style="text-align:left; color:#aaa; font-size:0.9em; font-style:italic; margin-top:0;">Pulsa la flecha para ver el calendario completo y confirmar asistencia.</p>
     </section>
 
     <section id="vista-calendario-mensual">
@@ -1317,17 +1262,17 @@
   </audio>
 
   <!-- SE AÑADE VERSIÓN PARA FORZAR RECARGA Y EVITAR CACHÉ HTML -->
-  <script src="jukebox.js?v=6"></script>
-  <script src="metronome.js?v=6"></script>
-  <script src="tuner.js?v=6"></script>
-  <script src="analisis.js?v=6"></script>
-  <script src="ensayos.js?v=7"></script>
-  <script src="calendario.js?v=6"></script>
-  <script src="setlists.js?v=6"></script>
+  <script src="jukebox.js?v=2"></script>
+  <script src="metronome.js?v=2"></script>
+  <script src="tuner.js?v=2"></script>
+  <script src="analisis.js?v=2"></script>
+  <script src="ensayos.js?v=2"></script>
+  <script src="calendario.js?v=2"></script>
+  <script src="setlists.js?v=2"></script>
 
 <script>
 // 0. Configuración Global
-const APP_VERSION = "1.2.2";
+const APP_VERSION = "1.2.1";
 let currentSessionId = null;
 
 const firebaseConfig = {
@@ -1528,18 +1473,12 @@ const sidebar = document.getElementById("sidebar-menu"), overlay = document.getE
 function closeAll() { document.querySelectorAll(".config-screen").forEach(s=>{s.style.display="none"});document.querySelectorAll(".modal-backdrop").forEach(s=>{s.classList.remove("show")});sidebar.classList.remove("show");overlay.classList.remove("show");document.getElementById("config-submenu").style.display="none";if(typeof resetUserForm==="function")resetUserForm();if(typeof window.resetRehearsalForm==="function")window.resetRehearsalForm();document.querySelectorAll("#user-message, #rehearsal-message, #setlist-message, #concert-detail-message, #rehearsal-detail-message, #suggestion-message").forEach(el=>el.textContent="");document.body.style.overflow=''}
 document.getElementById("menu-cerrar").onclick = e => { e.preventDefault(); closeAll(); }; overlay.onclick = closeAll;
 const setupMenuLink = (menuId, targetId) => { const link=document.getElementById(menuId);if(link){link.onclick=e=>{e.preventDefault();closeAll();const targetElement=document.getElementById(targetId);if(targetElement){const headerOffset=document.querySelector('header').offsetHeight||60;const elementPosition=targetElement.getBoundingClientRect().top;const offsetPosition=elementPosition+window.pageYOffset-headerOffset-10;window.scrollTo({top:offsetPosition,behavior:"smooth"})} else{console.warn(`Elemento ${targetId} no encontrado.`)}}}else{console.warn(`Enlace ${menuId} no encontrado.`)} };
-setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
+setupMenuLink("menu-rehearsals-setlist-section", "setlists"); setupMenuLink("menu-rehearsals-section", "rehearsals"); setupMenuLink("menu-second-setlist-section", "second-setlist"); setupMenuLink("menu-star-setlist-section", "star-setlist"); setupMenuLink("menu-concerts-section", "calendario");
 setupMenuLink("menu-calendar-view", "vista-calendario-mensual");
 setupMenuLink("menu-suggestions", "suggestions");
 setupMenuLink("menu-analisis-section", "analisis");
 document.getElementById("menu-suggestions").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("suggestions-screen"); renderSuggestions(); };
 document.getElementById("close-suggestions").onclick = () => { document.getElementById("suggestions-screen").style.display = "none"; };
-
-// --- MENU PRÓXIMOS ENSAYOS (MODIFICADO) ---
-document.getElementById("menu-rehearsals-section").onclick = e => { 
-    e.preventDefault(); 
-    if(window.openConfigScreen) window.openConfigScreen("rehearsals-view-screen"); 
-};
 
 // --- FIX: MENU GESTIÓN PROPUESTAS (ADMIN) ---
 document.getElementById("menu-admin-suggestions").onclick = e => { 
@@ -1657,7 +1596,7 @@ window.openConfigScreen = async (screenId) => {
     // Exponer isAuthenticated para otros scripts (master docs modal)
     window.isAuthenticated = isAuthenticated;
 
-    if(!isAuthenticated && screenId!=='user-list-screen' && screenId!=='stats-screen' && screenId!=='suggestions-screen' && screenId!=='rehearsals-view-screen') {
+    if(!isAuthenticated && screenId!=='user-list-screen' && screenId!=='stats-screen' && screenId!=='suggestions-screen') {
         let bioSuccess = await verifyBiometry();
         if (bioSuccess) {
             isAuthenticated = true;
@@ -1673,7 +1612,7 @@ window.openConfigScreen = async (screenId) => {
             }
         }
     } 
-    if(isAuthenticated || screenId==='user-list-screen' || screenId==='stats-screen' || screenId==='suggestions-screen' || screenId==='rehearsals-view-screen') {
+    if(isAuthenticated || screenId==='user-list-screen' || screenId==='stats-screen' || screenId==='suggestions-screen') {
         closeAll();
         const screen = document.getElementById(screenId);
         if (screen) {
@@ -1884,9 +1823,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           if(typeof window.cargarStarSetlist === 'function') window.globalItemsStar = await window.cargarStarSetlist(); 
       } catch (e) { console.error("Error cargarStarSetlist:", e); }
   }
-  
-  // CORRECCIÓN: No llamar a loadAllData() si Firebase no está listo.
-  // Dejar que el setInterval se encargue.
   if (typeof firebase !== 'undefined') loadAllData();
 });
 </script>
