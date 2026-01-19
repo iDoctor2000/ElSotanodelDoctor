@@ -194,10 +194,10 @@
     thead{background:#222;color:#0cf}
     th,td{padding:12px;border:1px solid #333;text-align:left;white-space: normal; word-wrap: break-word;}
     
-    /* Ajustes columnas setlist - AHORA CON PDF */
+    /* Ajustes columnas setlist - CORREGIDO: Centrado de cabeceras en todos los setlists */
     #setlists table th:nth-child(3), #setlists table th:nth-child(4), #setlists table th:nth-child(5), #setlists table th:nth-child(6), #setlists table th:nth-child(7),
-    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
-    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table td:nth-child(5), #star-setlist table td:nth-child(6), #star-setlist table td:nth-child(7) { text-align: center; }
+    #second-setlist table th:nth-child(3), #second-setlist table th:nth-child(4), #second-setlist table th:nth-child(5), #second-setlist table th:nth-child(6), #second-setlist table th:nth-child(7),
+    #star-setlist table th:nth-child(3), #star-setlist table th:nth-child(4), #star-setlist table th:nth-child(5), #star-setlist table th:nth-child(6), #star-setlist table th:nth-child(7) { text-align: center; }
     
     #setlists table td:nth-child(3), #setlists table td:nth-child(4), #setlists table td:nth-child(5), #setlists table td:nth-child(6), #setlists table td:nth-child(7),
     #second-setlist table td:nth-child(3), #second-setlist table td:nth-child(4), #second-setlist table td:nth-child(5), #second-setlist table td:nth-child(6), #second-setlist table td:nth-child(7),
@@ -935,8 +935,8 @@
     <a href="#setlists" id="menu-rehearsals-setlist-section">Setlist Próximo Ensayo</a>
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
-    <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#" id="menu-rehearsals-section">Próximos Ensayos</a>
+    <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#vista-calendario-mensual" id="menu-calendar-view">Calendario Mensual</a>
     <a href="#suggestions" id="menu-suggestions">Propuestas de Canciones</a>
     <a href="#analisis" id="menu-analisis-section">Análisis / Debriefing</a>
@@ -1302,12 +1302,6 @@
       </div>
       <p id="total-time-star"></p>
     </section>
-    
-    <section id="calendario"> <h2>Próximos Conciertos</h2> 
-        <div id="bandhelper-concerts-container"> 
-             <p id="bandhelper-loading-message" style="color:#aaa; text-align:center;">Cargando conciertos...</p>
-        </div> 
-    </section>
 
     <!-- SECCION ENSAYOS (MOVIDA AQUÍ Y ESTILIZADA) -->
     <section id="rehearsals-preview">
@@ -1316,6 +1310,12 @@
             <button id="btn-open-rehearsals-view" class="jukebox-btn" style="border-radius:50%; width:32px; height:32px; font-size:1em; border-color:#0cf; color:#0cf;" title="Ver todos los ensayos">➔</button>
         </div>
         <p style="text-align:left; color:#aaa; font-size:0.9em; font-style:italic; margin-top:0;">Pulsa la flecha para ver el calendario completo y confirmar asistencia.</p>
+    </section>
+    
+    <section id="calendario"> <h2>Próximos Conciertos</h2> 
+        <div id="bandhelper-concerts-container"> 
+             <p id="bandhelper-loading-message" style="color:#aaa; text-align:center;">Cargando conciertos...</p>
+        </div> 
     </section>
 
     <section id="vista-calendario-mensual">
