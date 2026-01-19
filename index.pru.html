@@ -227,7 +227,7 @@
     }
     .jukebox-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
-    /* PDF COLUMN STYLES (NUEVO) */
+    /* PDF COLUMN STYLES */
     th.pdf-col-header, td.pdf-col { width: 40px; text-align: center; padding: 5px; }
     .pdf-btn {
         background: transparent; border: 1px solid #333; color: #555;
@@ -235,7 +235,6 @@
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; transition: all 0.3s; margin: 0 auto;
     }
-    /* Estilo "Active" en Naranja para diferenciar del audio */
     .pdf-btn.active {
         border-color: #ff9800; color: #ff9800; 
         box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
@@ -251,6 +250,31 @@
         opacity: 1; border-color: #666; color: #999;
     }
     .pdf-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* NOTES COLUMN STYLES (AMARILLO) - NUEVO */
+    th.notes-col-header, td.notes-col { width: 40px; text-align: center; padding: 5px; }
+    .notes-btn {
+        background: transparent; border: 1px solid #333; color: #555;
+        border-radius: 50%; width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.3s; margin: 0 auto;
+    }
+    .notes-btn.active {
+        border-color: #FFD700; color: #FFD700; 
+        box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+    }
+    .notes-btn.active:hover {
+        background: rgba(255, 215, 0, 0.1); transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+    }
+    .notes-btn.inactive {
+        opacity: 0.4; filter: grayscale(100%); border-color: #444;
+    }
+    .notes-btn.inactive:hover {
+        opacity: 1; border-color: #666; color: #999;
+    }
+    .notes-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
 
     /* ESTILO BOTÓN GLOBAL MAESTRO (ACTUALIZADO 1, 2, 3) */
     .master-direct-group { display: inline-flex; gap: 6px; vertical-align: middle; margin-left: 10px; }
@@ -1125,6 +1149,23 @@
       </div>
   </div>
 
+  <!-- SONG NOTES MODAL (NUEVO) -->
+  <div id="song-notes-modal" class="modal-backdrop">
+      <div class="modal-content" style="max-width: 500px;">
+         <h3>Notas: <span id="song-notes-title" style="color:#FFD700;"></span></h3>
+         
+         <label for="song-notes-input">Anotaciones personales o de banda:</label>
+         <textarea id="song-notes-input" style="min-height: 150px;" placeholder="Escribe aquí notas sobre la canción (tonos, cambios, estructura)..."></textarea>
+         
+         <div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;">
+            <div>
+                <button id="song-notes-cancel-btn" class="modal-close-btn">Cancelar</button>
+                <button id="song-notes-save-btn" style="background-color: #FFD700; color: #000;">Guardar Notas</button>
+            </div>
+         </div>
+      </div>
+  </div>
+
   <!-- MARKER INPUT MODAL -->
   <div id="marker-input-modal" class="modal-backdrop" style="z-index: 12000;">
       <div class="modal-content" style="max-width: 400px;">
@@ -1210,7 +1251,8 @@
           </div>
       </h2>
       <p id="setlist1-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
+      <!-- HEADER ACTUALIZADO: AÑADIDA COLUMNA NOTAS ANTES DE KEY -->
+      <div class="table-wrapper"> <table> <thead> <tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th class="notes-col-header" style="text-align:center;">📒</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn">Pdf Simple</button>
@@ -1230,7 +1272,8 @@
           </div>
       </h2>
       <p id="second-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
+      <!-- HEADER ACTUALIZADO: AÑADIDA COLUMNA NOTAS ANTES DE KEY -->
+      <div class="table-wrapper"> <table id="second-list-table"> <thead><tr><th>#</th><th>Canción</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th class="notes-col-header" style="text-align:center;">📒</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="second-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-2">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-2">Pdf Simple</button>
@@ -1249,7 +1292,8 @@
           </div>
       </h2>
       <p id="star-setlist-dynamic-name" class="setlist-dynamic-name"></p>
-      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
+      <!-- HEADER ACTUALIZADO: AÑADIDA COLUMNA NOTAS ANTES DE KEY -->
+      <div class="table-wrapper"> <table> <thead><tr><th>#</th><th>Título</th><th class="jukebox-col-header">🎧</th><th class="pdf-col-header">📝</th><th class="notes-col-header" style="text-align:center;">📒</th><th>Key</th><th>Tempo</th><th class="metronome-col-header">⏱</th><th>Time</th></tr></thead><tbody id="star-setlist-body"></tbody></table></div>
       <div style="text-align: center;">
         <button class="download-btn" id="download-btn-star">Pdf Complex</button>
         <button class="download-btn" id="download-basic-btn-star">Pdf Simple</button>
@@ -1862,6 +1906,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           if(typeof window.loadJukeboxLibrary === 'function') tasks.push(window.loadJukeboxLibrary());
           if(typeof window.loadPdfLibrary === 'function') tasks.push(window.loadPdfLibrary());
           if(typeof window.loadMasterDocs === 'function') tasks.push(window.loadMasterDocs());
+          // NUEVO: CARGAR NOTAS
+          if(typeof window.loadSongNotes === 'function') tasks.push(window.loadSongNotes());
           
           await Promise.all(tasks);
           
