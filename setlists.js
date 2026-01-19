@@ -33,8 +33,6 @@ let currentEditingNoteSong = null; // NUEVO
 let currentMasterDocsSetlistKey = null;
 
 // --- UTILITIES LOCALES ---
-// Estas funciones se definen aquí para uso interno del script, 
-// aunque también existan en el scope global por otros scripts.
 const sanitizeKey = (str) => str ? str.replace(/[.#$[\]/:\s,]/g, '_') : 'unknown';
 const decodeHtml = (text) => {
     if (typeof text !== 'string') return text;
@@ -232,7 +230,7 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId) {
         return `<td class="pdf-col"><button class="pdf-btn ${statusClass}" onclick="${clickAction}">${iconSvg}</button></td>`;
     };
 
-    // --- NUEVO: CELDA DE NOTAS ---
+    // --- NUEVO: CELDA DE NOTAS (AMARILLO) ---
     const createNotesCell = (songName) => {
         const cleanName = sanitizeKey(songName);
         const note = window.songNotesLibrary ? window.songNotesLibrary[cleanName] : null;
@@ -241,9 +239,9 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId) {
         const safeName = songName.replace(/'/g, "\\'");
         const clickAction = `window.openSongNotesModal('${safeName}')`;
         
-        // Icono Hoja y Lapiz
-        const iconSvg = `<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
-        return `<td class="notes-col"><button class="notes-btn ${statusClass}" onclick="${clickAction}">${iconSvg}</button></td>`;
+        // Icono Hoja (Sticky Note style)
+        const iconSvg = `<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+        return `<td class="notes-col"><button class="notes-btn ${statusClass}" onclick="${clickAction}" title="Notas">${iconSvg}</button></td>`;
     };
 
     const createMetronomeCell = (tempo) => {
@@ -259,11 +257,23 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId) {
         setlistStructure.forEach(item => {
             if (item.isSetHeader) {
                 const setHeaderTime = toHHMMLocal(item.calculatedBlockDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="9">${item.displayName} (${setHeaderTime})</td></tr>`);
+                // Colspan ajustado a 10 para cubrir la nueva columna
+                tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="10">${item.displayName} (${setHeaderTime})</td></tr>`);
                 totalSecondsOverall += (item.calculatedBlockDurationSeconds || 0);
                 item.songs.forEach(song => {
                     songCount++;
-                    tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${song.displayName}</td>${createJukeboxCell(song.displayName)}${createPdfCell(song.displayName)}${createNotesCell(song.displayName)}<td>${decodeHtml(song.key || "-")}</td><td>${decodeHtml(song.tempo || "-")}</td>${createMetronomeCell(song.tempo)}<td>${toMMSSLocal(song.calculatedDurationSeconds || 0)}</td></tr>`);
+                    // ORDEN: # | Titulo | Audio | PDF | NOTAS | Key | Tempo | Metro | Time
+                    tbody.insertAdjacentHTML("beforeend", `<tr>
+                        <td>${songCount}</td>
+                        <td>${song.displayName}</td>
+                        ${createJukeboxCell(song.displayName)}
+                        ${createPdfCell(song.displayName)}
+                        ${createNotesCell(song.displayName)}
+                        <td>${decodeHtml(song.key || "-")}</td>
+                        <td>${decodeHtml(song.tempo || "-")}</td>
+                        ${createMetronomeCell(song.tempo)}
+                        <td>${toMMSSLocal(song.calculatedDurationSeconds || 0)}</td>
+                    </tr>`);
                 });
             } else if (item.isBreak) {
                 totalSecondsOverall += (item.calculatedDurationSeconds || 0);
@@ -271,7 +281,17 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId) {
             } else if (item.isSong) {
                 songCount++;
                 totalSecondsOverall += (item.calculatedDurationSeconds || 0);
-                tbody.insertAdjacentHTML("beforeend", `<tr><td>${songCount}</td><td>${item.displayName}</td>${createJukeboxCell(item.displayName)}${createPdfCell(item.displayName)}${createNotesCell(item.displayName)}<td>${decodeHtml(item.key || "-")}</td><td>${decodeHtml(item.tempo || "-")}</td>${createMetronomeCell(item.tempo)}<td>${toMMSSLocal(item.calculatedDurationSeconds || 0)}</td></tr>`);
+                tbody.insertAdjacentHTML("beforeend", `<tr>
+                    <td>${songCount}</td>
+                    <td>${item.displayName}</td>
+                    ${createJukeboxCell(item.displayName)}
+                    ${createPdfCell(item.displayName)}
+                    ${createNotesCell(item.displayName)}
+                    <td>${decodeHtml(item.key || "-")}</td>
+                    <td>${decodeHtml(item.tempo || "-")}</td>
+                    ${createMetronomeCell(item.tempo)}
+                    <td>${toMMSSLocal(item.calculatedDurationSeconds || 0)}</td>
+                </tr>`);
             }
         });
     }
@@ -652,7 +672,12 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('song-notes-modal').classList.remove('show');
         };
     }
-    document.getElementById('song-notes-cancel-btn').onclick = () => document.getElementById('song-notes-modal').classList.remove('show');
+    
+    // Fix: Verificar si existe el botón cancelar antes de asignar
+    const cancelNotesBtn = document.getElementById('song-notes-cancel-btn');
+    if(cancelNotesBtn) {
+        cancelNotesBtn.onclick = () => document.getElementById('song-notes-modal').classList.remove('show');
+    }
 
     // Master Docs
     document.getElementById('close-master-docs-modal').onclick = () => document.getElementById('master-docs-modal').classList.remove('show');
