@@ -36,13 +36,24 @@ window.renderRehearsals = function() {
     if(tbodyMgmt) tbodyMgmt.innerHTML = "";
     if(tbodyMain) tbodyMain.innerHTML = "";
     
-    // Fix: Comparar solo fechas en formato string YYYY-MM-DD para evitar problemas de zona horaria
-    const now = new Date();
-    // 'en-CA' devuelve formato YYYY-MM-DD
-    const todayStr = now.toLocaleDateString('en-CA');
+    // --- FIX FECHAS: Comparación estricta de días locales ---
+    // Creamos "hoy" a las 00:00:00 hora local para comparar sin horas
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // Ordenar ensayos por fecha (más reciente primero para admin, más próximo primero para view)
-    window.rehearsals.sort((a, b) => new Date(a.date + 'T' + a.startTime) - new Date(b.date + 'T' + b.startTime));
+    // Función auxiliar para convertir "YYYY-MM-DD" a objeto Date Local 00:00:00
+    const parseLocalDate = (dateStr) => {
+        if(!dateStr) return null;
+        const [y, m, d] = dateStr.split('-').map(Number);
+        return new Date(y, m - 1, d); 
+    };
+
+    // Ordenar ensayos por fecha (más próximo primero para view)
+    window.rehearsals.sort((a, b) => {
+        const dateA = new Date(a.date + 'T' + (a.startTime || '00:00'));
+        const dateB = new Date(b.date + 'T' + (b.startTime || '00:00'));
+        return dateA - dateB;
+    });
 
     if (window.rehearsals.length === 0) {
         const emptyRow = '<tr><td colspan="6" style="text-align:center;">No hay ensayos programados.</td></tr>';
@@ -70,24 +81,26 @@ window.renderRehearsals = function() {
             userOptions += `<option value="${u.name}">${u.name} (${u.nickname})</option>`;
         });
 
-        // Tabla Admin
+        // Tabla Admin (Muestra todos)
         if(tbodyMgmt) {
             tbodyMgmt.insertAdjacentHTML("beforeend", `<tr><td>${formattedDate}</td><td>${r.startTime}</td><td>${r.endTime}</td><td>${r.location}</td><td>${summary}</td><td><button data-i="${i}" class="edit-rehearsal">Editar</button><button data-i="${i}" class="copy-rehearsal">Copiar</button><button data-i="${i}" class="clear-attendance">Limpiar</button><button data-i="${i}" class="delete-rehearsal">Eliminar</button></td></tr>`);
         }
 
         // Tabla Principal (Solo futuros u hoy)
-        // Usamos comparación de cadenas para robustez
-        if(r.date >= todayStr){
+        const rLocal = parseLocalDate(r.date);
+        
+        if (rLocal && rLocal >= today) {
             // Construcción de botones
             const detailsBtnContent = `<button class="details-btn" onclick="window.openRehearsalDetailsModal(${i})" title="Notas del Ensayo">➡️</button>`;
             
-            // Fila ESTÁNDAR (SIN COLUMNA CALENDARIO)
+            // Fila ESTÁNDAR (5 COLUMNAS: Fecha, Hora, Lugar, Info, Asistencia)
+            // Se usa <br> en la hora para que quede stacked si es necesario o un guion
             const rowHtml = `
             <tr>
-                <td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td>
+                <td>${formattedDate}<br><span class="rehearsal-duration">(${durationText})</span></td>
                 <td>${r.startTime} - ${r.endTime}</td>
                 <td>${r.location}</td>
-                <td class="details-col-header">${detailsBtnContent}</td>
+                <td class="details-col-header" style="text-align:center;">${detailsBtnContent}</td>
                 <td>
                     <div class="attendance-form">
                         <select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select>
@@ -152,7 +165,7 @@ window.renderRehearsals = function() {
     if(tbodyMain) {
         tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn => btn.onclick = async () => {
             const i = parseInt(btn.dataset.i, 10);
-            const row = btn.closest("tr") || btn.closest(".rehearsal-card"); // Fallback for safety
+            const row = btn.closest("tr") || btn.closest(".rehearsal-card"); 
             const userSelect = row.querySelector(".attendance-user");
             const responseSelect = row.querySelector(".attendance-response");
             
