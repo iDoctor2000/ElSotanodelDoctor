@@ -304,6 +304,18 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
     
+    // View Screen Open Button (Home Page - Flecha)
+    const openViewBtn = document.getElementById("btn-open-rehearsals-view");
+    if(openViewBtn) {
+        openViewBtn.onclick = () => {
+             if(window.openConfigScreen) {
+                 window.openConfigScreen("rehearsals-view-screen");
+                 // Forzar renderizado para asegurar datos frescos
+                 if(window.renderRehearsals) window.renderRehearsals();
+             }
+        };
+    }
+
     // View Screen Close
     const closeView = document.getElementById("close-rehearsals-view");
     if(closeView) closeView.onclick = () => document.getElementById("rehearsals-view-screen").style.display = "none";
