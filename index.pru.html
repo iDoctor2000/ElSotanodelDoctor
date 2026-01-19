@@ -130,7 +130,14 @@
     #overlay.show{display:block; opacity: 1;}
     
     main { padding-top: 75px; }
-    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(3px); }
+    
+    /* MODAL BACKDROP Z-INDEX FIX: Must be higher than config-screen (10001) */
+    .modal-backdrop { 
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.85); 
+        z-index: 20000; /* Increased to stay on top */
+        justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(3px); 
+    }
     .modal-backdrop.show { display: flex; }
     
     .modal-content { 
@@ -172,7 +179,7 @@
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
     
-    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #vista-calendario-mensual, #suggestions, #analisis { 
+    #setlists, #star-setlist, #rehearsals, #second-setlist, #calendario, #rehearsals-preview, #vista-calendario-mensual, #suggestions, #analisis { 
         background: rgba(20, 20, 20, 0.75); 
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
         padding:20px; border-radius:12px; 
@@ -180,7 +187,7 @@
         border: 1px solid rgba(0, 204, 255, 0.1); margin-bottom:40px 
     }
     
-    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #suggestions h2, #analisis h2 { text-align:center;color:#0cf;margin-bottom:5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    #setlists h2, #star-setlist h2, #rehearsals h2, #second-setlist h2, #calendario h2, #rehearsals-preview h2, #suggestions h2, #analisis h2 { text-align:center;color:#0cf;margin-bottom:5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .setlist-dynamic-name { text-align:center;color:#aaa;margin-top:0px; margin-bottom:15px; font-style:italic; font-size: 0.9em; }
     .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; }
     table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: .95em; margin-left: auto; margin-right: auto; }
@@ -613,6 +620,63 @@
       #metronome-popup { right: 10px; left: 10px; width: auto; top: 65px; }
       /* Afinador móvil */
       #tuner-popup { right: 10px; left: 10px; width: auto; top: 65px; }
+
+      /* --- CARD VIEW FOR REHEARSALS (Responsive) --- */
+      #rehearsals-view-screen .table-wrapper { overflow-x: visible; } /* Cards don't need horizontal scroll */
+      #rehearsals-view-screen table { border-collapse: separate; border-spacing: 0 15px; background: transparent; }
+      #rehearsals-view-screen thead { display: none; }
+      #rehearsals-view-screen tbody tr {
+          display: block;
+          background: rgba(30, 30, 30, 0.8);
+          border: 1px solid #444;
+          border-radius: 12px;
+          padding: 10px;
+          margin-bottom: 15px;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      }
+      
+      /* ESTILOS ESPECÍFICOS PARA MÓVIL EN TABLA DE ENSAYOS (EVITAR CORTE) */
+      #rehearsals-view-screen .table-wrapper {
+          overflow-x: auto !important;
+          width: 100%;
+          -webkit-overflow-scrolling: touch;
+      }
+      #rehearsals-view-screen table {
+          min-width: 100%; /* Asegura que ocupe al menos el ancho */
+      }
+      #rehearsals-view-screen td {
+          padding: 6px 4px; /* Reducir padding lateral */
+          font-size: 0.8em; /* Fuente un poco más pequeña */
+          word-break: break-word; /* Romper palabras largas */
+          white-space: normal;
+      }
+      
+      #rehearsals-view-screen td:last-child { border-bottom: none; display: block; text-align: left; }
+      
+      #rehearsals-view-screen td::before {
+          content: attr(data-label);
+          color: #0cf;
+          font-weight: bold;
+          text-align: left;
+          margin-right: 10px;
+          flex-shrink: 0;
+      }
+      
+      /* Adjust specific cells */
+      #rehearsals-view-screen td[data-label="Cal"], 
+      #rehearsals-view-screen td[data-label="Info"] {
+          justify-content: space-between;
+      }
+      
+      /* Attendance form adjustment in card view */
+      #rehearsals-view-screen .attendance-form {
+          margin-top: 5px;
+          width: 100%;
+          flex-direction: column;
+          align-items: stretch;
+      }
+      #rehearsals-view-screen .attendance-form select { margin-bottom: 8px; }
+      #rehearsals-view-screen .attendance-summary { text-align: left; margin-top: 10px; }
     }
 
     /* FIX: MOVIL MUY PEQUEÑO (< 380px) */
@@ -886,10 +950,10 @@
   <nav class="sidebar" id="sidebar-menu">
     <h2>Menú</h2>
     <a href="#setlists" id="menu-rehearsals-setlist-section">Setlist Próximo Ensayo</a>
-    <a href="#" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
+    <a href="#" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#vista-calendario-mensual" id="menu-calendar-view">Calendario Mensual</a>
     <a href="#suggestions" id="menu-suggestions">Propuestas de Canciones</a>
     <a href="#analisis" id="menu-analisis-section">Análisis / Debriefing</a>
@@ -1197,15 +1261,6 @@
       <p id="total-time"></p>
     </section>
     
-    <!-- SECCION ENSAYOS MINIMIZADA (AJUSTADA ALINEACIÓN) -->
-    <section id="rehearsals-preview">
-        <div style="display:flex; justify-content: flex-start; align-items:center; gap:10px; margin-bottom:5px;">
-            <h2 style="margin:0; color:#0cf;">Próximos Ensayos</h2>
-            <button id="btn-open-rehearsals-view" class="jukebox-btn" style="border-radius:50%; width:32px; height:32px; font-size:1em; border-color:#0cf; color:#0cf;" title="Ver todos los ensayos">➔</button>
-        </div>
-        <p style="text-align:left; color:#aaa; font-size:0.9em; font-style:italic; margin-top:0;">Pulsa la flecha para ver el calendario completo y confirmar asistencia.</p>
-    </section>
-
     <section id="second-setlist">
       <h2>
           Setlist Próximo Concierto
@@ -1244,10 +1299,20 @@
       </div>
       <p id="total-time-star"></p>
     </section>
+    
     <section id="calendario"> <h2>Próximos Conciertos</h2> 
         <div id="bandhelper-concerts-container"> 
              <p id="bandhelper-loading-message" style="color:#aaa; text-align:center;">Cargando conciertos...</p>
         </div> 
+    </section>
+
+    <!-- SECCION ENSAYOS (MOVIDA AQUÍ Y ESTILIZADA) -->
+    <section id="rehearsals-preview">
+        <div style="display:flex; justify-content: flex-start; align-items:center; gap:10px; margin-bottom:5px;">
+            <h2 style="margin:0; color:#0cf;">Próximos Ensayos</h2>
+            <button id="btn-open-rehearsals-view" class="jukebox-btn" style="border-radius:50%; width:32px; height:32px; font-size:1em; border-color:#0cf; color:#0cf;" title="Ver todos los ensayos">➔</button>
+        </div>
+        <p style="text-align:left; color:#aaa; font-size:0.9em; font-style:italic; margin-top:0;">Pulsa la flecha para ver el calendario completo y confirmar asistencia.</p>
     </section>
 
     <section id="vista-calendario-mensual">
