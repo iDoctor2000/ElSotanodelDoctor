@@ -1351,14 +1351,14 @@
     Tu navegador no soporta el elemento de audio.
   </audio>
 
-  <!-- SE AÑADE VERSIÓN PARA FORZAR RECARGA Y EVITAR CACHÉ HTML -->
-  <script src="jukebox.js?v=9"></script>
-  <script src="metronome.js?v=8"></script>
-  <script src="tuner.js?v=8"></script>
-  <script src="analisis.js?v=8"></script>
-  <script src="ensayos.js?v=9"></script>
-  <script src="calendario.js?v=8"></script>
-  <script src="setlists.js?v=9"></script>
+  <!-- SE AÑADE DEFER A TODOS LOS SCRIPTS PARA GARANTIZAR ORDEN DE EJECUCIÓN -->
+  <script src="jukebox.js?v=10" defer></script>
+  <script src="metronome.js?v=9" defer></script>
+  <script src="tuner.js?v=9" defer></script>
+  <script src="analisis.js?v=9" defer></script>
+  <script src="ensayos.js?v=10" defer></script>
+  <script src="calendario.js?v=9" defer></script>
+  <script src="setlists.js?v=10" defer></script>
 
 <script>
 // 0. Configuración Global
@@ -1858,7 +1858,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                   clearInterval(checkFirebase); firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebase.firestore().enablePersistence().catch(err => console.warn(err));
                   attachSuggestionsListener(); 
                   if(window.attachConcertDetailsListener) window.attachConcertDetailsListener();
-                  // loadAllData será llamado abajo cuando firebase esté definido
+                  
+                  // CORRECCIÓN CRÍTICA: Llamar a loadAllData() cuando firebase está listo
+                  loadAllData();
+                  
                   setTimeout(initSession, 1500);
               }
           }, 100);
@@ -1901,13 +1904,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadAllData() {
       try {
           // Robust initialization: Solo intentar cargar si las funciones existen
+          // REINTENTO SI setlists.js AÚN NO HA CARGADO
+          if(typeof window.loadSetlistConfig !== 'function') {
+              console.warn("setlists.js no está listo, reintentando en 200ms...");
+              setTimeout(loadAllData, 200);
+              return;
+          }
+
           const tasks = [];
           
-          if(typeof window.loadSetlistConfig === 'function') {
-              tasks.push(window.loadSetlistConfig());
-          } else {
-              console.error("CRÍTICO: setlists.js no se cargó correctamente. loadSetlistConfig no existe.");
-          }
+          tasks.push(window.loadSetlistConfig());
           
           if(typeof loadUsers === 'function') tasks.push(loadUsers());
           if(typeof window.loadRehearsals === 'function') tasks.push(window.loadRehearsals());
