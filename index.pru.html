@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1959,18 +1958,16 @@ document.addEventListener("DOMContentLoaded", async () => {
           if(typeof window.loadMasterDocs === 'function') tasks.push(window.loadMasterDocs());
           if(typeof window.loadSongNotes === 'function') tasks.push(window.loadSongNotes());
           
-          // CRÍTICO: Timeout Race
-          // Si la carga tarda más de 2 segundos (por bloqueo de red o firebase), terminamos la espera.
-          const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // Esperamos a que todo cargue O a que pase el tiempo
-          await Promise.race([Promise.all(tasks), timeoutPromise]);
+          // Esperar a que todo cargue
+          await Promise.all(tasks);
           
       } catch (e) { 
           console.error("Error no fatal en carga inicial de datos:", e); 
       } finally {
           // --- ESTO ES LO IMPORTANTE ---
-          // Pase lo que pase (éxito, error o timeout), ocultamos la pantalla de carga.
+          // Pase lo que pase (éxito o error), ocultamos la pantalla de carga.
+          // Limpiamos el timer de seguridad para que no intente ejecutarse luego innecesariamente
+          clearTimeout(safetyForceTimer); 
           hideSplashScreen();
       }
       
