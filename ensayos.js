@@ -368,12 +368,123 @@ window.openRehearsalDetailsModal = function(index) {
     
     document.getElementById("rehearsal-detail-index").value = index;
     
+    // --- LÓGICA DE TÍTULO ---
     const titleDisplay = document.getElementById("rehearsal-detail-title-display");
     if(titleDisplay) {
         const fmtDate = window.formatDateWithDay(r.date);
         titleDisplay.innerHTML = `Ensayo: ${fmtDate} <br><span style="font-size:0.8em; color:#aaa;">${r.location} (${r.startTime}-${r.endTime})</span>`;
     }
+
+    // --- INICIO NUEVA FUNCIONALIDAD: WIDGET DE ASISTENCIA EN MODAL ---
+    // Buscar o crear contenedor del widget
+    let widgetContainer = document.getElementById("rehearsal-attendance-widget");
+    if (!widgetContainer) {
+        widgetContainer = document.createElement("div");
+        widgetContainer.id = "rehearsal-attendance-widget";
+        // Insertar justo después del título
+        if (titleDisplay && titleDisplay.parentNode) {
+            titleDisplay.parentNode.insertBefore(widgetContainer, titleDisplay.nextSibling);
+        }
+    }
     
+    // Preparar datos para el widget
+    const storedUser = localStorage.getItem('elSotanoCurrentUser');
+    let userOptionsHTML = '<option value="">Selecciona Músico</option>';
+    if (window.users) {
+        window.users.forEach(u => {
+            const isSelected = storedUser === u.name ? 'selected' : '';
+            userOptionsHTML += `<option value="${u.name}" ${isSelected}>${u.name} (${u.nickname})</option>`;
+        });
+    }
+
+    const attendance = r.attendance || [];
+    const getNamesByStatus = (status) => attendance.filter(a => a.attending === status).map(a => {
+        const u = window.users ? window.users.find(user => user.name === a.name) : null;
+        return u ? u.nickname : a.name;
+    }).join(", ") || "Nadie";
+
+    // Inyectar HTML del Widget (3 líneas solicitadas)
+    widgetContainer.style.cssText = "margin: 15px 0; padding: 15px; background: #222; border-radius: 8px; border: 1px solid #444;";
+    widgetContainer.innerHTML = `
+        <h3 style="color: #00d2ff; font-size: 1em; margin-top: 0; margin-bottom: 10px;">Confirmar Asistencia</h3>
+        
+        <!-- Línea 1: Combos -->
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <select id="modal-att-user" style="flex: 1; padding: 8px; background: #333; border: 1px solid #555; color: white; border-radius: 4px;">
+                ${userOptionsHTML}
+            </select>
+            <select id="modal-att-status" style="width: 120px; padding: 8px; background: #333; border: 1px solid #555; color: white; border-radius: 4px;">
+                <option value="">¿Asistirás?</option>
+                <option value="Sí">Sí</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+
+        <!-- Línea 2: Botón Confirmar -->
+        <button id="modal-att-confirm-btn" style="width: 100%; padding: 10px; background: #00d2ff; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase;">
+            Confirmar
+        </button>
+
+        <!-- Línea 3: Resumen -->
+        <div id="modal-att-summary" style="margin-top: 15px; font-size: 0.9em; line-height: 1.4;">
+            <p style="margin: 0;"><span style="color: #00d2ff;">Asisten:</span> <span id="summ-yes">${getNamesByStatus('Sí')}</span></p>
+            <p style="margin: 5px 0 0 0;"><span style="color: #ff4444;">No asisten:</span> <span id="summ-no">${getNamesByStatus('No')}</span></p>
+        </div>
+    `;
+
+    // Lógica del botón Confirmar dentro del widget
+    const confirmBtn = document.getElementById('modal-att-confirm-btn');
+    if (confirmBtn) {
+        confirmBtn.onclick = async () => {
+            const userSelect = document.getElementById('modal-att-user');
+            const statusSelect = document.getElementById('modal-att-status');
+            const user = userSelect.value;
+            const status = statusSelect.value;
+
+            if (!user || !status) {
+                alert("Por favor selecciona músico y respuesta.");
+                return;
+            }
+
+            // Guardar preferencia de usuario
+            localStorage.setItem('elSotanoCurrentUser', user);
+            confirmBtn.textContent = "Guardando...";
+
+            // Actualizar array en memoria
+            if(!window.rehearsals[index].attendance) window.rehearsals[index].attendance = [];
+            // Eliminar registro previo de este usuario si existe
+            window.rehearsals[index].attendance = window.rehearsals[index].attendance.filter(a => a.name !== user);
+            // Añadir nuevo
+            window.rehearsals[index].attendance.push({ name: user, attending: status });
+
+            try {
+                await window.saveRehearsals();
+                
+                // Actualizar UI Local
+                const newYes = (window.rehearsals[index].attendance || []).filter(a => a.attending === 'Sí').map(a => {
+                    const u = window.users.find(us => us.name === a.name); return u ? u.nickname : a.name;
+                }).join(", ") || "Nadie";
+                
+                const newNo = (window.rehearsals[index].attendance || []).filter(a => a.attending === 'No').map(a => {
+                    const u = window.users.find(us => us.name === a.name); return u ? u.nickname : a.name;
+                }).join(", ") || "Nadie";
+
+                document.getElementById('summ-yes').textContent = newYes;
+                document.getElementById('summ-no').textContent = newNo;
+
+                confirmBtn.textContent = "¡Guardado!";
+                setTimeout(() => confirmBtn.textContent = "Confirmar", 1500);
+
+            } catch (e) {
+                console.error(e);
+                confirmBtn.textContent = "Error";
+                alert("Error al guardar asistencia.");
+            }
+        };
+    }
+    // --- FIN NUEVA FUNCIONALIDAD ---
+
+    // Cargar notas existentes
     document.getElementById("rehearsal-notes").value = r.notes || "";
     
     rehearsalDetailsModal.classList.add('show');
