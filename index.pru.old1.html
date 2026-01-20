@@ -97,6 +97,22 @@
         width: 37px; height: 37px; transition: background-color 0.2s ease, transform 0.2s ease;
     }
     .header-icon-btn:hover { background: #333; transform: scale(1.05); }
+
+    /* --- CAMBIO SOLICITADO: BOTÓN CALENDARIO AMARILLO --- */
+    #header-calendar-btn {
+        background: #FBC02D; /* Amarillo mostaza/ámbar (no muy brillante) */
+        color: #111; /* Icono oscuro para contraste */
+        border-color: #FBC02D;
+        box-shadow: 0 0 10px rgba(251, 192, 45, 0.3);
+    }
+    #header-calendar-btn:hover {
+        background: #FFD54F;
+        color: #000;
+        box-shadow: 0 0 15px rgba(255, 213, 79, 0.5);
+        transform: scale(1.1);
+    }
+    /* ---------------------------------------------------- */
+
     .header-icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
     
     /* Icono Metrónomo (SVG stroke) */
@@ -175,6 +191,7 @@
     .config-screen select[multiple] { height: 150px; }
     .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .config-screen button:hover{background:#09b}
+    .config-screen .close-btn{ position:absolute; top:15px; right:20px; font-size:1.2em;background:none;border:1px solid #0cf; color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer; z-index: 10002; }
     .config-screen .close-btn{ position:absolute; top:15px; right:20px; font-size:1.2em;background:none;border:1px solid #0cf; color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer; z-index: 10002; }
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
