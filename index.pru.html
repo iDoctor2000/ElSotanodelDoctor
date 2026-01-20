@@ -952,7 +952,6 @@
     <a href="#setlists" id="menu-rehearsals-setlist-section">Setlist Próximo Ensayo</a>
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
-    <a href="#" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#vista-calendario-mensual" id="menu-calendar-view">Calendario Mensual</a>
     <a href="#suggestions" id="menu-suggestions">Propuestas de Canciones</a>
@@ -1320,15 +1319,6 @@
       <p id="total-time-star"></p>
     </section>
 
-    <!-- SECCION ENSAYOS (MOVIDA AQUÍ Y ESTILIZADA) -->
-    <section id="rehearsals-preview">
-        <div style="display:flex; justify-content: flex-start; align-items:center; gap:10px; margin-bottom:5px;">
-            <h2 style="margin:0; color:#0cf;">Próximos Ensayos</h2>
-            <button id="btn-open-rehearsals-view" class="jukebox-btn" style="border-radius:50%; width:32px; height:32px; font-size:1em; border-color:#0cf; color:#0cf;" title="Ver todos los ensayos">➔</button>
-        </div>
-        <p style="text-align:left; color:#aaa; font-size:0.9em; font-style:italic; margin-top:0;">Pulsa la flecha para ver el calendario completo y confirmar asistencia.</p>
-    </section>
-    
     <section id="calendario"> <h2>Próximos Conciertos</h2> 
         <div id="bandhelper-concerts-container"> 
              <p id="bandhelper-loading-message" style="color:#aaa; text-align:center;">Cargando conciertos...</p>
@@ -1597,10 +1587,7 @@ document.getElementById("menu-suggestions").onclick = e => { e.preventDefault();
 document.getElementById("close-suggestions").onclick = () => { document.getElementById("suggestions-screen").style.display = "none"; };
 
 // --- MENU PRÓXIMOS ENSAYOS (MODIFICADO) ---
-document.getElementById("menu-rehearsals-section").onclick = e => { 
-    e.preventDefault(); 
-    if(window.openConfigScreen) window.openConfigScreen("rehearsals-view-screen"); 
-};
+// SECCIÓN ELIMINADA - NO HAY LISTENER
 
 // --- FIX: MENU GESTIÓN PROPUESTAS (ADMIN) ---
 document.getElementById("menu-admin-suggestions").onclick = e => { 
