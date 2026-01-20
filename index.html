@@ -97,6 +97,22 @@
         width: 37px; height: 37px; transition: background-color 0.2s ease, transform 0.2s ease;
     }
     .header-icon-btn:hover { background: #333; transform: scale(1.05); }
+
+    /* --- CAMBIO SOLICITADO: BOTÓN CALENDARIO AMARILLO --- */
+    #header-calendar-btn {
+        background: #FBC02D; /* Amarillo mostaza/ámbar (no muy brillante) */
+        color: #111; /* Icono oscuro para contraste */
+        border-color: #FBC02D;
+        box-shadow: 0 0 10px rgba(251, 192, 45, 0.3);
+    }
+    #header-calendar-btn:hover {
+        background: #FFD54F;
+        color: #000;
+        box-shadow: 0 0 15px rgba(255, 213, 79, 0.5);
+        transform: scale(1.1);
+    }
+    /* ---------------------------------------------------- */
+
     .header-icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
     
     /* Icono Metrónomo (SVG stroke) */
@@ -175,6 +191,7 @@
     .config-screen select[multiple] { height: 150px; }
     .config-screen button{margin-top:30px;padding:10px 20px;background:#0cf;color:#000;border:none;border-radius:8px;cursor:pointer}
     .config-screen button:hover{background:#09b}
+    .config-screen .close-btn{ position:absolute; top:15px; right:20px; font-size:1.2em;background:none;border:1px solid #0cf; color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer; z-index: 10002; }
     .config-screen .close-btn{ position:absolute; top:15px; right:20px; font-size:1.2em;background:none;border:1px solid #0cf; color:#0cf;border-radius:4px;padding:5px 10px;cursor:pointer; z-index: 10002; }
     .config-screen .close-btn:hover{background:#333}
     main section{max-width:1200px;margin:0 auto;padding:20px}
@@ -935,7 +952,6 @@
     <a href="#setlists" id="menu-rehearsals-setlist-section">Setlist Próximo Ensayo</a>
     <a href="#second-setlist" id="menu-second-setlist-section">Setlist Próximo Concierto</a>
     <a href="#star-setlist" id="menu-star-setlist-section">Setlist Concierto Estrella</a>
-    <a href="#" id="menu-rehearsals-section">Próximos Ensayos</a>
     <a href="#calendario" id="menu-concerts-section">Próximos Conciertos</a>
     <a href="#vista-calendario-mensual" id="menu-calendar-view">Calendario Mensual</a>
     <a href="#suggestions" id="menu-suggestions">Propuestas de Canciones</a>
@@ -1303,15 +1319,6 @@
       <p id="total-time-star"></p>
     </section>
 
-    <!-- SECCION ENSAYOS (MOVIDA AQUÍ Y ESTILIZADA) -->
-    <section id="rehearsals-preview">
-        <div style="display:flex; justify-content: flex-start; align-items:center; gap:10px; margin-bottom:5px;">
-            <h2 style="margin:0; color:#0cf;">Próximos Ensayos</h2>
-            <button id="btn-open-rehearsals-view" class="jukebox-btn" style="border-radius:50%; width:32px; height:32px; font-size:1em; border-color:#0cf; color:#0cf;" title="Ver todos los ensayos">➔</button>
-        </div>
-        <p style="text-align:left; color:#aaa; font-size:0.9em; font-style:italic; margin-top:0;">Pulsa la flecha para ver el calendario completo y confirmar asistencia.</p>
-    </section>
-    
     <section id="calendario"> <h2>Próximos Conciertos</h2> 
         <div id="bandhelper-concerts-container"> 
              <p id="bandhelper-loading-message" style="color:#aaa; text-align:center;">Cargando conciertos...</p>
@@ -1580,10 +1587,7 @@ document.getElementById("menu-suggestions").onclick = e => { e.preventDefault();
 document.getElementById("close-suggestions").onclick = () => { document.getElementById("suggestions-screen").style.display = "none"; };
 
 // --- MENU PRÓXIMOS ENSAYOS (MODIFICADO) ---
-document.getElementById("menu-rehearsals-section").onclick = e => { 
-    e.preventDefault(); 
-    if(window.openConfigScreen) window.openConfigScreen("rehearsals-view-screen"); 
-};
+// SECCIÓN ELIMINADA - NO HAY LISTENER
 
 // --- FIX: MENU GESTIÓN PROPUESTAS (ADMIN) ---
 document.getElementById("menu-admin-suggestions").onclick = e => { 
