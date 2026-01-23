@@ -1368,7 +1368,7 @@
   </audio>
 
   <!-- SE AÑADE VERSIÓN PARA FORZAR RECARGA Y EVITAR CACHÉ HTML -->
-  <script src="jukebox.js?v=8"></script>
+  <script src="jukebox.js?v=9"></script>
   <script src="metronome.js?v=8"></script>
   <script src="tuner.js?v=8"></script>
   <script src="analisis.js?v=8"></script>
@@ -1733,6 +1733,33 @@ window.openConfigScreen = async (screenId) => {
     return true;
 }; 
 // --- FIN LÓGICA BIOMETRÍA ---
+
+// --- GESTIÓN JUKEBOX MENU ---
+// Se ha actualizado este listener para conectar con la nueva lógica en jukebox.js
+document.getElementById("menu-jukebox-mgmt").onclick = e => { 
+    e.preventDefault(); 
+    if(window.openConfigScreen("jukebox-mgmt-screen")) {
+        if(window.renderJukeboxManagement) window.renderJukeboxManagement();
+    }
+};
+document.getElementById("close-jukebox-mgmt").onclick = () => { document.getElementById("jukebox-mgmt-screen").style.display = "none"; };
+
+// --- GESTIÓN PDF ---
+document.getElementById("menu-pdf-mgmt").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("pdf-mgmt-screen"); if(window.renderPdfMgmt) window.renderPdfMgmt(); };
+document.getElementById("close-pdf-mgmt").onclick = () => document.getElementById("pdf-mgmt-screen").style.display = "none";
+
+// --- GESTIÓN MASTER DOCS ---
+document.getElementById("menu-master-docs-mgmt").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("master-docs-mgmt-screen"); if(window.renderMasterDocsMgmt) window.renderMasterDocsMgmt(); };
+document.getElementById("close-master-docs-mgmt").onclick = () => document.getElementById("master-docs-mgmt-screen").style.display = "none";
+
+// --- REGISTRO DE ACCESOS ---
+document.getElementById("menu-access-logs").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("access-logs-screen"); renderAccessLogs(); };
+document.getElementById("close-access-logs").onclick = () => document.getElementById("access-logs-screen").style.display = "none";
+
+// --- SELECCIÓN DE SETLIST (CONFIG) ---
+document.getElementById("menu-setlist-config").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("setlist-config-screen"); if(window.loadSetlistConfigUI) window.loadSetlistConfigUI(); };
+document.getElementById("close-setlist-config").onclick = () => document.getElementById("setlist-config-screen").style.display = "none";
+document.getElementById("guardar-setlist-config").onclick = () => { if(window.saveSetlistConfig) window.saveSetlistConfig(); };
 
 document.getElementById("menu-user-mgmt").onclick = e => { e.preventDefault(); if(window.openConfigScreen) window.openConfigScreen("user-mgmt-screen"); };
 document.getElementById("close-user-mgmt").onclick = () => { document.getElementById("user-mgmt-screen").style.display = "none"; document.getElementById("user-message").textContent = ""; resetUserForm(); };
