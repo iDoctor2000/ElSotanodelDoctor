@@ -1,4 +1,3 @@
-
 /* 
    JUKEBOX.JS
    Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
@@ -9,13 +8,13 @@
    + GESTIÓN INTEGRAL (Admin Panel)
 */
 
-// Variables Globales del Jukebox
-let jukeboxLibrary = {}; 
+// Variables Globales del Jukebox - Sincronizadas con window
+window.jukeboxLibrary = window.jukeboxLibrary || {}; 
 let jukeboxMarkers = {}; 
 let jukeboxOffsets = {}; 
 let jukeboxNotes = {}; 
 let jukeboxPitch = {}; 
-let jukeboxRelated = {}; // Nueva estructura: { "key_cancion": [ {name, url} (o null), ... ] }
+let jukeboxRelated = {}; 
 
 let ytPlayer = null;
 let isJukeboxPlaying = false;
@@ -51,7 +50,6 @@ let pendingMarkerState = null;
 const sanitizeJukeboxKey = (str) => str ? str.toString().trim().replace(/[.#$[\]/:\s,]/g, '_') : 'unknown';
 
 // Exponer funciones al objeto window
-window.jukeboxLibrary = jukeboxLibrary;
 window.sanitizeJukeboxKey = sanitizeJukeboxKey; // Exponer para uso en setlists.js
 
 /* --- 0. INYECCIÓN DE ESTILOS Y UI (DISEÑO MEJORADO) --- */
@@ -568,14 +566,9 @@ window.loadJukeboxLibrary = async function() {
         if (typeof window.loadDoc === 'function') {
             const data = await window.withRetry(() => window.loadDoc("intranet", "jukebox_library", { mapping: {}, markers: {}, offsets: {}, notes: {}, pitch: {}, related: {} }));
             
-            // Detección de Estructura Antigua vs Nueva
-            // Antigua: data = { "Song Name": "URL", ... } (sin mapping)
-            // Nueva: data = { mapping: { ... }, markers: { ... }, ... }
-            
             if (data.mapping) {
                 window.jukeboxLibrary = data.mapping || {};
             } else {
-                // Asumimos que es antigua si no tiene 'mapping' pero tiene claves
                 console.log("Detectada estructura antigua Jukebox. Migrando al vuelo...");
                 window.jukeboxLibrary = data || {};
             }
@@ -595,13 +588,11 @@ window.loadJukeboxLibrary = async function() {
     } catch (e) { console.error("Error cargando Jukebox Library:", e); }
 };
 
-// FIX CRÍTICO DE BORRADO: CAMBIAR MERGE TRUE A MERGE FALSE
-// Al borrar una clave en local y guardar con merge: true, Firebase MANTIENE la clave antigua.
-// Para borrar hay que sobreescribir (merge: false) o usar FieldValue.delete().
-// Como cargamos TODO al inicio, sobreescribir es seguro y más limpio para esta estructura anidada.
+// FIX CRÍTICO SENIOR: CAMBIAR MERGE TRUE A MERGE FALSE
 window.saveJukeboxLibrary = async function() {
     try {
         if (typeof window.saveDoc === 'function') {
+            // MERGE: FALSE para asegurar que los borrados sean efectivos
             await window.withRetry(() => window.saveDoc("intranet", "jukebox_library", { 
                 mapping: window.jukeboxLibrary,
                 markers: jukeboxMarkers,
@@ -609,12 +600,18 @@ window.saveJukeboxLibrary = async function() {
                 notes: jukeboxNotes,
                 pitch: jukeboxPitch,
                 related: jukeboxRelated 
-            }, false)); // <--- CAMBIO IMPORTANTE: false para sobreescribir y permitir borrados
+            }, false)); 
             
             // Actualizar vista de gestión si está abierta
             if(document.getElementById('jukebox-mgmt-screen') && document.getElementById('jukebox-mgmt-screen').style.display === 'block') {
                 if(window.renderJukeboxManagement) window.renderJukeboxManagement();
             }
+
+            // Recargar datos en los setlists para que aparezcan/desaparezcan los iconos de audio
+            if (typeof window.loadAllData === 'function') {
+                window.loadAllData();
+            }
+            
             return true;
         }
     } catch (e) { console.error("Error guardando Jukebox:", e); return false; }
@@ -659,9 +656,6 @@ function onPlayerStateChange(event) {
             
             // LÓGICA DE MODOS DE REPRODUCCIÓN
             if(isLoopingTrack) {
-                // Para bucle, si estamos en modo "extra", volvemos al inicio del extra
-                // Pero si hay offset guardado en la MAIN song, lo aplicamos
-                // (Opcional: Los extras no suelen tener offset guardado a menos que usemos una estructura más compleja)
                 let savedOffset = 0;
                 if(currentSongKey && jukeboxOffsets[currentSongKey]) savedOffset = jukeboxOffsets[currentSongKey];
 
@@ -693,7 +687,6 @@ window.convertDriveToDirectLink = function(url) {
 window.convertDropboxLink = function(url) {
     if (url.includes('dropbox.com')) {
         let newUrl = url;
-        // Forzar raw=1 para streaming correcto en iOS/Mobile
         if (newUrl.match(/dl=[01]/)) {
             newUrl = newUrl.replace(/dl=[01]/g, 'raw=1');
         } else if (!newUrl.includes('raw=1')) {
@@ -705,20 +698,16 @@ window.convertDropboxLink = function(url) {
     return null;
 };
 
-// LÓGICA DE PLAYLIST REPARADA
 window.initializePlaylist = function(startTitle) {
     let itemsToScan = [];
     const compareNames = (a, b) => sanitizeJukeboxKey(a) === sanitizeJukeboxKey(b);
 
-    // Buscar en qué variable global está la canción (buscando DENTRO de los Sets)
     const findSongInStructure = (structure, title) => {
         if(!structure) return false;
         return structure.some(block => {
-            // Si es un bloque con canciones
             if(block.isSetHeader && block.songs) {
                 return block.songs.some(s => compareNames(s.displayName, title));
             }
-            // Si es una canción suelta
             return compareNames(block.displayName, title);
         });
     };
@@ -727,18 +716,15 @@ window.initializePlaylist = function(startTitle) {
     else if (findSongInStructure(window.globalItems2, startTitle)) itemsToScan = window.globalItems2;
     else if (findSongInStructure(window.globalItemsStar, startTitle)) itemsToScan = window.globalItemsStar;
     else {
-        // Fallback
         jukeboxPlaylist = [{ 
             title: startTitle, 
             key: sanitizeJukeboxKey(startTitle),
             url: window.jukeboxLibrary[sanitizeJukeboxKey(startTitle)]
         }];
         currentPlaylistIndex = 0;
-        console.log("Playlist fallback: Canción única");
         return;
     }
 
-    // Aplanar estructura (Sets -> Lista plana)
     let flatList = [];
     itemsToScan.forEach(item => {
         if (item.isSetHeader && item.songs) {
@@ -748,7 +734,6 @@ window.initializePlaylist = function(startTitle) {
         }
     });
 
-    // Construir playlist SOLO con canciones que tengan audio linkeado
     jukeboxPlaylist = flatList.filter(item => {
         const key = sanitizeJukeboxKey(item.displayName);
         return window.jukeboxLibrary && window.jukeboxLibrary[key];
@@ -758,12 +743,7 @@ window.initializePlaylist = function(startTitle) {
         url: window.jukeboxLibrary[sanitizeJukeboxKey(item.displayName)]
     }));
 
-    // Encontrar índice actual
     currentPlaylistIndex = jukeboxPlaylist.findIndex(item => compareNames(item.title, startTitle));
-    
-    console.log(`Playlist generada: ${jukeboxPlaylist.length} pistas. Actual: ${currentPlaylistIndex}`);
-    
-    // Actualizar visualizador si está abierto
     window.renderPlaylist();
 };
 
@@ -795,7 +775,6 @@ window.renderPlaylist = function() {
 window.togglePlaylistPanel = function() {
     const panel = document.getElementById('jukebox-playlist-panel');
     const btn = document.getElementById('jb-show-playlist-btn');
-    // Cerrar otros paneles
     const relatedPanel = document.getElementById('jukebox-related-panel');
     const notesPanel = document.getElementById('jukebox-notes-panel');
     if(relatedPanel) relatedPanel.style.display = 'none';
@@ -820,10 +799,8 @@ window.togglePlaylistPanel = function() {
     }
 };
 
-// MODIFICADO: Acepta parámetro isRelated para reproducir audios extra sin perder contexto
 window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
     if(!isRelated) {
-        // TRACKING: Log play event solo para canciones principales
         if(window.logInteraction) window.logInteraction('JUKEBOX', 'Play: ' + title);
     }
 
@@ -848,12 +825,8 @@ window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
             isAutoplayPlaylist = false;
         }
         
-        // ESTABLECER CLAVE DE CANCIÓN ACTUAL (CONTEXTO PRINCIPAL)
         currentSongKey = cleanTitle;
-        console.log("Jukebox: Contexto cambiado a " + currentSongKey);
 
-        // --- FIX: CERRAR Y LIMPIAR PANELES DE DATOS DE LA CANCIÓN ANTERIOR ---
-        // Esto evita que se muestren los extras/notas de la canción anterior
         const auxPanels = ['jukebox-playlist-panel', 'jukebox-related-panel', 'jukebox-notes-panel'];
         const auxBtns = ['jb-show-playlist-btn', 'jb-related-btn', 'jb-notes-btn'];
         
@@ -861,7 +834,7 @@ window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
             const p = document.getElementById(pid);
             if(p) {
                 p.style.display = 'none';
-                if(pid === 'jukebox-related-panel') p.innerHTML = ""; // Limpiar contenido visual de extras para forzar recarga
+                if(pid === 'jukebox-related-panel') p.innerHTML = "";
             }
         });
         auxBtns.forEach(bid => {
@@ -880,16 +853,11 @@ window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
     const toolsRow = document.getElementById('jukebox-tools-row');
     const pitchControls = document.getElementById('jb-pitch-controls');
     
-    // Reset States
     currentSpeed = 1.0;
     const speedBtn = document.getElementById('jb-speed-btn');
     if(speedBtn) speedBtn.textContent = '1.0x';
 
-    // UI Updates
     if(!isRelated) {
-        // Si es canción principal, cargamos sus datos guardados
-        
-        // Load Saved Offset
         const savedOffset = jukeboxOffsets[currentSongKey] || 0;
         const offsetBtn = document.getElementById('jb-offset-btn');
         if(offsetBtn) {
@@ -902,7 +870,6 @@ window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
             }
         }
 
-        // Load Saved Notes
         const savedNote = jukeboxNotes[currentSongKey] || "";
         const notesInput = document.getElementById('jb-song-notes-input');
         if(notesInput) notesInput.value = savedNote;
@@ -919,26 +886,18 @@ window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
             }
         }
         
-        // Cargar Pitch guardado
         currentSemitones = jukeboxPitch[currentSongKey] || 0;
-
         titleEl.textContent = title;
-        window.renderMarkers(); // Renderizamos marcadores de la canción principal
+        window.renderMarkers(); 
     } else {
-        // Si es "Extra", modificamos el título visualmente pero NO currentSongKey
-        // Así los marcadores y notas siguen siendo los de la canción principal
         titleEl.innerHTML = `${title} <span style="color:#0cf; font-size:0.8em; margin-left:5px;">(Extra)</span>`;
-        // Mantenemos el pitch actual (puede ser util) o reseteamos a 0. Reseteamos por seguridad.
         currentSemitones = 0;
-        
-        // Actualizamos visualmente qué slot está sonando si está el panel abierto
         const slots = document.querySelectorAll('.jb-related-slot');
         slots.forEach(s => s.classList.remove('active-playing'));
     }
 
     window.updatePitchDisplay();
 
-    // Update Mode Buttons
     const loopBtn = document.getElementById('jb-looptrack-btn');
     if (loopBtn) loopBtn.classList.toggle('active', isLoopingTrack);
 
@@ -954,13 +913,11 @@ window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
     let driveDirectLink = window.convertDriveToDirectLink(url);
     let dropboxLink = window.convertDropboxLink(url);
     
-    // Offset de inicio: Solo si es canción principal
     let startOffset = 0;
     if(!isRelated && jukeboxOffsets[currentSongKey]) startOffset = jukeboxOffsets[currentSongKey];
 
     if (toolsRow) toolsRow.style.display = 'flex';
 
-    // 1. DROPBOX (HTML5)
     if (dropboxLink) {
          currentJukeboxType = 'html5';
          stdControls.style.display = 'flex';
@@ -970,8 +927,6 @@ window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
          if(markersArea) markersArea.style.display = 'block';
          if(pitchControls) pitchControls.style.display = 'flex'; 
          window.setupHtml5Audio(dropboxLink, false, startOffset);
-
-    // 2. DRIVE (HTML5 or Iframe)
     } else if (driveDirectLink) {
          currentJukeboxType = 'html5';
          stdControls.style.display = 'flex';
@@ -981,8 +936,6 @@ window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
          if(markersArea) markersArea.style.display = 'block';
          if(pitchControls) pitchControls.style.display = 'flex';
          window.setupHtml5Audio(driveDirectLink, true, startOffset); 
-
-    // 3. YOUTUBE
     } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
         currentJukeboxType = 'youtube';
         stdControls.style.display = 'flex';
@@ -1013,11 +966,9 @@ window.openJukeboxPlayer = function(title, rawUrl, isRelated = false) {
                     ytPlayer.setVolume(currentVolume); 
                     ytPlayer.playVideo();
                     ytPlayer.setPlaybackRate(1.0);
-                } else { alert("YouTube API no lista."); }
+                }
             }, 1000);
         }
-
-    // 4. HTML5 GENERIC
     } else {
         currentJukeboxType = 'html5';
         stdControls.style.display = 'flex';
@@ -1066,14 +1017,9 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0
     };
 
     currentAudioObj.onerror = function() {
-        const err = currentAudioObj.error;
-        console.error("Error cargando audio HTML5:", err);
-        
         if (isDriveFallback) {
-            console.warn("Fallo carga directa Drive. Cambiando a modo Iframe.");
             window.switchToDriveIframeMode();
         } else {
-            // Manejo de errores silencioso si es posible
             window.stopJukebox();
         }
     };
@@ -1093,12 +1039,9 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0
     };
     currentAudioObj.onended = () => { 
         window.stopJukeboxProgressLoop(); 
-        
         if(isLoopingTrack) {
-            // Si hay un offset definido para la MAIN song, lo usamos, si no, 0
             let loopStart = 0;
             if (currentSongKey && jukeboxOffsets[currentSongKey]) loopStart = jukeboxOffsets[currentSongKey];
-            
             currentAudioObj.currentTime = loopStart;
             currentAudioObj.play();
         } else if (isAutoplayPlaylist) {
@@ -1138,7 +1081,6 @@ window.switchToDriveIframeMode = function() {
         const titleEl = document.getElementById('jukebox-current-title');
         titleEl.innerHTML += " <span style='color:orange; font-size:0.7em;'>(Modo Iframe)</span>";
     } else {
-        alert("El archivo de Drive no se puede reproducir.");
         window.stopJukebox();
     }
 };
@@ -1194,14 +1136,12 @@ window.seekJukebox = function(percent) {
 };
 
 /* --- 7. GESTIÓN INTEGRAL (ADMIN PANEL) --- */
-// SECCION REESCRITA PARA EVITAR ERRORES DE SINTAXIS CON COMILLAS
 
 window.renderJukeboxManagement = function() {
     const tbody = document.getElementById('jukebox-mgmt-body');
     if(!tbody) return;
     tbody.innerHTML = "";
     
-    // Obtener todas las canciones que tienen enlace
     const songs = Object.keys(window.jukeboxLibrary).sort();
     
     if(songs.length === 0) {
@@ -1211,25 +1151,18 @@ window.renderJukeboxManagement = function() {
 
     songs.forEach(key => {
         const url = window.jukeboxLibrary[key];
-        
-        // Crear elementos DOM reales en lugar de usar string templates
-        // para evitar que caracteres como ' (comillas) rompan el HTML inline.
-        
         const tr = document.createElement('tr');
         
-        // Columna Nombre
         const tdName = document.createElement('td');
         tdName.style.fontSize = '0.9em';
         tdName.style.color = '#0cf';
         tdName.textContent = key;
         
-        // Columna URL
         const tdUrl = document.createElement('td');
         tdUrl.style.fontSize = '0.8em';
         tdUrl.style.wordBreak = 'break-all';
         tdUrl.textContent = url;
         
-        // Columna Acciones
         const tdActions = document.createElement('td');
         
         const btnEdit = document.createElement('button');
@@ -1240,33 +1173,30 @@ window.renderJukeboxManagement = function() {
         const btnDelete = document.createElement('button');
         btnDelete.className = 'delete-rehearsal';
         btnDelete.textContent = 'Borrar';
-        // Aquí es donde fallaba antes si key tenía comillas
         btnDelete.onclick = function() { window.deleteJukeboxTrack(key); };
         
         tdActions.appendChild(btnEdit);
-        tdActions.appendChild(btnDelete); // Añadir espacio si se quiere
-        
+        tdActions.appendChild(btnDelete);
         tr.appendChild(tdName);
         tr.appendChild(tdUrl);
         tr.appendChild(tdActions);
-        
         tbody.appendChild(tr);
     });
 };
 
+// FIX SENIOR: Borrado integral y persistencia merge:false
 window.deleteJukeboxTrack = async function(key) {
     if(confirm(`¿Seguro que quieres borrar el audio de "${key}"?`)) {
         try {
-            console.log("Borrando track:", key);
+            // Eliminar de todas las estructuras
             delete window.jukeboxLibrary[key];
-            
-            // Limpieza de datos asociados
             if(jukeboxMarkers[key]) delete jukeboxMarkers[key];
             if(jukeboxOffsets[key]) delete jukeboxOffsets[key];
             if(jukeboxNotes[key]) delete jukeboxNotes[key];
             if(jukeboxPitch[key]) delete jukeboxPitch[key];
             if(jukeboxRelated[key]) delete jukeboxRelated[key];
             
+            // Guardar con merge=false para limpiar Firestore
             await window.saveJukeboxLibrary();
             window.renderJukeboxManagement();
             alert("Audio eliminado correctamente.");
@@ -1285,7 +1215,6 @@ window.openJukeboxEditModal = function(key) {
     document.getElementById('jb-modal-url-input').value = window.jukeboxLibrary[key] || "";
     
     const saveBtn = document.getElementById('jb-modal-save-btn');
-    // Usar función anónima para closure seguro
     saveBtn.onclick = function() { window.saveJukeboxFromModal(key); };
     
     modal.classList.add('show');
@@ -1302,18 +1231,16 @@ window.saveJukeboxFromModal = async function(key) {
     await window.saveJukeboxLibrary();
     
     document.getElementById('jukebox-edit-modal').classList.remove('show');
-    
     if(document.getElementById('jukebox-mgmt-screen').style.display === 'block') {
         window.renderJukeboxManagement();
     }
-    
     alert("Audio guardado.");
 };
 
-window.updateJukeboxTrack = function(songName, url) {
+window.updateJukeboxTrack = async function(songName, url) {
     const key = sanitizeJukeboxKey(songName);
     window.jukeboxLibrary[key] = url;
-    window.saveJukeboxLibrary();
+    return await window.saveJukeboxLibrary();
 };
 
 
@@ -1333,40 +1260,15 @@ function initJukebox() {
     if(stopBtn) stopBtn.onclick = window.stopJukebox;
     const progBar = document.getElementById('jb-progress');
     if(progBar) progBar.oninput = (e) => window.seekJukebox(e.target.value);
-    const rewindBtn = document.getElementById('jb-rewind');
-    if(rewindBtn) rewindBtn.onclick = () => { 
-        const val = parseFloat(document.getElementById('jb-progress').value) || 0;
-        window.seekJukebox(val - 5); 
-    };
-    const fwdBtn = document.getElementById('jb-forward');
-    if(fwdBtn) fwdBtn.onclick = () => { 
-        const val = parseFloat(document.getElementById('jb-progress').value) || 0;
-        window.seekJukebox(val + 5); 
-    };
-    const btnLoopA = document.getElementById('jb-loop-a');
-    if(btnLoopA) btnLoopA.onclick = window.setLoopA;
-    const btnLoopB = document.getElementById('jb-loop-b');
-    if(btnLoopB) btnLoopB.onclick = window.setLoopB;
-    const btnLoopClear = document.getElementById('jb-loop-clear');
-    if(btnLoopClear) btnLoopClear.onclick = window.clearLoop;
-    const btnAddMarker = document.getElementById('jb-add-marker');
-    if(btnAddMarker) btnAddMarker.onclick = window.addMarker;
-    const btnCancelMarker = document.getElementById('cancel-marker-btn');
-    if(btnCancelMarker) btnCancelMarker.onclick = window.closeMarkerModal;
-    const btnConfirmMarker = document.getElementById('confirm-marker-btn');
-    if(btnConfirmMarker) btnConfirmMarker.onclick = window.confirmAddMarker;
     
-    // Wiring del Modal de Edición (Cancel btn)
     const btnCancelModal = document.getElementById('jb-modal-cancel-btn');
     if(btnCancelModal) btnCancelModal.onclick = () => {
         document.getElementById('jukebox-edit-modal').classList.remove('show');
     };
 }
 
-// Inicialización robusta para SPAs y carga diferida
 if (document.readyState === 'loading') {
     document.addEventListener("DOMContentLoaded", initJukebox);
 } else {
-    // Si el script carga después de DOMContentLoaded, ejecutar directamente
     initJukebox();
 }
