@@ -1368,7 +1368,7 @@
   </audio>
 
   <!-- SE AÑADE VERSIÓN PARA FORZAR RECARGA Y EVITAR CACHÉ HTML -->
-  <script src="jukebox.js?v=9"></script>
+  <script src="jukebox.js?v=10"></script>
   <script src="metronome.js?v=8"></script>
   <script src="tuner.js?v=8"></script>
   <script src="analisis.js?v=8"></script>
@@ -1829,170 +1829,54 @@ function renderSuggestions() {
         const voteStatusText = hasVoted ? `<span style="color:#FFD700; font-size:0.9em;">Votado (${myVote}/5)</span>` : `<span class="voting-label">Tu Voto:</span>`;
         const card = document.createElement('div');
         card.className = 'suggestion-card';
-        card.innerHTML = `<div class="suggestion-header"><div class="suggestion-title">${s.title}</div><div class="suggestion-artist">${s.artist}</div><div class="suggestion-meta">Propuesto por: ${s.proposedBy} el ${date}</div></div><div class="suggestion-body">${s.link ? `<a href="${s.link}" target="_blank" style="color:#0cf; font-size:0.8em;">Escuchar (Link)</a>` : ''}<div style="margin-top:15px;"><div class="star-rating-display"><span class="avg-score">${s.averageRating.toFixed(1)}</span><div style="display:flex;">${starsHtml}</div><span style="font-size:0.8em; color:#888; margin-left:5px;">(${votersCount} votos)</span></div><button class="toggle-voters-btn" onclick="document.getElementById('voters-${s.id}').classList.toggle('show')">Ver votaciones</button>${votersDetailsHtml}</div></div><div class="suggestion-actions"><div class="voting-area">${voteStatusText}<div class="interactive-stars ${hasVoted ? 'voted' : ''}">${interactiveStarsHtml}</div></div></div>`;
+        card.innerHTML = `<div class="suggestion-header"><div class="suggestion-title">${s.title}</div><div class="suggestion-artist">${s.artist}</div><div class="suggestion-meta">Propuesto por: ${s.proposedBy} el ${date}</div></div><div class="suggestion-body">${s.link ? `<a href="${s.link}" target="_blank" style="color:#0cf; font-size:0.8em;">Escuchar (Link)</a>` : ''}<div style="margin-top:15px;"><div class="star-rating-display"><span class="avg-score">${s.averageRating.toFixed(1)}</span> ${starsHtml} <span style="font-size:0.8em; color:#888; margin-left:5px;">(${votersCount} votos)</span></div><div class="voting-area">${voteStatusText}<div class="interactive-stars ${hasVoted ? 'voted' : ''}">${interactiveStarsHtml}</div></div><button class="toggle-voters-btn" onclick="document.getElementById('voters-${s.id}').classList.toggle('show')">Ver votantes</button>${votersDetailsHtml}</div></div>`;
         container.appendChild(card);
     });
 }
 function renderAdminSuggestions() {
     const tbody = document.getElementById('admin-suggestions-body');
+    if (!tbody) return;
     tbody.innerHTML = "";
-    const sorted = [...suggestions].sort((a, b) => new Date(b.proposedAt) - new Date(a.proposedAt));
-    sorted.forEach(s => {
-        const date = new Date(s.proposedAt).toLocaleDateString();
-        const isDeleted = s.status === 'deleted';
-        const rowClass = isDeleted ? 'deleted-row' : '';
-        const statusText = isDeleted ? `Eliminada por ${s.deletedBy || '?'} (${new Date(s.deletedAt).toLocaleDateString()})` : '<span style="color:#0cf">Activa</span>';
-        const actionBtn = isDeleted ? '-' : `<button onclick="deleteSuggestion('${s.id}')" style="background:#ff3333; padding:5px; font-size:0.8em;">Eliminar</button>`;
-        const row = `<tr class="${rowClass}"><td>${s.title} (${s.artist})</td><td>${s.proposedBy}</td><td>${date}</td><td style="font-size:0.8em;">${statusText}</td><td>${actionBtn}</td></tr>`;
-        tbody.insertAdjacentHTML('beforeend', row);
+    suggestions.sort((a, b) => new Date(b.proposedAt) - new Date(a.proposedAt)).forEach(s => {
+        const row = document.createElement('tr');
+        if (s.status === 'deleted') row.className = 'deleted-row';
+        const deleteAction = s.status === 'active' ? `<button class="delete-user" onclick="deleteSuggestion('${s.id}')">Borrar</button>` : `<span style="font-style:italic;">Borrado</span>`;
+        row.innerHTML = `<td>${s.title} (${s.artist})</td><td>${s.proposedBy}</td><td>${new Date(s.proposedAt).toLocaleDateString()}</td><td>${s.status}</td><td>${deleteAction}</td>`;
+        tbody.appendChild(row);
     });
 }
-async function deleteSuggestion(id) {
-    const userSelector = document.getElementById('user-identity-selector');
-    const currentUser = userSelector.value || "Admin";
-    if(confirm("¿Seguro que quieres eliminar esta propuesta?")){ try { await db.collection('suggestions').doc(id).update({ status: 'deleted', deletedAt: new Date().toISOString(), deletedBy: currentUser }); alert("Propuesta eliminada."); } catch(e) { alert("Error al eliminar."); } }
-}
+window.deleteSuggestion = async function(id) {
+    if (confirm("¿Marcar esta propuesta como borrada/inactiva?")) {
+        try { await db.collection('suggestions').doc(id).update({ status: 'deleted' }); } catch (e) { alert("Error: " + e.message); }
+    }
+};
 
-/* --- LÓGICA MODO DIRECTO --- */
-let currentLiveSetlist = []; let currentLiveIndex = 0; let wakeLock = null;
-async function requestWakeLock() { try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); console.log('Pantalla mantenida encendida'); } } catch (err) { console.error(`${err.name}, ${err.message}`); } }
-async function releaseWakeLock() { if (wakeLock !== null) { await wakeLock.release(); wakeLock = null; } }
-function startLiveMode(setlistData) {
-    currentLiveSetlist = [];
-    if (Array.isArray(setlistData)) { setlistData.forEach(item => { if (item.isSetHeader && Array.isArray(item.songs)) currentLiveSetlist = currentLiveSetlist.concat(item.songs); else if (item.isSong) currentLiveSetlist.push(item); }); }
-    if (currentLiveSetlist.length === 0) { alert("Setlist vacío."); return; }
-    currentLiveIndex = 0; renderLiveSong(currentLiveIndex);
-    document.getElementById('live-mode-overlay').classList.add('show');
-    requestWakeLock();
-}
-function renderLiveSong(index) {
-    const song = currentLiveSetlist[index]; if (!song) return;
-    document.getElementById('live-counter').textContent = `${index + 1} / ${currentLiveSetlist.length}`;
-    const titleEl = document.getElementById('live-song-title');
-    titleEl.textContent = song.displayName;
-    if (song.displayName.length > 20) titleEl.style.fontSize = "2.5em"; else titleEl.style.fontSize = "3.5em";
-    const cleanKey = window.decodeHtmlEntities(song.key || '-');
-    const cleanTempo = window.decodeHtmlEntities(song.tempo || '-');
-    document.getElementById('live-song-key').textContent = `Key: ${cleanKey}`;
-    document.getElementById('live-song-tempo').textContent = `${cleanTempo} BPM`;
-    const nextSong = currentLiveSetlist[index + 1];
-    const nextEl = document.getElementById('live-next-song');
-    if (nextSong) { nextEl.textContent = `Siguiente: ${nextSong.displayName}`; nextEl.style.color = '#555'; } else { nextEl.textContent = "¡FIN DEL SHOW! 👏"; nextEl.style.color = '#0cf'; }
-}
-document.getElementById('live-close-btn').onclick = () => { document.getElementById('live-mode-overlay').classList.remove('show'); releaseWakeLock(); };
-document.getElementById('live-next-btn').onclick = () => { if (currentLiveIndex < currentLiveSetlist.length - 1) { currentLiveIndex++; renderLiveSong(currentLiveIndex); } };
-document.getElementById('live-prev-btn').onclick = () => { if (currentLiveIndex > 0) { currentLiveIndex--; renderLiveSong(currentLiveIndex); } };
-document.getElementById('live-content-area').onclick = (e) => { const width = window.innerWidth; if (e.clientX > width / 2) { if (currentLiveIndex < currentLiveSetlist.length - 1) { currentLiveIndex++; renderLiveSong(currentLiveIndex); } } else { if (currentLiveIndex > 0) { currentLiveIndex--; renderLiveSong(currentLiveIndex); } } };
+// 12. Inicialización
+document.addEventListener("DOMContentLoaded", () => {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    
+    // --- Enable Offline Persistence ---
+    db.enablePersistence().catch(err => {
+        if (err.code == 'failed-precondition') { console.warn("Persistencia falló: Multiples pestañas abiertas."); } 
+        else if (err.code == 'unimplemented') { console.warn("Persistencia no soportada por el navegador."); }
+    });
+    // ----------------------------------
 
-/* ---------- 13. Carga inicial ---------- */
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-      // Definir la lógica de inicio seguro (race-condition proof)
-      const initApp = () => {
-          // Si Firebase o Setlists no están listos, abortar y esperar al intervalo
-          if (typeof firebase === 'undefined') return false;
-          if (typeof window.loadSetlistConfig !== 'function') return false;
-
-          try {
-              if (!firebase.apps.length) {
-                  firebase.initializeApp(firebaseConfig);
-                  db = firebase.firestore(); 
-                  
-                  // Manejo silencioso de la persistencia para evitar spam en consola
-                  firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(err => {
-                      if (err.code === 'failed-precondition') {
-                          // Múltiples pestañas abiertas
-                          console.log("Aviso: Persistencia offline deshabilitada (múltiples pestañas).");
-                      } else if (err.code === 'unimplemented') {
-                          console.log("Aviso: El navegador no soporta persistencia.");
-                      }
-                  });
-              }
-              
-              attachSuggestionsListener(); 
-              if(window.attachConcertDetailsListener) window.attachConcertDetailsListener();
-              
-              // Cargar todo ahora que sabemos que setlists.js existe
-              loadAllData(); 
-              
-              setTimeout(initSession, 1500);
-              return true;
-          } catch(e) {
-              console.error("Error initializing Firebase/App:", e);
-              return false;
-          }
-      };
-
-      // Intentar iniciar. Si falla, usar setInterval.
-      if (!initApp()) {
-          const checkReady = setInterval(() => {
-              if (initApp()) clearInterval(checkReady);
-          }, 100);
-      }
-
-  } catch(e) { console.error("Critical Init Error:", e); }
-
-  const siteAudioElement = document.getElementById('site-audio'); const siteAudioControlButton = document.getElementById('site-audio-control-button'); const siteAudioSongs = ['assets/que_mas_da.mp3', 'assets/una_semana.mp3']; let currentSiteSongIndex = -1; let siteAudioFadeInterval = null; const SITE_AUDIO_FADE_DURATION = 500; const SITE_AUDIO_TARGET_VOLUME = 0.8; 
-  function stopSiteAudioFade() { if (siteAudioFadeInterval) { clearInterval(siteAudioFadeInterval); siteAudioFadeInterval = null; } }
-  function fadeInSiteAudio(audio, duration, targetVolume) { stopSiteAudioFade(); if (!audio) return; if (audio.muted) { audio.volume = 0; audio.play().catch(e => {}); return; } audio.volume = 0; if (audio.paused) audio.play().catch(e => {}); let step = targetVolume / (duration / 50); let currentVolume = 0; siteAudioFadeInterval = setInterval(() => { currentVolume += step; if (currentVolume >= targetVolume) { if(audio) audio.volume = targetVolume; stopSiteAudioFade(); } else if (audio) audio.volume = currentVolume; else stopSiteAudioFade(); }, 50); }
-  function fadeOutSiteAudio(audio, duration, callback) { stopSiteAudioFade(); if (!audio) { if (callback) callback(); return; } if (audio.paused || audio.volume < 0.01) { if (!audio.paused) audio.pause(); audio.volume = 0; if (callback) callback(); return; } let currentVolume = audio.volume; let step = currentVolume / (duration / 50); siteAudioFadeInterval = setInterval(() => { currentVolume -= step; if (currentVolume <= 0.01) { if (audio) { audio.volume = 0; audio.pause(); } stopSiteAudioFade(); if (callback) callback(); } else if (audio) audio.volume = currentVolume; else stopSiteAudioFade(); }, 50); }
-  function playNextSiteSong(audioElement) { if (!audioElement || siteAudioSongs.length === 0) return; currentSiteSongIndex = (currentSiteSongIndex + 1) % siteAudioSongs.length; audioElement.src = siteAudioSongs[currentSiteSongIndex]; audioElement.load(); audioElement.addEventListener('canplaythrough', () => { if (audioElement) fadeInSiteAudio(audioElement, SITE_AUDIO_FADE_DURATION, audioElement.muted ? 0 : SITE_AUDIO_TARGET_VOLUME); }, { once: true }); }
-  if (siteAudioElement && siteAudioControlButton) {
-    const iconMuted = siteAudioControlButton.querySelector('.icon-muted'); const iconUnmuted = siteAudioControlButton.querySelector('.icon-unmuted');
-    const updateSiteAudioMuteButton = () => { if (!siteAudioElement || !iconMuted || !iconUnmuted || !siteAudioControlButton) return; if (siteAudioElement.muted) { iconMuted.style.display = 'inline'; iconUnmuted.style.display = 'none'; siteAudioControlButton.title = "Activar sonido"; } else { iconMuted.style.display = 'none'; iconUnmuted.style.display = 'inline'; siteAudioControlButton.title = "Desactivar sonido"; } };
-    siteAudioElement.muted = true; siteAudioElement.loop = false; updateSiteAudioMuteButton(); siteAudioControlButton.style.display = 'flex'; 
-    currentSiteSongIndex = Math.floor(Math.random() * siteAudioSongs.length); siteAudioElement.src = siteAudioSongs[currentSiteSongIndex]; siteAudioElement.load(); 
-    siteAudioElement.addEventListener('ended', () => { fadeOutSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, () => { playNextSiteSong(siteAudioElement); }); });
-    siteAudioControlButton.addEventListener('click', () => { if (!siteAudioElement) return; const wasMuted = siteAudioElement.muted; siteAudioElement.muted = !siteAudioElement.muted; updateSiteAudioMuteButton(); if (!siteAudioElement.muted) { if (siteAudioElement.paused || wasMuted) { if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused) fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); else { siteAudioElement.volume = 0; fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); } } } else stopSiteAudioFade(); });
-  }
-
-  const splashScreen = document.getElementById('splash-screen'); if (splashScreen) { setTimeout(() => { splashScreen.classList.add('hidden'); setTimeout(() => { if (splashScreen.parentNode) splashScreen.style.display = 'none'; }, 500); }, 100); }
-  updateConnectionStatus();
-
-  async function loadAllData() {
-      try {
-          // Robust initialization: Solo intentar cargar si las funciones existen
-          const tasks = [];
-          
-          if(typeof window.loadSetlistConfig === 'function') {
-              tasks.push(window.loadSetlistConfig());
-          } else {
-              // Este error ya no debería saltar gracias al initApp robusto
-              console.warn("loadSetlistConfig aún no disponible (reintentando en background...)");
-          }
-          
-          if(typeof loadUsers === 'function') tasks.push(loadUsers());
-          if(typeof window.loadRehearsals === 'function') tasks.push(window.loadRehearsals());
-          if(typeof window.loadJukeboxLibrary === 'function') tasks.push(window.loadJukeboxLibrary());
-          if(typeof window.loadPdfLibrary === 'function') tasks.push(window.loadPdfLibrary());
-          if(typeof window.loadMasterDocs === 'function') tasks.push(window.loadMasterDocs());
-          // NUEVO: CARGAR NOTAS
-          if(typeof window.loadSongNotes === 'function') tasks.push(window.loadSongNotes());
-          
-          await Promise.all(tasks);
-          
-      } catch (e) { 
-          console.error("Error en carga inicial de datos (Promise.all):", e); 
-      }
-      
-      if(window.loadAnalysisData) window.loadAnalysisData(); else setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
-      
-      // Safety checks for loading specific setlists
-      try { 
-          if(typeof window.cargarPrimerSetlist === 'function') window.globalItems1 = await window.cargarPrimerSetlist(); 
-      } catch (e) { console.error("Error cargarPrimerSetlist:", e); }
-      
-      try { 
-          if(typeof window.cargarSegundoSetlist === 'function') window.globalItems2 = await window.cargarSegundoSetlist(); 
-      } catch (e) { console.error("Error cargarSegundoSetlist:", e); }
-      
-      try { 
-          if(typeof window.cargarStarSetlist === 'function') window.globalItemsStar = await window.cargarStarSetlist(); 
-      } catch (e) { console.error("Error cargarStarSetlist:", e); }
-  }
-  
-  // ELIMINADO: La llamada inmediata que causaba el error crítico.
-  // if (typeof firebase !== 'undefined') loadAllData(); 
+    initSession();
+    attachSuggestionsListener();
+    loadUsers();
+    loadRehearsals();
+    if(window.loadSetlists) window.loadSetlists();
+    if(window.loadJukeboxLibrary) window.loadJukeboxLibrary();
+    // Load Master Docs on startup
+    if(window.loadMasterDocs) window.loadMasterDocs();
+    
+    // Hide Splash Screen
+    setTimeout(() => {
+        const splash = document.getElementById('splash-screen');
+        if(splash) splash.classList.add('hidden');
+    }, 1500);
 });
 </script>
 </body>
