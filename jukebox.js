@@ -1,5 +1,3 @@
-
-
 /* 
    JUKEBOX.JS
    Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
@@ -7,6 +5,7 @@
    + Inyección UI: Nueva fila de herramientas (Velocidad, Pitch, Notas, Offset, VOLUMEN, MODOS REPRODUCCION, PLAYLIST, EXTRAS)
    + Playlist Automática vs Bucle de Canción
    + Archivos Relacionados (Extras - 7 Slots)
+   + GESTIÓN INTEGRAL (Admin Panel)
 */
 
 // Variables Globales del Jukebox
@@ -52,6 +51,7 @@ const sanitizeJukeboxKey = (str) => str ? str.toString().trim().replace(/[.#$[\]
 
 // Exponer funciones al objeto window
 window.jukeboxLibrary = jukeboxLibrary;
+window.sanitizeJukeboxKey = sanitizeJukeboxKey; // Exponer para uso en setlists.js
 
 /* --- 0. INYECCIÓN DE ESTILOS Y UI (DISEÑO MEJORADO) --- */
 
@@ -594,10 +594,13 @@ window.loadJukeboxLibrary = async function() {
     } catch (e) { console.error("Error cargando Jukebox Library:", e); }
 };
 
+// FIX CRÍTICO DE BORRADO: CAMBIAR MERGE TRUE A MERGE FALSE
+// Al borrar una clave en local y guardar con merge: true, Firebase MANTIENE la clave antigua.
+// Para borrar hay que sobreescribir (merge: false) o usar FieldValue.delete().
+// Como cargamos TODO al inicio, sobreescribir es seguro y más limpio para esta estructura anidada.
 window.saveJukeboxLibrary = async function() {
     try {
         if (typeof window.saveDoc === 'function') {
-            // Guardamos siempre con estructura nueva
             await window.withRetry(() => window.saveDoc("intranet", "jukebox_library", { 
                 mapping: window.jukeboxLibrary,
                 markers: jukeboxMarkers,
@@ -605,7 +608,12 @@ window.saveJukeboxLibrary = async function() {
                 notes: jukeboxNotes,
                 pitch: jukeboxPitch,
                 related: jukeboxRelated 
-            }, true)); // true = merge
+            }, false)); // <--- CAMBIO IMPORTANTE: false para sobreescribir y permitir borrados
+            
+            // Actualizar vista de gestión si está abierta
+            if(document.getElementById('jukebox-mgmt-screen') && document.getElementById('jukebox-mgmt-screen').style.display === 'block') {
+                if(window.renderJukeboxManagement) window.renderJukeboxManagement();
+            }
             return true;
         }
     } catch (e) { console.error("Error guardando Jukebox:", e); return false; }
@@ -1800,6 +1808,98 @@ window.stopJukeboxProgressLoop = function() {
     if (jukeboxCheckInterval) clearInterval(jukeboxCheckInterval);
 };
 
+/* --- 7. GESTIÓN INTEGRAL (ADMIN PANEL) --- */
+// Nueva sección para asegurar que la gestión de canciones funcione correctamente
+
+window.renderJukeboxManagement = function() {
+    const tbody = document.getElementById('jukebox-mgmt-body');
+    if(!tbody) return;
+    tbody.innerHTML = "";
+    
+    // Obtener todas las canciones que tienen enlace
+    const songs = Object.keys(window.jukeboxLibrary).sort();
+    
+    if(songs.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#aaa;'>No hay canciones con audio asignado.</td></tr>";
+        return;
+    }
+
+    songs.forEach(key => {
+        const url = window.jukeboxLibrary[key];
+        // Intentar recuperar el nombre "bonito" si es posible (aunque la key suele ser el nombre saneado)
+        // Por ahora mostramos la key que es el identificador único
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-size:0.9em; color:#0cf;">${key}</td>
+            <td style="font-size:0.8em; word-break:break-all;">${url}</td>
+            <td>
+                <button class="edit-rehearsal" onclick="window.openJukeboxEditModal('${key}')">Editar</button>
+                <button class="delete-rehearsal" onclick="window.deleteJukeboxTrack('${key}')">Borrar</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+window.deleteJukeboxTrack = async function(key) {
+    if(confirm(`¿Seguro que quieres borrar el audio de "${key}"?`)) {
+        delete window.jukeboxLibrary[key];
+        // También limpiamos datos asociados para no dejar basura
+        if(jukeboxMarkers[key]) delete jukeboxMarkers[key];
+        if(jukeboxOffsets[key]) delete jukeboxOffsets[key];
+        if(jukeboxNotes[key]) delete jukeboxNotes[key];
+        if(jukeboxPitch[key]) delete jukeboxPitch[key];
+        if(jukeboxRelated[key]) delete jukeboxRelated[key];
+        
+        await window.saveJukeboxLibrary();
+        window.renderJukeboxManagement();
+        alert("Audio eliminado correctamente.");
+    }
+};
+
+window.openJukeboxEditModal = function(key) {
+    const modal = document.getElementById('jukebox-edit-modal');
+    if(!modal) return;
+    
+    document.getElementById('jb-modal-songname').textContent = key;
+    document.getElementById('jb-modal-url-input').value = window.jukeboxLibrary[key] || "";
+    
+    // Guardar referencia a la key actual en el botón de guardar
+    const saveBtn = document.getElementById('jb-modal-save-btn');
+    saveBtn.onclick = () => window.saveJukeboxFromModal(key);
+    
+    modal.classList.add('show');
+};
+
+window.saveJukeboxFromModal = async function(key) {
+    const url = document.getElementById('jb-modal-url-input').value.trim();
+    if(!url) {
+        alert("La URL no puede estar vacía.");
+        return;
+    }
+    
+    window.jukeboxLibrary[key] = url;
+    await window.saveJukeboxLibrary();
+    
+    document.getElementById('jukebox-edit-modal').classList.remove('show');
+    
+    // Si estamos en la pantalla de gestión, refrescar
+    if(document.getElementById('jukebox-mgmt-screen').style.display === 'block') {
+        window.renderJukeboxManagement();
+    }
+    
+    alert("Audio guardado.");
+};
+
+// Función helper para que setlists.js la llame al pulsar el icono
+window.updateJukeboxTrack = function(songName, url) {
+    const key = sanitizeJukeboxKey(songName);
+    window.jukeboxLibrary[key] = url;
+    window.saveJukeboxLibrary();
+};
+
+
 // FUNCIÓN DE INICIALIZACIÓN CONSOLIDADA
 function initJukebox() {
     window.injectJukeboxStyles();
@@ -1838,6 +1938,12 @@ function initJukebox() {
     if(btnCancelMarker) btnCancelMarker.onclick = window.closeMarkerModal;
     const btnConfirmMarker = document.getElementById('confirm-marker-btn');
     if(btnConfirmMarker) btnConfirmMarker.onclick = window.confirmAddMarker;
+    
+    // Wiring del Modal de Edición (Cancel btn)
+    const btnCancelModal = document.getElementById('jb-modal-cancel-btn');
+    if(btnCancelModal) btnCancelModal.onclick = () => {
+        document.getElementById('jukebox-edit-modal').classList.remove('show');
+    };
 }
 
 // Inicialización robusta para SPAs y carga diferida
