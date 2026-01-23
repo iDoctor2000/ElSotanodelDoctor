@@ -33,7 +33,9 @@ let currentEditingNoteSong = null; // NUEVO
 let currentMasterDocsSetlistKey = null;
 
 // --- UTILITIES LOCALES ---
-const sanitizeKey = (str) => str ? str.replace(/[.#$[\]/:\s,]/g, '_') : 'unknown';
+// Aseguramos que esta sanitización sea idéntica a la de jukebox.js
+const sanitizeKey = (str) => str ? str.toString().trim().replace(/[.#$[\]/:\s,]/g, '_') : 'unknown';
+
 const decodeHtml = (text) => {
     if (typeof text !== 'string') return text;
     const textArea = document.createElement('textarea');
@@ -207,13 +209,17 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId) {
 
     const createJukeboxCell = (songName) => {
         const cleanName = sanitizeKey(songName);
+        // IMPORTANTE: Buscamos por la clave sanitizada, pero al modal de edición pasamos el nombre original
+        // para que sea legible. La sanitización al guardar se hace en jukebox.js
         const url = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : null;
         const hasLink = !!url;
         const statusClass = hasLink ? 'active' : 'inactive';
         const safeName = songName.replace(/'/g, "\\'");
+        
         const clickAction = hasLink 
             ? `window.openJukeboxPlayer('${safeName}', '${url}')` 
             : `window.openJukeboxEditModal('${safeName}')`;
+            
         return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
     };
     
@@ -230,7 +236,6 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId) {
         return `<td class="pdf-col"><button class="pdf-btn ${statusClass}" onclick="${clickAction}">${iconSvg}</button></td>`;
     };
 
-    // --- NUEVO: CELDA DE NOTAS (AMARILLO) ---
     const createNotesCell = (songName) => {
         const cleanName = sanitizeKey(songName);
         const note = window.songNotesLibrary ? window.songNotesLibrary[cleanName] : null;
@@ -257,12 +262,10 @@ async function cargarSetlistGenerico(configEntry, tbodyId, totalTimeId) {
         setlistStructure.forEach(item => {
             if (item.isSetHeader) {
                 const setHeaderTime = toHHMMLocal(item.calculatedBlockDurationSeconds || 0);
-                // Colspan ajustado a 10 para cubrir la nueva columna
                 tbody.insertAdjacentHTML("beforeend", `<tr class="set-header-row"><td colspan="10">${item.displayName} (${setHeaderTime})</td></tr>`);
                 totalSecondsOverall += (item.calculatedBlockDurationSeconds || 0);
                 item.songs.forEach(song => {
                     songCount++;
-                    // ORDEN: # | Titulo | Audio | PDF | NOTAS | Key | Tempo | Metro | Time
                     tbody.insertAdjacentHTML("beforeend", `<tr>
                         <td>${songCount}</td>
                         <td>${song.displayName}</td>
@@ -625,11 +628,13 @@ window.openMasterDocsModal = function(setlistKey, displayName) {
 // --- 7. GESTIÓN DE ENLACES JUKEBOX (Parte de Gestión, no Player) ---
 
 window.openJukeboxEditModal = function(songName) {
-    // Definida en jukebox.js, pero por si acaso
+    // Esta función actúa de puente. Pasa el nombre original (para mostrar en el modal).
+    // La sanitización para guardar se hará DENTRO de saveJukeboxFromModal en jukebox.js
     if(window.openJukeboxEditModalImpl) window.openJukeboxEditModalImpl(songName);
     else console.warn("Jukebox Edit Modal not ready");
 }
 
+// Eliminación desde la tabla de gestión general (jukebox.js se encarga de la lógica)
 window.deleteJukeboxLink = async function(cleanKey) {
     if(confirm("¿Eliminar el enlace de esta canción?")) {
         delete window.jukeboxLibrary[cleanKey];
@@ -810,7 +815,8 @@ window.renderJukeboxMgmtTable = function() {
     const keys = Object.keys(window.jukeboxLibrary).sort();
     if (keys.length === 0) { tbody.innerHTML = "<tr><td colspan='3'>Sin canciones.</td></tr>"; return; }
     keys.forEach(key => {
-        const row = `<tr><td>${key.replace(/_/g, " ")}</td><td style="font-size:0.8em;">${window.jukeboxLibrary[key]}</td><td><button onclick="window.deleteJukeboxLink('${key}')" style="background:#f55;">X</button></td></tr>`;
+        // En la tabla de gestión mostramos la CLAVE REAL (que debería estar sanitizada)
+        const row = `<tr><td>${key}</td><td style="font-size:0.8em;">${window.jukeboxLibrary[key]}</td><td><button onclick="window.deleteJukeboxTrack('${key}')" style="background:#f55;">X</button></td></tr>`;
         tbody.insertAdjacentHTML('beforeend', row);
     });
 };
