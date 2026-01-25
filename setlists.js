@@ -816,7 +816,8 @@ window.renderJukeboxMgmtTable = function() {
     if (keys.length === 0) { tbody.innerHTML = "<tr><td colspan='3'>Sin canciones.</td></tr>"; return; }
     keys.forEach(key => {
         // En la tabla de gestión mostramos la CLAVE REAL (que debería estar sanitizada)
-        const row = `<tr><td>${key}</td><td style="font-size:0.8em;">${window.jukeboxLibrary[key]}</td><td><button onclick="window.deleteJukeboxTrack('${key}')" style="background:#f55;">X</button></td></tr>`;
+        // CORRECCIÓN: Usar window.deleteJukeboxLink (la función que existe) en lugar de deleteJukeboxTrack
+        const row = `<tr><td>${key}</td><td style="font-size:0.8em;">${window.jukeboxLibrary[key]}</td><td><button onclick="window.deleteJukeboxLink('${key}')" style="background:#f55;">X</button></td></tr>`;
         tbody.insertAdjacentHTML('beforeend', row);
     });
 };
