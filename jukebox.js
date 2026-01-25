@@ -1,10 +1,11 @@
- /* 
+/* 
    JUKEBOX.JS
    Lógica separada para el reproductor de audio, YouTube API, Google Drive y Dropbox
    + Marcadores (Bookmarks)
    + Inyección UI: Nueva fila de herramientas (Velocidad, Pitch, Notas, Offset, VOLUMEN, MODOS REPRODUCCION, PLAYLIST, EXTRAS)
    + Playlist Automática vs Bucle de Canción
    + Archivos Relacionados (Extras - 7 Slots)
+   + Modal de Edición (Implementación)
 */
 
 // Variables Globales del Jukebox
@@ -14,6 +15,9 @@ let jukeboxOffsets = {};
 let jukeboxNotes = {}; 
 let jukeboxPitch = {}; 
 let jukeboxRelated = {}; // Nueva estructura: { "key_cancion": [ {name, url} (o null), ... ] }
+
+// Variables de edición (NUEVO)
+let currentEditingJukeboxSong = null;
 
 let ytPlayer = null;
 let isJukeboxPlaying = false;
@@ -50,6 +54,27 @@ const sanitizeJukeboxKey = (str) => str ? str.toString().trim().replace(/[.#$[\]
 
 // Exponer funciones al objeto window
 window.jukeboxLibrary = jukeboxLibrary;
+
+/* --- IMPLEMENTACIÓN DEL MODAL DE EDICIÓN (SOLUCIÓN AL PROBLEMA PRINCIPAL) --- */
+window.openJukeboxEditModalImpl = function(songName) {
+    currentEditingJukeboxSong = songName;
+    const cleanName = sanitizeJukeboxKey(songName);
+    const currentUrl = window.jukeboxLibrary[cleanName] || "";
+    
+    const modal = document.getElementById('jukebox-edit-modal');
+    const input = document.getElementById('jb-modal-url-input');
+    const nameDisplay = document.getElementById('jb-modal-songname');
+    
+    if(modal && input && nameDisplay) {
+        nameDisplay.textContent = songName;
+        input.value = currentUrl;
+        modal.classList.add('show');
+        // Dar foco al input
+        setTimeout(() => input.focus(), 100);
+    } else {
+        console.error("Elementos del modal Jukebox no encontrados en el DOM.");
+    }
+};
 
 /* --- 0. INYECCIÓN DE ESTILOS Y UI (DISEÑO MEJORADO) --- */
 
@@ -1836,6 +1861,48 @@ function initJukebox() {
     if(btnCancelMarker) btnCancelMarker.onclick = window.closeMarkerModal;
     const btnConfirmMarker = document.getElementById('confirm-marker-btn');
     if(btnConfirmMarker) btnConfirmMarker.onclick = window.confirmAddMarker;
+    
+    // Configurar listeners del Modal Jukebox Edit (NUEVO)
+    const btnSaveJukebox = document.getElementById('jb-modal-save-btn');
+    const btnCancelJukebox = document.getElementById('jb-modal-cancel-btn');
+    
+    if(btnSaveJukebox) {
+        btnSaveJukebox.onclick = async () => {
+             if(!currentEditingJukeboxSong) return;
+             const input = document.getElementById('jb-modal-url-input');
+             const url = input.value.trim();
+             const cleanName = sanitizeJukeboxKey(currentEditingJukeboxSong);
+             
+             if(url) {
+                 window.jukeboxLibrary[cleanName] = url;
+             } else {
+                 // Si está vacío, borrar
+                 delete window.jukeboxLibrary[cleanName];
+             }
+             
+             await window.saveJukeboxLibrary();
+             
+             // Actualizar tablas visuales (Gestión Jukebox)
+             if(window.renderJukeboxMgmtTable) window.renderJukeboxMgmtTable();
+             
+             // Recargar setlists para actualizar los iconos (play/pause)
+             const promises = [];
+             if(window.cargarPrimerSetlist) promises.push(window.cargarPrimerSetlist());
+             if(window.cargarSegundoSetlist) promises.push(window.cargarSegundoSetlist());
+             if(window.cargarStarSetlist) promises.push(window.cargarStarSetlist());
+             await Promise.all(promises);
+             
+             document.getElementById('jukebox-edit-modal').classList.remove('show');
+             currentEditingJukeboxSong = null;
+        };
+    }
+    
+    if(btnCancelJukebox) {
+        btnCancelJukebox.onclick = () => {
+            document.getElementById('jukebox-edit-modal').classList.remove('show');
+            currentEditingJukeboxSong = null;
+        };
+    }
 }
 
 // Inicialización robusta para SPAs y carga diferida
