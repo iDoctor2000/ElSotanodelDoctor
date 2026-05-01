@@ -2518,8 +2518,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   if(nextBtn) { const newNext = nextBtn.cloneNode(true); nextBtn.parentNode.replaceChild(newNext, nextBtn); newNext.addEventListener('click', () => { currentCalDate.setMonth(currentCalDate.getMonth() + 1); renderVisualCalendar(); }); }
   renderVisualCalendar(); setTimeout(renderVisualCalendar, 2000); setTimeout(renderVisualCalendar, 5000);
 });
-<script src="private-zone.js?v=1"></script>
+
 </script>
+<script src="private-zone.js?v=1"></script>          
 </body>
 </html>
 </body>
