@@ -96,7 +96,7 @@
       .se-json-block label { color: #ff8c1a; font-weight: bold; }
       .se-json-block .se-json-help { font-size: 0.85em; color: #aaa; margin: 4px 0 8px; }
       .se-json-block textarea {
-        width: 100%; min-height: 110px;
+        width: 100%; min-height: 70px;
         font-family: 'Courier New', monospace; font-size: 0.85em;
         background: #0a0a0a; color: #ddd; border: 1px solid #333;
         border-radius: 6px; padding: 8px; resize: vertical;
@@ -280,8 +280,15 @@
     // NO tocamos document.body.style.overflow para no bloquear scroll de la página
   }
 
-  window.openConcertSetlistModal = function (concertTitle, concertDate, jsonText) {
-    safeRun(() => {
+  // Detecta si una cadena es una URL HTTP/HTTPS válida
+  function looksLikeUrl(text) {
+    if (!text) return false;
+    const t = text.trim();
+    return /^https?:\/\//i.test(t);
+  }
+
+  window.openConcertSetlistModal = async function (concertTitle, concertDate, savedText) {
+    await safeRun(async () => {
       ensureSetlistModal();
       const titleEl = document.getElementById("se-modal-title");
       const subEl   = document.getElementById("se-modal-subtitle");
@@ -293,23 +300,38 @@
       if (subEl) subEl.textContent = concertDate || "";
       if (totalEl) totalEl.textContent = "";
 
-      if (!jsonText || !jsonText.trim()) {
+      const trimmed = (savedText || "").trim();
+
+      if (!trimmed) {
         bodyEl.innerHTML = `<div class="se-empty-state">No se ha encontrado ningún setlist vinculado al concierto.</div>`;
+        showSetlistModal();
+        return;
+      }
+
+      // CASO 1: URL del feed BandHelper → descargar y renderizar
+      if (looksLikeUrl(trimmed)) {
+        showSetlistModal();
+        const result = await window.SE.renderFromFeedUrl(bodyEl, trimmed, { appendTotal: false });
+        if (result && result.items && result.items.length && totalEl) {
+          totalEl.textContent = "Tiempo total: " + toHHMM(result.totalSeconds || 0) + (result.usedCache ? " (caché)" : "");
+        }
+        return;
+      }
+
+      // CASO 2: JSON pegado directamente → parsear y renderizar
+      let parsed;
+      try { parsed = JSON.parse(trimmed); }
+      catch (e) {
+        bodyEl.innerHTML = `<div class="se-empty-state">El contenido guardado no es ni una URL válida ni un JSON válido.<br><br><code style="font-size:.85em;color:#888;">${(e.message || "").replace(/</g,"&lt;")}</code></div>`;
+        showSetlistModal();
+        return;
+      }
+      const { items, totalSeconds } = parseBandhelperJson(parsed);
+      if (!items.length) {
+        bodyEl.innerHTML = `<div class="se-empty-state">El JSON no contiene canciones reconocibles.</div>`;
       } else {
-        let parsed;
-        try { parsed = JSON.parse(jsonText); }
-        catch (e) {
-          bodyEl.innerHTML = `<div class="se-empty-state">El JSON guardado no es válido. Revisa el campo en los detalles del concierto.<br><br><code style="font-size:.85em;color:#888;">${(e.message || "").replace(/</g,"&lt;")}</code></div>`;
-          showSetlistModal();
-          return;
-        }
-        const { items, totalSeconds } = parseBandhelperJson(parsed);
-        if (!items.length) {
-          bodyEl.innerHTML = `<div class="se-empty-state">El JSON no contiene canciones reconocibles.</div>`;
-        } else {
-          renderSetlistTableInto(bodyEl, items, totalSeconds);
-          if (totalEl) totalEl.textContent = "Tiempo total: " + toHHMM(totalSeconds);
-        }
+        renderSetlistTableInto(bodyEl, items, totalSeconds);
+        if (totalEl) totalEl.textContent = "Tiempo total: " + toHHMM(totalSeconds);
       }
       showSetlistModal();
     }, "openConcertSetlistModal");
@@ -474,14 +496,16 @@
     const block = document.createElement("div");
     block.className = "se-json-block";
     block.innerHTML = `
-      <label for="se-concert-setlist-json">🎵 JSON del Setlist (BandHelper)</label>
+      <label for="se-concert-setlist-json">🎵 Setlist del Concierto (BandHelper)</label>
       <p class="se-json-help">
-        Pega aquí el JSON exportado desde BandHelper para este concierto.
+        Pega aquí <strong>la URL del feed</strong> de BandHelper para este concierto
+        (recomendado, p. ej. <code>https://www.bandhelper.com/feed/set_list/123456</code>)
+        <strong>o</strong> el JSON exportado completo.
         Si lo dejas vacío, el cuadro naranja del calendario mostrará
         "No se ha encontrado ningún setlist vinculado al concierto".
       </p>
-      <textarea id="se-concert-setlist-json" placeholder='[{"type":"set","name":"Set 1","duration":"45"}, {"type":"song","title":"Black Magic Woman","key":"Am","tempo":"122","duration":"260"}, ...]'></textarea>
-      <p class="se-json-status empty" id="se-concert-setlist-json-status">Sin JSON guardado.</p>
+      <textarea id="se-concert-setlist-json" placeholder='https://www.bandhelper.com/feed/set_list/123456&#10;&#10;( o un JSON completo: [{"type":"set","name":"Set 1","duration":"45"}, ...] )'></textarea>
+      <p class="se-json-status empty" id="se-concert-setlist-json-status">Sin URL ni JSON guardado.</p>
     `;
 
     const saveBtn = document.getElementById("save-concert-details");
@@ -497,7 +521,23 @@
     if (ta && status) {
       ta.addEventListener("input", () => {
         const v = ta.value.trim();
-        if (!v) { status.className = "se-json-status empty"; status.textContent = "Sin JSON. Se mostrará 'No se ha encontrado ningún setlist'."; return; }
+        if (!v) {
+          status.className = "se-json-status empty";
+          status.textContent = "Sin URL ni JSON. Se mostrará 'No se ha encontrado ningún setlist'.";
+          return;
+        }
+        // ¿Es una URL?
+        if (looksLikeUrl(v)) {
+          if (/bandhelper\.com\/feed\/set_list/i.test(v)) {
+            status.className = "se-json-status ok";
+            status.textContent = "✓ URL del feed BandHelper detectada. Se cargará en directo al pulsar 🎵.";
+          } else {
+            status.className = "se-json-status ok";
+            status.textContent = "✓ URL detectada. Se cargará en directo al pulsar 🎵.";
+          }
+          return;
+        }
+        // Si no es URL, intentamos parsear como JSON
         try {
           const parsed = JSON.parse(v);
           const items = Array.isArray(parsed) ? parsed : (parsed.items || []);
@@ -506,7 +546,7 @@
           status.textContent = `✓ JSON válido (${songs} canciones detectadas).`;
         } catch (e) {
           status.className = "se-json-status err";
-          status.textContent = "✗ JSON inválido: " + (e.message || "error de sintaxis");
+          status.textContent = "✗ Ni URL ni JSON válido. Pega la URL del feed BandHelper o el JSON exportado.";
         }
       });
     }
@@ -522,22 +562,26 @@
       const status = document.getElementById("se-concert-setlist-json-status");
       if (!idEl || !ta) return;
       const id = idEl.value;
-      const json = setlistByConcertId[id] || "";
-      ta.value = json;
+      const saved = setlistByConcertId[id] || "";
+      ta.value = saved;
       if (status) {
-        if (!json) {
+        const v = saved.trim();
+        if (!v) {
           status.className = "se-json-status empty";
-          status.textContent = "Sin JSON. Se mostrará 'No se ha encontrado ningún setlist'.";
+          status.textContent = "Sin URL ni JSON. Se mostrará 'No se ha encontrado ningún setlist'.";
+        } else if (looksLikeUrl(v)) {
+          status.className = "se-json-status ok";
+          status.textContent = "✓ URL del feed BandHelper guardada.";
         } else {
           try {
-            const parsed = JSON.parse(json);
+            const parsed = JSON.parse(v);
             const items = Array.isArray(parsed) ? parsed : (parsed.items || []);
             const songs = items.filter(it => it && it.type === "song").length;
             status.className = "se-json-status ok";
-            status.textContent = `✓ JSON cargado (${songs} canciones).`;
+            status.textContent = `✓ JSON guardado (${songs} canciones).`;
           } catch (_) {
             status.className = "se-json-status err";
-            status.textContent = "✗ JSON guardado no es válido.";
+            status.textContent = "✗ Contenido guardado no es válido.";
           }
         }
       }
