@@ -390,6 +390,23 @@
     }, 250);
   }
 
+  // Calcula concertId del modo más cercano posible al original (calendario.js)
+  function computeConcertIdFromRow(row) {
+    const cells = row.cells;
+    if (!cells || cells.length < 2) return { concertId: "", date: "", title: "" };
+    // SIEMPRE las dos primeras celdas son: [0]=fecha, [1]=título
+    const dateCellFullText = (cells[0]?.textContent || "").trim();
+    const eventTitleFromCell = ((cells[1]?.textContent || "").trim().split("\n")[0] || "").trim();
+    const dateForId = dateCellFullText.split(",")[0].trim();
+    let concertId = "";
+    try {
+      if (window.sanitizeFirebaseKey) {
+        concertId = window.sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
+      }
+    } catch (_) {}
+    return { concertId, date: dateCellFullText, title: eventTitleFromCell };
+  }
+
   function refreshSetlistColumn() {
     const container = document.getElementById("bandhelper-concerts-container");
     if (!container) return;
@@ -420,15 +437,7 @@
       rows.forEach((row) => {
         const cells = row.cells;
         if (cells.length < 3) return;
-        const dateCellFullText = (cells[0]?.textContent || "").trim();
-        const eventTitleFromCell = ((cells[1]?.textContent || "").trim().split("\n")[0] || "").trim();
-        const dateForId = dateCellFullText.split(",")[0].trim();
-        let concertId = "";
-        try {
-          if (window.sanitizeFirebaseKey) {
-            concertId = window.sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
-          }
-        } catch (_) {}
+        const { concertId, date: rowDate, title: rowTitle } = computeConcertIdFromRow(row);
 
         let setlistTd = row.querySelector("td.se-setlist-col");
         if (!setlistTd) {
@@ -439,8 +448,14 @@
           else row.appendChild(setlistTd);
         }
 
-        const json = setlistByConcertId[concertId] || "";
-        const hasSetlist = !!(json && json.trim());
+        // Guardar el concertId en la propia celda para que el click pueda
+        // releer el cache dinámicamente en el momento del click
+        setlistTd.dataset.concertId = concertId || "";
+        setlistTd.dataset.concertDate = rowDate || "";
+        setlistTd.dataset.concertTitle = rowTitle || "";
+
+        const saved = setlistByConcertId[concertId] || "";
+        const hasSetlist = !!(saved && saved.trim());
 
         const prevState = setlistTd.dataset.hasSetlist || "";
         const newState = hasSetlist ? "1" : "0";
@@ -451,9 +466,51 @@
         btn.className = "se-setlist-btn" + (hasSetlist ? "" : " empty");
         btn.title = hasSetlist ? "Ver setlist de este concierto" : "Sin setlist vinculado";
         btn.textContent = "🎵";
-        btn.onclick = (ev) => {
+        // IMPORTANTE: el handler NO captura `saved` por closure.
+        // Lee el cache dinámicamente en el momento del click, así
+        // refleja siempre el estado más reciente de Firestore.
+        // Si el cache está vacío (porque el listener aún no ha
+        // disparado o falló), hacemos una lectura directa del
+        // documento como fallback.
+        btn.onclick = async (ev) => {
           ev.stopPropagation();
-          window.openConcertSetlistModal(eventTitleFromCell, dateCellFullText, json);
+          const td = ev.currentTarget.parentElement;
+          const id = td?.dataset.concertId || concertId;
+          const d  = td?.dataset.concertDate || rowDate;
+          const t  = td?.dataset.concertTitle || rowTitle;
+          let current = (id && setlistByConcertId[id]) || "";
+          console.log("[setlist-extension] Click 🎵 →", {
+            id: id,
+            hasInCache: !!current,
+            cacheSize: Object.keys(setlistByConcertId).length
+          });
+          // Fallback: si no hay nada en cache, leer concert_details/{id}
+          // directamente desde Firestore.
+          if (!current && id) {
+            try {
+              if (window.firebase && window.firebase.firestore) {
+                const snap = await window.firebase.firestore()
+                  .collection("concert_details")
+                  .doc(id)
+                  .get();
+                if (snap.exists) {
+                  const data = snap.data() || {};
+                  if (typeof data.setlistJson === "string" && data.setlistJson.trim()) {
+                    current = data.setlistJson.trim();
+                    setlistByConcertId[id] = current;
+                    console.log("[setlist-extension] Fallback Firestore OK →", id);
+                  } else {
+                    console.log("[setlist-extension] Doc sin setlistJson:", id);
+                  }
+                } else {
+                  console.log("[setlist-extension] No existe concert_details/" + id);
+                }
+              }
+            } catch (e) {
+              console.warn("[setlist-extension] Fallback Firestore error:", e);
+            }
+          }
+          window.openConcertSetlistModal(t, d, current);
         };
         setlistTd.innerHTML = "";
         setlistTd.appendChild(btn);
