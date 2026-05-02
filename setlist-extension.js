@@ -1,188 +1,108 @@
 /* ============================================================
-   SETLIST-EXTENSION.JS
+   SETLIST-EXTENSION.JS  (v2 — defensivo)
    ------------------------------------------------------------
-   Módulo autocontenido. NO toca setlists.js ni calendario.js.
-   Hace 4 cosas:
-     1) Oculta de la página principal los setlists "Próximo Concierto"
-        y "Concierto Estrella" (y sus enlaces del menú lateral).
-        El setlist de Ensayo se queda intacto.
-     2) Añade en el modal de "Detalles del Concierto" un campo
-        para pegar el JSON del setlist (el que descargas de
-        BandHelper).
-     3) Añade al lado del botón ➡️ "Info" en la tabla de
-        Próximos Conciertos otro botón cuadrado naranja 🎵 que,
-        al pulsar, abre el setlist de ese concierto en una
-        ventana grande (modal).
-     4) Si el concierto no tiene JSON: el modal muestra
-        "No se ha encontrado ningún setlist vinculado al concierto".
-   ------------------------------------------------------------
-   Para desactivar: borra del index.html la línea
-   <script src="setlist-extension.js?v=1"></script>
+   Versión refactorizada con protección anti-bloqueo:
+   - Todo envuelto en try/catch para que NUNCA pueda romper la página
+   - Espera a que el DOM esté listo Y a que la página termine de cargar
+     antes de tocar nada (delay de 2s para no competir con el splash)
+   - No usa document.body.style.overflow (causa bloqueo de scroll)
+   - No reintenta Firebase de forma agresiva
+   - Observer del calendario es ULTRA conservador
    ============================================================ */
 
 (function () {
   "use strict";
-  console.log("--- SETLIST-EXTENSION.JS CARGADO ---");
 
   // ============================================================
-  // 1. ESTILOS — ocultar setlist 2 y star, y mejorar UI nueva
+  // PROTECCIÓN GLOBAL: cualquier error queda capturado aquí
+  // ============================================================
+  function safeRun(fn, label) {
+    try { return fn(); }
+    catch (e) {
+      console.warn("[setlist-extension] " + (label || "error") + ":", e && e.message);
+      return null;
+    }
+  }
+
+  console.log("--- SETLIST-EXTENSION.JS v2 cargado ---");
+
+  // ============================================================
+  // 1. ESTILOS — solo lo imprescindible
   // ============================================================
   function injectStyles() {
     if (document.getElementById("se-styles")) return;
     const css = `
-      /* Ocultar secciones que ya no aparecen en la página principal.
-         Sus datos siguen cargándose internamente para no romper PDFs/links. */
+      /* Ocultar setlists 2 y star de la página principal */
       #second-setlist, #star-setlist { display: none !important; }
       #menu-second-setlist-section, #menu-star-setlist-section { display: none !important; }
 
-      /* ---- Botón naranja "Setlist" en tabla de conciertos ---- */
+      /* Botón naranja "Setlist" en tabla de conciertos */
       .se-setlist-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        border: 1px solid #ff8c1a;
-        background: #ff8c1a;
-        color: #000;
-        cursor: pointer;
-        font-size: 16px;
-        line-height: 1;
-        padding: 0;
-        transition: transform .15s ease, background .15s ease;
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px; border-radius: 6px;
+        border: 1px solid #ff8c1a; background: #ff8c1a; color: #000;
+        cursor: pointer; font-size: 16px; line-height: 1; padding: 0;
       }
-      .se-setlist-btn:hover { transform: scale(1.08); background: #ffae5c; }
-      .se-setlist-btn.empty {
-        background: transparent;
-        color: #ff8c1a;
-        border-style: dashed;
-        opacity: 0.7;
-      }
-      .se-setlist-btn.empty:hover { opacity: 1; }
+      .se-setlist-btn:hover { background: #ffae5c; }
+      .se-setlist-btn.empty { background: transparent; color: #ff8c1a; border-style: dashed; opacity: 0.7; }
       th.se-setlist-col-header { text-align: center; }
       td.se-setlist-col          { text-align: center; }
 
-      /* ---- Modal "Ver Setlist del Concierto" ---- */
+      /* Modal "Ver Setlist del Concierto" - empieza display:none de forma estricta */
       #se-concert-setlist-modal {
-        position: fixed; inset: 0;
-        background: rgba(0,0,0,0.85);
         display: none;
-        align-items: flex-start;
-        justify-content: center;
-        z-index: 99000;
-        overflow-y: auto;
+      }
+      #se-concert-setlist-modal.show {
+        display: flex;
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.85);
+        align-items: flex-start; justify-content: center;
+        z-index: 99000; overflow-y: auto;
         padding: 30px 10px;
       }
-      #se-concert-setlist-modal.show { display: flex; }
       #se-concert-setlist-modal .se-modal-box {
-        background: #1a1a1a;
-        color: #fff;
-        border: 1px solid #333;
-        border-radius: 12px;
-        max-width: 1100px;
-        width: 100%;
+        background: #1a1a1a; color: #fff; border: 1px solid #333;
+        border-radius: 12px; max-width: 1100px; width: 100%;
         padding: 22px 22px 30px;
         box-shadow: 0 10px 40px rgba(0,0,0,0.6);
       }
-      #se-concert-setlist-modal h2 {
-        color: #ff8c1a;
-        text-align: center;
-        margin: 0 0 6px;
+      #se-concert-setlist-modal h2 { color: #ff8c1a; text-align: center; margin: 0 0 6px; }
+      #se-concert-setlist-modal .se-subtitle { text-align: center; color: #aaa; margin: 0 0 18px; font-size: 0.95em; }
+      #se-concert-setlist-modal table { width: 100%; border-collapse: collapse; background: #111; }
+      #se-concert-setlist-modal th, #se-concert-setlist-modal td {
+        padding: 6px 8px; border: 1px solid #2a2a2a; font-size: 0.95em;
       }
-      #se-concert-setlist-modal .se-subtitle {
-        text-align: center;
-        color: #aaa;
-        margin: 0 0 18px;
-        font-size: 0.95em;
-      }
-      #se-concert-setlist-modal table {
-        width: 100%;
-        border-collapse: collapse;
-        background: #111;
-      }
-      #se-concert-setlist-modal th,
-      #se-concert-setlist-modal td {
-        padding: 6px 8px;
-        border: 1px solid #2a2a2a;
-        font-size: 0.95em;
-      }
-      #se-concert-setlist-modal thead th {
-        background: #222;
-        color: #0cf;
-      }
-      #se-concert-setlist-modal tr.se-set-header td {
-        background: #2a2a2a;
-        color: #0cf;
-        font-weight: bold;
-        text-align: center;
-      }
-      #se-concert-setlist-modal tr.se-break-row td {
-        font-style: italic;
-        color: #ffae5c;
-        text-align: center;
-      }
-      #se-concert-setlist-modal .se-empty-state {
-        text-align: center;
-        padding: 40px 20px;
-        color: #ffae5c;
-        font-size: 1.05em;
-        font-style: italic;
-      }
+      #se-concert-setlist-modal thead th { background: #222; color: #0cf; }
+      #se-concert-setlist-modal tr.se-set-header td { background: #2a2a2a; color: #0cf; font-weight: bold; text-align: center; }
+      #se-concert-setlist-modal tr.se-break-row td { font-style: italic; color: #ffae5c; text-align: center; }
+      #se-concert-setlist-modal .se-empty-state { text-align: center; padding: 40px 20px; color: #ffae5c; font-size: 1.05em; font-style: italic; }
       #se-concert-setlist-modal .se-modal-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 18px;
-        flex-wrap: wrap;
-        gap: 10px;
+        display: flex; justify-content: space-between; align-items: center;
+        margin-top: 18px; flex-wrap: wrap; gap: 10px;
       }
-      #se-concert-setlist-modal .se-modal-total {
-        color: #aaa;
-        font-size: 0.95em;
-      }
+      #se-concert-setlist-modal .se-modal-total { color: #aaa; font-size: 0.95em; }
       #se-concert-setlist-modal .se-close-btn {
-        background: #c33;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        padding: 9px 18px;
-        cursor: pointer;
+        background: #c33; color: #fff; border: none; border-radius: 8px;
+        padding: 9px 18px; cursor: pointer;
       }
       #se-concert-setlist-modal .se-close-btn:hover { background: #e55; }
 
-      /* ---- Textarea JSON dentro del modal de detalles ---- */
+      /* Bloque JSON dentro del modal de concierto */
       .se-json-block {
-        border: 1px solid #444;
-        border-radius: 8px;
-        padding: 12px;
-        margin-top: 14px;
-        margin-bottom: 14px;
+        border: 1px solid #444; border-radius: 8px; padding: 12px;
+        margin-top: 14px; margin-bottom: 14px;
         background: rgba(255, 140, 26, 0.06);
       }
       .se-json-block label { color: #ff8c1a; font-weight: bold; }
-      .se-json-block .se-json-help {
-        font-size: 0.85em;
-        color: #aaa;
-        margin: 4px 0 8px;
-      }
+      .se-json-block .se-json-help { font-size: 0.85em; color: #aaa; margin: 4px 0 8px; }
       .se-json-block textarea {
-        width: 100%;
-        min-height: 110px;
-        font-family: 'Courier New', monospace;
-        font-size: 0.85em;
-        background: #0a0a0a;
-        color: #ddd;
-        border: 1px solid #333;
-        border-radius: 6px;
-        padding: 8px;
-        resize: vertical;
+        width: 100%; min-height: 110px;
+        font-family: 'Courier New', monospace; font-size: 0.85em;
+        background: #0a0a0a; color: #ddd; border: 1px solid #333;
+        border-radius: 6px; padding: 8px; resize: vertical;
+        box-sizing: border-box;
       }
-      .se-json-block .se-json-status {
-        font-size: 0.85em;
-        margin-top: 6px;
-        font-style: italic;
-      }
+      .se-json-block .se-json-status { font-size: 0.85em; margin-top: 6px; font-style: italic; }
       .se-json-block .se-json-status.ok    { color: #6f6; }
       .se-json-block .se-json-status.err   { color: #f66; }
       .se-json-block .se-json-status.empty { color: #888; }
@@ -194,7 +114,7 @@
   }
 
   // ============================================================
-  // 2. UTILIDADES (clones de las de setlists.js, no las tocamos)
+  // 2. UTILIDADES
   // ============================================================
   const decodeHtml = (text) => {
     if (typeof text !== "string") return text;
@@ -216,8 +136,7 @@
   };
 
   // ============================================================
-  // 3. PARSEO DE JSON BANDHELPER → estructura de sets
-  //    (misma lógica que cargarSetlistGenerico, pero sin fetch)
+  // 3. PARSEO JSON BANDHELPER → estructura de sets
   // ============================================================
   function parseBandhelperJson(rawData) {
     if (!rawData) return { items: [], totalSeconds: 0 };
@@ -290,7 +209,7 @@
   }
 
   // ============================================================
-  // 4. RENDER DE LA TABLA EN EL MODAL DE CONCIERTO
+  // 4. RENDER DE TABLA
   // ============================================================
   function renderSetlistTableInto(parentEl, structure, totalSeconds) {
     let html = `
@@ -323,12 +242,12 @@
   }
 
   // ============================================================
-  // 5. MODAL "Ver Setlist del Concierto"
+  // 5. MODAL DE CONCIERTO
   // ============================================================
   function ensureSetlistModal() {
     if (document.getElementById("se-concert-setlist-modal")) return;
     const html = `
-      <div id="se-concert-setlist-modal">
+      <div id="se-concert-setlist-modal" style="display:none;">
         <div class="se-modal-box">
           <h2 id="se-modal-title">Setlist del Concierto</h2>
           <p class="se-subtitle" id="se-modal-subtitle"></p>
@@ -342,174 +261,215 @@
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html;
     document.body.appendChild(wrapper.firstElementChild);
-    document.getElementById("se-modal-close").onclick = closeSetlistModal;
-    document.getElementById("se-concert-setlist-modal").addEventListener("click", (e) => {
-      if (e.target.id === "se-concert-setlist-modal") closeSetlistModal();
-    });
+    const closeBtn = document.getElementById("se-modal-close");
+    if (closeBtn) closeBtn.onclick = closeSetlistModal;
+    const m = document.getElementById("se-concert-setlist-modal");
+    if (m) {
+      m.addEventListener("click", (e) => {
+        if (e.target.id === "se-concert-setlist-modal") closeSetlistModal();
+      });
+    }
   }
+
   function closeSetlistModal() {
     const m = document.getElementById("se-concert-setlist-modal");
-    if (m) m.classList.remove("show");
-    document.body.style.overflow = "";
+    if (m) {
+      m.classList.remove("show");
+      m.style.display = "none";
+    }
+    // NO tocamos document.body.style.overflow para no bloquear scroll de la página
   }
 
-  /**
-   * Abre el modal con el setlist de un concierto.
-   * @param {string} concertTitle  Título a mostrar
-   * @param {string} concertDate   Fecha a mostrar (subtítulo)
-   * @param {string} jsonText      JSON pegado por el admin
-   */
   window.openConcertSetlistModal = function (concertTitle, concertDate, jsonText) {
-    ensureSetlistModal();
-    const titleEl = document.getElementById("se-modal-title");
-    const subEl   = document.getElementById("se-modal-subtitle");
-    const bodyEl  = document.getElementById("se-modal-body");
-    const totalEl = document.getElementById("se-modal-total");
+    safeRun(() => {
+      ensureSetlistModal();
+      const titleEl = document.getElementById("se-modal-title");
+      const subEl   = document.getElementById("se-modal-subtitle");
+      const bodyEl  = document.getElementById("se-modal-body");
+      const totalEl = document.getElementById("se-modal-total");
+      if (!titleEl || !bodyEl) return;
 
-    titleEl.textContent = concertTitle || "Setlist del Concierto";
-    subEl.textContent = concertDate || "";
-    totalEl.textContent = "";
+      titleEl.textContent = concertTitle || "Setlist del Concierto";
+      if (subEl) subEl.textContent = concertDate || "";
+      if (totalEl) totalEl.textContent = "";
 
-    if (!jsonText || !jsonText.trim()) {
-      bodyEl.innerHTML = `<div class="se-empty-state">No se ha encontrado ningún setlist vinculado al concierto.</div>`;
-    } else {
-      let parsed;
-      try {
-        parsed = JSON.parse(jsonText);
-      } catch (e) {
-        bodyEl.innerHTML = `<div class="se-empty-state">El JSON guardado no es válido. Revisa el campo en los detalles del concierto.<br><br><code style="font-size:.85em;color:#888;">${(e.message || "").replace(/</g,"&lt;")}</code></div>`;
-        document.getElementById("se-concert-setlist-modal").classList.add("show");
-        document.body.style.overflow = "hidden";
-        return;
-      }
-      const { items, totalSeconds } = parseBandhelperJson(parsed);
-      if (!items.length) {
-        bodyEl.innerHTML = `<div class="se-empty-state">El JSON no contiene canciones reconocibles.</div>`;
+      if (!jsonText || !jsonText.trim()) {
+        bodyEl.innerHTML = `<div class="se-empty-state">No se ha encontrado ningún setlist vinculado al concierto.</div>`;
       } else {
-        renderSetlistTableInto(bodyEl, items, totalSeconds);
-        totalEl.textContent = "Tiempo total: " + toHHMM(totalSeconds);
+        let parsed;
+        try { parsed = JSON.parse(jsonText); }
+        catch (e) {
+          bodyEl.innerHTML = `<div class="se-empty-state">El JSON guardado no es válido. Revisa el campo en los detalles del concierto.<br><br><code style="font-size:.85em;color:#888;">${(e.message || "").replace(/</g,"&lt;")}</code></div>`;
+          showSetlistModal();
+          return;
+        }
+        const { items, totalSeconds } = parseBandhelperJson(parsed);
+        if (!items.length) {
+          bodyEl.innerHTML = `<div class="se-empty-state">El JSON no contiene canciones reconocibles.</div>`;
+        } else {
+          renderSetlistTableInto(bodyEl, items, totalSeconds);
+          if (totalEl) totalEl.textContent = "Tiempo total: " + toHHMM(totalSeconds);
+        }
       }
-    }
-    document.getElementById("se-concert-setlist-modal").classList.add("show");
-    document.body.style.overflow = "hidden";
+      showSetlistModal();
+    }, "openConcertSetlistModal");
   };
 
+  function showSetlistModal() {
+    const m = document.getElementById("se-concert-setlist-modal");
+    if (m) {
+      m.style.display = "flex";
+      m.classList.add("show");
+    }
+  }
+
   // ============================================================
-  // 6. CACHE EN MEMORIA DE LOS JSON GUARDADOS
-  //    (escuchamos la colección concert_details y guardamos
-  //    setlistJson por concertId para tener acceso rápido)
+  // 6. CACHE DE JSONs (lazy, no agresivo)
   // ============================================================
   const setlistByConcertId = {};
+  let listenerAttached = false;
 
   function attachSetlistListener() {
-    if (typeof db === "undefined") {
-      // Reintentar cuando Firebase esté listo
-      setTimeout(attachSetlistListener, 800);
-      return;
-    }
+    if (listenerAttached) return;
+    if (typeof db === "undefined") return; // No reintentamos agresivamente
     try {
       db.collection("concert_details").onSnapshot((snapshot) => {
-        snapshot.forEach((doc) => {
-          const data = doc.data() || {};
-          setlistByConcertId[doc.id] = data.setlistJson || "";
-        });
-        // Re-render columna naranja para reflejar cambios (lleno/vacío)
-        refreshSetlistColumn();
+        try {
+          snapshot.forEach((doc) => {
+            const data = doc.data() || {};
+            setlistByConcertId[doc.id] = data.setlistJson || "";
+          });
+          scheduleRefresh();
+        } catch (e) {
+          console.warn("[setlist-extension] snapshot processing:", e);
+        }
+      }, (err) => {
+        console.warn("[setlist-extension] firestore listener error:", err);
       });
+      listenerAttached = true;
     } catch (e) {
       console.warn("[setlist-extension] No se pudo enganchar listener:", e);
     }
   }
 
   // ============================================================
-  // 7. AÑADIR COLUMNA "SETLIST" A LA TABLA DE CONCIERTOS
-  //    Como processBandHelperTable es función local de calendario.js,
-  //    usamos un MutationObserver y, además, repetimos cada N seg
-  //    por si el render llega más tarde.
+  // 7. COLUMNA "SETLIST" EN LA TABLA DE CONCIERTOS
   // ============================================================
+  let bandhelperObserver = null;
+  let refreshScheduled = false;
+  let refreshing = false;
+
+  function scheduleRefresh() {
+    if (refreshScheduled || refreshing) return;
+    refreshScheduled = true;
+    setTimeout(() => {
+      refreshScheduled = false;
+      safeRun(refreshSetlistColumn, "refreshSetlistColumn");
+    }, 250);
+  }
+
   function refreshSetlistColumn() {
     const container = document.getElementById("bandhelper-concerts-container");
     if (!container) return;
     const table = container.querySelector("table");
     if (!table) return;
 
-    // 1) Cabecera
-    const thead = table.tHead;
-    if (thead && thead.rows.length) {
-      const headerRow = thead.rows[0];
-      let setlistTh = headerRow.querySelector("th.se-setlist-col-header");
-      if (!setlistTh) {
-        setlistTh = document.createElement("th");
-        setlistTh.className = "se-setlist-col-header";
-        setlistTh.textContent = "Setlist";
-        // Insertar antes de la última columna ("Info")
-        const lastTh = headerRow.cells[headerRow.cells.length - 1];
-        headerRow.insertBefore(setlistTh, lastTh);
-      }
+    refreshing = true;
+    if (bandhelperObserver) {
+      try { bandhelperObserver.disconnect(); } catch (_) {}
     }
 
-    // 2) Filas
-    const rows = table.querySelectorAll("tbody tr");
-    rows.forEach((row) => {
-      // Reconstruir el concertId igual que lo hace calendario.js
-      const cells = row.cells;
-      if (cells.length < 4) return;
-      const dateCellFullText = cells[0]?.textContent.trim() || "";
-      const eventTitleFromCell = cells[1]?.textContent.trim().split("\n")[0].trim() || "";
-      const dateForId = dateCellFullText.split(",")[0].trim();
-      let concertId = "";
-      try {
-        if (window.sanitizeFirebaseKey) {
-          concertId = window.sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
+    try {
+      const thead = table.tHead;
+      if (thead && thead.rows.length) {
+        const headerRow = thead.rows[0];
+        let setlistTh = headerRow.querySelector("th.se-setlist-col-header");
+        if (!setlistTh) {
+          setlistTh = document.createElement("th");
+          setlistTh.className = "se-setlist-col-header";
+          setlistTh.textContent = "Setlist";
+          const lastTh = headerRow.cells[headerRow.cells.length - 1];
+          if (lastTh) headerRow.insertBefore(setlistTh, lastTh);
+          else headerRow.appendChild(setlistTh);
         }
-      } catch (_) {}
-
-      let setlistTd = row.querySelector("td.se-setlist-col");
-      if (!setlistTd) {
-        setlistTd = document.createElement("td");
-        setlistTd.className = "se-setlist-col";
-        // Insertar justo antes de la última celda ("Info")
-        const lastTd = cells[cells.length - 1];
-        row.insertBefore(setlistTd, lastTd);
       }
 
-      const json = setlistByConcertId[concertId] || "";
-      const hasSetlist = !!(json && json.trim());
-      const btn = document.createElement("button");
-      btn.className = "se-setlist-btn" + (hasSetlist ? "" : " empty");
-      btn.title = hasSetlist ? "Ver setlist de este concierto" : "Sin setlist vinculado";
-      btn.textContent = "🎵";
-      btn.onclick = (ev) => {
-        ev.stopPropagation();
-        window.openConcertSetlistModal(eventTitleFromCell, dateCellFullText, json);
-      };
-      setlistTd.innerHTML = "";
-      setlistTd.appendChild(btn);
-    });
+      const rows = table.querySelectorAll("tbody tr");
+      rows.forEach((row) => {
+        const cells = row.cells;
+        if (cells.length < 3) return;
+        const dateCellFullText = (cells[0]?.textContent || "").trim();
+        const eventTitleFromCell = ((cells[1]?.textContent || "").trim().split("\n")[0] || "").trim();
+        const dateForId = dateCellFullText.split(",")[0].trim();
+        let concertId = "";
+        try {
+          if (window.sanitizeFirebaseKey) {
+            concertId = window.sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
+          }
+        } catch (_) {}
+
+        let setlistTd = row.querySelector("td.se-setlist-col");
+        if (!setlistTd) {
+          setlistTd = document.createElement("td");
+          setlistTd.className = "se-setlist-col";
+          const lastTd = cells[cells.length - 1];
+          if (lastTd) row.insertBefore(setlistTd, lastTd);
+          else row.appendChild(setlistTd);
+        }
+
+        const json = setlistByConcertId[concertId] || "";
+        const hasSetlist = !!(json && json.trim());
+
+        const prevState = setlistTd.dataset.hasSetlist || "";
+        const newState = hasSetlist ? "1" : "0";
+        if (prevState === newState && setlistTd.querySelector("button")) return;
+        setlistTd.dataset.hasSetlist = newState;
+
+        const btn = document.createElement("button");
+        btn.className = "se-setlist-btn" + (hasSetlist ? "" : " empty");
+        btn.title = hasSetlist ? "Ver setlist de este concierto" : "Sin setlist vinculado";
+        btn.textContent = "🎵";
+        btn.onclick = (ev) => {
+          ev.stopPropagation();
+          window.openConcertSetlistModal(eventTitleFromCell, dateCellFullText, json);
+        };
+        setlistTd.innerHTML = "";
+        setlistTd.appendChild(btn);
+      });
+    } catch (e) {
+      console.warn("[setlist-extension] refreshSetlistColumn error:", e);
+    } finally {
+      try {
+        if (bandhelperObserver) {
+          const c2 = document.getElementById("bandhelper-concerts-container");
+          if (c2) bandhelperObserver.observe(c2, { childList: true, subtree: true });
+        }
+      } catch (_) {}
+      refreshing = false;
+    }
   }
 
   function watchBandHelperTable() {
     const container = document.getElementById("bandhelper-concerts-container");
     if (!container) return;
-    const obs = new MutationObserver(() => {
-      // Cuando calendario.js inyecte/actualice la tabla, añadimos la columna
-      refreshSetlistColumn();
-    });
-    obs.observe(container, { childList: true, subtree: true });
-    // Y por si acaso, refrescos periódicos suaves los primeros segundos
-    setTimeout(refreshSetlistColumn, 1500);
-    setTimeout(refreshSetlistColumn, 3500);
-    setTimeout(refreshSetlistColumn, 6000);
+    try {
+      bandhelperObserver = new MutationObserver(() => scheduleRefresh());
+      bandhelperObserver.observe(container, { childList: true, subtree: true });
+    } catch (e) {
+      console.warn("[setlist-extension] no observer:", e);
+    }
+    setTimeout(scheduleRefresh, 2000);
+    setTimeout(scheduleRefresh, 5000);
+    setTimeout(scheduleRefresh, 10000);
   }
 
   // ============================================================
-  // 8. INYECTAR CAMPO "JSON DEL SETLIST" EN MODAL DE CONCIERTO
-  //    + hook al botón "Guardar Detalles" para persistirlo
+  // 8. CAMPO JSON EN MODAL DE CONCIERTO
   // ============================================================
   function injectJsonFieldInConcertModal() {
     const modal = document.getElementById("concert-details-modal");
     if (!modal) return;
-    if (modal.querySelector(".se-json-block")) return; // ya inyectado
+    if (modal.querySelector(".se-json-block")) return;
 
     const block = document.createElement("div");
     block.className = "se-json-block";
@@ -524,87 +484,80 @@
       <p class="se-json-status empty" id="se-concert-setlist-json-status">Sin JSON guardado.</p>
     `;
 
-    // Lo colocamos justo antes del botón "Guardar Detalles"
     const saveBtn = document.getElementById("save-concert-details");
     if (saveBtn && saveBtn.parentNode) {
       saveBtn.parentNode.insertBefore(block, saveBtn);
     } else {
-      // Fallback: al final del modal-content
       const content = modal.querySelector(".modal-content") || modal;
       content.appendChild(block);
     }
 
-    // Validación visual al editar
     const ta = document.getElementById("se-concert-setlist-json");
     const status = document.getElementById("se-concert-setlist-json-status");
-    ta.addEventListener("input", () => {
-      const v = ta.value.trim();
-      if (!v) { status.className = "se-json-status empty"; status.textContent = "Sin JSON. Se mostrará 'No se ha encontrado ningún setlist'."; return; }
-      try {
-        const parsed = JSON.parse(v);
-        const items = Array.isArray(parsed) ? parsed : (parsed.items || []);
-        const songs = items.filter(it => it && it.type === "song").length;
-        status.className = "se-json-status ok";
-        status.textContent = `✓ JSON válido (${songs} canciones detectadas).`;
-      } catch (e) {
-        status.className = "se-json-status err";
-        status.textContent = "✗ JSON inválido: " + (e.message || "error de sintaxis");
-      }
-    });
+    if (ta && status) {
+      ta.addEventListener("input", () => {
+        const v = ta.value.trim();
+        if (!v) { status.className = "se-json-status empty"; status.textContent = "Sin JSON. Se mostrará 'No se ha encontrado ningún setlist'."; return; }
+        try {
+          const parsed = JSON.parse(v);
+          const items = Array.isArray(parsed) ? parsed : (parsed.items || []);
+          const songs = items.filter(it => it && it.type === "song").length;
+          status.className = "se-json-status ok";
+          status.textContent = `✓ JSON válido (${songs} canciones detectadas).`;
+        } catch (e) {
+          status.className = "se-json-status err";
+          status.textContent = "✗ JSON inválido: " + (e.message || "error de sintaxis");
+        }
+      });
+    }
   }
 
-  /**
-   * Cuando se abre el modal del concierto, leemos el JSON guardado
-   * en concert_details/{concertId} y lo pintamos.
-   */
   function onConcertModalOpen() {
-    const modal = document.getElementById("concert-details-modal");
-    if (!modal || !modal.classList.contains("show")) return;
-    injectJsonFieldInConcertModal();
-    const idEl = document.getElementById("concert-detail-id");
-    const ta = document.getElementById("se-concert-setlist-json");
-    const status = document.getElementById("se-concert-setlist-json-status");
-    if (!idEl || !ta) return;
-    const id = idEl.value;
-    const json = setlistByConcertId[id] || "";
-    ta.value = json;
-    if (!json) {
-      status.className = "se-json-status empty";
-      status.textContent = "Sin JSON. Se mostrará 'No se ha encontrado ningún setlist'.";
-    } else {
-      // Validar para feedback inmediato
-      try {
-        const parsed = JSON.parse(json);
-        const items = Array.isArray(parsed) ? parsed : (parsed.items || []);
-        const songs = items.filter(it => it && it.type === "song").length;
-        status.className = "se-json-status ok";
-        status.textContent = `✓ JSON cargado (${songs} canciones).`;
-      } catch (_) {
-        status.className = "se-json-status err";
-        status.textContent = "✗ JSON guardado no es válido.";
+    safeRun(() => {
+      const modal = document.getElementById("concert-details-modal");
+      if (!modal || !modal.classList.contains("show")) return;
+      injectJsonFieldInConcertModal();
+      const idEl = document.getElementById("concert-detail-id");
+      const ta = document.getElementById("se-concert-setlist-json");
+      const status = document.getElementById("se-concert-setlist-json-status");
+      if (!idEl || !ta) return;
+      const id = idEl.value;
+      const json = setlistByConcertId[id] || "";
+      ta.value = json;
+      if (status) {
+        if (!json) {
+          status.className = "se-json-status empty";
+          status.textContent = "Sin JSON. Se mostrará 'No se ha encontrado ningún setlist'.";
+        } else {
+          try {
+            const parsed = JSON.parse(json);
+            const items = Array.isArray(parsed) ? parsed : (parsed.items || []);
+            const songs = items.filter(it => it && it.type === "song").length;
+            status.className = "se-json-status ok";
+            status.textContent = `✓ JSON cargado (${songs} canciones).`;
+          } catch (_) {
+            status.className = "se-json-status err";
+            status.textContent = "✗ JSON guardado no es válido.";
+          }
+        }
       }
-    }
+    }, "onConcertModalOpen");
   }
 
   function watchConcertModal() {
     const modal = document.getElementById("concert-details-modal");
     if (!modal) return;
-    // Inyectar de inmediato (no destruye nada si se llama varias veces)
-    injectJsonFieldInConcertModal();
-    const obs = new MutationObserver(() => {
-      if (modal.classList.contains("show")) onConcertModalOpen();
-    });
-    obs.observe(modal, { attributes: true, attributeFilter: ["class"] });
+    safeRun(injectJsonFieldInConcertModal, "injectJsonField");
+    try {
+      const obs = new MutationObserver(() => {
+        if (modal.classList.contains("show")) onConcertModalOpen();
+      });
+      obs.observe(modal, { attributes: true, attributeFilter: ["class"] });
+    } catch (e) {
+      console.warn("[setlist-extension] modal observer error:", e);
+    }
   }
 
-  /**
-   * Hook al botón "Guardar Detalles": cuando el usuario lo pulse,
-   * guardamos también el JSON del setlist en el documento de Firestore
-   * concert_details/{concertId}, sin tocar el resto del flujo original.
-   *
-   * Importante: dejamos que la lógica original guarde primero todo
-   * (locationDetails, attendees, etc.). Después fusionamos el JSON.
-   */
   function hookSaveButton() {
     const saveBtn = document.getElementById("save-concert-details");
     if (!saveBtn || saveBtn.dataset.seHooked === "1") return;
@@ -619,33 +572,27 @@
         if (!id) return;
         const json = ta.value.trim();
 
-        // Usar el mismo helper que setlists.js usa
         if (typeof window.saveDoc === "function") {
-          // merge:true para no sobreescribir lo que acaba de guardar saveConcertDetailsLogic
           await window.saveDoc("concert_details", id, { setlistJson: json }, true);
         } else if (typeof db !== "undefined") {
           await db.collection("concert_details").doc(id).set({ setlistJson: json }, { merge: true });
         }
         setlistByConcertId[id] = json;
-        refreshSetlistColumn();
+        scheduleRefresh();
       } catch (e) {
         console.warn("[setlist-extension] Error guardando JSON setlist:", e);
       }
-    }, true); // capture: true → se ejecuta a la vez que el listener original
+    }, true);
   }
 
   // ============================================================
-  // 8.bis  EXPORTACIONES PARA OTROS MÓDULOS (zona privada, etc.)
+  // 8.bis  EXPORTACIONES
   // ============================================================
   window.SE = window.SE || {};
   window.SE.parseBandhelperJson    = parseBandhelperJson;
   window.SE.renderSetlistTableInto = renderSetlistTableInto;
   window.SE.toHHMM                 = toHHMM;
   window.SE.toMMSS                 = toMMSS;
-  /**
-   * Descarga + parsea + renderiza un setlist desde una URL feed BandHelper
-   * dentro del elemento parentEl. Devuelve { totalSeconds, items, error }.
-   */
   window.SE.renderFromFeedUrl = async function (parentEl, feedUrl, opts = {}) {
     if (!parentEl) return { error: "no-parent" };
     parentEl.innerHTML = `<div style="text-align:center;color:#aaa;padding:20px;">⌛ Cargando setlist...</div>`;
@@ -686,20 +633,31 @@
   };
 
   // ============================================================
-  // 9. INIT
+  // 9. INIT — DEFENSIVO: espera 2.5s tras carga completa para
+  //    no competir con la inicialización del index.html
   // ============================================================
   function init() {
-    injectStyles();
-    ensureSetlistModal();
-    watchConcertModal();
-    hookSaveButton();
-    watchBandHelperTable();
-    attachSetlistListener();
+    safeRun(injectStyles, "injectStyles");
+    safeRun(ensureSetlistModal, "ensureSetlistModal");
+    safeRun(watchConcertModal, "watchConcertModal");
+    safeRun(hookSaveButton, "hookSaveButton");
+    safeRun(watchBandHelperTable, "watchBandHelperTable");
+    safeRun(attachSetlistListener, "attachSetlistListener");
+
+    // Reintentos espaciados para Firebase si aún no estaba listo
+    const tryFirebase = (delay) => setTimeout(() => safeRun(attachSetlistListener, "attachListenerLate"), delay);
+    tryFirebase(2000);
+    tryFirebase(5000);
+    tryFirebase(10000);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
+  function startWhenReady() {
+    // Esperar 2.5s tras el "load" completo de la página para no
+    // interferir con el splash, la carga de Firebase, etc.
+    const deferred = () => setTimeout(() => safeRun(init, "init"), 2500);
+    if (document.readyState === "complete") deferred();
+    else window.addEventListener("load", deferred, { once: true });
   }
+
+  startWhenReady();
 })();
