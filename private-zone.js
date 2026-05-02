@@ -822,186 +822,207 @@
     }, { merge: true });
   }
 
-  // ============== EVENT HANDLERS ==============
+  // ============== EVENT HANDLERS (defensivo) ==============
+  // Helper: envuelve callbacks en try/catch para que NUNCA rompan la página
+  function _safe(fn, label) {
+    try { return fn(); }
+    catch (e) { console.warn('[private-zone] ' + (label || 'err') + ':', e && e.message); return null; }
+  }
+  function _on(elId, evt, handler) {
+    const el = document.getElementById(elId);
+    if (!el) { console.warn('[private-zone] elemento no encontrado:', elId); return; }
+    el.addEventListener(evt, handler);
+  }
+
   function setupEventHandlers() {
-    // Login
-    const loginBtn = document.getElementById('pz-login-submit');
-    const userInp  = document.getElementById('pz-username');
-    const passInp  = document.getElementById('pz-password');
-    const remInp   = document.getElementById('pz-remember');
+    _safe(() => {
+      // Login
+      const loginBtn = document.getElementById('pz-login-submit');
+      const userInp  = document.getElementById('pz-username');
+      const passInp  = document.getElementById('pz-password');
+      const remInp   = document.getElementById('pz-remember');
 
-    async function handleLogin() {
-      const u = userInp.value, p = passInp.value;
-      if (!u || !p) { showMsg('pz-login-msg', 'Usuario y contraseña requeridos.', true); return; }
-      loginBtn.disabled = true;
-      try {
-        const result = await attemptLogin(u, p);
-        if (!result) {
-          showMsg('pz-login-msg', 'Credenciales incorrectas.', true);
-        } else {
-          if (result._bootstrap) {
-            // Crear el primer usuario admin
-            await bootstrapFirstUser(p);
-            showMsg('pz-login-msg', 'Primer admin creado. Bienvenido.', false);
+      async function handleLogin() {
+        if (!userInp || !passInp) return;
+        const u = userInp.value, p = passInp.value;
+        if (!u || !p) { showMsg('pz-login-msg', 'Usuario y contraseña requeridos.', true); return; }
+        if (loginBtn) loginBtn.disabled = true;
+        try {
+          const result = await attemptLogin(u, p);
+          if (!result) {
+            showMsg('pz-login-msg', 'Credenciales incorrectas.', true);
+          } else {
+            if (result._bootstrap) {
+              await bootstrapFirstUser(p);
+              showMsg('pz-login-msg', 'Primer admin creado. Bienvenido.', false);
+            }
+            saveAuth({ username: result.username, isAdmin: result.isAdmin }, remInp ? remInp.checked : true);
+            passInp.value = '';
+            renderUI();
           }
-          saveAuth({ username: result.username, isAdmin: result.isAdmin }, remInp.checked);
-          passInp.value = '';
-          renderUI();
+        } catch (e) {
+          showMsg('pz-login-msg', 'Error: ' + e.message, true);
+        } finally {
+          if (loginBtn) loginBtn.disabled = false;
         }
-      } catch (e) {
-        showMsg('pz-login-msg', 'Error: ' + e.message, true);
-      } finally {
-        loginBtn.disabled = false;
       }
-    }
-    loginBtn.addEventListener('click', handleLogin);
-    [userInp, passInp].forEach(inp => {
-      inp.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
-    });
-
-    // Logout
-    document.getElementById('pz-logout-btn').addEventListener('click', () => {
-      if (confirm('¿Cerrar sesión de la zona privada?')) logout();
-    });
-
-    // Tabs
-    document.querySelectorAll('.pz-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        const target = tab.dataset.tab;
-        document.querySelectorAll('.pz-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        document.querySelectorAll('.pz-tab-content').forEach(c => c.classList.remove('active'));
-        const content = document.querySelector(`[data-tab-content="${target}"]`);
-        if (content) content.classList.add('active');
+      if (loginBtn) loginBtn.addEventListener('click', handleLogin);
+      [userInp, passInp].forEach(inp => {
+        if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
       });
-    });
 
-    // Click delegation en zona-privada
-    document.getElementById('zona-privada').addEventListener('click', async (e) => {
-      const btn = e.target.closest('[data-action]');
-      if (!btn) return;
-      const action = btn.dataset.action;
-      const id = btn.dataset.id;
-      try {
-        if (action === 'toggle-setlist') {
-          const songsBox = document.getElementById('pz-songs-' + id);
-          songsBox.classList.toggle('show');
-          if (songsBox.classList.contains('show')) {
-            await ensureSetlistLoaded(id);
+      // Logout
+      _on('pz-logout-btn', 'click', () => {
+        if (confirm('¿Cerrar sesión de la zona privada?')) logout();
+      });
+
+      // Tabs
+      document.querySelectorAll('.pz-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const target = tab.dataset.tab;
+          document.querySelectorAll('.pz-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          document.querySelectorAll('.pz-tab-content').forEach(c => c.classList.remove('active'));
+          const content = document.querySelector(`[data-tab-content="${target}"]`);
+          if (content) content.classList.add('active');
+        });
+      });
+
+      // Click delegation en zona-privada
+      const zona = document.getElementById('zona-privada');
+      if (zona) {
+        zona.addEventListener('click', async (e) => {
+          const btn = e.target.closest('[data-action]');
+          if (!btn) return;
+          const action = btn.dataset.action;
+          const id = btn.dataset.id;
+          try {
+            if (action === 'toggle-setlist') {
+              const songsBox = document.getElementById('pz-songs-' + id);
+              if (!songsBox) return;
+              songsBox.classList.toggle('show');
+              if (songsBox.classList.contains('show')) {
+                await ensureSetlistLoaded(id);
+              }
+            } else if (action === 'edit-setlist') {
+              openSetlistModal(id);
+            } else if (action === 'delete-setlist') {
+              await deleteSetlist(id);
+            } else if (action === 'edit-event') {
+              openEventModal(id);
+            } else if (action === 'delete-event') {
+              await deleteEvent(id);
+            } else if (action === 'change-pwd') {
+              openPasswordModal(id, btn.dataset.username);
+            } else if (action === 'toggle-admin') {
+              await toggleAdmin(id);
+            } else if (action === 'delete-user') {
+              await deleteUser(id, btn.dataset.username);
+            }
+          } catch (err) {
+            alert('Error: ' + err.message);
           }
-        } else if (action === 'edit-setlist') {
-          openSetlistModal(id);
-        } else if (action === 'delete-setlist') {
-          await deleteSetlist(id);
-        } else if (action === 'edit-event') {
-          openEventModal(id);
-        } else if (action === 'delete-event') {
-          await deleteEvent(id);
-        } else if (action === 'change-pwd') {
-          openPasswordModal(id, btn.dataset.username);
-        } else if (action === 'toggle-admin') {
-          await toggleAdmin(id);
-        } else if (action === 'delete-user') {
-          await deleteUser(id, btn.dataset.username);
-        }
-      } catch (err) {
-        alert('Error: ' + err.message);
+        });
       }
-    });
 
-    // Botones globales
-    document.getElementById('pz-btn-new-setlist').addEventListener('click', () => openSetlistModal(null));
-    document.getElementById('pz-btn-new-event').addEventListener('click', () => openEventModal(null));
+      // Botones globales
+      _on('pz-btn-new-setlist', 'click', () => openSetlistModal(null));
+      _on('pz-btn-new-event', 'click', () => openEventModal(null));
 
-    // Notas
-    document.getElementById('pz-notes-save').addEventListener('click', async () => {
-      try {
-        await saveSharedNotes(document.getElementById('pz-notes-textarea').value);
-        showMsg('pz-notes-info', 'Guardado ✓', false);
-      } catch (e) { alert('Error: ' + e.message); }
-    });
-
-    // Admin: crear usuario
-    document.getElementById('pz-add-user-btn').addEventListener('click', async () => {
-      const u = document.getElementById('pz-new-user').value;
-      const p = document.getElementById('pz-new-pass').value;
-      const a = document.getElementById('pz-new-admin').checked;
-      try {
-        await addUser(u, p, a);
-        document.getElementById('pz-new-user').value = '';
-        document.getElementById('pz-new-pass').value = '';
-        document.getElementById('pz-new-admin').checked = false;
-        showMsg('pz-admin-msg', 'Usuario creado ✓', false);
-      } catch (e) {
-        showMsg('pz-admin-msg', e.message, true);
-      }
-    });
-
-    // Modales: setlist
-    document.getElementById('pz-setlist-cancel').addEventListener('click', () => closeModal('pz-modal-setlist'));
-    document.getElementById('pz-setlist-save').addEventListener('click', async () => {
-      try {
-        const id = document.getElementById('pz-setlist-id').value;
-        await saveSetlist(
-          id || null,
-          document.getElementById('pz-setlist-name').value,
-          document.getElementById('pz-setlist-desc').value,
-          document.getElementById('pz-setlist-feed-url').value
-        );
-        closeModal('pz-modal-setlist');
-      } catch (e) { alert('Error: ' + e.message); }
-    });
-
-    // Modales: evento
-    document.getElementById('pz-event-cancel').addEventListener('click', () => closeModal('pz-modal-event'));
-    document.getElementById('pz-event-save').addEventListener('click', async () => {
-      try {
-        const id = document.getElementById('pz-event-id').value;
-        await saveEvent(
-          id || null,
-          document.getElementById('pz-event-name').value,
-          document.getElementById('pz-event-date').value,
-          document.getElementById('pz-event-location').value,
-          document.getElementById('pz-event-notes').value
-        );
-        closeModal('pz-modal-event');
-      } catch (e) { alert('Error: ' + e.message); }
-    });
-
-    // Modal: cambio de contraseña
-    document.getElementById('pz-pwd-cancel').addEventListener('click', () => closeModal('pz-modal-password'));
-    document.getElementById('pz-pwd-save').addEventListener('click', async () => {
-      try {
-        const id = document.getElementById('pz-pwd-userid').value;
-        const newPwd = document.getElementById('pz-pwd-new').value;
-        await changeUserPassword(id, newPwd);
-        closeModal('pz-modal-password');
-        alert('Contraseña actualizada.');
-      } catch (e) { alert('Error: ' + e.message); }
-    });
-
-    // Cerrar modales pulsando el backdrop
-    document.querySelectorAll('.pz-modal-backdrop').forEach(bd => {
-      bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('show'); });
-    });
-
-    // Enlace del menú lateral: cierra sidebar y hace scroll
-    const menuLink = document.getElementById('menu-zona-privada');
-    if (menuLink) {
-      menuLink.addEventListener('click', e => {
-        e.preventDefault();
-        // Reusar la lógica de cerrar menú existente
-        document.getElementById('sidebar-menu').classList.remove('show');
-        document.getElementById('overlay').classList.remove('show');
-        document.body.style.overflow = '';
-        // Mostrar y hacer scroll
-        const target = document.getElementById('zona-privada');
-        target.classList.add('show');
-        const headerOffset = (document.querySelector('header')?.offsetHeight || 60);
-        const top = target.getBoundingClientRect().top + window.pageYOffset - headerOffset - 10;
-        window.scrollTo({ top, behavior: 'smooth' });
+      // Notas
+      _on('pz-notes-save', 'click', async () => {
+        try {
+          const ta = document.getElementById('pz-notes-textarea');
+          await saveSharedNotes(ta ? ta.value : '');
+          showMsg('pz-notes-info', 'Guardado ✓', false);
+        } catch (e) { alert('Error: ' + e.message); }
       });
-    }
+
+      // Admin: crear usuario
+      _on('pz-add-user-btn', 'click', async () => {
+        try {
+          const u = document.getElementById('pz-new-user')?.value;
+          const p = document.getElementById('pz-new-pass')?.value;
+          const a = document.getElementById('pz-new-admin')?.checked;
+          await addUser(u, p, a);
+          const userF = document.getElementById('pz-new-user'); if (userF) userF.value = '';
+          const passF = document.getElementById('pz-new-pass'); if (passF) passF.value = '';
+          const adminF = document.getElementById('pz-new-admin'); if (adminF) adminF.checked = false;
+          showMsg('pz-admin-msg', 'Usuario creado ✓', false);
+        } catch (e) {
+          showMsg('pz-admin-msg', e.message, true);
+        }
+      });
+
+      // Modales: setlist
+      _on('pz-setlist-cancel', 'click', () => closeModal('pz-modal-setlist'));
+      _on('pz-setlist-save', 'click', async () => {
+        try {
+          const id = document.getElementById('pz-setlist-id')?.value;
+          await saveSetlist(
+            id || null,
+            document.getElementById('pz-setlist-name')?.value || '',
+            document.getElementById('pz-setlist-desc')?.value || '',
+            document.getElementById('pz-setlist-feed-url')?.value || ''
+          );
+          closeModal('pz-modal-setlist');
+        } catch (e) { alert('Error: ' + e.message); }
+      });
+
+      // Modales: evento
+      _on('pz-event-cancel', 'click', () => closeModal('pz-modal-event'));
+      _on('pz-event-save', 'click', async () => {
+        try {
+          const id = document.getElementById('pz-event-id')?.value;
+          await saveEvent(
+            id || null,
+            document.getElementById('pz-event-name')?.value || '',
+            document.getElementById('pz-event-date')?.value || '',
+            document.getElementById('pz-event-location')?.value || '',
+            document.getElementById('pz-event-notes')?.value || ''
+          );
+          closeModal('pz-modal-event');
+        } catch (e) { alert('Error: ' + e.message); }
+      });
+
+      // Modal: cambio de contraseña
+      _on('pz-pwd-cancel', 'click', () => closeModal('pz-modal-password'));
+      _on('pz-pwd-save', 'click', async () => {
+        try {
+          const id = document.getElementById('pz-pwd-userid')?.value;
+          const newPwd = document.getElementById('pz-pwd-new')?.value;
+          await changeUserPassword(id, newPwd);
+          closeModal('pz-modal-password');
+          alert('Contraseña actualizada.');
+        } catch (e) { alert('Error: ' + e.message); }
+      });
+
+      // Cerrar modales pulsando el backdrop
+      document.querySelectorAll('.pz-modal-backdrop').forEach(bd => {
+        bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('show'); });
+      });
+
+      // Enlace del menú lateral: cierra sidebar y hace scroll
+      const menuLink = document.getElementById('menu-zona-privada');
+      if (menuLink) {
+        menuLink.addEventListener('click', e => {
+          e.preventDefault();
+          const sb = document.getElementById('sidebar-menu');
+          const ov = document.getElementById('overlay');
+          if (sb) sb.classList.remove('show');
+          if (ov) ov.classList.remove('show');
+          // Restauramos overflow por si el menú original lo cambió
+          document.body.style.overflow = '';
+          const target = document.getElementById('zona-privada');
+          if (target) {
+            target.classList.add('show');
+            const headerOffset = (document.querySelector('header')?.offsetHeight || 60);
+            const top = target.getBoundingClientRect().top + window.pageYOffset - headerOffset - 10;
+            window.scrollTo({ top, behavior: 'smooth' });
+          }
+        });
+      }
+    }, 'setupEventHandlers');
   }
 
   function openModal(id) {
@@ -1056,24 +1077,34 @@
     openModal('pz-modal-password');
   }
 
-  // ============== INIT ==============
+  // ============== INIT (defensivo) ==============
+  let _initialized = false;
   function init() {
-    if (typeof firebase === 'undefined') {
-      // Aún cargando Firebase, esperar un poco
-      setTimeout(init, 300);
-      return;
+    if (_initialized) return;
+    // No bloqueamos si Firebase aún no está listo. Lo verificamos solo
+    // cuando el usuario intenta hacer login. Así NUNCA rompemos la página.
+    _initialized = true;
+    _safe(injectStyles, 'injectStyles');
+    _safe(injectHtml, 'injectHtml');
+    _safe(loadStoredAuth, 'loadStoredAuth');
+    _safe(setupEventHandlers, 'setupEventHandlers');
+    _safe(renderUI, 'renderUI');
+    if (currentUser) {
+      // Esperar a que Firebase exista antes de adjuntar listeners
+      const tryAttach = (delay) => setTimeout(() => _safe(attachListeners, 'attachListeners'), delay);
+      tryAttach(0);
+      tryAttach(2000);
+      tryAttach(5000);
     }
-    injectStyles();
-    injectHtml();
-    loadStoredAuth();
-    setupEventHandlers();
-    renderUI();
-    if (currentUser) attachListeners();
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+  function _start() {
+    // Nos enganchamos al "load" + 3.5s para que el splash, Firebase,
+    // setlists.js, calendario.js y todo lo del index estén ya configurados.
+    const deferred = () => setTimeout(() => _safe(init, 'init'), 3500);
+    if (document.readyState === 'complete') deferred();
+    else window.addEventListener('load', deferred, { once: true });
   }
+
+  _start();
 })();
