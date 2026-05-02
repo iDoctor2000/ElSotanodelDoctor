@@ -410,13 +410,14 @@
           <input type="text" id="pz-setlist-name" placeholder="Ej: Acústico Sala X">
           <label>Descripción / Notas</label>
           <textarea id="pz-setlist-desc" placeholder="Detalles del concierto, fecha, lugar..."></textarea>
-          <label>Canciones (una por línea)</label>
+          <label>URL del feed BandHelper</label>
           <p style="color:#888; font-size:0.8em; margin:0 0 5px 0;">
-            Formato sugerido: <code>Título | Tonalidad | BPM | Notas</code> (separado por | ).
-            Solo el título es obligatorio.
+            Pega la URL completa del feed (igual que en los setlists públicos).
+            Ejemplo: <code>https://www.bandhelper.com/feed/set_list/123456</code>
           </p>
-          <textarea id="pz-setlist-songs" style="min-height:200px; font-family:monospace;"
-            placeholder="Black Magic Woman | Am | 122 | Empezar suave&#10;Sultans of Swing | D | 148&#10;Wonderwall"></textarea>
+          <input type="url" id="pz-setlist-feed-url"
+                 placeholder="https://www.bandhelper.com/feed/set_list/..."
+                 style="width:100%; font-family:monospace; font-size:.9em;">
           <div class="pz-modal-actions">
             <button class="pz-btn pz-btn-secondary" id="pz-setlist-cancel">Cancelar</button>
             <button class="pz-btn" id="pz-setlist-save">Guardar</button>
@@ -601,34 +602,49 @@
     }
     const isAdmin = currentUser && currentUser.isAdmin;
     container.innerHTML = privateSetlists.map(sl => {
-      const songsHtml = (sl.songs || []).map((s, i) => `
-        <tr>
-          <td style="text-align:center; color:#888; width:30px;">${i + 1}</td>
-          <td>${escapeHtml(s.title)}</td>
-          <td style="text-align:center; width:60px;">${escapeHtml(s.key || '-')}</td>
-          <td style="text-align:center; width:60px;">${escapeHtml(s.tempo || '-')}</td>
-          <td style="color:#aaa; font-size:0.85em;">${escapeHtml(s.notes || '')}</td>
-        </tr>`).join('');
       const adminBtns = isAdmin ? `
         <button class="pz-btn" data-action="edit-setlist" data-id="${sl.id}">Editar</button>
         <button class="pz-btn pz-btn-danger" data-action="delete-setlist" data-id="${sl.id}">Eliminar</button>
       ` : '';
+      const hasUrl = !!(sl.feedUrl && sl.feedUrl.trim());
+      const subtitle = sl.description
+        ? `<div class="pz-setlist-card-meta">${escapeHtml(sl.description)}</div>`
+        : '';
+      const urlMeta = hasUrl
+        ? `<div class="pz-setlist-card-meta" style="color:#6f6;">✓ Feed BandHelper configurado</div>`
+        : `<div class="pz-setlist-card-meta" style="color:#f88;">⚠️ Sin URL de feed BandHelper</div>`;
       return `
         <div class="pz-setlist-card">
           <div class="pz-setlist-card-header" data-action="toggle-setlist" data-id="${sl.id}">
             <div>
               <div class="pz-setlist-card-title">${escapeHtml(sl.name)}</div>
-              ${sl.description ? `<div class="pz-setlist-card-meta">${escapeHtml(sl.description)}</div>` : ''}
-              <div class="pz-setlist-card-meta">${(sl.songs || []).length} canciones</div>
+              ${subtitle}
+              ${urlMeta}
             </div>
             <div style="color:#FFD700;">▼</div>
           </div>
           <div class="pz-setlist-songs" id="pz-songs-${sl.id}">
-            ${songsHtml ? `<table><thead><tr><th>#</th><th>Canción</th><th>Tono</th><th>BPM</th><th>Notas</th></tr></thead><tbody>${songsHtml}</tbody></table>` : '<p class="pz-empty">Sin canciones</p>'}
+            <div class="pz-setlist-render" id="pz-render-${sl.id}" data-feed-url="${escapeHtml(sl.feedUrl || '')}" data-loaded="0">
+              <p class="pz-empty">Pulsa la cabecera para cargar el setlist.</p>
+            </div>
             <div class="pz-setlist-actions">${adminBtns}</div>
           </div>
         </div>`;
     }).join('');
+  }
+
+  // Cargar el setlist en su contenedor (la primera vez que se abre)
+  async function ensureSetlistLoaded(id) {
+    const renderEl = document.getElementById('pz-render-' + id);
+    if (!renderEl) return;
+    if (renderEl.dataset.loaded === '1') return;
+    const url = renderEl.dataset.feedUrl || '';
+    if (window.SE && typeof window.SE.renderFromFeedUrl === 'function') {
+      await window.SE.renderFromFeedUrl(renderEl, url, { appendTotal: true });
+    } else {
+      renderEl.innerHTML = '<p class="pz-empty" style="color:#f88;">El módulo setlist-extension.js no está cargado.</p>';
+    }
+    renderEl.dataset.loaded = '1';
   }
 
   function renderEvents() {
@@ -751,13 +767,13 @@
     }).join('\n');
   }
 
-  async function saveSetlist(id, name, description, songsText) {
+  async function saveSetlist(id, name, description, feedUrl) {
     const db = getDb();
     if (!name.trim()) throw new Error('El nombre es obligatorio.');
     const data = {
       name: name.trim(),
       description: description.trim(),
-      songs: parseSongsText(songsText),
+      feedUrl: (feedUrl || '').trim(),
       updatedAt: Date.now(),
       updatedBy: currentUser.username
     };
@@ -868,7 +884,11 @@
       const id = btn.dataset.id;
       try {
         if (action === 'toggle-setlist') {
-          document.getElementById('pz-songs-' + id).classList.toggle('show');
+          const songsBox = document.getElementById('pz-songs-' + id);
+          songsBox.classList.toggle('show');
+          if (songsBox.classList.contains('show')) {
+            await ensureSetlistLoaded(id);
+          }
         } else if (action === 'edit-setlist') {
           openSetlistModal(id);
         } else if (action === 'delete-setlist') {
@@ -926,7 +946,7 @@
           id || null,
           document.getElementById('pz-setlist-name').value,
           document.getElementById('pz-setlist-desc').value,
-          document.getElementById('pz-setlist-songs').value
+          document.getElementById('pz-setlist-feed-url').value
         );
         closeModal('pz-modal-setlist');
       } catch (e) { alert('Error: ' + e.message); }
@@ -999,12 +1019,12 @@
       if (sl) {
         document.getElementById('pz-setlist-name').value = sl.name || '';
         document.getElementById('pz-setlist-desc').value = sl.description || '';
-        document.getElementById('pz-setlist-songs').value = songsToText(sl.songs);
+        document.getElementById('pz-setlist-feed-url').value = sl.feedUrl || '';
       }
     } else {
       document.getElementById('pz-setlist-name').value = '';
       document.getElementById('pz-setlist-desc').value = '';
-      document.getElementById('pz-setlist-songs').value = '';
+      document.getElementById('pz-setlist-feed-url').value = '';
     }
     openModal('pz-modal-setlist');
   }
