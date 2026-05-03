@@ -136,6 +136,73 @@
       .se-json-block .se-json-status.ok    { color: #6f6; }
       .se-json-block .se-json-status.err   { color: #f66; }
       .se-json-block .se-json-status.empty { color: #888; }
+
+      /* === IMPORTANTÍSIMO: el popup del metrónomo (#metronome-popup) tiene
+         z-index:2000 en index.html. Nuestro modal está a z-index:99000, así
+         que por defecto el popup quedaría DETRÁS del modal y parecería que
+         no funciona. Lo subimos por encima con !important. */
+      #metronome-popup { z-index: 100000 !important; }
+
+      /* === RESPONSIVE: tablas dentro de los modales del setlist ===
+         En móvil habilitamos scroll horizontal en lugar de cortar columnas. */
+      #se-concert-setlist-modal .table-wrapper,
+      #se-past-concerts-modal   .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+      }
+      #se-concert-setlist-modal table,
+      #se-past-concerts-modal   table {
+        min-width: 720px;     /* fuerza scroll en pantallas estrechas */
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      /* Las tablas de setlists de la zona privada también responsivas */
+      .pz-setlist-songs { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+      .pz-setlist-render { overflow-x: auto !important; -webkit-overflow-scrolling: touch; max-width: 100%; }
+      .pz-setlist-render .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+      .pz-setlist-render table { min-width: 720px !important; width: 100%; }
+
+      /* === Ajustes específicos para móviles pequeños === */
+      @media (max-width: 768px) {
+        #se-concert-setlist-modal { padding: 10px 4px; }
+        #se-past-concerts-modal   { padding: 10px 4px; }
+        #se-concert-setlist-modal .se-modal-box,
+        #se-past-concerts-modal   .se-modal-box {
+          padding: 14px 10px 18px;
+          border-radius: 10px;
+        }
+        #se-concert-setlist-modal h2,
+        #se-past-concerts-modal   h2 { font-size: 1.15em; }
+        #se-concert-setlist-modal .se-subtitle,
+        #se-past-concerts-modal   .se-subtitle { font-size: 0.85em; }
+        #se-concert-setlist-modal table th,
+        #se-concert-setlist-modal table td,
+        #se-past-concerts-modal   table th,
+        #se-past-concerts-modal   table td {
+          padding: 6px 4px; font-size: 0.85em;
+        }
+        #se-concert-setlist-modal .se-actions-bar { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+        #se-concert-setlist-modal .se-actions-bar button { font-size: 0.85em; padding: 7px 10px; }
+        /* Popup metrónomo en móvil ocupando casi toda la anchura */
+        #metronome-popup { right: 10px !important; left: 10px !important; width: auto !important; top: 65px !important; }
+      }
+      @media (max-width: 480px) {
+        #se-concert-setlist-modal table,
+        #se-past-concerts-modal   table { min-width: 620px; }
+      }
+
+      /* Indicador visual de scroll horizontal en móvil */
+      @media (max-width: 768px) {
+        #se-concert-setlist-modal .table-wrapper::after,
+        #se-past-concerts-modal   .table-wrapper::after,
+        .pz-setlist-render::after {
+          content: "← Desliza para ver más →";
+          display: block; text-align: center;
+          color: #888; font-size: 0.75em; padding: 4px 0; font-style: italic;
+        }
+      }
     `;
     const tag = document.createElement("style");
     tag.id = "se-styles";
@@ -275,7 +342,179 @@
       return `<td class="metronome-col"><button class="metronome-table-btn" title="Sin tempo definido">${svgIcon}</button></td>`;
     }
     const cleanTempo = match[0];
-    return `<td class="metronome-col"><button class="metronome-table-btn has-tempo" title="Tempo: ${cleanTempo} BPM" onclick="window.toggleMetronomeFromTable && window.toggleMetronomeFromTable('${cleanTempo}', this)">${svgIcon}</button></td>`;
+    // Llamamos a window.SE.toggleMetronome (siempre presente) que delega en
+    // window.toggleMetronomeFromTable si existe, o usa nuestro fallback.
+    return `<td class="metronome-col"><button class="metronome-table-btn has-tempo" title="Tempo: ${cleanTempo} BPM" onclick="window.SE && window.SE.toggleMetronome && window.SE.toggleMetronome('${cleanTempo}', this)">${svgIcon}</button></td>`;
+  }
+
+  // ============================================================
+  // 4.bis  METRÓNOMO — fallback autocontenido
+  // ------------------------------------------------------------
+  // Si metronome.js cargó correctamente expondrá window.toggleMetronomeFromTable
+  // (en el index original así funciona).  En cualquier otro caso (offline,
+  // 404, error en el script externo, etc.) usamos esta implementación que
+  // reutiliza el popup #metronome-popup ya presente en el DOM.
+  // ============================================================
+  const _metroState = {
+    audioCtx: null,
+    isPlaying: false,
+    timerId: null,
+    bpm: 120,
+    activeBtn: null,
+  };
+
+  function _ensureAudioCtx() {
+    if (_metroState.audioCtx) return _metroState.audioCtx;
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      _metroState.audioCtx = new Ctx();
+    } catch (_) { _metroState.audioCtx = null; }
+    return _metroState.audioCtx;
+  }
+
+  function _metroClick() {
+    const ctx = _ensureAudioCtx();
+    if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = 1000;
+      gain.gain.value = 0.4;
+      osc.connect(gain).connect(ctx.destination);
+      const now = ctx.currentTime;
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      osc.start(now);
+      osc.stop(now + 0.06);
+    } catch (_) {}
+  }
+
+  function _metroSetBpm(bpm) {
+    const v = Math.max(40, Math.min(240, parseInt(bpm, 10) || 120));
+    _metroState.bpm = v;
+    const display = document.getElementById("metro-bpm-val");
+    if (display) display.textContent = v;
+    const slider = document.getElementById("metro-bpm-slider");
+    if (slider) slider.value = v;
+  }
+
+  function _metroStart() {
+    if (_metroState.isPlaying) return;
+    _ensureAudioCtx();
+    if (_metroState.audioCtx && _metroState.audioCtx.state === "suspended") {
+      try { _metroState.audioCtx.resume(); } catch (_) {}
+    }
+    _metroState.isPlaying = true;
+    const intervalMs = 60000 / Math.max(1, _metroState.bpm);
+    _metroClick();
+    _metroState.timerId = setInterval(_metroClick, intervalMs);
+    const playBtn = document.getElementById("metro-play-btn");
+    if (playBtn) {
+      playBtn.classList.add("playing");
+      playBtn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>';
+    }
+    if (_metroState.activeBtn) _metroState.activeBtn.classList.add("active-metronome");
+  }
+
+  function _metroStop() {
+    _metroState.isPlaying = false;
+    if (_metroState.timerId) { clearInterval(_metroState.timerId); _metroState.timerId = null; }
+    const playBtn = document.getElementById("metro-play-btn");
+    if (playBtn) {
+      playBtn.classList.remove("playing");
+      playBtn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
+    }
+    document.querySelectorAll(".metronome-table-btn.active-metronome").forEach((b) => b.classList.remove("active-metronome"));
+    _metroState.activeBtn = null;
+  }
+
+  function _metroTogglePopup(visible) {
+    const popup = document.getElementById("metronome-popup");
+    if (!popup) return;
+    if (visible === undefined) popup.classList.toggle("visible");
+    else popup.classList.toggle("visible", !!visible);
+  }
+
+  // Conecta una sola vez los controles del popup (-, +, slider, play, tap).
+  function _wireMetronomePopupOnce() {
+    const popup = document.getElementById("metronome-popup");
+    if (!popup || popup.dataset.seWired === "1") return;
+    popup.dataset.seWired = "1";
+
+    const slider = document.getElementById("metro-bpm-slider");
+    const minus  = document.getElementById("metro-minus");
+    const plus   = document.getElementById("metro-plus");
+    const play   = document.getElementById("metro-play-btn");
+    const tap    = document.getElementById("metro-tap-btn");
+
+    if (slider) slider.addEventListener("input", (e) => {
+      const v = parseInt(e.target.value, 10) || 120;
+      _metroSetBpm(v);
+      if (_metroState.isPlaying) { _metroStop(); _metroStart(); }
+    });
+    if (minus) minus.addEventListener("click", () => {
+      _metroSetBpm(_metroState.bpm - 1);
+      if (_metroState.isPlaying) { _metroStop(); _metroStart(); }
+    });
+    if (plus) plus.addEventListener("click", () => {
+      _metroSetBpm(_metroState.bpm + 1);
+      if (_metroState.isPlaying) { _metroStop(); _metroStart(); }
+    });
+    if (play) play.addEventListener("click", () => {
+      if (_metroState.isPlaying) _metroStop(); else _metroStart();
+    });
+    // TAP tempo
+    let tapTimes = [];
+    if (tap) tap.addEventListener("click", () => {
+      const now = Date.now();
+      tapTimes.push(now);
+      if (tapTimes.length > 5) tapTimes.shift();
+      // Reset si han pasado >2s desde el último tap
+      tapTimes = tapTimes.filter(t => now - t < 2000);
+      if (tapTimes.length >= 2) {
+        const diffs = [];
+        for (let i = 1; i < tapTimes.length; i++) diffs.push(tapTimes[i] - tapTimes[i - 1]);
+        const avg = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+        const bpm = Math.round(60000 / avg);
+        _metroSetBpm(bpm);
+        if (_metroState.isPlaying) { _metroStop(); _metroStart(); }
+      }
+    });
+  }
+
+  // Implementación propia de toggleMetronomeFromTable (fallback)
+  function _ourToggleMetronomeFromTable(tempo, btn) {
+    _wireMetronomePopupOnce();
+    const bpm = parseInt(String(tempo).match(/\d+/)?.[0] || "120", 10);
+
+    // Si pulsamos sobre el mismo botón que ya está activo → parar
+    if (_metroState.activeBtn === btn && _metroState.isPlaying) {
+      _metroStop();
+      return;
+    }
+    // Si había otro tocando, lo paramos antes
+    if (_metroState.isPlaying) _metroStop();
+
+    _metroSetBpm(bpm);
+    _metroState.activeBtn = btn;
+    _metroTogglePopup(true);
+    _metroStart();
+  }
+
+  // Punto de entrada único usado por TODOS nuestros botones del setlist.
+  // Delega en metronome.js (window.toggleMetronomeFromTable) si existe;
+  // si no, usa nuestro fallback.
+  function toggleMetronomeUnified(tempo, btn) {
+    try {
+      if (typeof window.toggleMetronomeFromTable === "function") {
+        window.toggleMetronomeFromTable(tempo, btn);
+        return;
+      }
+    } catch (e) {
+      console.warn("[setlist-extension] toggleMetronomeFromTable original falló, uso fallback:", e);
+    }
+    _ourToggleMetronomeFromTable(tempo, btn);
   }
 
   // Render con las 8 columnas idénticas al setlist principal:
@@ -576,14 +815,21 @@
       try {
         if (document.body.style.overflow !== "hidden") return;
         // ¿Hay algún modal visible que justifique el lock?
-        const candidates = document.querySelectorAll(
-          ".modal, .modal-overlay, [id$='-modal'], #se-concert-setlist-modal"
-        );
+        // Incluye los modales nativos del index, los nuestros, y los de Zona Privada.
+        const candidates = document.querySelectorAll([
+          ".modal.show",
+          ".modal-overlay.show",
+          "#concert-details-modal.show",
+          "#se-concert-setlist-modal.show",
+          "#se-past-concerts-modal.show",
+          ".pz-modal-backdrop.show",
+          "#metronome-popup.visible",
+        ].join(","));
         let anyVisible = false;
         candidates.forEach((el) => {
           if (anyVisible) return;
           const cs = window.getComputedStyle(el);
-          if (cs.display !== "none" && cs.visibility !== "hidden" && el.offsetParent !== null) {
+          if (cs.display !== "none" && cs.visibility !== "hidden") {
             anyVisible = true;
           }
         });
@@ -718,7 +964,7 @@
       return;
     }
 
-    // 4) Renderizar tabla similar a la de Próximos Conciertos, sin "Cal"
+    // 4) Renderizar tabla similar a la de Próximos Conciertos, sin "Cal" ni "Lugar"
     let rowsHtml = "";
     past.forEach(({ id, info, data }) => {
       const location = (data.locationDetails || data.location || "").trim();
@@ -732,7 +978,6 @@
       rowsHtml += `<tr>
         <td>${info.dateStr}</td>
         <td>${info.title}</td>
-        <td>${location || "<span style='color:#666;'>—</span>"}</td>
         <td class="details-col-header" style="text-align:center;">
           <button class="details-btn" title="Ver/Editar Detalles del Concierto"
                   onclick="window.SE && window.SE.openPastConcertDetails && window.SE.openPastConcertDetails('${safeId}','${safeDate}','${safeTitle}','${safeLoc}')">➡️</button>
@@ -752,7 +997,6 @@
             <tr>
               <th>Fecha/Hora</th>
               <th>Evento</th>
-              <th>Lugar</th>
               <th class="details-col-header">Info</th>
               <th class="se-setlist-col-header">Setlist</th>
             </tr>
@@ -767,16 +1011,31 @@
   // Wrapper para abrir el modal de detalles desde la tabla de pasados.
   // openConcertDetailModal se declara con `function ...` en el script
   // global de index.html, así que está disponible como window.openConcertDetailModal.
+  // IMPORTANTE: cerramos el modal de "Conciertos Pasados" ANTES de abrir el
+  // modal de detalles para evitar superposiciones de z-index y para que
+  // el body.style.overflow no quede bloqueado al cerrarse el detalle.
+  // Guardia de re-entrada: evita que dos clicks rápidos abran dos modales.
+  let _openingPastDetail = false;
   function openPastConcertDetails(concertId, dateText, title, location) {
-    if (typeof window.openConcertDetailModal === "function") {
+    if (_openingPastDetail) return;
+    if (typeof window.openConcertDetailModal !== "function") {
+      alert("La función de detalles del concierto no está disponible en esta página.");
+      return;
+    }
+    _openingPastDetail = true;
+    // Cerrar primero el modal de pasados (dejándolo listo para reabrirse luego)
+    closePastConcertsModal();
+    // Pequeño delay para que la transición visual sea limpia
+    setTimeout(() => {
       try { window.openConcertDetailModal(concertId, dateText, title, location); }
       catch (e) {
         console.warn("[setlist-extension] openConcertDetailModal error:", e);
         alert("No se pudo abrir el detalle del concierto.");
+      } finally {
+        // Liberar la guardia un poco más tarde para amortiguar dobles clicks
+        setTimeout(() => { _openingPastDetail = false; }, 400);
       }
-    } else {
-      alert("La función de detalles del concierto no está disponible en esta página.");
-    }
+    }, 80);
   }
 
   function injectPastConcertsButton() {
@@ -1134,6 +1393,7 @@
   window.SE.toMMSS                 = toMMSS;
   window.SE.openPastConcertDetails = openPastConcertDetails;
   window.SE.openPastConcertsModal  = openPastConcertsModal;
+  window.SE.toggleMetronome        = toggleMetronomeUnified;
   window.SE.renderFromFeedUrl = async function (parentEl, feedUrl, opts = {}) {
     if (!parentEl) return { error: "no-parent" };
     parentEl.innerHTML = `<div style="text-align:center;color:#aaa;padding:20px;">⌛ Cargando setlist...</div>`;
