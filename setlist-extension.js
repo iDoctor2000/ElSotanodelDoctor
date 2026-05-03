@@ -80,6 +80,43 @@
       }
       #se-concert-setlist-modal .se-close-btn:hover { background: #e55; }
 
+      /* Botón "Conciertos Pasados" inyectado en la sección #calendario */
+      .se-past-concerts-bar {
+        text-align: center; margin: 18px 0 6px;
+      }
+      .se-past-concerts-btn {
+        display: inline-block; background: #ff8c1a; color: #000;
+        border: none; border-radius: 8px; padding: 10px 22px;
+        font-size: 1em; font-weight: bold; cursor: pointer;
+      }
+      .se-past-concerts-btn:hover { background: #ffae5c; }
+
+      /* Modal "Conciertos Pasados" */
+      #se-past-concerts-modal { display: none; }
+      #se-past-concerts-modal.show {
+        display: flex;
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.85);
+        align-items: flex-start; justify-content: center;
+        z-index: 99000; overflow-y: auto;
+        padding: 30px 10px;
+      }
+      #se-past-concerts-modal .se-modal-box {
+        background: #1a1a1a; color: #fff; border: 1px solid #333;
+        border-radius: 12px; max-width: 1100px; width: 100%;
+        padding: 22px 22px 30px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      }
+      #se-past-concerts-modal h2 { color: #ff8c1a; text-align: center; margin: 0 0 6px; }
+      #se-past-concerts-modal .se-subtitle { text-align: center; color: #aaa; margin: 0 0 18px; font-size: 0.95em; }
+      #se-past-concerts-modal .se-empty-state { text-align: center; padding: 40px 20px; color: #ffae5c; font-size: 1.05em; font-style: italic; }
+      #se-past-concerts-modal .se-close-row { text-align: center; margin-top: 14px; }
+      #se-past-concerts-modal .details-btn {
+        background: transparent; border: 1px solid #0cf; color: #0cf;
+        padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 1.1em;
+      }
+      #se-past-concerts-modal .details-btn:hover { background: rgba(0,204,255,0.1); }
+
       /* Bloque JSON dentro del modal de concierto */
       .se-json-block {
         border: 1px solid #444; border-radius: 8px; padding: 12px;
@@ -559,6 +596,204 @@
   }
 
   // ============================================================
+  // 6.ter  CONCIERTOS PASADOS — botón + modal con tabla
+  // ============================================================
+
+  // Mapas de meses/días para parseo de IDs
+  const _MONTH_NAMES_ES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+  // Parsea un concert_id como "Sab_02_05_26_Boda_Bruno_-_hijo_Patato-"
+  // o "Sab_07_06_25__19_00_a_23_55_Boda_Tardeo".
+  // Devuelve { dateObj, dateStr, title } o null si no se puede.
+  function parsePastConcertId(id) {
+    if (!id) return null;
+    // Día (3-9 letras incluyendo acentos), DD, MM, YY, resto.
+    const m = id.match(/^([A-Za-zÁÉÍÓÚáéíóúñÑ]{3,9})_(\d{2})_(\d{2})_(\d{2})_(.*)$/);
+    if (!m) return null;
+    const dayName = m[1];
+    const dd = parseInt(m[2], 10);
+    const mm = parseInt(m[3], 10);
+    const yy = parseInt(m[4], 10);
+    const yearFull = yy >= 70 ? 1900 + yy : 2000 + yy;
+    const dateObj = new Date(yearFull, mm - 1, dd);
+    if (isNaN(dateObj.getTime())) return null;
+
+    // Resto puede empezar con "_19_00_a_23_55_..." o "19_00_a_23_55_..." (rango horario)
+    let rest = m[5] || "";
+    let timeRange = "";
+    const timeMatch = rest.match(/^_?(\d{2})_(\d{2})_a_(\d{2})_(\d{2})_(.*)$/);
+    if (timeMatch) {
+      timeRange = `${timeMatch[1]}:${timeMatch[2]} a ${timeMatch[3]}:${timeMatch[4]}`;
+      rest = timeMatch[5];
+    }
+    // Reemplazar guiones bajos por espacios para reconstruir el título
+    const title = rest.replace(/_/g, " ").trim() || "Evento";
+
+    const dateStr = `${dayName} ${String(dd).padStart(2,"0")}/${String(mm).padStart(2,"0")}/${String(yy).padStart(2,"0")}`
+      + (timeRange ? `, ${timeRange}` : "");
+
+    return { dateObj, dateStr, title, timeRange };
+  }
+
+  function ensurePastConcertsModal() {
+    if (document.getElementById("se-past-concerts-modal")) return;
+    const html = `
+      <div id="se-past-concerts-modal" style="display:none;">
+        <div class="se-modal-box">
+          <h2>📅 Conciertos Pasados</h2>
+          <p class="se-subtitle">Listado de conciertos ya celebrados, del más reciente al más antiguo.</p>
+          <div id="se-past-concerts-body">
+            <div class="se-empty-state">⌛ Cargando…</div>
+          </div>
+          <div class="se-close-row">
+            <button class="se-close-btn" id="se-past-modal-close">Cerrar</button>
+          </div>
+        </div>
+      </div>`;
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html;
+    document.body.appendChild(wrapper.firstElementChild);
+    const closeBtn = document.getElementById("se-past-modal-close");
+    if (closeBtn) closeBtn.onclick = closePastConcertsModal;
+    const m = document.getElementById("se-past-concerts-modal");
+    if (m) {
+      m.addEventListener("click", (e) => {
+        if (e.target.id === "se-past-concerts-modal") closePastConcertsModal();
+      });
+    }
+  }
+
+  function closePastConcertsModal() {
+    const m = document.getElementById("se-past-concerts-modal");
+    if (m) {
+      m.classList.remove("show");
+      m.style.display = "none";
+    }
+  }
+
+  function showPastConcertsModal() {
+    const m = document.getElementById("se-past-concerts-modal");
+    if (m) {
+      m.style.display = "flex";
+      m.classList.add("show");
+    }
+  }
+
+  async function openPastConcertsModal() {
+    ensurePastConcertsModal();
+    showPastConcertsModal();
+    const bodyEl = document.getElementById("se-past-concerts-body");
+    if (!bodyEl) return;
+    bodyEl.innerHTML = `<div class="se-empty-state">⌛ Cargando conciertos pasados…</div>`;
+
+    // 1) Conseguir todos los concert_details
+    let docs = [];
+    try {
+      if (typeof db === "undefined") throw new Error("Firestore no disponible");
+      const snap = await db.collection("concert_details").get();
+      snap.forEach((d) => docs.push({ id: d.id, data: d.data() || {} }));
+    } catch (e) {
+      console.warn("[setlist-extension] Error cargando conciertos pasados:", e);
+      bodyEl.innerHTML = `<div class="se-empty-state">No se pudo cargar el listado.<br><span style="font-size:.85em;color:#888;">${(e.message || "").replace(/</g,"&lt;")}</span></div>`;
+      return;
+    }
+
+    // 2) Parsear y filtrar pasados (anteriores a hoy a las 00:00)
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const past = [];
+    docs.forEach(({ id, data }) => {
+      const info = parsePastConcertId(id);
+      if (!info) return;
+      if (info.dateObj < today) {
+        past.push({ id, info, data });
+      }
+    });
+
+    // 3) Ordenar descendentemente (más reciente primero)
+    past.sort((a, b) => b.info.dateObj.getTime() - a.info.dateObj.getTime());
+
+    if (!past.length) {
+      bodyEl.innerHTML = `<div class="se-empty-state">No hay conciertos pasados registrados.</div>`;
+      return;
+    }
+
+    // 4) Renderizar tabla similar a la de Próximos Conciertos, sin "Cal"
+    let rowsHtml = "";
+    past.forEach(({ id, info, data }) => {
+      const location = (data.locationDetails || data.location || "").trim();
+      const setlistJson = (data.setlistJson || "").trim();
+      const hasSetlist = !!setlistJson;
+      const safeId = id.replace(/'/g, "\\'");
+      const safeDate = info.dateStr.replace(/'/g, "\\'");
+      const safeTitle = info.title.replace(/'/g, "\\'");
+      const safeLoc = location.replace(/'/g, "\\'");
+
+      rowsHtml += `<tr>
+        <td>${info.dateStr}</td>
+        <td>${info.title}</td>
+        <td>${location || "<span style='color:#666;'>—</span>"}</td>
+        <td class="details-col-header" style="text-align:center;">
+          <button class="details-btn" title="Ver/Editar Detalles del Concierto"
+                  onclick="window.SE && window.SE.openPastConcertDetails && window.SE.openPastConcertDetails('${safeId}','${safeDate}','${safeTitle}','${safeLoc}')">➡️</button>
+        </td>
+        <td class="se-setlist-col" style="text-align:center;">
+          <button class="se-setlist-btn${hasSetlist ? "" : " empty"}"
+                  title="${hasSetlist ? "Ver setlist de este concierto" : "Sin setlist vinculado"}"
+                  onclick="window.openConcertSetlistModal('${safeTitle}','${safeDate}', ${JSON.stringify(setlistJson)})">🎵</button>
+        </td>
+      </tr>`;
+    });
+
+    bodyEl.innerHTML = `
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha/Hora</th>
+              <th>Evento</th>
+              <th>Lugar</th>
+              <th class="details-col-header">Info</th>
+              <th class="se-setlist-col-header">Setlist</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+      <p style="text-align:center; color:#aaa; font-size:.9em; margin-top:10px;">${past.length} concierto${past.length === 1 ? "" : "s"} pasado${past.length === 1 ? "" : "s"}.</p>
+    `;
+  }
+
+  // Wrapper para abrir el modal de detalles desde la tabla de pasados.
+  // openConcertDetailModal se declara con `function ...` en el script
+  // global de index.html, así que está disponible como window.openConcertDetailModal.
+  function openPastConcertDetails(concertId, dateText, title, location) {
+    if (typeof window.openConcertDetailModal === "function") {
+      try { window.openConcertDetailModal(concertId, dateText, title, location); }
+      catch (e) {
+        console.warn("[setlist-extension] openConcertDetailModal error:", e);
+        alert("No se pudo abrir el detalle del concierto.");
+      }
+    } else {
+      alert("La función de detalles del concierto no está disponible en esta página.");
+    }
+  }
+
+  function injectPastConcertsButton() {
+    const calendarSection = document.getElementById("calendario");
+    if (!calendarSection) return;
+    if (document.getElementById("se-past-concerts-btn")) return;
+
+    const bar = document.createElement("div");
+    bar.className = "se-past-concerts-bar";
+    bar.innerHTML = `<button id="se-past-concerts-btn" class="se-past-concerts-btn">📅 Conciertos Pasados</button>`;
+    calendarSection.appendChild(bar);
+
+    const btn = document.getElementById("se-past-concerts-btn");
+    if (btn) btn.onclick = () => safeRun(openPastConcertsModal, "openPastConcertsModal");
+  }
+
+  // ============================================================
   // 7. COLUMNA "SETLIST" EN LA TABLA DE CONCIERTOS
   // ============================================================
   let bandhelperObserver = null;
@@ -897,6 +1132,8 @@
   window.SE.renderSetlistTableInto = renderSetlistTableInto;
   window.SE.toHHMM                 = toHHMM;
   window.SE.toMMSS                 = toMMSS;
+  window.SE.openPastConcertDetails = openPastConcertDetails;
+  window.SE.openPastConcertsModal  = openPastConcertsModal;
   window.SE.renderFromFeedUrl = async function (parentEl, feedUrl, opts = {}) {
     if (!parentEl) return { error: "no-parent" };
     parentEl.innerHTML = `<div style="text-align:center;color:#aaa;padding:20px;">⌛ Cargando setlist...</div>`;
@@ -940,20 +1177,75 @@
   // 9. INIT — DEFENSIVO: espera 2.5s tras carga completa para
   //    no competir con la inicialización del index.html
   // ============================================================
+  // ============================================================
+  // 8.ter  OCULTAR EN EL PANEL DE CONFIGURACIÓN los bloques de
+  //        "Setlist Próximo Concierto" y "Setlist Concierto Estrella".
+  //        Los inputs siguen existiendo en el DOM (no rompemos
+  //        ningún handler de index.html), solo se ocultan visualmente.
+  // ============================================================
+  function hideSetlistConfigSections() {
+    const screen = document.getElementById("setlist-config-screen");
+    if (!screen) return;
+    if (screen.dataset.seConfigHidden === "1") return;
+
+    // Anclas: los inputs setlist2-name y setlistStar-name. Caminamos hacia
+    // atrás hasta el <h3> y ocultamos h3 + label + input + label + input.
+    const anchorsIds = ["setlist2-name", "setlistStar-name"];
+    let hiddenAny = false;
+
+    anchorsIds.forEach((anchorId) => {
+      const anchor = document.getElementById(anchorId);
+      if (!anchor) return;
+
+      // Buscar el <h3> hermano anterior más cercano
+      let h3 = anchor.previousElementSibling;
+      while (h3 && h3.tagName !== "H3") h3 = h3.previousElementSibling;
+      if (!h3) return;
+
+      // Recorrer hacia delante desde h3 hasta el siguiente <h3> o <button>
+      // y ocultar todo lo que esté en medio (h3 incluido).
+      const toHide = [];
+      let cur = h3;
+      while (cur) {
+        toHide.push(cur);
+        const next = cur.nextElementSibling;
+        if (!next || next.tagName === "H3" || next.tagName === "BUTTON") break;
+        cur = next;
+      }
+      toHide.forEach((el) => { el.style.display = "none"; hiddenAny = true; });
+    });
+
+    if (hiddenAny) {
+      screen.dataset.seConfigHidden = "1";
+      console.log("[setlist-extension] Panel de configuración: ocultados bloques setlist2 y star");
+    }
+  }
+
   function init() {
     safeRun(injectStyles, "injectStyles");
     safeRun(ensureSetlistModal, "ensureSetlistModal");
+    safeRun(ensurePastConcertsModal, "ensurePastConcertsModal");
     safeRun(watchConcertModal, "watchConcertModal");
     safeRun(hookSaveButton, "hookSaveButton");
     safeRun(watchBandHelperTable, "watchBandHelperTable");
     safeRun(attachSetlistListener, "attachSetlistListener");
     safeRun(startScrollWatchdog, "startScrollWatchdog");
+    safeRun(hideSetlistConfigSections, "hideSetlistConfigSections");
+    safeRun(injectPastConcertsButton, "injectPastConcertsButton");
 
     // Reintentos espaciados para Firebase si aún no estaba listo
     const tryFirebase = (delay) => setTimeout(() => safeRun(attachSetlistListener, "attachListenerLate"), delay);
     tryFirebase(2000);
     tryFirebase(5000);
     tryFirebase(10000);
+
+    // Si el panel de configuración se renderiza tarde, lo reintentamos
+    setTimeout(() => safeRun(hideSetlistConfigSections, "hideSetlistConfigSectionsLate"), 3000);
+    setTimeout(() => safeRun(hideSetlistConfigSections, "hideSetlistConfigSectionsLate2"), 8000);
+
+    // Si la sección #calendario se renderiza tarde, reintentamos inyectar el botón
+    setTimeout(() => safeRun(injectPastConcertsButton, "injectPastConcertsButtonLate"), 3000);
+    setTimeout(() => safeRun(injectPastConcertsButton, "injectPastConcertsButtonLate2"), 8000);
   }
 
   function startWhenReady() {
