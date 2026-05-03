@@ -143,65 +143,205 @@
          no funciona. Lo subimos por encima con !important. */
       #metronome-popup { z-index: 100000 !important; }
 
-      /* === RESPONSIVE: tablas dentro de los modales del setlist ===
-         En móvil habilitamos scroll horizontal en lugar de cortar columnas. */
+      /* === RESPONSIVE: que las tablas dentro de los modales del setlist
+         se comporten EXACTAMENTE como las tablas del setlist principal
+         del index (líneas 488-520 de index.html):
+         - overflow-x:hidden (NO scroll horizontal)
+         - min-width:unset, width:100%
+         - texto envuelto, max-width 150px por celda
+         Esto garantiza que en móvil se vean igual que el "Setlist Próximo
+         Ensayo" original. */
       #se-concert-setlist-modal .table-wrapper,
       #se-past-concerts-modal   .table-wrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        width: 100%;
         max-width: 100%;
+        overflow-x: hidden;
+        display: flex;
+        justify-content: center;
       }
       #se-concert-setlist-modal table,
       #se-past-concerts-modal   table {
-        min-width: 720px;     /* fuerza scroll en pantallas estrechas */
         width: 100%;
+        min-width: unset;
         border-collapse: collapse;
+        table-layout: auto;
       }
 
-      /* Las tablas de setlists de la zona privada también responsivas */
-      .pz-setlist-songs { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
-      .pz-setlist-render { overflow-x: auto !important; -webkit-overflow-scrolling: touch; max-width: 100%; }
-      .pz-setlist-render .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
-      .pz-setlist-render table { min-width: 720px !important; width: 100%; }
+      /* Las tablas de la zona privada se ajustan igual */
+      .pz-setlist-songs { overflow-x: hidden !important; }
+      .pz-setlist-render { overflow-x: hidden !important; max-width: 100%; }
+      .pz-setlist-render .table-wrapper { overflow-x: hidden; max-width: 100%; }
+      .pz-setlist-render table { min-width: unset !important; width: 100%; }
 
-      /* === Ajustes específicos para móviles pequeños === */
+      /* === Ajustes específicos para móviles (≤768px) === */
       @media (max-width: 768px) {
         #se-concert-setlist-modal { padding: 10px 4px; }
         #se-past-concerts-modal   { padding: 10px 4px; }
         #se-concert-setlist-modal .se-modal-box,
         #se-past-concerts-modal   .se-modal-box {
-          padding: 14px 10px 18px;
+          padding: 14px 8px 18px;
           border-radius: 10px;
         }
         #se-concert-setlist-modal h2,
         #se-past-concerts-modal   h2 { font-size: 1.15em; }
         #se-concert-setlist-modal .se-subtitle,
         #se-past-concerts-modal   .se-subtitle { font-size: 0.85em; }
-        #se-concert-setlist-modal table th,
-        #se-concert-setlist-modal table td,
-        #se-past-concerts-modal   table th,
-        #se-past-concerts-modal   table td {
-          padding: 6px 4px; font-size: 0.85em;
+
+        /* Tablas: fuerza ajuste y permite envoltura de texto, igual que
+           hace index.html @media(max-width:768px) { th,td ... } */
+        #se-concert-setlist-modal table,
+        #se-past-concerts-modal   table,
+        .pz-setlist-render table {
+          font-size: 0.8em !important;
+          min-width: unset !important;
+          width: 100% !important;
         }
+        #se-concert-setlist-modal th,
+        #se-concert-setlist-modal td,
+        #se-past-concerts-modal   th,
+        #se-past-concerts-modal   td,
+        .pz-setlist-render th,
+        .pz-setlist-render td {
+          padding: 6px 3px !important;
+          white-space: normal !important;
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+          max-width: 130px;
+        }
+        /* Columnas de iconos: ancho mínimo, sin truncar */
+        #se-concert-setlist-modal th.jukebox-col-header,
+        #se-concert-setlist-modal td.jukebox-col,
+        #se-concert-setlist-modal th.pdf-col-header,
+        #se-concert-setlist-modal td.pdf-col,
+        #se-concert-setlist-modal th.metronome-col-header,
+        #se-concert-setlist-modal td.metronome-col,
+        #se-past-concerts-modal   th.details-col-header,
+        #se-past-concerts-modal   td.details-col-header,
+        #se-past-concerts-modal   th.se-setlist-col-header,
+        #se-past-concerts-modal   td.se-setlist-col,
+        .pz-setlist-render th.jukebox-col-header,
+        .pz-setlist-render td.jukebox-col,
+        .pz-setlist-render th.pdf-col-header,
+        .pz-setlist-render td.pdf-col,
+        .pz-setlist-render th.metronome-col-header,
+        .pz-setlist-render td.metronome-col {
+          width: 32px !important; padding: 4px 1px !important; text-align: center !important;
+        }
+        /* Iconos un poquito más pequeños en móvil */
+        #se-concert-setlist-modal .jukebox-btn,
+        #se-concert-setlist-modal .pdf-btn,
+        #se-concert-setlist-modal .metronome-table-btn,
+        .pz-setlist-render .jukebox-btn,
+        .pz-setlist-render .pdf-btn,
+        .pz-setlist-render .metronome-table-btn {
+          width: 28px !important; height: 28px !important;
+        }
+
         #se-concert-setlist-modal .se-actions-bar { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
         #se-concert-setlist-modal .se-actions-bar button { font-size: 0.85em; padding: 7px 10px; }
         /* Popup metrónomo en móvil ocupando casi toda la anchura */
         #metronome-popup { right: 10px !important; left: 10px !important; width: auto !important; top: 65px !important; }
-      }
-      @media (max-width: 480px) {
-        #se-concert-setlist-modal table,
-        #se-past-concerts-modal   table { min-width: 620px; }
+
+        /* === FIX para la tabla del Setlist Próximo Ensayo (index.html) === */
+        /* El usuario reportó que la columna Time se cortaba a la derecha en
+           móvil. Endurecemos los anchos sin tocar el index.html. */
+        #setlists table, #second-setlist table, #star-setlist table {
+          width: 100% !important;
+          min-width: unset !important;
+          table-layout: auto !important;
+        }
+        #setlists .table-wrapper,
+        #second-setlist .table-wrapper,
+        #star-setlist .table-wrapper {
+          overflow-x: hidden !important;
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        #setlists th, #setlists td,
+        #second-setlist th, #second-setlist td,
+        #star-setlist th, #star-setlist td {
+          padding: 5px 2px !important;
+          font-size: 0.78em !important;
+          white-space: normal !important;
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+        }
+        #setlists th.jukebox-col-header, #setlists td.jukebox-col,
+        #setlists th.pdf-col-header,    #setlists td.pdf-col,
+        #setlists th.metronome-col-header, #setlists td.metronome-col {
+          width: 28px !important; padding: 4px 1px !important; text-align: center !important;
+        }
+        #setlists .jukebox-btn, #setlists .pdf-btn, #setlists .metronome-table-btn {
+          width: 26px !important; height: 26px !important;
+        }
       }
 
-      /* Indicador visual de scroll horizontal en móvil */
+      /* ====== BOTÓN AFINADOR EN EL HEADER ====== */
+      #se-tuner-toggle-btn {
+        background: transparent; border: none; cursor: pointer;
+        width: 40px; height: 40px; padding: 7px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff;
+      }
+      #se-tuner-toggle-btn svg { width: 100%; height: 100%; fill: currentColor; }
+      #se-tuner-toggle-btn:hover { color: #0cf; }
       @media (max-width: 768px) {
-        #se-concert-setlist-modal .table-wrapper::after,
-        #se-past-concerts-modal   .table-wrapper::after,
-        .pz-setlist-render::after {
-          content: "← Desliza para ver más →";
-          display: block; text-align: center;
-          color: #888; font-size: 0.75em; padding: 4px 0; font-style: italic;
-        }
+        #se-tuner-toggle-btn { width: 35px; height: 35px; padding: 6px; }
+      }
+
+      /* ====== POPUP AFINADOR ====== */
+      #se-tuner-popup {
+        position: fixed; top: 70px; right: 20px; width: 280px;
+        background: #1a1a1a; color: #fff; border: 1px solid #0cf;
+        border-radius: 12px; padding: 18px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+        z-index: 100000; display: none; text-align: center;
+      }
+      #se-tuner-popup.visible { display: block; }
+      #se-tuner-popup .se-tuner-title {
+        color: #0cf; font-size: 0.95em; margin: 0 0 10px;
+        text-transform: uppercase; letter-spacing: 1px;
+      }
+      #se-tuner-popup .se-tuner-note {
+        font-size: 3.4em; font-weight: bold; color: #0cf;
+        line-height: 1; margin: 6px 0;
+        font-family: 'Courier New', monospace;
+      }
+      #se-tuner-popup .se-tuner-freq {
+        color: #aaa; font-size: 0.9em; margin: 0 0 10px;
+      }
+      #se-tuner-popup .se-tuner-bar {
+        position: relative; height: 18px; background: #0a0a0a;
+        border: 1px solid #333; border-radius: 9px; overflow: hidden;
+        margin: 10px 0;
+      }
+      #se-tuner-popup .se-tuner-bar-center {
+        position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
+        background: #555; transform: translateX(-1px);
+      }
+      #se-tuner-popup .se-tuner-bar-needle {
+        position: absolute; left: 50%; top: 1px; bottom: 1px; width: 4px;
+        background: #ff8c1a; transform: translateX(-2px);
+        transition: left 0.08s ease-out, background 0.08s;
+        border-radius: 2px;
+      }
+      #se-tuner-popup .se-tuner-bar-needle.in-tune { background: #6f6; box-shadow: 0 0 8px #6f6; }
+      #se-tuner-popup .se-tuner-cents {
+        font-size: 0.8em; color: #888; margin-top: 4px;
+      }
+      #se-tuner-popup .se-tuner-status {
+        font-size: 0.85em; color: #aaa; min-height: 1.2em; margin-top: 8px;
+      }
+      #se-tuner-popup .se-tuner-actions {
+        display: flex; gap: 6px; justify-content: center; margin-top: 12px;
+      }
+      #se-tuner-popup .se-tuner-actions button {
+        background: transparent; border: 1px solid #0cf; color: #0cf;
+        padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85em;
+      }
+      #se-tuner-popup .se-tuner-actions button:hover { background: rgba(0,204,255,0.15); }
+      @media (max-width: 768px) {
+        #se-tuner-popup { right: 10px; left: 10px; width: auto; top: 65px; }
       }
     `;
     const tag = document.createElement("style");
@@ -1481,10 +1621,198 @@
     }
   }
 
+  // ============================================================
+  // AFINADOR (TUNER) — autocontenido (sin tocar index.html)
+  // Botón en el header + popup con detección de tono por mic.
+  // ============================================================
+  const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+  function _frequencyToNote(freq) {
+    if (!freq || freq <= 0) return null;
+    // A4 = 440 Hz = nota MIDI 69
+    const midi = 69 + 12 * Math.log2(freq / 440);
+    const midiRound = Math.round(midi);
+    const cents = Math.round((midi - midiRound) * 100);
+    const noteIndex = ((midiRound % 12) + 12) % 12;
+    const octave = Math.floor(midiRound / 12) - 1;
+    return { name: NOTE_NAMES[noteIndex], octave, cents, freq };
+  }
+
+  // Algoritmo autocorrelación (robusto y simple)
+  function _autoCorrelate(buf, sampleRate) {
+    let SIZE = buf.length;
+    let rms = 0;
+    for (let i = 0; i < SIZE; i++) { rms += buf[i] * buf[i]; }
+    rms = Math.sqrt(rms / SIZE);
+    if (rms < 0.01) return -1; // demasiado silencio
+
+    let r1 = 0, r2 = SIZE - 1, thres = 0.2;
+    for (let i = 0; i < SIZE / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+    for (let i = 1; i < SIZE / 2; i++) if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
+    buf = buf.slice(r1, r2);
+    SIZE = buf.length;
+
+    const c = new Array(SIZE).fill(0);
+    for (let i = 0; i < SIZE; i++)
+      for (let j = 0; j < SIZE - i; j++)
+        c[i] += buf[j] * buf[j + i];
+
+    let d = 0; while (c[d] > c[d + 1]) d++;
+    let maxval = -1, maxpos = -1;
+    for (let i = d; i < SIZE; i++) {
+      if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
+    }
+    let T0 = maxpos;
+    if (T0 <= 0) return -1;
+    const x1 = c[T0 - 1] || 0, x2 = c[T0] || 0, x3 = c[T0 + 1] || 0;
+    const a = (x1 + x3 - 2 * x2) / 2;
+    const b = (x3 - x1) / 2;
+    if (a) T0 = T0 - b / (2 * a);
+    return sampleRate / T0;
+  }
+
+  function ensureTunerPopup() {
+    if (document.getElementById("se-tuner-popup")) return;
+    const div = document.createElement("div");
+    div.id = "se-tuner-popup";
+    div.innerHTML = `
+      <p class="se-tuner-title">Afinador</p>
+      <div class="se-tuner-note" id="se-tuner-note">—</div>
+      <div class="se-tuner-freq" id="se-tuner-freq">— Hz</div>
+      <div class="se-tuner-bar">
+        <div class="se-tuner-bar-center"></div>
+        <div class="se-tuner-bar-needle" id="se-tuner-needle" style="left:50%;"></div>
+      </div>
+      <div class="se-tuner-cents" id="se-tuner-cents">0 cents</div>
+      <div class="se-tuner-status" id="se-tuner-status">Pulsa Iniciar y permite el micrófono</div>
+      <div class="se-tuner-actions">
+        <button id="se-tuner-start">Iniciar</button>
+        <button id="se-tuner-stop">Detener</button>
+        <button id="se-tuner-close">Cerrar</button>
+      </div>
+    `;
+    document.body.appendChild(div);
+
+    const tuner = { ctx:null, analyser:null, stream:null, source:null, raf:null, buf:null };
+
+    function stop() {
+      try { if (tuner.raf) cancelAnimationFrame(tuner.raf); } catch(e){}
+      tuner.raf = null;
+      try { if (tuner.source) tuner.source.disconnect(); } catch(e){}
+      try { if (tuner.stream) tuner.stream.getTracks().forEach(t => t.stop()); } catch(e){}
+      try { if (tuner.ctx && tuner.ctx.state !== "closed") tuner.ctx.close(); } catch(e){}
+      tuner.ctx = null; tuner.analyser = null; tuner.stream = null; tuner.source = null;
+      const st = document.getElementById("se-tuner-status");
+      if (st) st.textContent = "Detenido";
+    }
+
+    async function start() {
+      stop();
+      const st = document.getElementById("se-tuner-status");
+      if (st) st.textContent = "Solicitando micrófono…";
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          if (st) st.textContent = "Tu navegador no permite acceso al micrófono";
+          return;
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false }
+        });
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new Ctx();
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 2048;
+        source.connect(analyser);
+        const buf = new Float32Array(analyser.fftSize);
+        tuner.ctx = ctx; tuner.analyser = analyser; tuner.stream = stream; tuner.source = source; tuner.buf = buf;
+        if (st) st.textContent = "Escuchando…";
+        loop();
+      } catch (e) {
+        console.warn("[afinador] error:", e && e.message);
+        if (st) st.textContent = "No se pudo acceder al micrófono";
+      }
+    }
+
+    function loop() {
+      if (!tuner.analyser) return;
+      tuner.analyser.getFloatTimeDomainData(tuner.buf);
+      const freq = _autoCorrelate(tuner.buf, tuner.ctx.sampleRate);
+      const noteEl   = document.getElementById("se-tuner-note");
+      const freqEl   = document.getElementById("se-tuner-freq");
+      const centsEl  = document.getElementById("se-tuner-cents");
+      const needleEl = document.getElementById("se-tuner-needle");
+      if (freq === -1 || freq < 50 || freq > 1500) {
+        if (noteEl) noteEl.textContent = "—";
+        if (freqEl) freqEl.textContent = "— Hz";
+        if (centsEl) centsEl.textContent = "—";
+        if (needleEl) { needleEl.style.left = "50%"; needleEl.classList.remove("in-tune"); }
+      } else {
+        const n = _frequencyToNote(freq);
+        if (n) {
+          if (noteEl) noteEl.textContent = n.name + n.octave;
+          if (freqEl) freqEl.textContent = freq.toFixed(1) + " Hz";
+          if (centsEl) centsEl.textContent = (n.cents > 0 ? "+" : "") + n.cents + " cents";
+          // -50…+50 cents → 0%…100%
+          const pct = Math.max(0, Math.min(100, 50 + n.cents));
+          if (needleEl) {
+            needleEl.style.left = pct + "%";
+            if (Math.abs(n.cents) < 5) needleEl.classList.add("in-tune");
+            else needleEl.classList.remove("in-tune");
+          }
+        }
+      }
+      tuner.raf = requestAnimationFrame(loop);
+    }
+
+    document.getElementById("se-tuner-start").addEventListener("click", start);
+    document.getElementById("se-tuner-stop").addEventListener("click", stop);
+    document.getElementById("se-tuner-close").addEventListener("click", () => {
+      stop();
+      div.classList.remove("visible");
+    });
+
+    window.SE = window.SE || {};
+    window.SE.toggleTuner = function () {
+      if (div.classList.contains("visible")) {
+        stop();
+        div.classList.remove("visible");
+      } else {
+        div.classList.add("visible");
+        // Auto-start cómodo
+        start();
+      }
+    };
+  }
+
+  function injectTunerButton() {
+    if (document.getElementById("se-tuner-toggle-btn")) return;
+    const headerRight = document.querySelector(".header-controls-right");
+    if (!headerRight) return;
+    const hamburger = headerRight.querySelector(".hamburger");
+    const btn = document.createElement("button");
+    btn.id = "se-tuner-toggle-btn";
+    btn.className = "header-icon-btn";
+    btn.title = "Afinador";
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 3a9 9 0 0 0-9 9h2a7 7 0 0 1 14 0h2a9 9 0 0 0-9-9zm0 4a5 5 0 0 0-5 5h2a3 3 0 0 1 6 0h2a5 5 0 0 0-5-5zm-1 6v6a1 1 0 1 0 2 0v-6h-2z"/>
+      </svg>
+    `;
+    btn.addEventListener("click", () => {
+      if (window.SE && typeof window.SE.toggleTuner === "function") window.SE.toggleTuner();
+    });
+    if (hamburger) headerRight.insertBefore(btn, hamburger);
+    else headerRight.appendChild(btn);
+    console.log("[setlist-extension] Botón afinador inyectado");
+  }
+
   function init() {
     safeRun(injectStyles, "injectStyles");
     safeRun(ensureSetlistModal, "ensureSetlistModal");
     safeRun(ensurePastConcertsModal, "ensurePastConcertsModal");
+    safeRun(ensureTunerPopup, "ensureTunerPopup");
+    safeRun(injectTunerButton, "injectTunerButton");
     safeRun(watchConcertModal, "watchConcertModal");
     safeRun(hookSaveButton, "hookSaveButton");
     safeRun(watchBandHelperTable, "watchBandHelperTable");
@@ -1492,6 +1820,10 @@
     safeRun(startScrollWatchdog, "startScrollWatchdog");
     safeRun(hideSetlistConfigSections, "hideSetlistConfigSections");
     safeRun(injectPastConcertsButton, "injectPastConcertsButton");
+
+    // Reintentos: el header puede haberse modificado por otros scripts
+    setTimeout(() => safeRun(injectTunerButton, "injectTunerButtonLate"), 3000);
+    setTimeout(() => safeRun(injectTunerButton, "injectTunerButtonLate2"), 8000);
 
     // Reintentos espaciados para Firebase si aún no estaba listo
     const tryFirebase = (delay) => setTimeout(() => safeRun(attachSetlistListener, "attachListenerLate"), delay);
