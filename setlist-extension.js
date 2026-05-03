@@ -355,6 +355,21 @@
     if (listenerAttached) return;
     if (typeof db === "undefined") return; // No reintentamos agresivamente
     try {
+      // 1) Carga directa inmediata (no depende del listener)
+      db.collection("concert_details").get().then((snap) => {
+        let n = 0;
+        snap.forEach((doc) => {
+          const data = doc.data() || {};
+          setlistByConcertId[doc.id] = data.setlistJson || "";
+          n++;
+        });
+        console.log("[setlist-extension] Cache cargado por .get() →", n, "documentos. IDs:", Object.keys(setlistByConcertId));
+        scheduleRefresh();
+      }).catch((err) => {
+        console.warn("[setlist-extension] .get() concert_details falló:", err);
+      });
+
+      // 2) Listener para cambios futuros
       db.collection("concert_details").onSnapshot((snapshot) => {
         try {
           snapshot.forEach((doc) => {
@@ -372,6 +387,34 @@
     } catch (e) {
       console.warn("[setlist-extension] No se pudo enganchar listener:", e);
     }
+  }
+
+  // ============================================================
+  // 6.bis  WATCHDOG DE SCROLL — restaura body.overflow si quedó
+  //        atascado en "hidden" sin que haya modales visibles.
+  // ============================================================
+  function startScrollWatchdog() {
+    setInterval(() => {
+      try {
+        if (document.body.style.overflow !== "hidden") return;
+        // ¿Hay algún modal visible que justifique el lock?
+        const candidates = document.querySelectorAll(
+          ".modal, .modal-overlay, [id$='-modal'], #se-concert-setlist-modal"
+        );
+        let anyVisible = false;
+        candidates.forEach((el) => {
+          if (anyVisible) return;
+          const cs = window.getComputedStyle(el);
+          if (cs.display !== "none" && cs.visibility !== "hidden" && el.offsetParent !== null) {
+            anyVisible = true;
+          }
+        });
+        if (!anyVisible) {
+          document.body.style.overflow = "";
+          console.log("[setlist-extension] Watchdog: body.overflow restaurado (no hay modales visibles).");
+        }
+      } catch (_) {}
+    }, 1500);
   }
 
   // ============================================================
@@ -438,6 +481,11 @@
         const cells = row.cells;
         if (cells.length < 3) return;
         const { concertId, date: rowDate, title: rowTitle } = computeConcertIdFromRow(row);
+        // Log de un solo concert por fila para depurar mismatches:
+        if (rowTitle && !row.dataset.seLogged) {
+          row.dataset.seLogged = "1";
+          console.log("[setlist-extension] Fila →", { concertId, title: rowTitle, date: rowDate, inCache: !!setlistByConcertId[concertId] });
+        }
 
         let setlistTd = row.querySelector("td.se-setlist-col");
         if (!setlistTd) {
@@ -673,12 +721,15 @@
         if (!id) return;
         const json = ta.value.trim();
 
+        console.log("[setlist-extension] GUARDANDO setlistJson →", { id: id, length: json.length, isUrl: looksLikeUrl(json) });
+
         if (typeof window.saveDoc === "function") {
           await window.saveDoc("concert_details", id, { setlistJson: json }, true);
         } else if (typeof db !== "undefined") {
           await db.collection("concert_details").doc(id).set({ setlistJson: json }, { merge: true });
         }
         setlistByConcertId[id] = json;
+        console.log("[setlist-extension] Guardado OK. Cache ahora tiene", Object.keys(setlistByConcertId).length, "ids");
         scheduleRefresh();
       } catch (e) {
         console.warn("[setlist-extension] Error guardando JSON setlist:", e);
@@ -744,6 +795,7 @@
     safeRun(hookSaveButton, "hookSaveButton");
     safeRun(watchBandHelperTable, "watchBandHelperTable");
     safeRun(attachSetlistListener, "attachSetlistListener");
+    safeRun(startScrollWatchdog, "startScrollWatchdog");
 
     // Reintentos espaciados para Firebase si aún no estaba listo
     const tryFirebase = (delay) => setTimeout(() => safeRun(attachSetlistListener, "attachListenerLate"), delay);
