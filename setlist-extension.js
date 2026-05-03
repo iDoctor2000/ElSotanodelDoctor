@@ -433,6 +433,13 @@
     }, 250);
   }
 
+  // Replicamos exactamente la función de index.html (no está en window)
+  // const sanitizeFirebaseKey = (str) => str.replace(/[.#$[\]/:\s,]/g, '_');
+  function _sanitizeFirebaseKey(str) {
+    if (str === null || str === undefined) return "";
+    return String(str).replace(/[.#$[\]/:\s,]/g, "_");
+  }
+
   // Calcula concertId del modo más cercano posible al original (calendario.js)
   function computeConcertIdFromRow(row) {
     const cells = row.cells;
@@ -443,10 +450,14 @@
     const dateForId = dateCellFullText.split(",")[0].trim();
     let concertId = "";
     try {
-      if (window.sanitizeFirebaseKey) {
-        concertId = window.sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
-      }
-    } catch (_) {}
+      // Preferimos la función global si existe; si no, usamos la nuestra
+      const fn = (typeof window.sanitizeFirebaseKey === "function")
+        ? window.sanitizeFirebaseKey
+        : _sanitizeFirebaseKey;
+      concertId = fn(`${dateForId}_${eventTitleFromCell}`);
+    } catch (_) {
+      concertId = _sanitizeFirebaseKey(`${dateForId}_${eventTitleFromCell}`);
+    }
     return { concertId, date: dateCellFullText, title: eventTitleFromCell };
   }
 
