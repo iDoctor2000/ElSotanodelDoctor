@@ -62,28 +62,21 @@
       }
       #se-concert-setlist-modal .se-modal-box {
         background: #1a1a1a; color: #fff; border: 1px solid #333;
-        border-radius: 12px; max-width: 1100px; width: 100%;
+        border-radius: 12px; max-width: 1200px; width: 100%;
         padding: 22px 22px 30px;
         box-shadow: 0 10px 40px rgba(0,0,0,0.6);
       }
       #se-concert-setlist-modal h2 { color: #ff8c1a; text-align: center; margin: 0 0 6px; }
       #se-concert-setlist-modal .se-subtitle { text-align: center; color: #aaa; margin: 0 0 18px; font-size: 0.95em; }
-      #se-concert-setlist-modal table { width: 100%; border-collapse: collapse; background: #111; }
-      #se-concert-setlist-modal th, #se-concert-setlist-modal td {
-        padding: 6px 8px; border: 1px solid #2a2a2a; font-size: 0.95em;
-      }
-      #se-concert-setlist-modal thead th { background: #222; color: #0cf; }
-      #se-concert-setlist-modal tr.se-set-header td { background: #2a2a2a; color: #0cf; font-weight: bold; text-align: center; }
-      #se-concert-setlist-modal tr.se-break-row td { font-style: italic; color: #ffae5c; text-align: center; }
+      /* La tabla DENTRO del modal HEREDA los estilos globales (.table-wrapper, table, etc.)
+         de la página principal: misma apariencia que el setlist de ensayos */
       #se-concert-setlist-modal .se-empty-state { text-align: center; padding: 40px 20px; color: #ffae5c; font-size: 1.05em; font-style: italic; }
-      #se-concert-setlist-modal .se-modal-actions {
-        display: flex; justify-content: space-between; align-items: center;
-        margin-top: 18px; flex-wrap: wrap; gap: 10px;
-      }
-      #se-concert-setlist-modal .se-modal-total { color: #aaa; font-size: 0.95em; }
+      #se-concert-setlist-modal .se-actions-bar { text-align: center; margin-top: 14px; }
+      #se-concert-setlist-modal .se-modal-total { color: #aaa; font-size: 0.95em; text-align: center; margin: 12px 0 4px; }
+      #se-concert-setlist-modal .se-close-row { text-align: center; margin-top: 10px; }
       #se-concert-setlist-modal .se-close-btn {
         background: #c33; color: #fff; border: none; border-radius: 8px;
-        padding: 9px 18px; cursor: pointer;
+        padding: 9px 22px; cursor: pointer;
       }
       #se-concert-setlist-modal .se-close-btn:hover { background: #e55; }
 
@@ -209,35 +202,110 @@
   }
 
   // ============================================================
-  // 4. RENDER DE TABLA
+  // 4. RENDER DE TABLA — IDÉNTICO al setlist principal
+  //    (misma estructura, mismas columnas, mismas celdas activas)
   // ============================================================
+
+  // Helpers réplica de los de index.html (createJukeboxCell / createPdfCell / createMetronomeCell)
+  function _createJukeboxCell(songName) {
+    const cleanName = _sanitizeFirebaseKey(songName);
+    const url = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : null;
+    const hasLink = !!url;
+    const statusClass = hasLink ? "active" : "inactive";
+    const safeName = String(songName).replace(/'/g, "\\'");
+    const clickAction = hasLink
+      ? `window.openJukeboxPlayer('${safeName}', '${url}')`
+      : `window.openJukeboxEditModal && window.openJukeboxEditModal('${safeName}')`;
+    return `<td class="jukebox-col"><button class="jukebox-btn ${statusClass}" onclick="${clickAction}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/></svg></button></td>`;
+  }
+  function _createPdfCell(songName) {
+    const cleanName = _sanitizeFirebaseKey(songName);
+    const url = window.pdfLibrary ? window.pdfLibrary[cleanName] : null;
+    const hasLink = !!url;
+    const statusClass = hasLink ? "active" : "inactive";
+    const safeName = String(songName).replace(/'/g, "\\'");
+    const clickAction = hasLink
+      ? `window.openPdfLink('${url}')`
+      : `window.openPdfEditModal && window.openPdfEditModal('${safeName}')`;
+    const iconSvg = `<svg viewBox="0 0 24 24"><path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/><path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>`;
+    return `<td class="pdf-col"><button class="pdf-btn ${statusClass}" onclick="${clickAction}">${iconSvg}</button></td>`;
+  }
+  function _createMetronomeCell(tempo) {
+    const tempoStr = decodeHtml(tempo || "-");
+    const match = String(tempoStr).match(/\d+/);
+    const svgIcon = `<svg viewBox="0 0 24 24"><path d="M12 2L3 20h18L12 2zm0 3.8L17.6 18H6.4L12 5.8zM11 8v6h2V8h-2z"/></svg>`;
+    if (!match) {
+      return `<td class="metronome-col"><button class="metronome-table-btn" title="Sin tempo definido">${svgIcon}</button></td>`;
+    }
+    const cleanTempo = match[0];
+    return `<td class="metronome-col"><button class="metronome-table-btn has-tempo" title="Tempo: ${cleanTempo} BPM" onclick="window.toggleMetronomeFromTable && window.toggleMetronomeFromTable('${cleanTempo}', this)">${svgIcon}</button></td>`;
+  }
+
+  // Render con las 8 columnas idénticas al setlist principal:
+  //   #  |  Título  |  🎧  |  📝  |  Key  |  Tempo  |  ⏱  |  Time
   function renderSetlistTableInto(parentEl, structure, totalSeconds) {
-    let html = `
-      <div class="table-wrapper" style="margin-top:6px;">
-        <table>
-          <thead><tr>
-            <th>#</th><th>Título</th><th>Key</th><th>Tempo</th><th>Time</th>
-          </tr></thead>
-          <tbody>`;
+    let body = "";
     let count = 0;
     structure.forEach((item) => {
       if (item.isSetHeader) {
-        html += `<tr class="se-set-header"><td colspan="5">${item.displayName} (${toHHMM(item.calculatedBlockDurationSeconds || 0)})</td></tr>`;
-        item.songs.forEach((s) => {
+        const setTime = toHHMM(item.calculatedBlockDurationSeconds || 0);
+        body += `<tr class="set-header-row"><td colspan="8">${item.displayName} (${setTime})</td></tr>`;
+        (item.songs || []).forEach((s) => {
           count++;
-          html += `<tr>
+          const t = toMMSS(s.calculatedDurationSeconds || 0);
+          body += `<tr>
             <td>${count}</td>
             <td>${s.displayName}</td>
+            ${_createJukeboxCell(s.displayName)}
+            ${_createPdfCell(s.displayName)}
             <td>${decodeHtml(s.key || "-")}</td>
             <td>${decodeHtml(s.tempo || "-")}</td>
-            <td>${toMMSS(s.calculatedDurationSeconds || 0)}</td>
+            ${_createMetronomeCell(s.tempo)}
+            <td>${t}</td>
           </tr>`;
         });
       } else if (item.isBreak) {
-        html += `<tr class="se-break-row"><td colspan="4">${item.displayName}</td><td>${toMMSS(item.calculatedDurationSeconds || 0)}</td></tr>`;
+        const t = toMMSS(item.calculatedDurationSeconds || 0);
+        body += `<tr class="break-row">
+          <td></td>
+          <td style="font-style:italic;">${item.displayName}</td>
+          <td style="text-align:center;">-</td>
+          <td style="text-align:center;">-</td>
+          <td style="font-style:italic; text-align:center;">-</td>
+          <td style="font-style:italic; text-align:center;">-</td>
+          <td style="text-align:center;">-</td>
+          <td style="font-style:italic; text-align:center;">${t}</td>
+        </tr>`;
+      } else if (item.isSong) {
+        count++;
+        const t = toMMSS(item.calculatedDurationSeconds || 0);
+        body += `<tr>
+          <td>${count}</td>
+          <td>${item.displayName}</td>
+          ${_createJukeboxCell(item.displayName)}
+          ${_createPdfCell(item.displayName)}
+          <td>${decodeHtml(item.key || "-")}</td>
+          <td>${decodeHtml(item.tempo || "-")}</td>
+          ${_createMetronomeCell(item.tempo)}
+          <td>${t}</td>
+        </tr>`;
       }
     });
-    html += `</tbody></table></div>`;
+
+    const html = `
+      <div class="table-wrapper" style="margin-top:6px;">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Título</th>
+            <th class="jukebox-col-header">🎧</th>
+            <th class="pdf-col-header">📝</th>
+            <th>Key</th><th>Tempo</th>
+            <th class="metronome-col-header">⏱</th>
+            <th>Time</th>
+          </tr></thead>
+          <tbody>${body}</tbody>
+        </table>
+      </div>`;
     parentEl.innerHTML = html;
   }
 
@@ -252,8 +320,14 @@
           <h2 id="se-modal-title">Setlist del Concierto</h2>
           <p class="se-subtitle" id="se-modal-subtitle"></p>
           <div id="se-modal-body"></div>
-          <div class="se-modal-actions">
-            <span class="se-modal-total" id="se-modal-total"></span>
+          <div class="se-actions-bar" id="se-modal-actions-bar" style="display:none;">
+            <button class="download-btn" id="se-download-complex-btn">Pdf Complex</button>
+            <button class="download-btn" id="se-download-basic-btn">Pdf Simple</button>
+            <button class="download-btn" id="se-download-personal-btn">PDF Personal</button>
+            <button class="live-mode-btn" id="se-live-mode-btn">Modo Show 🎤</button>
+          </div>
+          <p class="se-modal-total" id="se-modal-total"></p>
+          <div class="se-close-row">
             <button class="se-close-btn" id="se-modal-close">Cerrar</button>
           </div>
         </div>
@@ -271,12 +345,69 @@
     }
   }
 
+  // Estado del modal actual: items procesados + nombre para los PDFs
+  let _currentModalItems = null;
+  let _currentModalName  = "Setlist del Concierto";
+
+  function _wireModalActionButtons() {
+    const bar = document.getElementById("se-modal-actions-bar");
+    if (!bar) return;
+    // Solo mostramos los botones si tenemos items y las funciones globales existen
+    const hasItems = !!(_currentModalItems && _currentModalItems.length);
+    if (!hasItems) {
+      bar.style.display = "none";
+      return;
+    }
+    bar.style.display = "block";
+
+    const setHandler = (id, fn) => {
+      const b = document.getElementById(id);
+      if (b) b.onclick = fn;
+    };
+
+    setHandler("se-download-complex-btn", () => {
+      if (typeof window.genPDF === "function") {
+        try { window.genPDF(_currentModalItems, _currentModalName, _currentModalName); }
+        catch (e) { console.warn("[setlist-extension] genPDF error:", e); alert("Error al generar PDF Complex."); }
+      } else { alert("La función de PDF Complex no está disponible."); }
+    });
+    setHandler("se-download-basic-btn", () => {
+      if (typeof window.genBasicPDF === "function") {
+        try { window.genBasicPDF(_currentModalItems, _currentModalName, _currentModalName); }
+        catch (e) { console.warn("[setlist-extension] genBasicPDF error:", e); alert("Error al generar PDF Simple."); }
+      } else { alert("La función de PDF Simple no está disponible."); }
+    });
+    setHandler("se-live-mode-btn", () => {
+      if (typeof window.startLiveMode === "function") {
+        try { window.startLiveMode(_currentModalItems); }
+        catch (e) { console.warn("[setlist-extension] startLiveMode error:", e); alert("Error al iniciar Modo Show."); }
+      } else { alert("Modo Show no está disponible."); }
+    });
+
+    // PDF Personal: la función global setupPersonalPdfBtn enlaza su propio onclick
+    // sobre el botón cuyo id le pasamos. Lo invocamos cada vez que renderizamos.
+    if (typeof window.setupPersonalPdfBtn === "function") {
+      try { window.setupPersonalPdfBtn("se-download-personal-btn", _currentModalItems, _currentModalName); }
+      catch (e) {
+        console.warn("[setlist-extension] setupPersonalPdfBtn error:", e);
+        const b = document.getElementById("se-download-personal-btn");
+        if (b) b.onclick = () => alert("Error preparando PDF Personal.");
+      }
+    } else {
+      const b = document.getElementById("se-download-personal-btn");
+      if (b) b.onclick = () => alert("La función de PDF Personal no está disponible.");
+    }
+  }
+
   function closeSetlistModal() {
     const m = document.getElementById("se-concert-setlist-modal");
     if (m) {
       m.classList.remove("show");
       m.style.display = "none";
     }
+    const bar = document.getElementById("se-modal-actions-bar");
+    if (bar) bar.style.display = "none";
+    _currentModalItems = null;
     // NO tocamos document.body.style.overflow para no bloquear scroll de la página
   }
 
@@ -294,11 +425,17 @@
       const subEl   = document.getElementById("se-modal-subtitle");
       const bodyEl  = document.getElementById("se-modal-body");
       const totalEl = document.getElementById("se-modal-total");
+      const bar     = document.getElementById("se-modal-actions-bar");
       if (!titleEl || !bodyEl) return;
 
       titleEl.textContent = concertTitle || "Setlist del Concierto";
       if (subEl) subEl.textContent = concertDate || "";
       if (totalEl) totalEl.textContent = "";
+      if (bar) bar.style.display = "none"; // se mostrará tras tener items
+
+      // Guardamos el nombre para los PDFs
+      _currentModalName  = (concertTitle || "Setlist del Concierto").trim() || "Setlist del Concierto";
+      _currentModalItems = null;
 
       const trimmed = (savedText || "").trim();
 
@@ -312,8 +449,10 @@
       if (looksLikeUrl(trimmed)) {
         showSetlistModal();
         const result = await window.SE.renderFromFeedUrl(bodyEl, trimmed, { appendTotal: false });
-        if (result && result.items && result.items.length && totalEl) {
-          totalEl.textContent = "Tiempo total: " + toHHMM(result.totalSeconds || 0) + (result.usedCache ? " (caché)" : "");
+        if (result && result.items && result.items.length) {
+          _currentModalItems = result.items;
+          if (totalEl) totalEl.textContent = "Tiempo total del set: " + toHHMM(result.totalSeconds || 0) + (result.usedCache ? " (Datos guardados)" : "");
+          _wireModalActionButtons();
         }
         return;
       }
@@ -331,7 +470,9 @@
         bodyEl.innerHTML = `<div class="se-empty-state">El JSON no contiene canciones reconocibles.</div>`;
       } else {
         renderSetlistTableInto(bodyEl, items, totalSeconds);
-        if (totalEl) totalEl.textContent = "Tiempo total: " + toHHMM(totalSeconds);
+        _currentModalItems = items;
+        if (totalEl) totalEl.textContent = "Tiempo total del set: " + toHHMM(totalSeconds);
+        _wireModalActionButtons();
       }
       showSetlistModal();
     }, "openConcertSetlistModal");
