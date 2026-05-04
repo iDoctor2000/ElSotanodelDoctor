@@ -294,7 +294,7 @@
       const link = document.createElement('a');
       link.href = '#zona-privada';
       link.id = 'menu-zona-privada';
-      link.textContent = '🔒 Zona Privada';
+      link.textContent = '🔒 Acceso Premium';
       sidebar.insertBefore(link, closeMenu);
     }
 
@@ -305,7 +305,7 @@
     const section = document.createElement('section');
     section.id = 'zona-privada';
     section.innerHTML = `
-      <h2>🔒 Zona Privada</h2>
+      <h2>🔒 Acceso Premium</h2>
 
       <!-- LOGIN -->
       <div id="pz-login-container" class="pz-login-container">
@@ -873,7 +873,7 @@
 
       // Logout
       _on('pz-logout-btn', 'click', () => {
-        if (confirm('¿Cerrar sesión de la zona privada?')) logout();
+        if (confirm('¿Cerrar sesión del Acceso Premium?')) logout();
       });
 
       // Tabs
