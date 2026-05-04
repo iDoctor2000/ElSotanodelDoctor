@@ -24,7 +24,7 @@
     }
   }
 
-  console.log("--- SETLIST-EXTENSION.JS v2 cargado ---");
+  console.log("--- SETLIST-EXTENSION.JS v3 cargado ---");
 
   // ============================================================
   // 1. ESTILOS — solo lo imprescindible
@@ -1231,23 +1231,44 @@
     // atributo (es lo que estaba haciendo que un botón hiciera lo del otro).
     const bodyEl = document.getElementById("se-past-concerts-body");
     if (bodyEl) {
+      console.log("[setlist-extension] Listener delegación pasados → enganchado a", bodyEl);
       bodyEl.addEventListener("click", (e) => {
-        const btn = e.target.closest && e.target.closest("button[data-pc-action]");
+        const target = e.target;
+        const btn = target && target.closest ? target.closest("button[data-pc-action]") : null;
+        console.log("[setlist-extension] click bodyEl pasados", {
+          targetTag: target && target.tagName,
+          targetClass: target && target.className,
+          foundBtn: !!btn,
+          action: btn && btn.getAttribute("data-pc-action"),
+          id: btn && btn.getAttribute("data-pc-id"),
+          registrySize: Object.keys(_pastSetlistRegistry).length
+        });
         if (!btn) return;
         e.preventDefault();
         e.stopPropagation();
         const action = btn.getAttribute("data-pc-action");
         const id = btn.getAttribute("data-pc-id");
-        if (!action || !id) return;
+        if (!action || !id) {
+          console.warn("[setlist-extension] click sin action/id válidos:", { action, id });
+          return;
+        }
         if (action === "info") {
           const entry = _pastSetlistRegistry[id] || {};
+          console.log("[setlist-extension] → INFO", { id, entry });
           openPastConcertDetails(id, entry.date || "", entry.title || "", entry.location || "");
         } else if (action === "setlist") {
+          console.log("[setlist-extension] → SETLIST", { id, hasFn: typeof window.SE.openPastSetlist });
           if (typeof window.SE.openPastSetlist === "function") {
             window.SE.openPastSetlist(id);
+          } else {
+            alert("Función openPastSetlist no disponible.");
           }
+        } else {
+          console.warn("[setlist-extension] action desconocida:", action);
         }
       });
+    } else {
+      console.warn("[setlist-extension] No se encontró #se-past-concerts-body para enganchar listener");
     }
   }
 
