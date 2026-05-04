@@ -331,59 +331,130 @@
         #se-tuner-toggle-btn { width: 35px; height: 35px; padding: 6px; }
       }
 
-      /* ====== POPUP AFINADOR ====== */
+      /* ====== POPUP AFINADOR · iDoctor TUNER PRO ====== */
       #se-tuner-popup {
-        position: fixed; top: 70px; right: 20px; width: 280px;
-        background: #1a1a1a; color: #fff; border: 1px solid #0cf;
-        border-radius: 12px; padding: 18px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+        position: fixed; top: 70px; right: 20px; width: 360px;
+        background: linear-gradient(180deg, #1d1d1d 0%, #0e0e0e 100%);
+        color: #ddd;
+        border: 1px solid #2a2a2a;
+        border-radius: 18px; padding: 14px 14px 12px;
+        box-shadow: 0 12px 50px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05);
         z-index: 100000; display: none; text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
       }
       #se-tuner-popup.visible { display: block; }
-      #se-tuner-popup .se-tuner-title {
-        color: #0cf; font-size: 0.95em; margin: 0 0 10px;
-        text-transform: uppercase; letter-spacing: 1px;
+
+      #se-tuner-popup .se-tuner-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 8px; padding: 0 4px;
       }
-      #se-tuner-popup .se-tuner-note {
-        font-size: 3.4em; font-weight: bold; color: #0cf;
-        line-height: 1; margin: 6px 0;
-        font-family: 'Courier New', monospace;
+      #se-tuner-popup .se-tuner-brand {
+        font-size: 0.85em; color: #888; letter-spacing: 1.5px;
+        font-weight: 600;
       }
-      #se-tuner-popup .se-tuner-freq {
-        color: #aaa; font-size: 0.9em; margin: 0 0 10px;
+      #se-tuner-popup .se-tuner-mode {
+        display: flex; background: #0a0a0a; border-radius: 999px;
+        padding: 2px; border: 1px solid #2a2a2a;
       }
-      #se-tuner-popup .se-tuner-bar {
-        position: relative; height: 18px; background: #0a0a0a;
-        border: 1px solid #333; border-radius: 9px; overflow: hidden;
-        margin: 10px 0;
+      #se-tuner-popup .se-tuner-mode-btn {
+        background: transparent; border: none; color: #888;
+        padding: 4px 14px; border-radius: 999px; cursor: pointer;
+        font-size: 0.78em; font-weight: bold; letter-spacing: 1px;
+        transition: all 0.2s;
       }
-      #se-tuner-popup .se-tuner-bar-center {
-        position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
-        background: #555; transform: translateX(-1px);
+      #se-tuner-popup .se-tuner-mode-btn.active {
+        background: #1eb5d9; color: #0a0a0a;
+        box-shadow: 0 0 8px rgba(30,181,217,0.5);
       }
-      #se-tuner-popup .se-tuner-bar-needle {
-        position: absolute; left: 50%; top: 1px; bottom: 1px; width: 4px;
-        background: #ff8c1a; transform: translateX(-2px);
-        transition: left 0.08s ease-out, background 0.08s;
-        border-radius: 2px;
+
+      #se-tuner-popup .se-tuner-gauge-wrap {
+        background: #050505; border-radius: 10px;
+        border: 1px solid #1a1a1a;
+        padding: 10px 8px 4px;
+        position: relative;
       }
-      #se-tuner-popup .se-tuner-bar-needle.in-tune { background: #6f6; box-shadow: 0 0 8px #6f6; }
-      #se-tuner-popup .se-tuner-cents {
-        font-size: 0.8em; color: #888; margin-top: 4px;
+      #se-tuner-popup .se-tuner-gauge-wrap svg { width: 100%; height: auto; display: block; }
+
+      /* Fila inferior: dots + mic */
+      #se-tuner-popup .se-tuner-bottom {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 8px 12px 4px;
       }
-      #se-tuner-popup .se-tuner-status {
-        font-size: 0.85em; color: #aaa; min-height: 1.2em; margin-top: 8px;
+      #se-tuner-popup .se-tuner-dots {
+        display: flex; gap: 6px; align-items: center;
       }
-      #se-tuner-popup .se-tuner-actions {
-        display: flex; gap: 6px; justify-content: center; margin-top: 12px;
+      #se-tuner-popup .se-tuner-dots .dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #333;
       }
-      #se-tuner-popup .se-tuner-actions button {
-        background: transparent; border: 1px solid #0cf; color: #0cf;
-        padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85em;
+      #se-tuner-popup .se-tuner-dots .dot.active {
+        background: #1eb5d9; box-shadow: 0 0 6px rgba(30,181,217,0.8);
       }
-      #se-tuner-popup .se-tuner-actions button:hover { background: rgba(0,204,255,0.15); }
+      #se-tuner-popup .se-tuner-mic {
+        background: transparent; border: none; cursor: pointer;
+        font-size: 1.3em; padding: 4px 8px; color: #aaa;
+        transition: all 0.2s;
+      }
+      #se-tuner-popup .se-tuner-mic.listening {
+        color: #ff5252;
+        animation: se-mic-pulse 1.4s ease-in-out infinite;
+      }
+      @keyframes se-mic-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(1.1); }
+      }
+
+      /* Manual: fila de notas */
+      #se-tuner-popup .se-tuner-manual-row {
+        display: none; flex-wrap: wrap; gap: 4px; justify-content: center;
+        padding: 6px 4px 2px;
+      }
+      #se-tuner-popup .se-tuner-manual-row.visible { display: flex; }
+      #se-tuner-popup .se-tuner-manual-row button {
+        background: #161616; border: 1px solid #2a2a2a; color: #aaa;
+        border-radius: 6px; padding: 4px 8px; cursor: pointer;
+        font-size: 0.8em; font-weight: bold; min-width: 36px;
+      }
+      #se-tuner-popup .se-tuner-manual-row button.active {
+        background: #1eb5d9; color: #0a0a0a; border-color: #1eb5d9;
+      }
+
+      #se-tuner-popup .se-tuner-status-line {
+        font-size: 0.78em; color: #777; min-height: 1em; margin-top: 4px;
+      }
+      #se-tuner-popup .se-tuner-close-x {
+        position: absolute; top: 8px; right: 12px;
+        background: transparent; border: none; color: #555;
+        cursor: pointer; font-size: 1.1em; padding: 0;
+      }
+      #se-tuner-popup .se-tuner-close-x:hover { color: #ddd; }
+
+      /* === Responsive del afinador === */
       @media (max-width: 768px) {
-        #se-tuner-popup { right: 10px; left: 10px; width: auto; top: 65px; }
+        #se-tuner-popup {
+          right: 8px !important; left: 8px !important;
+          width: auto !important; max-width: 100%;
+          top: 60px !important;
+          padding: 10px 10px 8px;
+          border-radius: 14px;
+        }
+        #se-tuner-popup .se-tuner-brand { font-size: 0.72em; letter-spacing: 1px; }
+        #se-tuner-popup .se-tuner-mode-btn { padding: 3px 10px; font-size: 0.7em; }
+        #se-tuner-popup .se-tuner-gauge-wrap { padding: 6px 4px 2px; }
+        #se-tuner-popup .se-tuner-manual-row button {
+          min-width: 30px; padding: 4px 6px; font-size: 0.74em;
+        }
+        #se-tuner-popup .se-tuner-status-line { font-size: 0.72em; }
+        #se-tuner-popup .se-tuner-mic { font-size: 1.1em; }
+      }
+      /* Móvil muy estrecho (≤360 px): aún más compacto */
+      @media (max-width: 360px) {
+        #se-tuner-popup { padding: 8px 6px; }
+        #se-tuner-popup .se-tuner-brand { display: none; }   /* prioridad: galga */
+        #se-tuner-popup .se-tuner-manual-row { gap: 3px; }
+        #se-tuner-popup .se-tuner-manual-row button {
+          min-width: 26px; padding: 3px 4px; font-size: 0.7em;
+        }
       }
     `;
     const tag = document.createElement("style");
@@ -1726,39 +1797,172 @@
     return sampleRate / T0;
   }
 
+  // Genera el SVG de la galga (25 LEDs en arco + aguja + textos)
+  function _buildTunerGaugeSVG() {
+    const cx = 200, cy = 220;
+    const rIn = 130, rOut = 158;
+    const totalLeds = 25;
+    const halfArcDeg = 75;        // arco de -75° a +75°
+    const stepDeg = (halfArcDeg * 2) / (totalLeds - 1);
+
+    let leds = "";
+    for (let i = 0; i < totalLeds; i++) {
+      const a = -halfArcDeg + i * stepDeg;             // grados desde vertical
+      const svgA = (a - 90) * Math.PI / 180;            // SVG ángulo radianes
+      const x1 = cx + rIn  * Math.cos(svgA);
+      const y1 = cy + rIn  * Math.sin(svgA);
+      const x2 = cx + rOut * Math.cos(svgA);
+      const y2 = cy + rOut * Math.sin(svgA);
+      leds += `<line class="se-led" data-i="${i}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#1a4d1a" stroke-width="6" stroke-linecap="round"/>`;
+    }
+
+    return `
+      <svg viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="se-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#3a3a3a"/>
+            <stop offset="100%" stop-color="#0a0a0a"/>
+          </radialGradient>
+          <filter id="se-led-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- LEDs en arco -->
+        <g id="se-tuner-leds">${leds}</g>
+
+        <!-- Aguja roja -->
+        <line id="se-tuner-needle"
+              x1="200" y1="220" x2="200" y2="78"
+              stroke="#ff3322" stroke-width="3" stroke-linecap="round"
+              filter="url(#se-led-glow)"
+              transform="rotate(0 200 220)"/>
+
+        <!-- Knob central -->
+        <circle cx="200" cy="220" r="9" fill="#222" stroke="#444" stroke-width="1.5"/>
+        <circle cx="200" cy="220" r="3" fill="#666"/>
+
+        <!-- Nota grande -->
+        <text id="se-tuner-note-text" x="190" y="160"
+              text-anchor="middle"
+              font-family="Arial Black, Arial, sans-serif"
+              font-size="78" font-weight="900"
+              fill="#3df04a" opacity="0.95">—</text>
+
+        <!-- Octava -->
+        <text id="se-tuner-octave-text" x="252" y="165"
+              font-family="Arial, sans-serif"
+              font-size="26" fill="#666">—</text>
+
+        <!-- Frecuencia -->
+        <text id="se-tuner-freq-text" x="200" y="195"
+              text-anchor="middle"
+              font-family="Arial, sans-serif"
+              font-size="14" fill="#888">— Hz</text>
+
+        <!-- ¡AFINADO! -->
+        <text id="se-tuner-status-text" x="200" y="218"
+              text-anchor="middle"
+              font-family="Arial Black, Arial, sans-serif"
+              font-size="13" font-weight="900" letter-spacing="1.5"
+              fill="#3df04a" opacity="0">¡AFINADO!</text>
+      </svg>
+    `;
+  }
+
   function ensureTunerPopup() {
     if (document.getElementById("se-tuner-popup")) return;
+
     const div = document.createElement("div");
     div.id = "se-tuner-popup";
+
+    // 12 botones para modo manual
+    const manualBtns = NOTE_NAMES.map((n, i) =>
+      `<button class="se-tuner-manual-btn" data-note="${i}">${n}</button>`
+    ).join("");
+
     div.innerHTML = `
-      <p class="se-tuner-title">Afinador</p>
-      <div class="se-tuner-note" id="se-tuner-note">—</div>
-      <div class="se-tuner-freq" id="se-tuner-freq">— Hz</div>
-      <div class="se-tuner-bar">
-        <div class="se-tuner-bar-center"></div>
-        <div class="se-tuner-bar-needle" id="se-tuner-needle" style="left:50%;"></div>
+      <button class="se-tuner-close-x" id="se-tuner-close-x" title="Cerrar">✕</button>
+      <div class="se-tuner-header">
+        <span class="se-tuner-brand">iDoctor TUNER PRO</span>
+        <div class="se-tuner-mode">
+          <button id="se-tuner-mode-auto" class="se-tuner-mode-btn active">AUTO</button>
+          <button id="se-tuner-mode-manual" class="se-tuner-mode-btn">MANUAL</button>
+        </div>
       </div>
-      <div class="se-tuner-cents" id="se-tuner-cents">0 cents</div>
-      <div class="se-tuner-status" id="se-tuner-status">Pulsa Iniciar y permite el micrófono</div>
-      <div class="se-tuner-actions">
-        <button id="se-tuner-start">Iniciar</button>
-        <button id="se-tuner-stop">Detener</button>
-        <button id="se-tuner-close">Cerrar</button>
+
+      <div class="se-tuner-gauge-wrap">
+        ${_buildTunerGaugeSVG()}
       </div>
+
+      <div class="se-tuner-manual-row" id="se-tuner-manual-row">${manualBtns}</div>
+
+      <div class="se-tuner-bottom">
+        <div class="se-tuner-dots">
+          <span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span>
+        </div>
+        <button id="se-tuner-mic-btn" class="se-tuner-mic" title="Iniciar / Detener">🎤</button>
+      </div>
+
+      <div class="se-tuner-status-line" id="se-tuner-status">Pulsa el 🎤 para empezar</div>
     `;
     document.body.appendChild(div);
 
-    const tuner = { ctx:null, analyser:null, stream:null, source:null, raf:null, buf:null };
+    // Estado del afinador
+    const tuner = {
+      ctx: null, analyser: null, stream: null, source: null,
+      raf: null, buf: null,
+      mode: "auto",          // 'auto' | 'manual'
+      manualMidi: 64,        // E4 por defecto (afinación de cuerda mi guitarra)
+      smoothCents: 0
+    };
+
+    function _updateLedsForCents(cents) {
+      // Mapeo cents [-50,+50] → índice LED [0..24]
+      const idx = Math.max(0, Math.min(24, Math.round(((cents + 50) / 100) * 24)));
+      const leds = div.querySelectorAll(".se-led");
+      leds.forEach((led, i) => {
+        // Distancia al LED activo
+        const dist = Math.abs(i - idx);
+        let color, width;
+        if (dist === 0) { color = "#3df04a"; width = 8; }      // verde brillante
+        else if (dist === 1) { color = "#27a132"; width = 7; }
+        else if (dist === 2) { color = "#1d7a25"; width = 6; }
+        else { color = "#1a4d1a"; width = 6; }                  // verde oscuro
+        led.setAttribute("stroke", color);
+        led.setAttribute("stroke-width", String(width));
+      });
+    }
+
+    function _resetGauge() {
+      const noteT = document.getElementById("se-tuner-note-text");
+      const octT = document.getElementById("se-tuner-octave-text");
+      const freqT = document.getElementById("se-tuner-freq-text");
+      const statusT = document.getElementById("se-tuner-status-text");
+      const needle = document.getElementById("se-tuner-needle");
+      if (noteT) noteT.textContent = "—";
+      if (octT) octT.textContent = "—";
+      if (freqT) freqT.textContent = "— Hz";
+      if (statusT) statusT.setAttribute("opacity", "0");
+      if (needle) needle.setAttribute("transform", "rotate(0 200 220)");
+      _updateLedsForCents(-50); // todos los LEDs en oscuro
+      const allLeds = div.querySelectorAll(".se-led");
+      allLeds.forEach(l => { l.setAttribute("stroke", "#1a4d1a"); l.setAttribute("stroke-width", "6"); });
+    }
 
     function stop() {
-      try { if (tuner.raf) cancelAnimationFrame(tuner.raf); } catch(e){}
+      try { if (tuner.raf) cancelAnimationFrame(tuner.raf); } catch (e) {}
       tuner.raf = null;
-      try { if (tuner.source) tuner.source.disconnect(); } catch(e){}
-      try { if (tuner.stream) tuner.stream.getTracks().forEach(t => t.stop()); } catch(e){}
-      try { if (tuner.ctx && tuner.ctx.state !== "closed") tuner.ctx.close(); } catch(e){}
+      try { if (tuner.source) tuner.source.disconnect(); } catch (e) {}
+      try { if (tuner.stream) tuner.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+      try { if (tuner.ctx && tuner.ctx.state !== "closed") tuner.ctx.close(); } catch (e) {}
       tuner.ctx = null; tuner.analyser = null; tuner.stream = null; tuner.source = null;
       const st = document.getElementById("se-tuner-status");
       if (st) st.textContent = "Detenido";
+      const mic = document.getElementById("se-tuner-mic-btn");
+      if (mic) mic.classList.remove("listening");
+      _resetGauge();
     }
 
     async function start() {
@@ -1780,8 +1984,11 @@
         analyser.fftSize = 2048;
         source.connect(analyser);
         const buf = new Float32Array(analyser.fftSize);
-        tuner.ctx = ctx; tuner.analyser = analyser; tuner.stream = stream; tuner.source = source; tuner.buf = buf;
-        if (st) st.textContent = "Escuchando…";
+        tuner.ctx = ctx; tuner.analyser = analyser; tuner.stream = stream;
+        tuner.source = source; tuner.buf = buf;
+        if (st) st.textContent = tuner.mode === "auto" ? "Escuchando…" : "Manual: " + NOTE_NAMES[tuner.manualMidi % 12];
+        const mic = document.getElementById("se-tuner-mic-btn");
+        if (mic) mic.classList.add("listening");
         loop();
       } catch (e) {
         console.warn("[afinador] error:", e && e.message);
@@ -1793,38 +2000,98 @@
       if (!tuner.analyser) return;
       tuner.analyser.getFloatTimeDomainData(tuner.buf);
       const freq = _autoCorrelate(tuner.buf, tuner.ctx.sampleRate);
-      const noteEl   = document.getElementById("se-tuner-note");
-      const freqEl   = document.getElementById("se-tuner-freq");
-      const centsEl  = document.getElementById("se-tuner-cents");
-      const needleEl = document.getElementById("se-tuner-needle");
+
+      const noteT  = document.getElementById("se-tuner-note-text");
+      const octT   = document.getElementById("se-tuner-octave-text");
+      const freqT  = document.getElementById("se-tuner-freq-text");
+      const statusT = document.getElementById("se-tuner-status-text");
+      const needle = document.getElementById("se-tuner-needle");
+
       if (freq === -1 || freq < 50 || freq > 1500) {
-        if (noteEl) noteEl.textContent = "—";
-        if (freqEl) freqEl.textContent = "— Hz";
-        if (centsEl) centsEl.textContent = "—";
-        if (needleEl) { needleEl.style.left = "50%"; needleEl.classList.remove("in-tune"); }
+        // sin señal: resetear suavemente
+        if (noteT) noteT.textContent = "—";
+        if (octT) octT.textContent = "—";
+        if (freqT) freqT.textContent = "— Hz";
+        if (statusT) statusT.setAttribute("opacity", "0");
+        // aguja vuelve al centro suave
+        tuner.smoothCents = tuner.smoothCents * 0.7;
+        if (needle) needle.setAttribute("transform", `rotate(${(tuner.smoothCents / 50) * 75} 200 220)`);
+        _updateLedsForCents(tuner.smoothCents);
       } else {
-        const n = _frequencyToNote(freq);
-        if (n) {
-          if (noteEl) noteEl.textContent = n.name + n.octave;
-          if (freqEl) freqEl.textContent = freq.toFixed(1) + " Hz";
-          if (centsEl) centsEl.textContent = (n.cents > 0 ? "+" : "") + n.cents + " cents";
-          // -50…+50 cents → 0%…100%
-          const pct = Math.max(0, Math.min(100, 50 + n.cents));
-          if (needleEl) {
-            needleEl.style.left = pct + "%";
-            if (Math.abs(n.cents) < 5) needleEl.classList.add("in-tune");
-            else needleEl.classList.remove("in-tune");
-          }
+        let displayName, displayOct, cents;
+        if (tuner.mode === "auto") {
+          const n = _frequencyToNote(freq);
+          if (!n) { tuner.raf = requestAnimationFrame(loop); return; }
+          displayName = n.name; displayOct = n.octave; cents = n.cents;
+        } else {
+          // MANUAL: cents respecto al MIDI seleccionado
+          const targetMidi = tuner.manualMidi;
+          const targetFreq = 440 * Math.pow(2, (targetMidi - 69) / 12);
+          const semis = 12 * Math.log2(freq / targetFreq);
+          cents = Math.round(semis * 100);
+          // Limitar a ±50 para que la aguja no se vaya al fondo si tocas otra cuerda
+          cents = Math.max(-50, Math.min(50, cents));
+          displayName = NOTE_NAMES[targetMidi % 12];
+          displayOct = Math.floor(targetMidi / 12) - 1;
         }
+
+        // Suavizado de la aguja para movimiento natural
+        tuner.smoothCents = tuner.smoothCents * 0.5 + cents * 0.5;
+        const angle = Math.max(-75, Math.min(75, (tuner.smoothCents / 50) * 75));
+
+        if (noteT) noteT.textContent = displayName;
+        if (octT) octT.textContent = String(displayOct);
+        if (freqT) freqT.textContent = freq.toFixed(1) + " Hz";
+        if (needle) needle.setAttribute("transform", `rotate(${angle} 200 220)`);
+        _updateLedsForCents(tuner.smoothCents);
+
+        // ¡AFINADO! cuando |cents| < 5
+        const inTune = Math.abs(cents) < 5;
+        if (statusT) statusT.setAttribute("opacity", inTune ? "1" : "0");
+        if (noteT) noteT.setAttribute("fill", inTune ? "#3df04a" : "#3df04a");
       }
       tuner.raf = requestAnimationFrame(loop);
     }
 
-    document.getElementById("se-tuner-start").addEventListener("click", start);
-    document.getElementById("se-tuner-stop").addEventListener("click", stop);
-    document.getElementById("se-tuner-close").addEventListener("click", () => {
+    // Listeners
+    document.getElementById("se-tuner-mic-btn").addEventListener("click", () => {
+      if (tuner.ctx) stop(); else start();
+    });
+    document.getElementById("se-tuner-close-x").addEventListener("click", () => {
       stop();
       div.classList.remove("visible");
+    });
+
+    // Modo AUTO/MANUAL
+    const btnAuto = document.getElementById("se-tuner-mode-auto");
+    const btnManual = document.getElementById("se-tuner-mode-manual");
+    const manualRow = document.getElementById("se-tuner-manual-row");
+    btnAuto.addEventListener("click", () => {
+      tuner.mode = "auto";
+      btnAuto.classList.add("active"); btnManual.classList.remove("active");
+      manualRow.classList.remove("visible");
+      const st = document.getElementById("se-tuner-status");
+      if (st) st.textContent = tuner.ctx ? "Escuchando…" : "Pulsa el 🎤 para empezar";
+    });
+    btnManual.addEventListener("click", () => {
+      tuner.mode = "manual";
+      btnManual.classList.add("active"); btnAuto.classList.remove("active");
+      manualRow.classList.add("visible");
+      const st = document.getElementById("se-tuner-status");
+      if (st) st.textContent = "Manual: " + NOTE_NAMES[tuner.manualMidi % 12] + " (selecciona nota)";
+    });
+
+    // Botones de notas del modo manual
+    div.querySelectorAll(".se-tuner-manual-btn").forEach(b => {
+      b.addEventListener("click", () => {
+        const noteIdx = parseInt(b.dataset.note, 10);
+        // Ajustamos a la octava 4 por defecto (igual que la mayoría de afinadores)
+        tuner.manualMidi = 12 * (4 + 1) + noteIdx; // octava 4
+        div.querySelectorAll(".se-tuner-manual-btn").forEach(x => x.classList.remove("active"));
+        b.classList.add("active");
+        const st = document.getElementById("se-tuner-status");
+        if (st) st.textContent = "Manual: " + NOTE_NAMES[noteIdx] + "4";
+      });
     });
 
     window.SE = window.SE || {};
