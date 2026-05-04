@@ -1073,38 +1073,70 @@
   }
 
   // ============================================================
-  // 6.bis  WATCHDOG DE SCROLL — restaura body.overflow si quedó
-  //        atascado en "hidden" sin que haya modales visibles.
+  // 6.bis  WATCHDOG DE SCROLL — restaura body/html.overflow si
+  //        quedaron atascados en "hidden" sin que haya modales
+  //        visibles. Incluye:
+  //          • intervalo periódico (cada 500 ms)
+  //          • listener de wheel/touchstart (reacción inmediata)
+  //          • listener de keydown ESC (libera al instante)
   // ============================================================
-  function startScrollWatchdog() {
-    setInterval(() => {
+  function _anyBlockingModalVisible() {
+    // ¿Hay algún modal visible que justifique el lock?
+    // Incluye los modales nativos del index, los nuestros y los de Zona Privada.
+    const candidates = document.querySelectorAll([
+      ".modal.show",
+      ".modal-overlay.show",
+      "#concert-details-modal.show",
+      "#se-concert-setlist-modal.show",
+      "#se-past-concerts-modal.show",
+      ".pz-modal-backdrop.show",
+      "#metronome-popup.visible",
+      "#se-tuner-popup.visible",
+    ].join(","));
+    let anyVisible = false;
+    candidates.forEach((el) => {
+      if (anyVisible) return;
       try {
-        if (document.body.style.overflow !== "hidden") return;
-        // ¿Hay algún modal visible que justifique el lock?
-        // Incluye los modales nativos del index, los nuestros, y los de Zona Privada.
-        const candidates = document.querySelectorAll([
-          ".modal.show",
-          ".modal-overlay.show",
-          "#concert-details-modal.show",
-          "#se-concert-setlist-modal.show",
-          "#se-past-concerts-modal.show",
-          ".pz-modal-backdrop.show",
-          "#metronome-popup.visible",
-        ].join(","));
-        let anyVisible = false;
-        candidates.forEach((el) => {
-          if (anyVisible) return;
-          const cs = window.getComputedStyle(el);
-          if (cs.display !== "none" && cs.visibility !== "hidden") {
-            anyVisible = true;
-          }
-        });
-        if (!anyVisible) {
-          document.body.style.overflow = "";
-          console.log("[setlist-extension] Watchdog: body.overflow restaurado (no hay modales visibles).");
+        const cs = window.getComputedStyle(el);
+        if (cs.display !== "none" && cs.visibility !== "hidden") {
+          anyVisible = true;
         }
       } catch (_) {}
-    }, 1500);
+    });
+    return anyVisible;
+  }
+
+  function _maybeRestoreScroll(reason) {
+    try {
+      const bodyLocked = document.body.style.overflow === "hidden";
+      const htmlLocked = document.documentElement.style.overflow === "hidden";
+      if (!bodyLocked && !htmlLocked) return;
+      if (_anyBlockingModalVisible()) return;
+      if (bodyLocked) document.body.style.overflow = "";
+      if (htmlLocked) document.documentElement.style.overflow = "";
+      console.log("[setlist-extension] scroll restaurado (" + reason + ")");
+    } catch (_) {}
+  }
+
+  function startScrollWatchdog() {
+    // Tic periódico
+    setInterval(() => _maybeRestoreScroll("watchdog"), 500);
+
+    // Cuando el usuario intenta hacer scroll, restaurar al instante.
+    // Usamos `passive: true` para no afectar al rendimiento del scroll.
+    const onWheelOrTouch = () => _maybeRestoreScroll("wheel/touch");
+    window.addEventListener("wheel", onWheelOrTouch, { passive: true, capture: true });
+    window.addEventListener("touchstart", onWheelOrTouch, { passive: true, capture: true });
+
+    // ESC siempre libera el scroll (por si quedó algún modal escondido).
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" || e.keyCode === 27) {
+        setTimeout(() => _maybeRestoreScroll("escape"), 50);
+      }
+    });
+
+    // Cualquier click en zona "vacía" del documento → comprobamos.
+    window.addEventListener("click", () => _maybeRestoreScroll("click"), true);
   }
 
   // ============================================================
@@ -1113,6 +1145,13 @@
 
   // Mapas de meses/días para parseo de IDs
   const _MONTH_NAMES_ES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+  // Registro de setlists de conciertos pasados.
+  // Evitamos meter JSON.stringify en un atributo onclick="..." porque las
+  // comillas internas del JSON colisionan con los delimitadores del atributo
+  // y rompen el HTML (-> Uncaught SyntaxError: Unexpected end of input).
+  // En su lugar guardamos los datos en este map y el onclick sólo pasa el id.
+  const _pastSetlistRegistry = {};
 
   // Parsea un concert_id como "Sab_02_05_26_Boda_Bruno_-_hijo_Patato-"
   // o "Sab_07_06_25__19_00_a_23_55_Boda_Tardeo".
@@ -1241,6 +1280,14 @@
       const safeTitle = info.title.replace(/'/g, "\\'");
       const safeLoc = location.replace(/'/g, "\\'");
 
+      // Guardamos el setlist en el registro por id, en vez de inyectar
+      // JSON.stringify dentro del atributo onclick (eso rompía el HTML).
+      _pastSetlistRegistry[id] = {
+        title: info.title,
+        date:  info.dateStr,
+        json:  setlistJson
+      };
+
       rowsHtml += `<tr>
         <td>${info.dateStr}</td>
         <td>${info.title}</td>
@@ -1251,7 +1298,7 @@
         <td class="se-setlist-col" style="text-align:center;">
           <button class="se-setlist-btn${hasSetlist ? "" : " empty"}"
                   title="${hasSetlist ? "Ver setlist de este concierto" : "Sin setlist vinculado"}"
-                  onclick="window.openConcertSetlistModal('${safeTitle}','${safeDate}', ${JSON.stringify(setlistJson)})">🎵</button>
+                  onclick="window.SE && window.SE.openPastSetlist && window.SE.openPastSetlist('${safeId}')">🎵</button>
         </td>
       </tr>`;
     });
@@ -1660,6 +1707,31 @@
   window.SE.openPastConcertDetails = openPastConcertDetails;
   window.SE.openPastConcertsModal  = openPastConcertsModal;
   window.SE.toggleMetronome        = toggleMetronomeUnified;
+
+  // Abre el setlist de un concierto pasado a partir del id, leyendo el
+  // contenido del registro (_pastSetlistRegistry). Esto evita meter JSON
+  // dentro del atributo onclick="..." (donde rompe el HTML).
+  window.SE.openPastSetlist = function (concertId) {
+    try {
+      const entry = _pastSetlistRegistry[concertId];
+      if (!entry) {
+        alert("No se encontraron datos del setlist para este concierto.");
+        return;
+      }
+      if (!entry.json) {
+        alert("Este concierto no tiene setlist vinculado.");
+        return;
+      }
+      if (typeof window.openConcertSetlistModal !== "function") {
+        alert("La función para abrir el setlist no está disponible.");
+        return;
+      }
+      window.openConcertSetlistModal(entry.title || "", entry.date || "", entry.json);
+    } catch (e) {
+      console.warn("[setlist-extension] openPastSetlist error:", e);
+      alert("No se pudo abrir el setlist del concierto.");
+    }
+  };
   window.SE.renderFromFeedUrl = async function (parentEl, feedUrl, opts = {}) {
     if (!parentEl) return { error: "no-parent" };
     parentEl.innerHTML = `<div style="text-align:center;color:#aaa;padding:20px;">⌛ Cargando setlist...</div>`;
