@@ -24,7 +24,7 @@
     }
   }
 
-  console.log("--- SETLIST-EXTENSION.JS v3 cargado ---");
+  console.log("--- SETLIST-EXTENSION.JS v4 cargado ---");
 
   // ============================================================
   // 1. ESTILOS — solo lo imprescindible
@@ -57,7 +57,10 @@
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         background: rgba(0,0,0,0.85);
         align-items: flex-start; justify-content: center;
-        z-index: 99000; overflow-y: auto;
+        /* z-index 99500: por encima del modal de "Conciertos Pasados" (99000)
+           para que cuando el usuario pulse 🎵 desde un concierto pasado, el
+           setlist aparezca POR ENCIMA del modal de pasados, no debajo. */
+        z-index: 99500; overflow-y: auto;
         padding: 30px 10px;
       }
       #se-concert-setlist-modal .se-modal-box {
@@ -1782,21 +1785,40 @@
   // contenido del registro (_pastSetlistRegistry). Esto evita meter JSON
   // dentro del atributo onclick="..." (donde rompe el HTML).
   window.SE.openPastSetlist = function (concertId) {
+    console.log("[setlist-extension] openPastSetlist() INVOCADA con id =", concertId);
     try {
       const entry = _pastSetlistRegistry[concertId];
+      console.log("[setlist-extension] openPastSetlist → registry entry:", {
+        found: !!entry,
+        title: entry && entry.title,
+        date: entry && entry.date,
+        location: entry && entry.location,
+        jsonLen: entry && entry.json ? entry.json.length : 0,
+        jsonPreview: entry && entry.json ? entry.json.slice(0, 80) : null,
+        registryKeys: Object.keys(_pastSetlistRegistry).length
+      });
       if (!entry) {
+        console.warn("[setlist-extension] openPastSetlist → NO entry para id", concertId,
+          "claves registro:", Object.keys(_pastSetlistRegistry));
         alert("No se encontraron datos del setlist para este concierto.");
         return;
       }
       if (!entry.json) {
+        console.warn("[setlist-extension] openPastSetlist → entry.json vacío para id", concertId);
         alert("Este concierto no tiene setlist vinculado.");
         return;
       }
+      console.log("[setlist-extension] openPastSetlist → window.openConcertSetlistModal typeof =",
+        typeof window.openConcertSetlistModal);
       if (typeof window.openConcertSetlistModal !== "function") {
+        console.warn("[setlist-extension] openPastSetlist → openConcertSetlistModal NO es función");
         alert("La función para abrir el setlist no está disponible.");
         return;
       }
+      console.log("[setlist-extension] openPastSetlist → llamando openConcertSetlistModal(",
+        entry.title, ",", entry.date, ", json[" + entry.json.length + " chars])");
       window.openConcertSetlistModal(entry.title || "", entry.date || "", entry.json);
+      console.log("[setlist-extension] openPastSetlist → openConcertSetlistModal devolvió OK");
     } catch (e) {
       console.warn("[setlist-extension] openPastSetlist error:", e);
       alert("No se pudo abrir el setlist del concierto.");
