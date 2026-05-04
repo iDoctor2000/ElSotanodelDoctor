@@ -1186,6 +1186,19 @@
     return { dateObj, dateStr, title, timeRange };
   }
 
+  // Helper: escapa texto para que sea seguro insertarlo en HTML (innerHTML
+  // o atributos). Importante porque los títulos pueden contener &, <, >, "
+  // o ' que romperían el HTML.
+  function _escHtml(s) {
+    if (s === null || s === undefined) return "";
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function ensurePastConcertsModal() {
     if (document.getElementById("se-past-concerts-modal")) return;
     const html = `
@@ -1210,6 +1223,30 @@
     if (m) {
       m.addEventListener("click", (e) => {
         if (e.target.id === "se-past-concerts-modal") closePastConcertsModal();
+      });
+    }
+    // Delegación de eventos para los botones de la tabla.
+    // Usamos data-action + data-id en vez de onclick="..." para evitar que
+    // caracteres especiales en títulos/localizaciones rompan el HTML del
+    // atributo (es lo que estaba haciendo que un botón hiciera lo del otro).
+    const bodyEl = document.getElementById("se-past-concerts-body");
+    if (bodyEl) {
+      bodyEl.addEventListener("click", (e) => {
+        const btn = e.target.closest && e.target.closest("button[data-pc-action]");
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const action = btn.getAttribute("data-pc-action");
+        const id = btn.getAttribute("data-pc-id");
+        if (!action || !id) return;
+        if (action === "info") {
+          const entry = _pastSetlistRegistry[id] || {};
+          openPastConcertDetails(id, entry.date || "", entry.title || "", entry.location || "");
+        } else if (action === "setlist") {
+          if (typeof window.SE.openPastSetlist === "function") {
+            window.SE.openPastSetlist(id);
+          }
+        }
       });
     }
   }
@@ -1270,35 +1307,47 @@
     }
 
     // 4) Renderizar tabla similar a la de Próximos Conciertos, sin "Cal" ni "Lugar"
+    //
+    // IMPORTANTE: NUNCA inyectamos texto del usuario (título, localización,
+    // id) dentro de un atributo onclick="..." porque cualquier comilla,
+    // ampersand o etiqueta podía romper el HTML del atributo y hacer que
+    // un botón disparara el handler de OTRO botón (o no disparara nada).
+    // En su lugar:
+    //   • Guardamos los datos del concierto en `_pastSetlistRegistry`.
+    //   • Los botones llevan `data-pc-action` y `data-pc-id` (sólo el id).
+    //   • Un único listener (en ensurePastConcertsModal) hace la delegación.
     let rowsHtml = "";
     past.forEach(({ id, info, data }) => {
       const location = (data.locationDetails || data.location || "").trim();
       const setlistJson = (data.setlistJson || "").trim();
       const hasSetlist = !!setlistJson;
-      const safeId = id.replace(/'/g, "\\'");
-      const safeDate = info.dateStr.replace(/'/g, "\\'");
-      const safeTitle = info.title.replace(/'/g, "\\'");
-      const safeLoc = location.replace(/'/g, "\\'");
 
-      // Guardamos el setlist en el registro por id, en vez de inyectar
-      // JSON.stringify dentro del atributo onclick (eso rompía el HTML).
+      // Registro del concierto, indexado por id.
       _pastSetlistRegistry[id] = {
-        title: info.title,
-        date:  info.dateStr,
-        json:  setlistJson
+        title:    info.title,
+        date:     info.dateStr,
+        location: location,
+        json:     setlistJson
       };
 
+      // Todo lo que va al HTML pasa por _escHtml.
+      const idAttr    = _escHtml(id);
+      const dateHtml  = _escHtml(info.dateStr);
+      const titleHtml = _escHtml(info.title);
+      const slTitle   = hasSetlist ? "Ver setlist de este concierto" : "Sin setlist vinculado";
+
       rowsHtml += `<tr>
-        <td>${info.dateStr}</td>
-        <td>${info.title}</td>
+        <td>${dateHtml}</td>
+        <td>${titleHtml}</td>
         <td class="details-col-header" style="text-align:center;">
-          <button class="details-btn" title="Ver/Editar Detalles del Concierto"
-                  onclick="window.SE && window.SE.openPastConcertDetails && window.SE.openPastConcertDetails('${safeId}','${safeDate}','${safeTitle}','${safeLoc}')">➡️</button>
+          <button type="button" class="details-btn"
+                  data-pc-action="info" data-pc-id="${idAttr}"
+                  title="Ver/Editar Detalles del Concierto">➡️</button>
         </td>
         <td class="se-setlist-col" style="text-align:center;">
-          <button class="se-setlist-btn${hasSetlist ? "" : " empty"}"
-                  title="${hasSetlist ? "Ver setlist de este concierto" : "Sin setlist vinculado"}"
-                  onclick="window.SE && window.SE.openPastSetlist && window.SE.openPastSetlist('${safeId}')">🎵</button>
+          <button type="button" class="se-setlist-btn${hasSetlist ? "" : " empty"}"
+                  data-pc-action="setlist" data-pc-id="${idAttr}"
+                  title="${_escHtml(slTitle)}">🎵</button>
         </td>
       </tr>`;
     });
