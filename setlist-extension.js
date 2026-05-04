@@ -143,6 +143,12 @@
          no funciona. Lo subimos por encima con !important. */
       #metronome-popup { z-index: 100000 !important; }
 
+      /* === Jukebox: index.html lo crea con z-index:11000 — eso lo deja
+         POR DEBAJO de nuestros modales (z-index 99000) y al pulsar el icono
+         🎧 dentro del modal del setlist, el reproductor aparecía oculto.
+         Lo subimos por encima de TODO para que siempre se vea. */
+      #jukebox-player-bar { z-index: 100500 !important; }
+
       /* === RESPONSIVE: que las tablas dentro de los modales del setlist
          se comporten EXACTAMENTE como las tablas del setlist principal
          del index (líneas 488-520 de index.html):
@@ -276,15 +282,51 @@
         }
       }
 
-      /* ====== BOTÓN AFINADOR EN EL HEADER ====== */
+      /* ====== UNIFORMIDAD VISUAL DE LOS BOTONES DEL HEADER ======
+         Recuadre suave para todos los iconos para que se vean alineados.
+         (Aplica también al metrónomo, al de audio y al calendario.) */
+      .header-controls-right .header-icon-btn {
+        border: 1px solid rgba(255,255,255,0.25) !important;
+        border-radius: 8px !important;
+        background: rgba(0,0,0,0.35);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        transition: background 0.2s, border-color 0.2s, transform 0.1s;
+      }
+      .header-controls-right .header-icon-btn:hover {
+        border-color: #0cf !important;
+        transform: translateY(-1px);
+      }
+
+      /* ====== BOTÓN AFINADOR — verde militar ====== */
       #se-tuner-toggle-btn {
-        background: transparent; border: none; cursor: pointer;
+        cursor: pointer;
         width: 40px; height: 40px; padding: 7px;
         display: flex; align-items: center; justify-content: center;
         color: #fff;
+        background: #4b5320 !important;       /* verde militar */
+        border: 1px solid #6b7335 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.5);
       }
       #se-tuner-toggle-btn svg { width: 100%; height: 100%; fill: currentColor; }
-      #se-tuner-toggle-btn:hover { color: #0cf; }
+      #se-tuner-toggle-btn:hover {
+        background: #5d6628 !important;
+        border-color: #8a9446 !important;
+        color: #d4e69c;
+      }
+
+      /* ====== BOTÓN CALENDARIO — fondo amarillento ====== */
+      #header-calendar-btn {
+        background: #c9a227 !important;        /* amarillo dorado */
+        border: 1px solid #e3c04a !important;
+        color: #1a1a1a !important;
+      }
+      #header-calendar-btn svg { fill: #1a1a1a !important; }
+      #header-calendar-btn:hover {
+        background: #e3c04a !important;
+        border-color: #ffd966 !important;
+      }
+
       @media (max-width: 768px) {
         #se-tuner-toggle-btn { width: 35px; height: 35px; padding: 6px; }
       }
@@ -800,19 +842,32 @@
       } else { alert("Modo Show no está disponible."); }
     });
 
-    // PDF Personal: la función global setupPersonalPdfBtn enlaza su propio onclick
-    // sobre el botón cuyo id le pasamos. Lo invocamos cada vez que renderizamos.
-    if (typeof window.setupPersonalPdfBtn === "function") {
-      try { window.setupPersonalPdfBtn("se-download-personal-btn", _currentModalItems, _currentModalName); }
-      catch (e) {
-        console.warn("[setlist-extension] setupPersonalPdfBtn error:", e);
-        const b = document.getElementById("se-download-personal-btn");
-        if (b) b.onclick = () => alert("Error preparando PDF Personal.");
+    // PDF Personal: setupPersonalPdfBtn no está expuesta en window (es un const
+    // dentro de un closure de index.html). Replicamos la lógica localmente
+    // usando window.genPersonalPDF, que SÍ está expuesta (setlists.js).
+    setHandler("se-download-personal-btn", () => {
+      if (typeof window.genPersonalPDF !== "function") {
+        alert("La función de PDF Personal no está disponible.");
+        return;
       }
-    } else {
-      const b = document.getElementById("se-download-personal-btn");
-      if (b) b.onclick = () => alert("La función de PDF Personal no está disponible.");
-    }
+      if (!_currentModalItems || !_currentModalItems.length) {
+        alert("Setlist vacío.");
+        return;
+      }
+      const sizeStr = prompt("PDF Personal - Tamaño letra títulos (8-30 pt):", "14");
+      if (!sizeStr) return;
+      const fontSize = parseInt(sizeStr, 10);
+      if (isNaN(fontSize) || fontSize < 8 || fontSize > 30) {
+        alert("Tamaño inválido. Debe estar entre 8 y 30.");
+        return;
+      }
+      try {
+        window.genPersonalPDF(_currentModalItems, _currentModalName, _currentModalName, fontSize);
+      } catch (e) {
+        console.warn("[setlist-extension] genPersonalPDF error:", e);
+        alert("Error al generar PDF Personal.");
+      }
+    });
   }
 
   function closeSetlistModal() {
