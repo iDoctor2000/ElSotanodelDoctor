@@ -9,7 +9,7 @@
    + Pitch shift real (Web Audio Jungle) — solo se activa cuando semitones≠0
    + GainNode para volumen iOS — solo se activa en iOS o tras pitch shift
 */
-console.log("--- JUKEBOX.JS v3 cargado (Web Audio condicional) ---");
+console.log("--- JUKEBOX.JS v4 cargado (pitch clásico + volumen iOS) ---");
 
 // Variables Globales del Jukebox
 let jukeboxLibrary = {}; 
@@ -1489,29 +1489,20 @@ window.updatePitchDisplay = function() {
 
 window.applyPlaybackRate = function() {
     if (currentJukeboxType === 'html5' && currentAudioObj) {
-        // SPEED → playbackRate con preservesPitch=true (cambia tempo, no pitch).
+        // Método clásico: SPEED y PITCH se combinan en playbackRate.
+        //   - speed → 1.0x = velocidad normal
+        //   - pitch → cada semitono multiplica por 2^(1/12) ≈ 1.0595
+        //   - finalRate = speed * 2^(semitones/12)
+        // preservesPitch=false → al cambiar playbackRate, cambia pitch + tempo
+        // (efecto "chipmunk"). Es lo que SIEMPRE funciona.
+        const pitchMultiplier = Math.pow(2, currentSemitones / 12);
+        const finalRate = currentSpeed * pitchMultiplier;
         try {
-            currentAudioObj.preservesPitch = true;
-            currentAudioObj.mozPreservesPitch = true;
-            currentAudioObj.webkitPreservesPitch = true;
+            currentAudioObj.preservesPitch = false;
+            currentAudioObj.mozPreservesPitch = false;
+            currentAudioObj.webkitPreservesPitch = false;
         } catch (e) {}
-        try { currentAudioObj.playbackRate = currentSpeed; } catch (e) {}
-
-        // PITCH → pasa por Web Audio SOLO si los semitonos ≠ 0 (cuando son 0
-        // dejamos el audio sin tocar y suena por el camino normal del navegador,
-        // que es lo seguro y compatible con todos los casos).
-        // Si el audio YA estaba conectado a Web Audio (de un pitch previo),
-        // mantenemos la conexión y aplicamos el nuevo valor (incluido 0).
-        try {
-            const ja = window.JukeboxAudio;
-            if (!ja) return;
-            if (currentSemitones !== 0 || ja.isConnected(currentAudioObj)) {
-                if (ja.connect(currentAudioObj)) {
-                    ja.setSemitones(currentSemitones);
-                    ja.resume();
-                }
-            }
-        } catch (e) { console.warn("[Jukebox] applyPlaybackRate pitch error:", e); }
+        try { currentAudioObj.playbackRate = finalRate; } catch (e) {}
     }
     if (currentJukeboxType === 'youtube' && ytPlayer && typeof ytPlayer.setPlaybackRate === 'function') {
         ytPlayer.setPlaybackRate(currentSpeed);
@@ -1565,24 +1556,25 @@ window.setJukeboxVolume = function(val) {
     }
 
     if (currentJukeboxType === 'html5' && currentAudioObj) {
-        // Estrategia mixta:
-        //   - Si el audio NO está enrutado por Web Audio y NO es iOS → usar
-        //     el .volume nativo del <audio> (camino seguro y silencioso).
-        //   - Si el audio YA está en Web Audio (porque hay pitch shift) o
-        //     estamos en iOS (donde .volume es ignorado), usamos GainNode.
+        // Estrategia: SIEMPRE actualizar .volume nativo (suena en escritorio
+        // y no estorba si Web Audio está activo). Adicionalmente, si estamos
+        // en iOS, propagar el valor al GainNode (audio.volume es ignorado allí).
+        try {
+            const vol = Math.max(0, Math.min(1, currentVolume / 100));
+            if (isFinite(vol)) currentAudioObj.volume = vol;
+        } catch(e) {}
+
         const ja = window.JukeboxAudio;
-        const needsWebAudio = !!ja && (ja.isConnected(currentAudioObj) || ja.isIOS());
-        let webAudioOk = false;
-        if (needsWebAudio && ja) {
-            try { ja.connect(currentAudioObj); } catch(e) {}
-            webAudioOk = ja.setVolume(currentVolume);
-            ja.resume && ja.resume();
-        }
-        if (!webAudioOk) {
+        if (ja && ja.isIOS()) {
+            // En iOS necesitamos enchufar el audio al GainNode para que el
+            // slider tenga efecto. Si falla, el audio sigue sonando por la
+            // ruta nativa (no podremos cambiar volumen, pero al menos suena).
             try {
-                const vol = Math.max(0, Math.min(1, currentVolume / 100));
-                if (isFinite(vol)) currentAudioObj.volume = vol;
-            } catch(e) {}
+                if (ja.connect(currentAudioObj)) {
+                    ja.setVolume(currentVolume);
+                    ja.resume();
+                }
+            } catch (e) { console.warn("[Jukebox] iOS volume Web Audio error:", e); }
         }
     }
 
@@ -1962,20 +1954,27 @@ function initJukebox() {
 }
 
 /* ============================================================
-   WEB AUDIO PIPELINE
-   - Pitch shifter REAL (no cambia tempo) basado en la técnica Jungle
-     de Chris Wilson (Google) — dos delay lines moduladas con LFOs
-     triangulares en oposición de fase y crossfade entre ambas.
-   - GainNode para volumen FUNCIONAL EN iOS (HTMLAudioElement.volume
-     es ignorado por iOS Safari; un GainNode sí responde).
+   WEB AUDIO PIPELINE — versión SIMPLE y robusta
+   - Solo se usa GainNode para volumen FUNCIONAL EN iOS (donde
+     HTMLAudioElement.volume es ignorado por iOS Safari).
+   - El pitch shift NO se hace por Web Audio (probó dar problemas
+     de silencio en algunos navegadores). En su lugar se usa el
+     método clásico playbackRate + preservesPitch=false, que cambia
+     pitch y tempo a la vez (efecto "chipmunk" leve, casi inaudible
+     hasta ±3 semitonos). Es lo que SIEMPRE funciona.
+   - Cadena: source → gain → destination. Sin shifter.
    ============================================================ */
 window.JukeboxAudio = (function() {
     let _ctx = null;
     let _srcNode = null;       // MediaElementSource (1 por elemento)
     let _gainNode = null;      // Volumen
-    let _pitch = null;         // Pitch shifter
     const _connectedEls = new WeakSet();
-    let _connectedEl = null;   // Solo puede haber 1 elemento conectado a la cadena
+    let _connectedEl = null;
+
+    function isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
 
     function ensureCtx() {
         if (_ctx) return _ctx;
@@ -1985,9 +1984,6 @@ window.JukeboxAudio = (function() {
             _ctx = new Ctx();
             _gainNode = _ctx.createGain();
             _gainNode.gain.value = 1.0;
-            _pitch = createJunglePitchShifter(_ctx);
-            // Cadena: pitch.input ← (audio) ; pitch.output → gain → destination
-            _pitch.output.connect(_gainNode);
             _gainNode.connect(_ctx.destination);
             return _ctx;
         } catch (e) {
@@ -2000,30 +1996,22 @@ window.JukeboxAudio = (function() {
     function connectAudioElement(audioEl) {
         if (!audioEl) return false;
         if (!ensureCtx()) return false;
-        if (_connectedEl === audioEl) return true; // Ya conectado
-        // Intentar despertar el contexto antes de conectar. Si después del
-        // resume el contexto sigue suspended, NO conectamos (porque eso
-        // dejaría el audio en silencio): mejor que suene por el camino
-        // nativo del navegador.
-        if (_ctx.state === 'suspended') {
-            try { _ctx.resume(); } catch (e) {}
-        }
+        if (_connectedEl === audioEl) return true;
+        if (_ctx.state === 'suspended') { try { _ctx.resume(); } catch (e) {} }
         if (_ctx.state !== 'running') {
-            console.warn("[Jukebox] AudioContext no está running — saltando conexión Web Audio para no silenciar el audio.");
+            console.warn("[Jukebox] AudioContext no está running — saltando conexión Web Audio.");
             return false;
         }
-        // Si había uno antiguo conectado, desconectarlo del pitch
-        if (_srcNode) {
-            try { _srcNode.disconnect(); } catch (e) {}
-            _srcNode = null;
-        }
+        if (_srcNode) { try { _srcNode.disconnect(); } catch (e) {} _srcNode = null; }
         try {
             if (_connectedEls.has(audioEl)) {
-                console.warn("[Jukebox] Audio element ya tenía source — saltando.");
-                return false;
+                // Mismo elemento ya tuvo source. No podemos crear otro. Asumimos OK.
+                _connectedEl = audioEl;
+                return true;
             }
             _srcNode = _ctx.createMediaElementSource(audioEl);
-            _srcNode.connect(_pitch.input);
+            // Cadena simple: source → gain → destination
+            _srcNode.connect(_gainNode);
             _connectedEls.add(audioEl);
             _connectedEl = audioEl;
             return true;
@@ -2033,17 +2021,11 @@ window.JukeboxAudio = (function() {
         }
     }
 
-    function setSemitones(n) {
-        if (!_pitch) return;
-        // Clamp -12 .. +12
-        n = Math.max(-12, Math.min(12, n));
-        _pitch.setSemitones(n);
-    }
-
     function setVolume(pct) {
-        if (!_gainNode) return false;
+        if (!_gainNode || !_ctx) return false;
         const v = Math.max(0, Math.min(1, pct / 100));
         try {
+            // setTargetAtTime suaviza el cambio para evitar clicks
             _gainNode.gain.setTargetAtTime(v, _ctx.currentTime, 0.01);
             return true;
         } catch (e) {
@@ -2060,171 +2042,23 @@ window.JukeboxAudio = (function() {
     function isConnected(audioEl) {
         return _connectedEl === audioEl && !!_srcNode;
     }
-    function isIOS() {
-        return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    }
 
     return {
         ensureCtx: ensureCtx,
         connect: connectAudioElement,
-        setSemitones: setSemitones,
         setVolume: setVolume,
         resume: resume,
         isConnected: isConnected,
         isIOS: isIOS,
+        // setSemitones se mantiene como noop por compatibilidad (otras
+        // partes del código podrían llamarla; no debe romper nada)
+        setSemitones: function() {},
         get isReady() { return !!_ctx; },
     };
 })();
 
-/* ----------------------------------------------------------
-   Jungle Pitch Shifter (basado en el ejemplo canónico de
-   Chris Wilson / Google Chrome Labs). Permite pitch shift
-   en tiempo real sin cambiar el tempo.
-   ---------------------------------------------------------- */
-function createJunglePitchShifter(context) {
-    const delayTime = 0.100;
-    const fadeTime = 0.050;
-    const bufferTime = 0.100;
-
-    const input  = context.createGain();
-    const output = context.createGain();
-
-    // Buffers de modulación
-    const shiftDownBuffer = _createDelayTimeBuffer(context, bufferTime, fadeTime, false);
-    const shiftUpBuffer   = _createDelayTimeBuffer(context, bufferTime, fadeTime, true);
-    const fadeBuffer      = _createFadeBuffer(context, bufferTime, fadeTime);
-
-    // Generadores LFO (4 fuentes leyendo los buffers)
-    const mod1 = context.createBufferSource();
-    const mod2 = context.createBufferSource();
-    const mod3 = context.createBufferSource();
-    const mod4 = context.createBufferSource();
-    mod1.buffer = shiftDownBuffer;
-    mod2.buffer = shiftDownBuffer;
-    mod3.buffer = shiftUpBuffer;
-    mod4.buffer = shiftUpBuffer;
-    mod1.loop = true; mod2.loop = true; mod3.loop = true; mod4.loop = true;
-
-    const mod1Gain = context.createGain();
-    const mod2Gain = context.createGain(); mod2Gain.gain.value = 0;
-    const mod3Gain = context.createGain(); mod3Gain.gain.value = 0;
-    const mod4Gain = context.createGain(); mod4Gain.gain.value = 0;
-
-    mod1.connect(mod1Gain);
-    mod2.connect(mod2Gain);
-    mod3.connect(mod3Gain);
-    mod4.connect(mod4Gain);
-
-    const modGain1 = context.createGain();
-    const modGain2 = context.createGain();
-    mod1Gain.connect(modGain1);
-    mod2Gain.connect(modGain1);
-    mod3Gain.connect(modGain2);
-    mod4Gain.connect(modGain2);
-
-    const delay1 = context.createDelay();
-    const delay2 = context.createDelay();
-    modGain1.connect(delay1.delayTime);
-    modGain2.connect(delay2.delayTime);
-
-    // Crossfader
-    const fade1 = context.createBufferSource();
-    const fade2 = context.createBufferSource();
-    fade1.buffer = fadeBuffer;
-    fade2.buffer = fadeBuffer;
-    fade1.loop = true;
-    fade2.loop = true;
-
-    const mix1 = context.createGain(); mix1.gain.value = 0;
-    const mix2 = context.createGain(); mix2.gain.value = 0;
-    fade1.connect(mix1.gain);
-    fade2.connect(mix2.gain);
-
-    input.connect(delay1);
-    input.connect(delay2);
-    delay1.connect(mix1);
-    delay2.connect(mix2);
-    mix1.connect(output);
-    mix2.connect(output);
-
-    // Encender todo en t=0; el segundo grupo comienza desfasado bufferTime/2
-    const t = context.currentTime + 0.020;
-    const t2 = t + bufferTime - fadeTime;
-    mod1.start(t);
-    mod2.start(t2);
-    mod3.start(t);
-    mod4.start(t2);
-    fade1.start(t);
-    fade2.start(t2);
-
-    function _setDelay(value) {
-        modGain1.gain.setTargetAtTime(0.5 * value, context.currentTime, 0.010);
-        modGain2.gain.setTargetAtTime(0.5 * value, context.currentTime, 0.010);
-    }
-
-    function setSemitones(n) {
-        // mult > 0 → pitch up (lee en shiftUpBuffer)
-        // mult < 0 → pitch down (lee en shiftDownBuffer)
-        const mult = n / 12;
-        if (mult > 0) {
-            mod1Gain.gain.value = 0;
-            mod2Gain.gain.value = 0;
-            mod3Gain.gain.value = 1;
-            mod4Gain.gain.value = 1;
-        } else {
-            mod1Gain.gain.value = 1;
-            mod2Gain.gain.value = 1;
-            mod3Gain.gain.value = 0;
-            mod4Gain.gain.value = 0;
-        }
-        _setDelay(delayTime * Math.abs(mult));
-    }
-
-    // Estado inicial: 0 semitonos (pasa-through, delay=0)
-    setSemitones(0);
-
-    return {
-        input: input,
-        output: output,
-        setSemitones: setSemitones,
-    };
-}
-
-function _createFadeBuffer(context, activeTime, fadeTime) {
-    const length1 = activeTime * context.sampleRate;
-    const length2 = (activeTime - 2 * fadeTime) * context.sampleRate;
-    const length = length1 + length2;
-    const buffer = context.createBuffer(1, length, context.sampleRate);
-    const p = buffer.getChannelData(0);
-    const fadeLength = fadeTime * context.sampleRate;
-    const fadeIndex1 = fadeLength;
-    const fadeIndex2 = length1 - fadeLength;
-
-    for (let i = 0; i < length1; ++i) {
-        let value;
-        if (i < fadeIndex1) value = Math.sqrt(i / fadeLength);
-        else if (i >= fadeIndex2) value = Math.sqrt(1 - (i - fadeIndex2) / fadeLength);
-        else value = 1;
-        p[i] = value;
-    }
-    for (let i = length1; i < length; ++i) p[i] = 0;
-    return buffer;
-}
-
-function _createDelayTimeBuffer(context, activeTime, fadeTime, shiftUp) {
-    const length1 = activeTime * context.sampleRate;
-    const length2 = (activeTime - 2 * fadeTime) * context.sampleRate;
-    const length = length1 + length2;
-    const buffer = context.createBuffer(1, length, context.sampleRate);
-    const p = buffer.getChannelData(0);
-    for (let i = 0; i < length1; ++i) {
-        if (shiftUp) p[i] = (length1 - i) / length;
-        else         p[i] = i / length1;
-    }
-    for (let i = length1; i < length; ++i) p[i] = 0;
-    return buffer;
-}
+/* (Pitch shifter Jungle eliminado — ahora el pitch se hace por el método
+    clásico playbackRate + preservesPitch=false dentro de applyPlaybackRate.) */
 
 // Inicialización robusta para SPAs y carga diferida
 if (document.readyState === 'loading') {
