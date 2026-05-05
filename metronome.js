@@ -17,7 +17,7 @@
         · TAP tempo (botón grande).
    ========================================================================== */
 
-console.log("--- METRONOME.JS Pro v1 cargado ---");
+console.log("--- METRONOME.JS Pro v2 cargado ---");
 
 const metronomeState = {
     isPlaying: false,
@@ -28,6 +28,11 @@ const metronomeState = {
     lookahead: 25.0,             // ms entre llamadas al scheduler
     scheduleAheadTime: 0.10,     // segundos de antelación al programar notas
     activeTableBtn: null,
+
+    // Sample (assets/Click.mp3) — si carga, lo usamos en lugar de osciladores
+    clickBuffer: null,
+    clickLoadAttempted: false,
+    clickUrl: "assets/Click.mp3",
 
     // Compás
     beatsPerMeasure: 4,          // numerador del compás
@@ -441,19 +446,76 @@ function initAudioContext() {
     if (metronomeState.audioContext && metronomeState.audioContext.state === "suspended") {
         try { metronomeState.audioContext.resume(); } catch (e) {}
     }
+    // Iniciar la carga del sample en cuanto haya AudioContext (idempotente)
+    loadClickSample();
 }
 
-/* Toca un click sintético. tipo:
-   - "accent"  → primer pulso del compás (frecuencia alta, volumen alto)
-   - "beat"    → resto de pulsos principales (frecuencia media)
-   - "sub"     → subdivisión (frecuencia baja, volumen bajo, corto)
-*/
+/* Carga assets/Click.mp3 una sola vez. Si falla, dejamos clickBuffer=null
+   y todos los pulsos se generarán con el oscilador (fallback). */
+function loadClickSample() {
+    if (metronomeState.clickLoadAttempted) return;
+    metronomeState.clickLoadAttempted = true;
+    const ctx = metronomeState.audioContext;
+    if (!ctx) return;
+    fetch(metronomeState.clickUrl, { cache: "force-cache" })
+        .then(r => {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.arrayBuffer();
+        })
+        .then(ab => ctx.decodeAudioData(ab))
+        .then(buf => {
+            metronomeState.clickBuffer = buf;
+            console.log("[Metronome] Click.mp3 cargado y decodificado correctamente.");
+        })
+        .catch(err => {
+            console.warn("[Metronome] No se pudo cargar Click.mp3 — se usará oscilador.", err);
+            metronomeState.clickBuffer = null;
+        });
+}
+
+/* Toca un click. tipo:
+   - "accent"  → primer pulso del compás
+   - "beat"    → resto de pulsos principales
+   - "sub"     → subdivisión
+
+   Estrategia:
+   - Si hay clickBuffer (Click.mp3), usar BufferSource con playbackRate y gain
+     diferenciados por tipo (accent agudo y fuerte, sub más bajo y corto).
+   - Si no, fallback a osciladores sintéticos. */
 function playClick(time, type) {
     const ctx = metronomeState.audioContext;
     if (!ctx) return;
+
+    if (metronomeState.clickBuffer) {
+        // === Sample mode ===
+        const src = ctx.createBufferSource();
+        const env = ctx.createGain();
+        src.buffer = metronomeState.clickBuffer;
+
+        // Diferenciar timbre/volumen por tipo:
+        let rate, peak, durLimit;
+        if (type === "accent") {
+            rate = 1.50; peak = 1.0;  durLimit = 0.30;
+        } else if (type === "beat") {
+            rate = 1.00; peak = 0.70; durLimit = 0.25;
+        } else {
+            rate = 1.30; peak = 0.30; durLimit = 0.10;
+        }
+        src.playbackRate.value = rate;
+        env.gain.setValueAtTime(peak, time);
+        // Ramp-out suave para que las subdivisiones rápidas no se solapen
+        env.gain.exponentialRampToValueAtTime(0.0001, time + durLimit);
+
+        src.connect(env);
+        env.connect(ctx.destination);
+        src.start(time);
+        src.stop(time + durLimit + 0.05);
+        return;
+    }
+
+    // === Fallback: oscilador sintético ===
     const osc = ctx.createOscillator();
     const env = ctx.createGain();
-
     let freq, peak, dur;
     if (type === "accent") {
         freq = 1700; peak = 1.0; dur = 0.040;
@@ -466,11 +528,9 @@ function playClick(time, type) {
         osc.type = "sine";
     }
     osc.frequency.value = freq;
-
     env.gain.setValueAtTime(0.0001, time);
     env.gain.exponentialRampToValueAtTime(peak, time + 0.001);
     env.gain.exponentialRampToValueAtTime(0.0001, time + dur);
-
     osc.connect(env);
     env.connect(ctx.destination);
     osc.start(time);
