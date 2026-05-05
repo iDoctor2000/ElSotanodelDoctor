@@ -9,7 +9,7 @@
    + Pitch shift real (Web Audio Jungle) — solo se activa cuando semitones≠0
    + GainNode para volumen iOS — solo se activa en iOS o tras pitch shift
 */
-console.log("--- JUKEBOX.JS v4 cargado (pitch clásico + volumen iOS) ---");
+console.log("--- JUKEBOX.JS v5 cargado (pitch clásico + slider iOS bajo demanda) ---");
 
 // Variables Globales del Jukebox
 let jukeboxLibrary = {}; 
@@ -166,6 +166,30 @@ window.injectJukeboxStyles = function() {
         }
         .jb-mute-btn:hover { color: #fff; }
         .jb-mute-btn.muted { color: #f55; }
+
+        /* BOTÓN MODO USB (solo iOS) */
+        .jb-usb-toggle {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #555;
+            color: #888;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.75em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .jb-usb-toggle:hover {
+            border-color: #0cf;
+            color: #0cf;
+        }
+        .jb-usb-toggle.active {
+            background: linear-gradient(180deg, #0cf, #06a);
+            border-color: #0cf;
+            color: #001018;
+            box-shadow: 0 0 6px rgba(0,204,255,0.5);
+        }
         
         /* ESTILO SLIDER VOLUMEN MEJORADO PARA MÓVIL */
         .jb-volume-slider {
@@ -501,27 +525,46 @@ window.injectExtraControls = function() {
 
     // F. Grupo VOLUMEN
     if (!document.getElementById('jb-volume-group')) {
+        const isIOS = !!(window.JukeboxAudio && window.JukeboxAudio.isIOS && window.JukeboxAudio.isIOS());
+        // Estado persistente de "modo USB" (solo aplica en iOS)
+        const usbModeEnabled = isIOS && (function() {
+            try { return localStorage.getItem('jb_ios_usb_mode') === '1'; } catch (e) { return false; }
+        })();
+
         const volWrapper = document.createElement('div');
         volWrapper.id = 'jb-volume-group';
         volWrapper.className = 'jukebox-volume-group';
 
-        // (Antes se ocultaba este grupo en iOS porque audio.volume no funciona
-        //  en iOS Safari. Ahora el volumen va por GainNode de Web Audio
-        //  (window.JukeboxAudio.setVolume), que SÍ funciona en iOS — por
-        //  tanto mostramos el slider en TODOS los dispositivos.)
+        // En iOS:
+        //  - audio.volume del HTMLAudioElement es ignorado por iOS Safari.
+        //  - Para tener slider real necesitamos enrutar por Web Audio (GainNode).
+        //  - Pero cuando se enruta por Web Audio, hay riesgo de que el audio
+        //    se silencie (clicks, AudioContext pausado, etc.).
+        //  - Solución: ocultar slider por defecto. Mostrar un botón pequeño
+        //    "🎛️ USB" que el usuario activa SOLO cuando esté usando un audio
+        //    output USB-C externo (donde sí necesita el slider porque los
+        //    botones físicos no controlan el volumen del DAC USB).
+        //
+        // En escritorio / Android: mostrar slider normal (audio.volume funciona).
+
+        const sliderInline = isIOS && !usbModeEnabled ? ' style="display:none;"' : '';
+        const muteInline   = isIOS && !usbModeEnabled ? ' style="display:none;"' : '';
+        const usbBtnInline = isIOS ? '' : ' style="display:none;"';
 
         volWrapper.innerHTML = `
-            <button class="jb-mute-btn" id="jb-mute-btn" title="Mute/Unmute">
+            <button class="jb-mute-btn" id="jb-mute-btn"${muteInline} title="Mute/Unmute">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
             </button>
-            <input type="range" class="jb-volume-slider" id="jb-volume-slider" min="0" max="100" value="100" step="1" title="Volumen">
+            <input type="range" class="jb-volume-slider" id="jb-volume-slider" min="0" max="100" value="100" step="1" title="Volumen"${sliderInline}>
+            <button class="jb-usb-toggle${usbModeEnabled ? ' active' : ''}" id="jb-usb-toggle" title="Modo USB-C (volumen por software para audio externo)"${usbBtnInline}>🎛️ USB</button>
         `;
         toolsRow.appendChild(volWrapper);
-        
+
         setTimeout(() => {
-            const slider = document.getElementById('jb-volume-slider');
+            const slider  = document.getElementById('jb-volume-slider');
             const muteBtn = document.getElementById('jb-mute-btn');
-            
+            const usbBtn  = document.getElementById('jb-usb-toggle');
+
             if (slider) {
                 slider.addEventListener('input', (e) => window.setJukeboxVolume(e.target.value));
                 slider.addEventListener('change', (e) => window.setJukeboxVolume(e.target.value));
@@ -530,6 +573,40 @@ window.injectExtraControls = function() {
             if (muteBtn) {
                 muteBtn.onclick = window.toggleJukeboxMute;
             }
+            if (usbBtn) {
+                usbBtn.addEventListener('click', () => {
+                    const ja = window.JukeboxAudio;
+                    if (!ja) return;
+                    const wasActive = usbBtn.classList.contains('active');
+                    if (wasActive) {
+                        // Desactivar: ocultamos slider+mute. NOTA: el
+                        // MediaElementSource ya creado no se puede deshacer en
+                        // esta sesión — si el usuario quiere volver a la ruta
+                        // nativa, debe recargar la página.
+                        usbBtn.classList.remove('active');
+                        if (slider)  slider.style.display = 'none';
+                        if (muteBtn) muteBtn.style.display = 'none';
+                        try { localStorage.setItem('jb_ios_usb_mode', '0'); } catch(e) {}
+                        usbBtn.title = "Modo USB-C activable. Pulsa para activar.";
+                    } else {
+                        // Activar: enchufamos Web Audio AHORA mismo (este click
+                        // es un user gesture, lo que permite resume() del ctx)
+                        // y mostramos los controles.
+                        if (currentAudioObj && ja.connect(currentAudioObj)) {
+                            ja.setVolume(currentVolume);
+                            ja.resume();
+                        }
+                        usbBtn.classList.add('active');
+                        if (slider)  slider.style.display = '';
+                        if (muteBtn) muteBtn.style.display = '';
+                        try { localStorage.setItem('jb_ios_usb_mode', '1'); } catch(e) {}
+                        usbBtn.title = "Modo USB-C activo. Pulsa para desactivar (recarga al desactivar).";
+                    }
+                });
+            }
+            // Si modo USB ya estaba activo de antes (localStorage), conectar
+            // en cuanto haya audio reproduciéndose. No conectamos aquí porque
+            // todavía no hay user gesture; se hará al primer play.
             window.updateMuteIcon();
         }, 100);
     }
@@ -1055,15 +1132,31 @@ window.setupHtml5Audio = function(srcUrl, isDriveFallback = false, startTime = 0
     currentAudioObj.parentNode.replaceChild(newAudio, currentAudioObj);
     currentAudioObj = newAudio;
 
-    // preservesPitch=true → al cambiar la velocidad el pitch NO cambia.
-    // El cambio de pitch (semitonos) lo aplicamos por separado vía Web Audio.
-    currentAudioObj.preservesPitch = true;
-    currentAudioObj.mozPreservesPitch = true;
-    currentAudioObj.webkitPreservesPitch = true;
+    // preservesPitch=false → playbackRate cambia tempo Y pitch (chipmunk).
+    // Lo dejamos a false para que ♭/♯ funcionen con el método clásico.
+    currentAudioObj.preservesPitch = false;
+    currentAudioObj.mozPreservesPitch = false;
+    currentAudioObj.webkitPreservesPitch = false;
 
     currentAudioObj.src = srcUrl;
     window.setJukeboxVolume(currentVolume);
     window.applyPlaybackRate();
+
+    // Si el usuario tenía activado modo USB en una sesión anterior (iOS),
+    // re-enchufamos Web Audio AHORA. Estamos dentro del flujo de play() que
+    // se disparó por un click del usuario → es user gesture válido.
+    try {
+        const ja = window.JukeboxAudio;
+        const usbActive = (function() {
+            try { return localStorage.getItem('jb_ios_usb_mode') === '1'; } catch(e) { return false; }
+        })();
+        if (ja && ja.isIOS() && usbActive) {
+            if (ja.connect(currentAudioObj)) {
+                ja.setVolume(currentVolume);
+                ja.resume();
+            }
+        }
+    } catch(e) { console.warn("[Jukebox] auto-USB re-attach error:", e); }
 
     if(startTime > 0) {
         currentAudioObj.currentTime = startTime;
@@ -1556,25 +1649,21 @@ window.setJukeboxVolume = function(val) {
     }
 
     if (currentJukeboxType === 'html5' && currentAudioObj) {
-        // Estrategia: SIEMPRE actualizar .volume nativo (suena en escritorio
-        // y no estorba si Web Audio está activo). Adicionalmente, si estamos
-        // en iOS, propagar el valor al GainNode (audio.volume es ignorado allí).
+        // SIEMPRE actualizar .volume nativo (escritorio: funciona; iOS: lo
+        // ignora pero al menos no rompe nada).
         try {
             const vol = Math.max(0, Math.min(1, currentVolume / 100));
             if (isFinite(vol)) currentAudioObj.volume = vol;
         } catch(e) {}
 
+        // Si el audio YA está conectado a Web Audio (porque el usuario activó
+        // modo USB en iOS), también propagamos el valor al GainNode.
+        // NUNCA enchufamos Web Audio aquí "automáticamente" — eso es lo que
+        // estaba cortando el audio. La conexión solo se hace desde el botón
+        // "🎛️ USB" (que es un user gesture explícito).
         const ja = window.JukeboxAudio;
-        if (ja && ja.isIOS()) {
-            // En iOS necesitamos enchufar el audio al GainNode para que el
-            // slider tenga efecto. Si falla, el audio sigue sonando por la
-            // ruta nativa (no podremos cambiar volumen, pero al menos suena).
-            try {
-                if (ja.connect(currentAudioObj)) {
-                    ja.setVolume(currentVolume);
-                    ja.resume();
-                }
-            } catch (e) { console.warn("[Jukebox] iOS volume Web Audio error:", e); }
+        if (ja && ja.isConnected(currentAudioObj)) {
+            try { ja.setVolume(currentVolume); } catch (e) {}
         }
     }
 
