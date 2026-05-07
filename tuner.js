@@ -216,9 +216,18 @@ console.log("--- TUNER.JS v2 cargado (8 instrumentos + 3 modos) ---");
     let currentInstrument = "guitar";
     let currentTuning     = "standard";
 
-    const BUFLEN = 2048;
-    const sampleBuf = new Float32Array(BUFLEN);
-    const MIN_VOLUME_THRESHOLD = 0.01;
+   const BUFLEN = 4096;
+   const sampleBuf = new Float32Array(BUFLEN);
+   
+   // Más sensible para iPhone: antes estaba en 0.01
+   const MIN_VOLUME_THRESHOLD = 0.003;
+   
+   // Ganancia previa al analizador. Si distorsiona, bajar a 2.5 o 3.0
+   const INPUT_GAIN_VALUE = 4.0;
+   
+   // Mantiene la última nota unos ms para que la aguja no desaparezca inmediatamente
+   const UI_HOLD_MS = 450;
+   let lastPitchTime = 0;
 
     // ============================================================
     // 3. UTILIDADES MUSICALES
@@ -840,13 +849,27 @@ console.log("--- TUNER.JS v2 cargado (8 instrumentos + 3 modos) ---");
             }
             if (audioContext.state === "suspended") await audioContext.resume();
 
-            microphoneStream = await navigator.mediaDevices.getUserMedia({
-                audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false }
-            });
-            const source = audioContext.createMediaStreamSource(microphoneStream);
-            analyser = audioContext.createAnalyser();
-            analyser.fftSize = BUFLEN;
-            source.connect(analyser);
+         microphoneStream = await navigator.mediaDevices.getUserMedia({
+             audio: {
+                 echoCancellation: false,
+                 autoGainControl: true,
+                 noiseSuppression: false,
+                 channelCount: 1
+             }
+         });
+         
+         const source = audioContext.createMediaStreamSource(microphoneStream);
+         
+         // Ganancia de entrada para que el iPhone no llegue tan flojo al analizador
+         const inputGain = audioContext.createGain();
+         inputGain.gain.value = INPUT_GAIN_VALUE;
+         
+         analyser = audioContext.createAnalyser();
+         analyser.fftSize = BUFLEN;
+         analyser.smoothingTimeConstant = 0.15;
+         
+         source.connect(inputGain);
+         inputGain.connect(analyser);
 
             updatePitchLoop();
         } catch (err) {
@@ -890,24 +913,32 @@ console.log("--- TUNER.JS v2 cargado (8 instrumentos + 3 modos) ---");
         const rms = Math.sqrt(sum / sampleBuf.length);
         updateMicViz(rms);
 
-        if (mode !== "manual") {
-            const freq = autoCorrelate(sampleBuf, audioContext.sampleRate);
-            if (freq !== -1) {
-                const midi = noteFromPitch(freq);
-                const cents = centsOffFromPitch(freq, midi);
-                updateUI(midi, cents, freq);
-            } else {
-                dimUI();
-            }
-        }
-        rafID = requestAnimationFrame(updatePitchLoop);
+      if (mode !== "manual") {
+          const freq = autoCorrelate(sampleBuf, audioContext.sampleRate);
+      
+          // Rango útil aproximado para guitarra, bajo, ukelele, mandolina y violín
+          if (freq !== -1 && freq >= 25 && freq <= 1200) {
+              lastPitchTime = performance.now();
+      
+              const midi = noteFromPitch(freq);
+              const cents = centsOffFromPitch(freq, midi);
+              updateUI(midi, cents, freq);
+          } else {
+              // No borres la pantalla al primer frame sin señal.
+              // Así la aguja se queda visible un instante y parece mucho más estable.
+              if (performance.now() - lastPitchTime > UI_HOLD_MS) {
+                  dimUI();
+              }
+          }
+      }
+      rafID = requestAnimationFrame(updatePitchLoop);
     }
 
     function updateMicViz(volume) {
         const bars = document.querySelectorAll(".idt-mic-bar");
         if (!bars.length) return;
         bars.forEach((bar, idx) => {
-            const h = Math.min(14, Math.max(2, volume * 60 * (idx + 1)));
+            const h = Math.min(14, Math.max(2, volume * 300 * (idx + 1)));
             bar.style.height = h + "px";
             bar.style.background = h > 6 ? "#d4e69c" : "#2a2f35";
         });
