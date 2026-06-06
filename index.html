@@ -945,9 +945,10 @@
       <div class="modal-content" style="max-width: 500px;">
          <h3>Jukebox: <span id="jb-modal-songname" style="color:#fff;"></span></h3>
          
-         <label for="jb-modal-url-input">Enlace de Audio (YouTube, MP3, Drive):</label>
+         <label for="jb-modal-url-input">Enlace de Audio (Dropbox, YouTube, MP3, Drive):</label>
          <input type="text" id="jb-modal-url-input" placeholder="Pegar URL aquí para activar el audio...">
-         <p style="font-size:0.8em; color:#888; margin-top:5px;">* Soporta YouTube y Google Drive (modo vista previa)</p>
+         <p style="font-size:0.8em; color:#888; margin-top:5px;">* Soporta Dropbox, YouTube y Google Drive</p>
+         <p id="jb-modal-save-status" aria-live="polite" style="font-size:0.85em; min-height:1.2em; margin-top:8px;"></p>
 
          <div style="margin-top:20px; display: flex; justify-content: flex-end; align-items: center;">
             <div>
@@ -1134,7 +1135,7 @@
     Tu navegador no soporta el elemento de audio.
   </audio>
 
-  <script src="jukebox.js?v=5"></script>
+  <script src="jukebox.js?v=6"></script>
   <script src="metronome.js?v=4"></script>
   <script src="tuner.js?v=2"></script>
   <script src="analisis.js"></script> <!-- Nuevo script añadido -->
@@ -1485,41 +1486,13 @@ const cargarSegundoSetlist = async () => { window.globalItems2 = await cargarSet
 const cargarStarSetlist = async () => { window.globalItemsStar = await cargarSetlistGenerico(setlistConfig.setlistStar, "star-setlist-body", "total-time-star", "Error cargando Setlist Concierto Estrella"); return window.globalItemsStar; };
 
 /* ---------- 3.5. Jukebox Edit & Management Logic ---------- */
-let currentEditingSongName = null;
-const jukeboxEditModal = document.getElementById('jukebox-edit-modal');
-
 function openJukeboxEditModal(songName) {
-    currentEditingSongName = songName;
-    const cleanName = sanitizeFirebaseKey(songName);
-    const currentLink = window.jukeboxLibrary ? window.jukeboxLibrary[cleanName] : "";
-    
-    document.getElementById('jb-modal-songname').textContent = songName;
-    document.getElementById('jb-modal-url-input').value = currentLink || "";
-    
-    jukeboxEditModal.classList.add('show');
-}
-
-document.getElementById('jb-modal-save-btn').onclick = async () => {
-    if(!currentEditingSongName) return;
-    const url = document.getElementById('jb-modal-url-input').value.trim();
-    const cleanName = sanitizeFirebaseKey(currentEditingSongName);
-    
-    if (window.jukeboxLibrary) {
-        if (url) {
-            window.jukeboxLibrary[cleanName] = url;
-        } else {
-            delete window.jukeboxLibrary[cleanName];
-        }
-        
-        await window.saveJukeboxLibrary();
-        await Promise.all([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
+    if(window.openJukeboxEditModalImpl) {
+        window.openJukeboxEditModalImpl(songName);
+    } else {
+        console.error("El editor del Jukebox todavía no está disponible.");
     }
-    jukeboxEditModal.classList.remove('show');
-};
-
-document.getElementById('jb-modal-cancel-btn').onclick = () => {
-    jukeboxEditModal.classList.remove('show');
-};
+}
 
 // --- GESTIÓN MASIVA JUKEBOX ---
 document.getElementById("menu-jukebox-mgmt").onclick = e => { 

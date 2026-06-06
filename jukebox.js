@@ -9,7 +9,7 @@
    + Pitch shift real (Web Audio Jungle) — solo se activa cuando semitones≠0
    + GainNode para volumen iOS — solo se activa en iOS o tras pitch shift
 */
-console.log("--- JUKEBOX.JS v5 cargado (pitch clásico + slider iOS bajo demanda) ---");
+console.log("--- JUKEBOX.JS v6 cargado (guardado Jukebox reparado) ---");
 
 // Variables Globales del Jukebox
 let jukeboxLibrary = {}; 
@@ -71,6 +71,7 @@ window.openJukeboxEditModalImpl = function(songName) {
     if(modal && input && nameDisplay) {
         nameDisplay.textContent = songName;
         input.value = currentUrl;
+        window.setJukeboxSaveStatus("");
         modal.classList.add('show');
         // Dar foco al input
         setTimeout(() => input.focus(), 100);
@@ -697,19 +698,55 @@ window.loadJukeboxLibrary = async function() {
 
 window.saveJukeboxLibrary = async function() {
     try {
-        if (typeof window.saveDoc === 'function') {
-            // Guardamos siempre con estructura nueva
-            await window.withRetry(() => window.saveDoc("intranet", "jukebox_library", { 
-                mapping: window.jukeboxLibrary,
-                markers: jukeboxMarkers,
-                offsets: jukeboxOffsets,
-                notes: jukeboxNotes,
-                pitch: jukeboxPitch,
-                related: jukeboxRelated 
-            }, true)); // true = merge
-            return true;
+        if (typeof window.saveDoc !== 'function' || typeof window.withRetry !== 'function') {
+            throw new Error("Firestore todavía no está disponible.");
         }
+
+        // Guardamos siempre con estructura nueva
+        await window.withRetry(() => window.saveDoc("intranet", "jukebox_library", {
+            mapping: window.jukeboxLibrary,
+            markers: jukeboxMarkers,
+            offsets: jukeboxOffsets,
+            notes: jukeboxNotes,
+            pitch: jukeboxPitch,
+            related: jukeboxRelated
+        }, true)); // true = merge
+        return true;
     } catch (e) { console.error("Error guardando Jukebox:", e); return false; }
+};
+
+window.setJukeboxSaveStatus = function(message, isError = false) {
+    const status = document.getElementById('jb-modal-save-status');
+    if(!status) return;
+    status.textContent = message;
+    status.style.color = isError ? '#ff6666' : '#66dd99';
+};
+
+window.saveJukeboxUrl = async function(songName, rawUrl) {
+    if(!songName) return false;
+
+    const cleanName = sanitizeJukeboxKey(songName);
+    const url = (rawUrl || "").trim();
+    const hadPreviousValue = Object.prototype.hasOwnProperty.call(window.jukeboxLibrary, cleanName);
+    const previousValue = window.jukeboxLibrary[cleanName];
+
+    if(url) {
+        window.jukeboxLibrary[cleanName] = url;
+    } else {
+        delete window.jukeboxLibrary[cleanName];
+    }
+
+    const saved = await window.saveJukeboxLibrary();
+    if(saved) return true;
+
+    // Si Firestore falla, restauramos el valor anterior para no mostrar
+    // un enlace que realmente no se ha guardado.
+    if(hadPreviousValue) {
+        window.jukeboxLibrary[cleanName] = previousValue;
+    } else {
+        delete window.jukeboxLibrary[cleanName];
+    }
+    return false;
 };
 
 /* --- 2. YOUTUBE API --- */
@@ -2007,18 +2044,19 @@ function initJukebox() {
         btnSaveJukebox.onclick = async () => {
              if(!currentEditingJukeboxSong) return;
              const input = document.getElementById('jb-modal-url-input');
-             const url = input.value.trim();
-             const cleanName = sanitizeJukeboxKey(currentEditingJukeboxSong);
-             
-             if(url) {
-                 window.jukeboxLibrary[cleanName] = url;
-             } else {
-                 // Si está vacío, borrar
-                 delete window.jukeboxLibrary[cleanName];
+             const originalText = btnSaveJukebox.textContent;
+             btnSaveJukebox.disabled = true;
+             btnSaveJukebox.textContent = 'Guardando...';
+             window.setJukeboxSaveStatus("");
+
+             const saved = await window.saveJukeboxUrl(currentEditingJukeboxSong, input.value);
+             if(!saved) {
+                 btnSaveJukebox.disabled = false;
+                 btnSaveJukebox.textContent = originalText;
+                 window.setJukeboxSaveStatus("No se pudo guardar. Comprueba la conexión e inténtalo de nuevo.", true);
+                 return;
              }
-             
-             await window.saveJukeboxLibrary();
-             
+
              // Actualizar tablas visuales (Gestión Jukebox)
              if(window.renderJukeboxMgmtTable) window.renderJukeboxMgmtTable();
              
@@ -2027,10 +2065,12 @@ function initJukebox() {
              if(window.cargarPrimerSetlist) promises.push(window.cargarPrimerSetlist());
              if(window.cargarSegundoSetlist) promises.push(window.cargarSegundoSetlist());
              if(window.cargarStarSetlist) promises.push(window.cargarStarSetlist());
-             await Promise.all(promises);
+             await Promise.allSettled(promises);
              
              document.getElementById('jukebox-edit-modal').classList.remove('show');
              currentEditingJukeboxSong = null;
+             btnSaveJukebox.disabled = false;
+             btnSaveJukebox.textContent = originalText;
         };
     }
     
