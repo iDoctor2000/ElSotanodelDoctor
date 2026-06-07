@@ -45,6 +45,7 @@
   let activeSession = null;
   let activePlanScreenId = null;
   let sessionTimer = null;
+  let finishConfirmTimer = null;
   let saveTimer = null;
   let lastSongsFingerprint = "";
 
@@ -111,6 +112,18 @@
     return getRehearsals()
       .filter(rehearsal => rehearsal && rehearsal.date && new Date(`${rehearsal.date}T00:00:00`) >= today)
       .sort((a, b) => new Date(`${a.date}T${a.startTime || "00:00"}`) - new Date(`${b.date}T${b.startTime || "00:00"}`));
+  }
+
+  function getNextFutureRehearsal(rehearsalIdValue) {
+    const current = getRehearsals().find(rehearsal => rehearsalId(rehearsal) === rehearsalIdValue);
+    const currentTime = current
+      ? new Date(`${current.date}T${current.startTime || "00:00"}`).getTime()
+      : 0;
+    return getFutureRehearsals().find(rehearsal => {
+      if (rehearsalId(rehearsal) === rehearsalIdValue) return false;
+      const rehearsalTime = new Date(`${rehearsal.date}T${rehearsal.startTime || "00:00"}`).getTime();
+      return !currentTime || rehearsalTime > currentTime;
+    }) || null;
   }
 
   function getIdentity() {
@@ -481,6 +494,40 @@
       .sr-session-results button[data-result="repeat"] { background:#ffb52e; color:#111; border-color:#ffb52e; }
       .sr-session-results button[data-result="blocked"] { background:#d93838; border-color:#ff5353; }
       .sr-session-results button:disabled { opacity:.35; cursor:not-allowed; }
+      #sr-summary-overlay {
+        display:none; position:fixed; inset:0; z-index:125000; overflow-y:auto; overscroll-behavior:contain;
+        background:radial-gradient(circle at top,#242424,#050505 70%); color:#fff;
+      }
+      #sr-summary-overlay.show { display:block; }
+      .sr-close-summary { border:1px solid #ffb52e; background:#171717; color:#ffb52e; border-radius:8px; padding:9px 12px; cursor:pointer; font-weight:bold; }
+      .sr-summary-shell { min-height:100%; max-width:1000px; margin:0 auto; padding:22px 18px 40px; }
+      .sr-summary-header { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; margin-bottom:18px; }
+      .sr-summary-header h2 { color:#ffb52e; margin:0 0 5px; }
+      .sr-summary-header p { color:#aaa; margin:0; font-size:.82em; }
+      .sr-close-stats { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; margin:15px 0; }
+      .sr-close-stat { background:#111; border:1px solid #333; border-radius:8px; padding:10px; text-align:center; }
+      .sr-close-stat strong { display:block; font-size:1.45em; }
+      .sr-close-stat span { color:#aaa; font-size:.72em; }
+      .sr-close-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:12px; }
+      .sr-close-panel { background:rgba(0,0,0,.3); border:1px solid #333; border-radius:10px; padding:12px; margin-top:12px; }
+      .sr-close-panel h3 { color:#ffb52e; margin:0 0 10px; font-size:1em; }
+      .sr-close-result {
+        display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; border-bottom:1px solid #292929; padding:8px 2px;
+      }
+      .sr-close-result:last-child { border-bottom:0; }
+      .sr-close-result small { color:#aaa; }
+      .sr-close-result-note { color:#ddd; font-size:.75em; margin-top:3px; }
+      .sr-close-badge { border:1px solid #555; border-radius:12px; padding:3px 7px; font-size:.7em; height:max-content; }
+      .sr-close-badge.good { color:#43d17a; border-color:#43d17a; }
+      .sr-close-badge.repeat { color:#ffb52e; border-color:#ffb52e; }
+      .sr-close-badge.blocked { color:#ff5353; border-color:#ff5353; }
+      .sr-close-badge.skip,.sr-close-badge.unfinished { color:#aaa; }
+      .sr-close-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+      .sr-close-actions button { border:1px solid #555; background:#222; color:#fff; border-radius:8px; padding:9px 12px; cursor:pointer; font-weight:bold; }
+      .sr-close-actions button.primary { background:#ffb52e; border-color:#ffb52e; color:#111; }
+      .sr-close-actions button:disabled { opacity:.4; cursor:not-allowed; }
+      .sr-history-item { position:relative; padding-right:95px; }
+      .sr-history-open { position:absolute; right:0; top:5px; border:1px solid #555; background:#222; color:#fff; border-radius:6px; padding:4px 7px; cursor:pointer; font-size:.7em; }
       @media(max-width:800px) {
         .sr-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
         .sr-song,.sr-rehearsal-grid { grid-template-columns:1fr; }
@@ -489,6 +536,9 @@
         .sr-plan-screen-shell { padding:0 10px 20px; }
         .sr-plan-screen-top { align-items:flex-start; }
         .sr-plan-screen-title strong { font-size:.82em; }
+        .sr-close-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        .sr-close-grid { grid-template-columns:1fr; }
+        .sr-summary-shell { padding:16px 10px 30px; }
       }
     `;
     document.head.appendChild(style);
@@ -556,6 +606,16 @@
       </div>
     `;
     document.body.appendChild(screen);
+  }
+
+  function createSummaryOverlay() {
+    if (document.getElementById("sr-summary-overlay")) return;
+    const overlay = document.createElement("div");
+    overlay.id = "sr-summary-overlay";
+    overlay.className = "modal-overlay";
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.innerHTML = '<div id="sr-summary-content"></div>';
+    document.body.appendChild(overlay);
   }
 
   function setlistSummaryHtml(sourceSongs) {
@@ -741,17 +801,124 @@
     `;
   }
 
+  function resultLabel(result) {
+    return {
+      good: "Lista",
+      repeat: "Necesita repaso",
+      blocked: "Bloqueada",
+      skip: "Saltada",
+      unfinished: "Sin trabajar"
+    }[result] || "Pendiente";
+  }
+
+  function sessionPendingItems(session) {
+    const pending = new Map();
+    (Array.isArray(session.results) ? session.results : []).forEach(result => {
+      if (!result || result.result === "good" || !result.key) return;
+      pending.set(result.key, { ...result });
+    });
+    (Array.isArray(session.unfinishedSongs) ? session.unfinishedSongs : []).forEach(song => {
+      if (!song || !song.key || pending.has(song.key)) return;
+      pending.set(song.key, { ...song, result: "unfinished", seconds: 0 });
+    });
+    return Array.from(pending.values());
+  }
+
+  function sessionStats(session) {
+    const results = Array.isArray(session.results) ? session.results : [];
+    const pending = sessionPendingItems(session);
+    return {
+      results,
+      pending,
+      ready: results.filter(result => result.result === "good").length,
+      repeat: results.filter(result => result.result === "repeat").length,
+      blocked: results.filter(result => result.result === "blocked").length,
+      skipped: results.filter(result => result.result === "skip").length,
+      actualSeconds: Number(session.actualSeconds || results.reduce((sum, result) => sum + Number(result.seconds || 0), 0)),
+      plannedSeconds: Number(session.plannedMinutes || 0) * 60
+    };
+  }
+
+  function sessionResultsHtml(items) {
+    if (!items.length) return '<div class="sr-empty">No hay canciones en este apartado.</div>';
+    return items.map(item => `
+      <div class="sr-close-result">
+        <div>
+          <strong>${escapeHtml(item.title || item.key || "Cancion")}</strong>
+          <small> · ${formatSeconds(item.seconds || 0)}${item.plannedMinutes ? ` / ${item.plannedMinutes} min previstos` : ""}</small>
+          ${item.note ? `<div class="sr-close-result-note">${escapeHtml(item.note)}</div>` : ""}
+        </div>
+        <span class="sr-close-badge ${escapeHtml(item.result || "unfinished")}">${escapeHtml(resultLabel(item.result))}</span>
+      </div>
+    `).join("");
+  }
+
+  function sessionSummaryHtml(session) {
+    const stats = sessionStats(session);
+    const nextRehearsal = getNextFutureRehearsal(session.rehearsalId);
+    const carried = session.carriedToRehearsalId && nextRehearsal && session.carriedToRehearsalId === rehearsalId(nextRehearsal);
+    const date = new Date(session.endedAt || session.startedAt).toLocaleString("es-ES");
+    const timeDifference = stats.plannedSeconds - stats.actualSeconds;
+    const timeMessage = timeDifference >= 0
+      ? `${formatSeconds(timeDifference)} por debajo del tiempo previsto`
+      : `${formatSeconds(Math.abs(timeDifference))} por encima del tiempo previsto`;
+    return `
+      <div class="sr-summary-shell">
+        <div class="sr-summary-header">
+          <div>
+            <h2>${session.partial ? "Ensayo finalizado parcialmente" : "Ensayo completado"}</h2>
+            <p>${escapeHtml(date)} · registrado por ${escapeHtml(session.recordedBy || "Banda")}</p>
+          </div>
+          <button class="sr-close-summary" data-sr-close-summary>Cerrar resumen</button>
+        </div>
+        <div class="sr-close-stats">
+          <div class="sr-close-stat"><strong>${stats.results.length}</strong><span>Trabajadas</span></div>
+          <div class="sr-close-stat"><strong style="color:#43d17a">${stats.ready}</strong><span>Listas</span></div>
+          <div class="sr-close-stat"><strong style="color:#ffb52e">${stats.repeat}</strong><span>Para repasar</span></div>
+          <div class="sr-close-stat"><strong style="color:#ff5353">${stats.blocked}</strong><span>Bloqueadas</span></div>
+          <div class="sr-close-stat"><strong>${stats.skipped}</strong><span>Saltadas</span></div>
+          <div class="sr-close-stat"><strong>${stats.pending.length}</strong><span>Próximas prioridades</span></div>
+        </div>
+        <div class="sr-close-panel">
+          <h3>Tiempo del ensayo</h3>
+          <strong>${formatSeconds(stats.actualSeconds)} reales / ${formatSeconds(stats.plannedSeconds)} previstos</strong>
+          <div class="sr-row-meta">${escapeHtml(timeMessage)}</div>
+        </div>
+        <div class="sr-close-grid">
+          <div class="sr-close-panel">
+            <h3>Resultado canción por canción</h3>
+            ${sessionResultsHtml(stats.results)}
+          </div>
+          <div>
+            <div class="sr-close-panel">
+              <h3>Propuesta para el próximo ensayo</h3>
+              ${sessionResultsHtml(stats.pending)}
+              <div class="sr-close-actions">
+                <button class="primary" data-sr-carry-forward="${escapeHtml(session.id)}" ${!nextRehearsal || !stats.pending.length || carried ? "disabled" : ""}>
+                  ${carried ? "Prioridades ya añadidas" : "Añadir prioridades al próximo ensayo"}
+                </button>
+                ${nextRehearsal ? `<button data-sr-open-next-plan="${escapeHtml(rehearsalId(nextRehearsal))}">Abrir próximo plan</button>` : ""}
+              </div>
+              <div class="sr-row-meta" style="margin-top:8px;">
+                ${nextRehearsal ? `Próximo: ${escapeHtml(formatRehearsalDate(nextRehearsal))}` : "Todavía no hay otro ensayo programado."}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function historyHtml(rehearsalIdValue) {
     const sessions = state.sessions.filter(session => session.rehearsalId === rehearsalIdValue).slice(0, 5);
     if (!sessions.length) return '<div class="sr-empty">Este ensayo aun no tiene sesiones registradas.</div>';
     return sessions.map(session => {
-      const results = Array.isArray(session.results) ? session.results : [];
-      const ready = results.filter(result => result.result === "good").length;
-      const pending = results.filter(result => result.result === "repeat" || result.result === "blocked").length;
+      const stats = sessionStats(session);
       return `
         <div class="sr-history-item">
           <strong>${new Date(session.endedAt || session.startedAt).toLocaleString("es-ES")}</strong>
-          · ${results.length} canciones · ${ready} listas · ${pending} pendientes
+          · ${stats.results.length} canciones · ${stats.ready} listas · ${stats.pending.length} prioridades · ${formatSeconds(stats.actualSeconds)}
+          <button class="sr-history-open" data-sr-open-summary="${escapeHtml(session.id)}">Ver resumen</button>
         </div>
       `;
     }).join("");
@@ -855,6 +1022,45 @@
     renderPlanScreen(id, true);
     screen.classList.add("show");
     screen.setAttribute("aria-hidden", "false");
+  }
+
+  function closeSessionSummary() {
+    const overlay = document.getElementById("sr-summary-overlay");
+    if (!overlay) return;
+    overlay.classList.remove("show");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+
+  function showSessionSummary(sessionOrId) {
+    const session = typeof sessionOrId === "string"
+      ? state.sessions.find(item => item.id === sessionOrId)
+      : sessionOrId;
+    const overlay = document.getElementById("sr-summary-overlay");
+    const content = document.getElementById("sr-summary-content");
+    if (!session || !overlay || !content) return;
+    content.innerHTML = sessionSummaryHtml(session);
+    overlay.scrollTop = 0;
+    overlay.classList.add("show");
+    overlay.setAttribute("aria-hidden", "false");
+  }
+
+  function carrySessionPrioritiesForward(sessionId) {
+    const session = state.sessions.find(item => item.id === sessionId);
+    if (!session) return;
+    const pending = sessionPendingItems(session);
+    const nextRehearsal = getNextFutureRehearsal(session.rehearsalId);
+    if (!pending.length || !nextRehearsal) return;
+    const record = getPlanRecord(nextRehearsal);
+    const pendingKeys = pending.map(item => item.key).filter(Boolean);
+    record.required = Array.from(new Set([...record.required, ...pendingKeys]));
+    record.excluded = record.excluded.filter(key => !pendingKeys.includes(key));
+    record.plan = null;
+    touchPlanRecord(record);
+    session.carriedToRehearsalId = rehearsalId(nextRehearsal);
+    session.carriedAt = new Date().toISOString();
+    queueSave();
+    renderAll();
+    showSessionSummary(session);
   }
 
   function renderRehearsalPlans() {
@@ -1039,6 +1245,11 @@
       quickNotes: {}
     };
     document.getElementById("sr-session-overlay")?.classList.add("show");
+    const finishButton = document.getElementById("sr-finish-session");
+    if (finishButton) {
+      finishButton.textContent = "Finalizar ensayo";
+      delete finishButton.dataset.confirming;
+    }
     if (!IS_LOCAL_PREVIEW && typeof window.requestWakeLock === "function") window.requestWakeLock();
     clearInterval(sessionTimer);
     sessionTimer = setInterval(renderSessionClocks, 1000);
@@ -1188,7 +1399,20 @@
     saveSessionQuickNote(false);
     clearInterval(sessionTimer);
     sessionTimer = null;
-    state.sessions.unshift({
+    clearTimeout(finishConfirmTimer);
+    finishConfirmTimer = null;
+    const plannedSongs = activeSession.plan.songs.map(song => ({
+      key: song.key,
+      title: song.title,
+      plannedMinutes: Number(song.plannedMinutes || 0)
+    }));
+    const unfinishedSongs = activeSession.plan.songs.slice(activeSession.index).map(song => ({
+      key: song.key,
+      title: song.title,
+      plannedMinutes: Number(song.plannedMinutes || 0),
+      note: activeSession.quickNotes[song.key] || getSongRecord(song.key).note || ""
+    }));
+    const completedSession = {
       id: `session_${Date.now()}`,
       rehearsalId: activeSession.rehearsalId,
       startedAt: activeSession.startedAt,
@@ -1197,14 +1421,18 @@
       actualSeconds: sessionTotalElapsedSeconds(),
       partial: !!partial,
       results: activeSession.results,
+      plannedSongs,
+      unfinishedSongs,
       recordedBy: getIdentity()
-    });
+    };
+    state.sessions.unshift(completedSession);
     state.sessions = state.sessions.slice(0, MAX_SESSIONS);
     activeSession = null;
     document.getElementById("sr-session-overlay")?.classList.remove("show");
     if (!IS_LOCAL_PREVIEW && typeof window.releaseWakeLock === "function") window.releaseWakeLock();
     queueSave();
     renderAll();
+    showSessionSummary(completedSession);
   }
 
   function wireEvents() {
@@ -1226,6 +1454,26 @@
       }
       if (event.target.closest("#sr-close-plan-screen")) {
         closePlanScreen();
+        return;
+      }
+      const openSummaryButton = event.target.closest("[data-sr-open-summary]");
+      if (openSummaryButton) {
+        showSessionSummary(openSummaryButton.dataset.srOpenSummary);
+        return;
+      }
+      if (event.target.closest("[data-sr-close-summary]")) {
+        closeSessionSummary();
+        return;
+      }
+      const carryForwardButton = event.target.closest("[data-sr-carry-forward]");
+      if (carryForwardButton) {
+        carrySessionPrioritiesForward(carryForwardButton.dataset.srCarryForward);
+        return;
+      }
+      const openNextPlanButton = event.target.closest("[data-sr-open-next-plan]");
+      if (openNextPlanButton) {
+        closeSessionSummary();
+        openPlanScreen(openNextPlanButton.dataset.srOpenNextPlan);
         return;
       }
       const card = event.target.closest(".sr-rehearsal-card");
@@ -1272,7 +1520,19 @@
         return;
       }
       if (event.target.closest("#sr-finish-session") && activeSession) {
-        if (confirm("Finalizar y guardar el progreso de este ensayo?")) finishSession(true);
+        const finishButton = event.target.closest("#sr-finish-session");
+        if (finishButton.dataset.confirming === "true") {
+          finishSession(true);
+        } else {
+          finishButton.dataset.confirming = "true";
+          finishButton.textContent = "Confirmar finalización";
+          clearTimeout(finishConfirmTimer);
+          finishConfirmTimer = setTimeout(() => {
+            if (!activeSession) return;
+            finishButton.textContent = "Finalizar ensayo";
+            delete finishButton.dataset.confirming;
+          }, 5000);
+        }
         return;
       }
       if (event.target.closest("#sr-session-save-note")) {
@@ -1315,7 +1575,9 @@
     });
 
     document.addEventListener("keydown", event => {
-      if (event.key === "Escape" && activePlanScreenId && !activeSession) closePlanScreen();
+      if (event.key !== "Escape" || activeSession) return;
+      if (document.getElementById("sr-summary-overlay")?.classList.contains("show")) closeSessionSummary();
+      else if (activePlanScreenId) closePlanScreen();
     });
   }
 
@@ -1324,6 +1586,7 @@
     injectStyles();
     createSessionOverlay();
     createPlanScreen();
+    createSummaryOverlay();
     wireEvents();
     renderAll();
     setTimeout(loadRemoteState, 1500);
@@ -1341,7 +1604,7 @@
       getSongs: () => songs.slice(),
       getState: () => JSON.parse(JSON.stringify(state))
     };
-    console.log("--- SMART REHEARSAL v5 cargado ---");
+    console.log("--- SMART REHEARSAL v6 cargado ---");
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
