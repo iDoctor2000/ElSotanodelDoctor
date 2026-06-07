@@ -1856,6 +1856,7 @@ function renderRehearsals() {
         tbodyConfig.innerHTML=emptyMsgConfig;
         const emptyMsgMain='<tr><td colspan="6">No hay próximos ensayos.</td></tr>';
         tbodyMain.innerHTML=emptyMsgMain;
+        if(window.SmartRehearsal) window.SmartRehearsal.renderRehearsals();
         return
     } 
     
@@ -1904,6 +1905,7 @@ function renderRehearsals() {
     tbodyConfig.querySelectorAll(".clear-attendance").forEach(btn=>btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const rehearsal=rehearsals[index];if(confirm(`¿Eliminar asistencias para ensayo del ${formatDateWithDay(rehearsal.date)} en ${rehearsal.location}?`)){rehearsal.attendance=[];await saveRehearsals();document.getElementById("rehearsal-message").textContent="Asistencias eliminadas.";renderStats()}}); 
     
     tbodyMain.querySelectorAll(".confirm-attendance").forEach(btn=>{btn.onclick=async()=>{const index=parseInt(btn.dataset.i,10);const userSelect=document.querySelector(`.attendance-user[data-i="${index}"]`);const responseSelect=document.querySelector(`.attendance-response[data-i="${index}"]`);const name=userSelect.value;const attending=responseSelect.value;if(!name||!attending){alert("Selecciona nombre y respuesta.");return} const rehearsal=rehearsals[index];const confirmMsg=`${name}, ¿${attending==="Sí"?"ASISTIRÁS":"NO ASISTIRÁS"} al ensayo del ${formatDateWithDay(rehearsal.date)}?`;if(!confirm(confirmMsg))return;if(!Array.isArray(rehearsal.attendance))rehearsal.attendance=[];const existingResponse=rehearsal.attendance.find(a=>a.name===name);if(existingResponse)existingResponse.attending=attending;else rehearsal.attendance.push({name,attending});try{await saveRehearsals();userSelect.value="";responseSelect.value="";renderStats()}catch(e){alert("Error al guardar asistencia: "+e.message)}}})
+    if(window.SmartRehearsal) window.SmartRehearsal.renderRehearsals();
 }
 
 const rehearsalDetailModal = document.getElementById('rehearsal-details-modal');
@@ -2279,7 +2281,7 @@ document.getElementById("add-user").onclick = async () => { const msg=document.g
 document.getElementById("cancel-edit-user").onclick = () => { resetUserForm(); document.getElementById("user-message").textContent = ""; };
 document.getElementById("menu-rehearsal").onclick = e => { e.preventDefault(); openConfigScreen("rehearsal-screen"); };
 document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; document.getElementById("rehearsal-message").textContent = ""; resetRehearsalForm(); };
-document.getElementById("add-rehearsal").onclick = async () => { const msg=document.getElementById("rehearsal-message");msg.textContent="";const date=document.getElementById("rehearsal-date").value,startTime=document.getElementById("rehearsal-start-time").value,endTime=document.getElementById("rehearsal-end-time").value,loc=document.getElementById("rehearsal-location").value.trim();if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return} if(calculateDuration(startTime,endTime)<=0){msg.className="error-message";msg.textContent="Hora fin posterior a inicio.";return} try{const newData={date,startTime,endTime,location:loc,attendance:[]};if(editingRehearsalIndex!==null){newData.attendance=rehearsals[editingRehearsalIndex].attendance||[];rehearsals[editingRehearsalIndex]=newData;msg.textContent="Ensayo actualizado."}else{rehearsals.push(newData);msg.textContent="Ensayo añadido."} await saveRehearsals();msg.className="success-message";resetRehearsalForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
+document.getElementById("add-rehearsal").onclick = async () => { const msg=document.getElementById("rehearsal-message");msg.textContent="";const date=document.getElementById("rehearsal-date").value,startTime=document.getElementById("rehearsal-start-time").value,endTime=document.getElementById("rehearsal-end-time").value,loc=document.getElementById("rehearsal-location").value.trim();if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return} if(calculateDuration(startTime,endTime)<=0){msg.className="error-message";msg.textContent="Hora fin posterior a inicio.";return} try{const previous=editingRehearsalIndex!==null?rehearsals[editingRehearsalIndex]:null;const generatedId=window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():`rehearsal_${Date.now()}`;const newData={date,startTime,endTime,location:loc,attendance:[],smartId:previous?.smartId||(previous&&window.getRehearsalSmartId?window.getRehearsalSmartId(previous):generatedId)};if(editingRehearsalIndex!==null){newData.attendance=previous.attendance||[];newData.notes=previous.notes||"";rehearsals[editingRehearsalIndex]=newData;msg.textContent="Ensayo actualizado."}else{rehearsals.push(newData);msg.textContent="Ensayo añadido."} await saveRehearsals();msg.className="success-message";resetRehearsalForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
 document.getElementById("cancel-edit-rehearsal").onclick = () => { resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = ""; };
 document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(openConfigScreen("stats-screen")){ updateMonthFilter(); renderStats(); }};
 document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
@@ -2545,7 +2547,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 </script>
 <script src="setlist-extension.js?v=6"></script>
 <script src="private-zone.js?v=5"></script>
-<script src="smart-rehearsal.js?v=1"></script>
+<script src="smart-rehearsal.js?v=2"></script>
 </body>
 </html>
 </body>

@@ -1,38 +1,51 @@
 /*
    SMART-REHEARSAL.JS
-   Semaforo del repertorio + Modo Ensayo Inteligente.
-   Modulo aislado para trabajar sobre los setlists ya cargados.
+   Semaforo global por cancion + planes inteligentes por ensayo.
+   Este modulo solo se carga desde index.pru.html.
 */
 (function () {
   "use strict";
 
   const DOC_ID = "rehearsal_intelligence";
-  const LOCAL_STATE_KEY = "esdd_rehearsal_intelligence_v1";
-  const LOCAL_PLAN_KEY = "esdd_rehearsal_plan_v1";
-  const MAX_SESSIONS = 20;
+  const LOCAL_STATE_KEY = "esdd_rehearsal_intelligence_v2";
+  const LEGACY_STATE_KEY = "esdd_rehearsal_intelligence_v1";
+  const MAX_SESSIONS = 30;
   const IS_LOCAL_PREVIEW = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
 
   const STATUS = {
-    ready: { label: "Lista", short: "Lista", color: "#43d17a", score: 5 },
-    review: { label: "Necesita repaso", short: "Repaso", color: "#ffb52e", score: 65 },
-    blocked: { label: "Bloqueada", short: "Bloqueada", color: "#ff5353", score: 110 },
-    unknown: { label: "Sin valorar", short: "Sin valorar", color: "#777", score: 40 }
+    ready: { label: "Lista", color: "#43d17a", score: 5 },
+    review: { label: "Necesita repaso", color: "#ffb52e", score: 65 },
+    blocked: { label: "Bloqueada", color: "#ff5353", score: 110 },
+    unknown: { label: "Sin valorar", color: "#777", score: 40 }
   };
 
-  const SOURCE_LABELS = {
-    rehearsal: "Proximo ensayo",
-    concert: "Proximo concierto",
-    star: "Concierto estrella"
+  const SOURCES = {
+    rehearsal: {
+      label: "Setlist Proximo Ensayo",
+      short: "Ensayo",
+      sectionId: "setlists",
+      color: "#b070ff"
+    },
+    concert: {
+      label: "Setlist Proximo Concierto",
+      short: "Concierto",
+      sectionId: "second-setlist",
+      color: "#0cf"
+    },
+    star: {
+      label: "Setlist Concierto Estrella",
+      short: "Estrella",
+      sectionId: "star-setlist",
+      color: "#ffd700"
+    }
   };
 
-  let state = { songs: {}, sessions: [] };
+  let state = { songs: {}, sessions: [], rehearsalPlans: {} };
   let songs = [];
-  let currentPlan = null;
   let activeSession = null;
   let sessionTimer = null;
   let saveTimer = null;
   let lastSongsFingerprint = "";
-  let durationManuallyChanged = false;
 
   function sanitizeKey(value) {
     return value ? String(value).trim().replace(/[.#$[\]/:\s,]/g, "_") : "unknown";
@@ -52,13 +65,51 @@
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
   }
 
+  function formatRehearsalDate(rehearsal) {
+    if (!rehearsal || !rehearsal.date) return "Ensayo sin fecha";
+    return new Date(`${rehearsal.date}T00:00:00`).toLocaleDateString("es-ES", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+  }
+
   function rehearsalDurationMinutes(rehearsal) {
-    if (!rehearsal || !rehearsal.startTime || !rehearsal.endTime) return 0;
+    if (!rehearsal || !rehearsal.startTime || !rehearsal.endTime) return 90;
     const [startHour, startMinute] = rehearsal.startTime.split(":").map(Number);
     const [endHour, endMinute] = rehearsal.endTime.split(":").map(Number);
     let minutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
     if (minutes < 0) minutes += 24 * 60;
-    return minutes;
+    return minutes || 90;
+  }
+
+  function rehearsalId(rehearsal) {
+    if (!rehearsal) return "unknown_rehearsal";
+    if (rehearsal.smartId) return String(rehearsal.smartId);
+    return sanitizeKey([
+      rehearsal.date || "sin_fecha",
+      rehearsal.startTime || "sin_hora",
+      rehearsal.endTime || "",
+      rehearsal.location || "sin_lugar"
+    ].join("_"));
+  }
+
+  window.getRehearsalSmartId = rehearsalId;
+
+  function getRehearsals() {
+    const list = typeof window.getRehearsalsForSmartMode === "function"
+      ? window.getRehearsalsForSmartMode()
+      : window.rehearsals;
+    return Array.isArray(list) ? list : [];
+  }
+
+  function getFutureRehearsals() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return getRehearsals()
+      .filter(rehearsal => rehearsal && rehearsal.date && new Date(`${rehearsal.date}T00:00:00`) >= today)
+      .sort((a, b) => new Date(`${a.date}T${a.startTime || "00:00"}`) - new Date(`${b.date}T${b.startTime || "00:00"}`));
   }
 
   function getIdentity() {
@@ -66,14 +117,19 @@
     return selector && selector.value ? selector.value : "Banda";
   }
 
+  function normalizeState(saved) {
+    if (!saved || typeof saved !== "object") return;
+    state.songs = saved.songs && typeof saved.songs === "object" ? saved.songs : state.songs;
+    state.sessions = Array.isArray(saved.sessions) ? saved.sessions.slice(0, MAX_SESSIONS) : state.sessions;
+    state.rehearsalPlans = saved.rehearsalPlans && typeof saved.rehearsalPlans === "object"
+      ? saved.rehearsalPlans
+      : state.rehearsalPlans;
+  }
+
   function readLocalState() {
     try {
-      const saved = JSON.parse(localStorage.getItem(LOCAL_STATE_KEY) || "{}");
-      if (saved && typeof saved === "object") {
-        state.songs = saved.songs && typeof saved.songs === "object" ? saved.songs : {};
-        state.sessions = Array.isArray(saved.sessions) ? saved.sessions.slice(0, MAX_SESSIONS) : [];
-      }
-      currentPlan = JSON.parse(localStorage.getItem(LOCAL_PLAN_KEY) || "null");
+      const saved = JSON.parse(localStorage.getItem(LOCAL_STATE_KEY) || localStorage.getItem(LEGACY_STATE_KEY) || "{}");
+      normalizeState(saved);
     } catch (error) {
       console.warn("[Ensayo Inteligente] No se pudo leer la copia local:", error);
     }
@@ -82,31 +138,30 @@
   function writeLocalState() {
     try {
       localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(state));
-      if (currentPlan) localStorage.setItem(LOCAL_PLAN_KEY, JSON.stringify(currentPlan));
-      else localStorage.removeItem(LOCAL_PLAN_KEY);
     } catch (error) {
       console.warn("[Ensayo Inteligente] No se pudo guardar la copia local:", error);
     }
   }
 
   function setSyncMessage(message, isError) {
-    const el = document.getElementById("sr-sync-status");
-    if (!el) return;
-    el.textContent = message || "";
-    el.classList.toggle("error", !!isError);
+    document.querySelectorAll(".sr-sync-status").forEach(element => {
+      element.textContent = message || "";
+      element.classList.toggle("error", !!isError);
+    });
   }
 
   async function loadRemoteState() {
     if (typeof window.loadDoc !== "function") return;
     try {
-      const remote = await window.loadDoc("intranet", DOC_ID, { songs: {}, sessions: [] });
+      const remote = await window.loadDoc("intranet", DOC_ID, {
+        songs: {},
+        sessions: [],
+        rehearsalPlans: {}
+      });
       if (!remote || typeof remote !== "object") return;
-      if (remote.songs && typeof remote.songs === "object") {
-        state.songs = { ...state.songs, ...remote.songs };
-      }
-      if (Array.isArray(remote.sessions) && remote.sessions.length) {
-        state.sessions = remote.sessions.slice(0, MAX_SESSIONS);
-      }
+      state.songs = { ...state.songs, ...(remote.songs || {}) };
+      if (Array.isArray(remote.sessions)) state.sessions = remote.sessions.slice(0, MAX_SESSIONS);
+      state.rehearsalPlans = { ...state.rehearsalPlans, ...(remote.rehearsalPlans || {}) };
       writeLocalState();
       renderAll();
       setSyncMessage(IS_LOCAL_PREVIEW
@@ -132,6 +187,7 @@
       await window.withRetry(() => window.saveDoc("intranet", DOC_ID, {
         songs: state.songs,
         sessions: state.sessions.slice(0, MAX_SESSIONS),
+        rehearsalPlans: state.rehearsalPlans,
         updatedAt: new Date().toISOString()
       }, true));
       setSyncMessage("Guardado");
@@ -190,8 +246,8 @@
   }
 
   function getSongStatus(songKey) {
-    const saved = state.songs[songKey];
-    return saved && STATUS[saved.status] ? saved.status : "unknown";
+    const record = state.songs[songKey];
+    return record && STATUS[record.status] ? record.status : "unknown";
   }
 
   function getSongRecord(songKey) {
@@ -200,9 +256,8 @@
 
   function setSongStatus(songKey, status) {
     if (!STATUS[status] || status === "unknown") return;
-    const previous = state.songs[songKey] || {};
     state.songs[songKey] = {
-      ...previous,
+      ...getSongRecord(songKey),
       status,
       updatedAt: new Date().toISOString(),
       updatedBy: getIdentity()
@@ -214,11 +269,10 @@
   function editSongNote(songKey) {
     const song = songs.find(item => item.key === songKey);
     if (!song) return;
-    const previous = getSongRecord(songKey);
-    const note = prompt(`Nota de trabajo para "${song.title}":`, previous.note || "");
+    const note = prompt(`Nota de trabajo para "${song.title}":`, getSongRecord(songKey).note || "");
     if (note === null) return;
     state.songs[songKey] = {
-      ...previous,
+      ...getSongRecord(songKey),
       note: note.trim(),
       updatedAt: new Date().toISOString(),
       updatedBy: getIdentity()
@@ -228,7 +282,11 @@
   }
 
   function sourceBadges(song) {
-    return song.sources.map(source => `<span class="sr-source sr-source-${source}">${escapeHtml(SOURCE_LABELS[source])}</span>`).join("");
+    return song.sources.map(source => `
+      <span class="sr-source" style="border-color:${SOURCES[source].color};color:${SOURCES[source].color}">
+        ${escapeHtml(SOURCES[source].short)}
+      </span>
+    `).join("");
   }
 
   function injectStyles() {
@@ -236,50 +294,64 @@
     const style = document.createElement("style");
     style.id = "smart-rehearsal-styles";
     style.textContent = `
-      #smart-rehearsal {
-        background: rgba(20,20,20,.82); backdrop-filter: blur(10px);
-        padding: 20px; border-radius: 12px; margin-bottom: 40px;
-        border: 1px solid rgba(255,181,46,.25); box-shadow: 0 8px 32px rgba(0,0,0,.37);
+      .sr-setlist-panel,.sr-rehearsal-card {
+        margin-top:18px; background:rgba(0,0,0,.28); border:1px solid rgba(255,181,46,.28);
+        border-radius:10px; padding:12px;
       }
-      #smart-rehearsal h2 { text-align:center; color:#ffb52e; margin:0 0 5px; }
-      .sr-subtitle { text-align:center; color:#aaa; margin:0 0 18px; }
-      .sr-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
-      .sr-summary-card { background:#111; border:1px solid #333; border-radius:10px; padding:12px; text-align:center; }
-      .sr-summary-value { display:block; font-size:1.7em; font-weight:bold; }
-      .sr-summary-label { color:#aaa; font-size:.82em; }
-      .sr-toolbar { display:flex; flex-wrap:wrap; gap:8px; padding:12px; background:rgba(0,0,0,.28); border:1px solid #333; border-radius:10px; margin-bottom:14px; }
-      .sr-toolbar input,.sr-toolbar select { flex:1; min-width:150px; padding:9px; background:#171717; color:#fff; border:1px solid #444; border-radius:7px; }
-      .sr-toolbar button,.sr-action-btn { border:0; border-radius:7px; padding:9px 13px; background:#ffb52e; color:#111; font-weight:bold; cursor:pointer; }
-      .sr-toolbar button.secondary,.sr-action-btn.secondary { background:#333; color:#fff; border:1px solid #555; }
-      .sr-toolbar button:disabled,.sr-action-btn:disabled { opacity:.45; cursor:not-allowed; }
-      .sr-sync { min-height:1.2em; color:#66dd99; font-size:.8em; text-align:right; margin:-5px 0 8px; }
-      .sr-sync.error { color:#ff8a8a; }
-      .sr-next-hint { color:#c9c9c9; font-size:.82em; margin:-5px 0 12px; padding-left:4px; }
-      .sr-layout { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr); gap:14px; align-items:start; }
-      .sr-panel { background:rgba(0,0,0,.25); border:1px solid #333; border-radius:10px; padding:12px; }
-      .sr-panel h3 { color:#ffb52e; margin:0 0 10px; }
-      .sr-song-list { max-height:620px; overflow-y:auto; padding-right:3px; }
-      .sr-song { display:grid; grid-template-columns:minmax(130px,1fr) auto; gap:10px; padding:10px; border-bottom:1px solid #2c2c2c; align-items:center; }
+      .sr-setlist-panel > summary,.sr-rehearsal-card > summary {
+        color:#ffb52e; cursor:pointer; font-weight:bold; padding:3px; list-style-position:inside;
+      }
+      .sr-subtitle { color:#aaa; font-size:.82em; margin:9px 0 12px; }
+      .sr-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; margin:10px 0; }
+      .sr-summary-card { background:#111; border:1px solid #333; border-radius:8px; padding:8px; text-align:center; }
+      .sr-summary-value { display:block; font-size:1.35em; font-weight:bold; }
+      .sr-summary-label { color:#aaa; font-size:.72em; }
+      .sr-song-list { max-height:430px; overflow-y:auto; padding-right:3px; }
+      .sr-song { display:grid; grid-template-columns:minmax(130px,1fr) auto; gap:9px; padding:9px 4px; border-bottom:1px solid #292929; align-items:center; }
       .sr-song:last-child { border-bottom:0; }
       .sr-song-title { font-weight:bold; color:#fff; }
-      .sr-song-note { color:#aaa; font-size:.78em; margin-top:5px; }
-      .sr-sources { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
-      .sr-source { font-size:.65em; padding:2px 5px; border-radius:10px; border:1px solid #555; color:#bbb; }
-      .sr-source-concert { border-color:#0cf; color:#6de5ff; }
-      .sr-source-star { border-color:#ffd700; color:#ffe36a; }
-      .sr-source-rehearsal { border-color:#b070ff; color:#c99cff; }
+      .sr-song-note { color:#aaa; font-size:.76em; margin-top:4px; }
+      .sr-sources { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+      .sr-source { font-size:.62em; padding:2px 5px; border-radius:10px; border:1px solid #555; }
       .sr-status-controls { display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
-      .sr-status-btn { border:1px solid #555; background:#222; color:#aaa; border-radius:6px; padding:6px 8px; cursor:pointer; font-size:.75em; }
+      .sr-status-btn,.sr-note-btn,.sr-small-btn {
+        border:1px solid #555; background:#222; color:#bbb; border-radius:6px; padding:6px 8px; cursor:pointer; font-size:.75em;
+      }
       .sr-status-btn.active.ready { color:#111; background:#43d17a; border-color:#43d17a; }
       .sr-status-btn.active.review { color:#111; background:#ffb52e; border-color:#ffb52e; }
       .sr-status-btn.active.blocked { color:#fff; background:#d93838; border-color:#ff5353; }
-      .sr-note-btn { border:1px solid #555; color:#ddd; background:transparent; border-radius:6px; padding:6px 8px; cursor:pointer; font-size:.75em; }
-      .sr-plan-empty,.sr-empty { color:#888; text-align:center; padding:22px 8px; }
-      .sr-plan-summary { display:flex; justify-content:space-between; gap:8px; color:#aaa; font-size:.85em; margin-bottom:8px; }
-      .sr-plan-item { display:grid; grid-template-columns:28px minmax(0,1fr) auto; gap:8px; align-items:center; padding:9px 5px; border-bottom:1px solid #292929; }
+      .sr-rehearsal-plans { margin-top:18px; }
+      .sr-rehearsal-heading { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; align-items:center; }
+      .sr-rehearsal-meta { color:#aaa; font-size:.8em; font-weight:normal; }
+      .sr-rehearsal-grid { display:grid; grid-template-columns:minmax(260px,.8fr) minmax(320px,1.2fr); gap:12px; margin-top:12px; }
+      .sr-panel { background:rgba(0,0,0,.25); border:1px solid #333; border-radius:9px; padding:11px; }
+      .sr-panel h4 { color:#ffb52e; margin:0 0 9px; }
+      .sr-form-label { display:block; color:#ccc; font-size:.78em; margin:9px 0 4px; }
+      .sr-objective,.sr-focus,.sr-song-picker {
+        width:100%; padding:8px; background:#171717; color:#fff; border:1px solid #444; border-radius:7px;
+      }
+      .sr-objective { min-height:72px; resize:vertical; }
+      .sr-source-options { display:flex; flex-wrap:wrap; gap:7px; margin:7px 0; }
+      .sr-source-option { display:flex; align-items:center; gap:5px; color:#ccc; font-size:.8em; }
+      .sr-picker-row { display:flex; gap:6px; margin-top:6px; }
+      .sr-picker-row .sr-song-picker { flex:1; min-width:0; }
+      .sr-tag-list { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; min-height:20px; }
+      .sr-tag { display:inline-flex; align-items:center; gap:5px; background:#252525; border:1px solid #444; border-radius:12px; padding:3px 7px; color:#ddd; font-size:.7em; }
+      .sr-tag.required { border-color:#43d17a; }
+      .sr-tag.excluded { border-color:#ff5353; }
+      .sr-tag button { border:0; background:none; color:#aaa; padding:0; cursor:pointer; }
+      .sr-actions { display:flex; gap:7px; flex-wrap:wrap; margin-top:11px; }
+      .sr-action-btn { border:0; border-radius:7px; padding:9px 12px; background:#ffb52e; color:#111; font-weight:bold; cursor:pointer; }
+      .sr-action-btn.secondary { background:#333; color:#fff; border:1px solid #555; }
+      .sr-action-btn:disabled { opacity:.45; cursor:not-allowed; }
+      .sr-sync-status { min-height:1.2em; color:#66dd99; font-size:.72em; margin-top:8px; }
+      .sr-sync-status.error { color:#ff8a8a; }
+      .sr-plan-empty,.sr-empty { color:#888; text-align:center; padding:18px 7px; }
+      .sr-plan-summary { display:flex; justify-content:space-between; gap:8px; color:#aaa; font-size:.8em; margin-bottom:7px; }
+      .sr-plan-item { display:grid; grid-template-columns:27px minmax(0,1fr) auto; gap:8px; align-items:center; padding:8px 4px; border-bottom:1px solid #292929; }
       .sr-plan-number { color:#ffb52e; font-weight:bold; text-align:center; }
-      .sr-plan-time { color:#aaa; font-size:.8em; }
-      .sr-history-item { padding:8px 5px; border-bottom:1px solid #292929; color:#ccc; font-size:.82em; }
+      .sr-plan-time { color:#aaa; font-size:.78em; }
+      .sr-history-item { padding:7px 4px; border-bottom:1px solid #292929; color:#ccc; font-size:.78em; }
       tr[data-sr-status] td:first-child { border-left:4px solid #777 !important; }
       tr[data-sr-status="ready"] td:first-child { border-left-color:#43d17a !important; }
       tr[data-sr-status="review"] td:first-child { border-left-color:#ffb52e !important; }
@@ -291,20 +363,17 @@
       .sr-session-progress { height:7px; background:#222; border-radius:10px; overflow:hidden; margin-bottom:28px; }
       .sr-session-progress > div { height:100%; background:#ffb52e; transition:width .25s; }
       .sr-session-title { font-size:clamp(2em,7vw,4.8em); line-height:1.05; text-align:center; margin:10px 0; }
-      .sr-session-meta { text-align:center; color:#aaa; font-size:1.05em; }
-      .sr-session-note { max-width:650px; margin:18px auto; color:#ddd; text-align:center; min-height:1.4em; }
+      .sr-session-meta,.sr-session-note,.sr-session-target { text-align:center; color:#aaa; }
+      .sr-session-note { max-width:650px; margin:18px auto; color:#ddd; min-height:1.4em; }
       .sr-session-clock { font-family:monospace; color:#ffb52e; font-size:clamp(2.2em,8vw,5em); text-align:center; margin:18px 0 5px; }
-      .sr-session-target { color:#777; text-align:center; margin-bottom:22px; }
       .sr-session-tools,.sr-session-results { display:flex; flex-wrap:wrap; justify-content:center; gap:9px; margin-top:12px; }
-      .sr-session-tools button,.sr-session-results button { border:1px solid #555; background:#222; color:#fff; border-radius:9px; padding:12px 17px; cursor:pointer; font-weight:bold; }
+      .sr-session-tools button,.sr-session-results button,.sr-session-close { border:1px solid #555; background:#222; color:#fff; border-radius:9px; padding:12px 17px; cursor:pointer; font-weight:bold; }
       .sr-session-results button[data-result="good"] { background:#43d17a; color:#111; border-color:#43d17a; }
       .sr-session-results button[data-result="repeat"] { background:#ffb52e; color:#111; border-color:#ffb52e; }
       .sr-session-results button[data-result="blocked"] { background:#d93838; border-color:#ff5353; }
-      .sr-session-close { border:1px solid #666; color:#ddd; background:transparent; border-radius:7px; padding:7px 11px; cursor:pointer; }
       @media(max-width:800px) {
         .sr-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
-        .sr-layout { grid-template-columns:1fr; }
-        .sr-song { grid-template-columns:1fr; }
+        .sr-song,.sr-rehearsal-grid { grid-template-columns:1fr; }
         .sr-status-controls { justify-content:flex-start; }
         .sr-song-list { max-height:none; }
       }
@@ -312,64 +381,8 @@
     document.head.appendChild(style);
   }
 
-  function injectInterface() {
-    if (document.getElementById("smart-rehearsal")) return;
-    const section = document.createElement("section");
-    section.id = "smart-rehearsal";
-    section.innerHTML = `
-      <h2>Semaforo del repertorio</h2>
-      <p class="sr-subtitle">Prioridades compartidas y plan automatico para aprovechar cada ensayo.</p>
-      <div id="sr-summary" class="sr-summary"></div>
-      <div class="sr-toolbar">
-        <input id="sr-search" type="search" placeholder="Buscar cancion...">
-        <select id="sr-source-filter">
-          <option value="all">Todo el repertorio visible</option>
-          <option value="rehearsal">Setlist proximo ensayo</option>
-          <option value="concert">Setlist proximo concierto</option>
-          <option value="star">Setlist concierto estrella</option>
-        </select>
-        <select id="sr-duration">
-          <option value="60">Ensayo de 60 min</option>
-          <option value="90" selected>Ensayo de 90 min</option>
-          <option value="120">Ensayo de 120 min</option>
-          <option value="150">Ensayo de 150 min</option>
-        </select>
-        <select id="sr-focus">
-          <option value="balanced">Plan equilibrado</option>
-          <option value="problems">Priorizar problemas</option>
-          <option value="concert">Priorizar conciertos</option>
-          <option value="unrated">Valorar repertorio pendiente</option>
-        </select>
-        <button id="sr-generate-plan">Generar plan</button>
-      </div>
-      <div id="sr-sync-status" class="sr-sync"></div>
-      <div id="sr-next-rehearsal-hint" class="sr-next-hint"></div>
-      <div class="sr-layout">
-        <div class="sr-panel">
-          <h3>Repertorio</h3>
-          <div id="sr-song-list" class="sr-song-list"></div>
-        </div>
-        <div>
-          <div class="sr-panel">
-            <h3>Plan de ensayo</h3>
-            <div id="sr-plan"></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-              <button id="sr-start-session" class="sr-action-btn" disabled>Iniciar Modo Ensayo</button>
-              <button id="sr-clear-plan" class="sr-action-btn secondary" disabled>Limpiar plan</button>
-            </div>
-          </div>
-          <div class="sr-panel" style="margin-top:14px;">
-            <h3>Ultimos ensayos inteligentes</h3>
-            <div id="sr-history"></div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    const setlists = document.getElementById("setlists");
-    if (setlists && setlists.parentNode) setlists.parentNode.insertBefore(section, setlists.nextSibling);
-    else document.querySelector("main")?.prepend(section);
-
+  function createSessionOverlay() {
+    if (document.getElementById("sr-session-overlay")) return;
     const overlay = document.createElement("div");
     overlay.id = "sr-session-overlay";
     overlay.innerHTML = `
@@ -399,34 +412,12 @@
       </div>
     `;
     document.body.appendChild(overlay);
-
-    const menu = document.getElementById("sidebar-menu");
-    const statsLink = document.getElementById("menu-stats");
-    if (menu && !document.getElementById("menu-smart-rehearsal")) {
-      const link = document.createElement("a");
-      link.href = "#smart-rehearsal";
-      link.id = "menu-smart-rehearsal";
-      link.textContent = "Semaforo y Modo Ensayo";
-      if (statsLink) menu.insertBefore(link, statsLink);
-      else menu.appendChild(link);
-      link.addEventListener("click", event => {
-        event.preventDefault();
-        if (typeof window.closeAll === "function") window.closeAll();
-        else {
-          document.getElementById("sidebar-menu")?.classList.remove("show");
-          document.getElementById("overlay")?.classList.remove("show");
-        }
-        document.getElementById("smart-rehearsal")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    }
   }
 
-  function renderSummary() {
-    const summary = document.getElementById("sr-summary");
-    if (!summary) return;
+  function setlistSummaryHtml(sourceSongs) {
     const counts = { ready: 0, review: 0, blocked: 0, unknown: 0 };
-    songs.forEach(song => counts[getSongStatus(song.key)]++);
-    summary.innerHTML = ["ready", "review", "blocked", "unknown"].map(status => `
+    sourceSongs.forEach(song => counts[getSongStatus(song.key)]++);
+    return ["ready", "review", "blocked", "unknown"].map(status => `
       <div class="sr-summary-card">
         <span class="sr-summary-value" style="color:${STATUS[status].color}">${counts[status]}</span>
         <span class="sr-summary-label">${escapeHtml(STATUS[status].label)}</span>
@@ -434,157 +425,105 @@
     `).join("");
   }
 
-  function syncNextRehearsalDuration() {
-    const hint = document.getElementById("sr-next-rehearsal-hint");
-    const durationSelect = document.getElementById("sr-duration");
-    const rehearsals = typeof window.getRehearsalsForSmartMode === "function"
-      ? window.getRehearsalsForSmartMode()
-      : window.rehearsals;
-    if (!hint || !durationSelect || !Array.isArray(rehearsals)) return;
-    const now = new Date();
-    const next = rehearsals
-      .filter(rehearsal => rehearsal && rehearsal.date && new Date(`${rehearsal.date}T${rehearsal.startTime || "00:00"}`) >= now)
-      .sort((a, b) => new Date(`${a.date}T${a.startTime || "00:00"}`) - new Date(`${b.date}T${b.startTime || "00:00"}`))[0];
-    const oldOption = document.getElementById("sr-next-duration-option");
-    if (oldOption) oldOption.remove();
-    if (!next) {
-      hint.textContent = "No hay un proximo ensayo programado; puedes elegir la duracion manualmente.";
-      return;
-    }
-    const minutes = rehearsalDurationMinutes(next);
-    const dateText = new Date(`${next.date}T00:00:00`).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
-    hint.textContent = `Proximo ensayo: ${dateText}, ${next.startTime || ""}-${next.endTime || ""}${next.location ? ` en ${next.location}` : ""}.`;
-    if (minutes > 0) {
-      const option = document.createElement("option");
-      option.id = "sr-next-duration-option";
-      option.value = String(minutes);
-      option.textContent = `Proximo ensayo: ${minutes} min`;
-      durationSelect.prepend(option);
-      if (!durationManuallyChanged) durationSelect.value = String(minutes);
-    }
+  function songStatusHtml(song) {
+    const status = getSongStatus(song.key);
+    const record = getSongRecord(song.key);
+    return `
+      <div class="sr-song">
+        <div>
+          <div class="sr-song-title">${escapeHtml(song.title)}</div>
+          <div class="sr-sources">${sourceBadges(song)}</div>
+          <div class="sr-song-note">${record.note ? escapeHtml(record.note) : "Sin nota de trabajo"}</div>
+        </div>
+        <div class="sr-status-controls">
+          <button class="sr-status-btn ready ${status === "ready" ? "active" : ""}" data-sr-status="ready" data-song-key="${escapeHtml(song.key)}">Lista</button>
+          <button class="sr-status-btn review ${status === "review" ? "active" : ""}" data-sr-status="review" data-song-key="${escapeHtml(song.key)}">Repaso</button>
+          <button class="sr-status-btn blocked ${status === "blocked" ? "active" : ""}" data-sr-status="blocked" data-song-key="${escapeHtml(song.key)}">Bloqueada</button>
+          <button class="sr-note-btn" data-sr-note="${escapeHtml(song.key)}">Nota</button>
+        </div>
+      </div>
+    `;
   }
 
-  function filteredSongs() {
-    const query = (document.getElementById("sr-search")?.value || "").trim().toLocaleLowerCase("es");
-    const source = document.getElementById("sr-source-filter")?.value || "all";
-    return songs.filter(song => {
-      const matchesQuery = !query || song.title.toLocaleLowerCase("es").includes(query);
-      const matchesSource = source === "all" || song.sources.includes(source);
-      return matchesQuery && matchesSource;
-    }).sort((a, b) => {
-      const statusDiff = STATUS[getSongStatus(b.key)].score - STATUS[getSongStatus(a.key)].score;
-      return statusDiff || a.title.localeCompare(b.title, "es");
+  function renderSetlistPanels() {
+    Object.entries(SOURCES).forEach(([source, config]) => {
+      const section = document.getElementById(config.sectionId);
+      if (!section) return;
+      let panel = section.querySelector(`[data-sr-setlist="${source}"]`);
+      const wasOpen = !!panel?.open;
+      if (!panel) {
+        panel = document.createElement("details");
+        panel.className = "sr-setlist-panel";
+        panel.dataset.srSetlist = source;
+        section.appendChild(panel);
+      }
+      const sourceSongs = songs.filter(song => song.sources.includes(source));
+      panel.innerHTML = `
+        <summary>Semaforo del repertorio · ${sourceSongs.length} canciones</summary>
+        <p class="sr-subtitle">El estado de cada cancion es global y se comparte con los otros Setlists.</p>
+        <div class="sr-summary">${setlistSummaryHtml(sourceSongs)}</div>
+        <div class="sr-song-list">
+          ${sourceSongs.length ? sourceSongs.map(songStatusHtml).join("") : '<div class="sr-empty">Esperando a que cargue este Setlist...</div>'}
+        </div>
+        <div class="sr-sync-status"></div>
+      `;
+      panel.open = wasOpen;
     });
   }
 
-  function renderSongs() {
-    const list = document.getElementById("sr-song-list");
-    if (!list) return;
-    const visibleSongs = filteredSongs();
-    if (!visibleSongs.length) {
-      list.innerHTML = `<div class="sr-empty">${songs.length ? "No hay canciones con este filtro." : "Esperando a que carguen los setlists..."}</div>`;
-      return;
+  function getPlanRecord(rehearsal) {
+    const id = rehearsalId(rehearsal);
+    if (!state.rehearsalPlans[id]) {
+      state.rehearsalPlans[id] = {
+        objective: rehearsal.notes || "",
+        focus: "balanced",
+        sources: ["rehearsal"],
+        required: [],
+        excluded: [],
+        plan: null,
+        updatedAt: null
+      };
     }
-    list.innerHTML = visibleSongs.map(song => {
-      const status = getSongStatus(song.key);
-      const record = getSongRecord(song.key);
+    const record = state.rehearsalPlans[id];
+    if (!Array.isArray(record.sources) || !record.sources.length) record.sources = ["rehearsal"];
+    if (!Array.isArray(record.required)) record.required = [];
+    if (!Array.isArray(record.excluded)) record.excluded = [];
+    return record;
+  }
+
+  function selectedSongsForRecord(record) {
+    return songs.filter(song => song.sources.some(source => record.sources.includes(source)));
+  }
+
+  function songOptionsHtml(record) {
+    const available = selectedSongsForRecord(record).filter(song => !record.required.includes(song.key) && !record.excluded.includes(song.key));
+    return `<option value="">Selecciona una cancion...</option>${available.map(song => `
+      <option value="${escapeHtml(song.key)}">${escapeHtml(song.title)}</option>
+    `).join("")}`;
+  }
+
+  function tagsHtml(keys, type) {
+    if (!keys.length) return '<span style="color:#777;font-size:.72em;">Ninguna</span>';
+    return keys.map(key => {
+      const song = songs.find(item => item.key === key);
       return `
-        <div class="sr-song">
-          <div>
-            <div class="sr-song-title">${escapeHtml(song.title)}</div>
-            <div class="sr-sources">${sourceBadges(song)}</div>
-            <div class="sr-song-note">${record.note ? escapeHtml(record.note) : "Sin nota de trabajo"}</div>
-          </div>
-          <div class="sr-status-controls">
-            <button class="sr-status-btn ready ${status === "ready" ? "active" : ""}" data-status="ready" data-key="${escapeHtml(song.key)}">Lista</button>
-            <button class="sr-status-btn review ${status === "review" ? "active" : ""}" data-status="review" data-key="${escapeHtml(song.key)}">Repaso</button>
-            <button class="sr-status-btn blocked ${status === "blocked" ? "active" : ""}" data-status="blocked" data-key="${escapeHtml(song.key)}">Bloqueada</button>
-            <button class="sr-note-btn" data-note-key="${escapeHtml(song.key)}">Nota</button>
-          </div>
-        </div>
+        <span class="sr-tag ${type}">
+          ${escapeHtml(song ? song.title : key)}
+          <button data-sr-remove="${type}" data-song-key="${escapeHtml(key)}" title="Quitar">x</button>
+        </span>
       `;
     }).join("");
   }
 
-  function scoreSong(song, focus) {
-    const status = getSongStatus(song.key);
-    let score = STATUS[status].score;
-    if (song.sources.includes("star")) score += 32;
-    if (song.sources.includes("concert")) score += 25;
-    if (song.sources.includes("rehearsal")) score += 12;
-    if (!window.jukeboxLibrary || !window.jukeboxLibrary[song.key]) score += 5;
-    if (focus === "problems" && (status === "blocked" || status === "review")) score += 120;
-    if (focus === "concert" && (song.sources.includes("concert") || song.sources.includes("star"))) score += 120;
-    if (focus === "unrated" && status === "unknown") score += 150;
-    return score;
-  }
-
-  function estimateSongMinutes(song) {
-    const status = getSongStatus(song.key);
-    const baseline = { blocked: 15, review: 10, unknown: 8, ready: 5 }[status];
-    const durationMinutes = Math.ceil((song.durationSeconds || 0) / 60);
-    return Math.max(baseline, durationMinutes ? durationMinutes + 3 : 0);
-  }
-
-  function generatePlan() {
-    collectSongs();
-    if (!songs.length) {
-      alert("Todavia no hay canciones cargadas en los setlists.");
-      return;
-    }
-    const targetMinutes = Number(document.getElementById("sr-duration")?.value || 90);
-    const focus = document.getElementById("sr-focus")?.value || "balanced";
-    const source = document.getElementById("sr-source-filter")?.value || "all";
-    const reserveMinutes = 10 + (targetMinutes >= 90 ? 5 : 0);
-    const songsBudget = Math.max(20, targetMinutes - reserveMinutes);
-    const candidates = songs
-      .filter(song => source === "all" || song.sources.includes(source))
-      .map(song => ({ ...song, score: scoreSong(song, focus), plannedMinutes: estimateSongMinutes(song) }))
-      .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title, "es"));
-
-    const selected = [];
-    let usedMinutes = 0;
-    candidates.forEach(song => {
-      if (usedMinutes + song.plannedMinutes <= songsBudget || selected.length === 0) {
-        selected.push(song);
-        usedMinutes += song.plannedMinutes;
-      }
-    });
-
-    const openerIndex = selected.findIndex(song => getSongStatus(song.key) === "ready");
-    if (openerIndex > 0) selected.unshift(selected.splice(openerIndex, 1)[0]);
-    const closerIndex = selected.map(song => getSongStatus(song.key)).lastIndexOf("ready");
-    if (closerIndex > 0 && closerIndex < selected.length - 1) selected.push(selected.splice(closerIndex, 1)[0]);
-
-    currentPlan = {
-      generatedAt: new Date().toISOString(),
-      targetMinutes,
-      reserveMinutes,
-      focus,
-      source,
-      songs: selected
-    };
-    writeLocalState();
-    renderPlan();
-  }
-
-  function renderPlan() {
-    const container = document.getElementById("sr-plan");
-    const startButton = document.getElementById("sr-start-session");
-    const clearButton = document.getElementById("sr-clear-plan");
-    if (!container) return;
-    const planSongs = currentPlan && Array.isArray(currentPlan.songs) ? currentPlan.songs : [];
-    if (!planSongs.length) {
-      container.innerHTML = `<div class="sr-plan-empty">Genera un plan para ordenar automaticamente las prioridades.</div>`;
-      if (startButton) startButton.disabled = true;
-      if (clearButton) clearButton.disabled = true;
-      return;
-    }
-    const songsMinutes = planSongs.reduce((sum, song) => sum + song.plannedMinutes, 0);
-    container.innerHTML = `
+  function planHtml(record) {
+    const plan = record.plan;
+    const planSongs = plan && Array.isArray(plan.songs) ? plan.songs : [];
+    if (!planSongs.length) return '<div class="sr-plan-empty">Configura las prioridades y genera el plan de este ensayo.</div>';
+    const songsMinutes = planSongs.reduce((sum, song) => sum + Number(song.plannedMinutes || 0), 0);
+    return `
       <div class="sr-plan-summary">
         <span>${planSongs.length} canciones</span>
-        <span>${songsMinutes + currentPlan.reserveMinutes} de ${currentPlan.targetMinutes} min</span>
+        <span>${songsMinutes + plan.reserveMinutes} de ${plan.targetMinutes} min</span>
       </div>
       <div class="sr-plan-item">
         <span class="sr-plan-number">0</span>
@@ -596,40 +535,221 @@
           <span class="sr-plan-number">${index + 1}</span>
           <span>
             <strong>${escapeHtml(song.title)}</strong><br>
-            <small style="color:${STATUS[getSongStatus(song.key)].color}">${escapeHtml(STATUS[getSongStatus(song.key)].label)}</small>
+            <small style="color:${STATUS[getSongStatus(song.key)].color}">
+              ${escapeHtml(STATUS[getSongStatus(song.key)].label)}${record.required.includes(song.key) ? " · Imprescindible" : ""}
+            </small>
           </span>
           <span class="sr-plan-time">${song.plannedMinutes} min</span>
         </div>
       `).join("")}
-      ${currentPlan.targetMinutes >= 90 ? `
+      ${plan.targetMinutes >= 90 ? `
         <div class="sr-plan-item">
           <span class="sr-plan-number">+</span>
           <span><strong>Descanso / margen</strong></span>
           <span class="sr-plan-time">5 min</span>
-        </div>` : ""}
+        </div>
+      ` : ""}
     `;
-    if (startButton) startButton.disabled = false;
-    if (clearButton) clearButton.disabled = false;
   }
 
-  function renderHistory() {
-    const history = document.getElementById("sr-history");
-    if (!history) return;
-    if (!state.sessions.length) {
-      history.innerHTML = `<div class="sr-empty">Aun no hay sesiones registradas.</div>`;
-      return;
-    }
-    history.innerHTML = state.sessions.slice(0, 5).map(session => {
+  function historyHtml(rehearsalIdValue) {
+    const sessions = state.sessions.filter(session => session.rehearsalId === rehearsalIdValue).slice(0, 5);
+    if (!sessions.length) return '<div class="sr-empty">Este ensayo aun no tiene sesiones registradas.</div>';
+    return sessions.map(session => {
       const results = Array.isArray(session.results) ? session.results : [];
       const ready = results.filter(result => result.result === "good").length;
-      const problems = results.filter(result => result.result === "repeat" || result.result === "blocked").length;
+      const pending = results.filter(result => result.result === "repeat" || result.result === "blocked").length;
       return `
         <div class="sr-history-item">
-          <strong>${new Date(session.endedAt || session.startedAt).toLocaleDateString("es-ES")}</strong>
-          · ${results.length} canciones · ${ready} listas · ${problems} pendientes
+          <strong>${new Date(session.endedAt || session.startedAt).toLocaleString("es-ES")}</strong>
+          · ${results.length} canciones · ${ready} listas · ${pending} pendientes
         </div>
       `;
     }).join("");
+  }
+
+  function rehearsalCardHtml(rehearsal, index) {
+    const id = rehearsalId(rehearsal);
+    const record = getPlanRecord(rehearsal);
+    const duration = rehearsalDurationMinutes(rehearsal);
+    return `
+      <details class="sr-rehearsal-card" data-rehearsal-id="${escapeHtml(id)}" ${index === 0 ? "open" : ""}>
+        <summary>
+          <span class="sr-rehearsal-heading">
+            <span>Plan · ${escapeHtml(formatRehearsalDate(rehearsal))}</span>
+            <span class="sr-rehearsal-meta">${escapeHtml(rehearsal.startTime || "")}-${escapeHtml(rehearsal.endTime || "")} · ${duration} min · ${escapeHtml(rehearsal.location || "")}</span>
+          </span>
+        </summary>
+        <div class="sr-rehearsal-grid">
+          <div class="sr-panel">
+            <h4>Objetivo y prioridades</h4>
+            <label class="sr-form-label">Objetivo concreto del ensayo</label>
+            <textarea class="sr-objective" data-sr-objective="${escapeHtml(id)}" placeholder="Ej: cerrar finales, trabajar coros y repasar transiciones...">${escapeHtml(record.objective || "")}</textarea>
+            <label class="sr-form-label">Setlists incluidos</label>
+            <div class="sr-source-options">
+              ${Object.entries(SOURCES).map(([source, sourceConfig]) => `
+                <label class="sr-source-option">
+                  <input type="checkbox" data-sr-source="${source}" ${record.sources.includes(source) ? "checked" : ""}>
+                  ${escapeHtml(sourceConfig.short)}
+                </label>
+              `).join("")}
+            </div>
+            <label class="sr-form-label">Enfoque automatico</label>
+            <select class="sr-focus" data-sr-focus="${escapeHtml(id)}">
+              <option value="balanced" ${record.focus === "balanced" ? "selected" : ""}>Plan equilibrado</option>
+              <option value="problems" ${record.focus === "problems" ? "selected" : ""}>Priorizar problemas</option>
+              <option value="concert" ${record.focus === "concert" ? "selected" : ""}>Priorizar conciertos</option>
+              <option value="unrated" ${record.focus === "unrated" ? "selected" : ""}>Valorar repertorio pendiente</option>
+            </select>
+            <label class="sr-form-label">Canciones imprescindibles</label>
+            <div class="sr-picker-row">
+              <select class="sr-song-picker" data-sr-picker="required">${songOptionsHtml(record)}</select>
+              <button class="sr-small-btn" data-sr-add="required">Anadir</button>
+            </div>
+            <div class="sr-tag-list">${tagsHtml(record.required, "required")}</div>
+            <label class="sr-form-label">Canciones excluidas</label>
+            <div class="sr-picker-row">
+              <select class="sr-song-picker" data-sr-picker="excluded">${songOptionsHtml(record)}</select>
+              <button class="sr-small-btn" data-sr-add="excluded">Excluir</button>
+            </div>
+            <div class="sr-tag-list">${tagsHtml(record.excluded, "excluded")}</div>
+            <div class="sr-sync-status"></div>
+          </div>
+          <div>
+            <div class="sr-panel">
+              <h4>Plan inteligente</h4>
+              <div class="sr-plan">${planHtml(record)}</div>
+              <div class="sr-actions">
+                <button class="sr-action-btn" data-sr-generate="${escapeHtml(id)}">Generar plan</button>
+                <button class="sr-action-btn" data-sr-start="${escapeHtml(id)}" ${record.plan && record.plan.songs && record.plan.songs.length ? "" : "disabled"}>Iniciar Modo Ensayo</button>
+                <button class="sr-action-btn secondary" data-sr-clear="${escapeHtml(id)}" ${record.plan ? "" : "disabled"}>Limpiar plan</button>
+              </div>
+            </div>
+            <div class="sr-panel" style="margin-top:10px;">
+              <h4>Historial de este ensayo</h4>
+              ${historyHtml(id)}
+            </div>
+          </div>
+        </div>
+      </details>
+    `;
+  }
+
+  function renderRehearsalPlans() {
+    const section = document.getElementById("rehearsals");
+    if (!section) return;
+    let container = document.getElementById("sr-rehearsal-plans");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "sr-rehearsal-plans";
+      container.className = "sr-rehearsal-plans";
+      section.appendChild(container);
+    }
+    const openCards = new Set(Array.from(container.querySelectorAll(".sr-rehearsal-card[open]")).map(card => card.dataset.rehearsalId));
+    const rehearsals = getFutureRehearsals();
+    container.innerHTML = rehearsals.length
+      ? `<h3 style="color:#ffb52e;margin:0 0 8px;">Planes inteligentes por ensayo</h3>${rehearsals.map(rehearsalCardHtml).join("")}`
+      : '<div class="sr-empty">Programa un ensayo para preparar su plan inteligente.</div>';
+    if (openCards.size) {
+      container.querySelectorAll(".sr-rehearsal-card").forEach(card => {
+        card.open = openCards.has(card.dataset.rehearsalId);
+      });
+    }
+  }
+
+  function getRehearsalById(id) {
+    return getRehearsals().find(rehearsal => rehearsalId(rehearsal) === id);
+  }
+
+  function scoreSong(song, focus, required) {
+    const status = getSongStatus(song.key);
+    let score = STATUS[status].score;
+    if (required) score += 1000;
+    if (song.sources.includes("star")) score += 32;
+    if (song.sources.includes("concert")) score += 25;
+    if (song.sources.includes("rehearsal")) score += 12;
+    if (!window.jukeboxLibrary || !window.jukeboxLibrary[song.key]) score += 5;
+    if (focus === "problems" && (status === "blocked" || status === "review")) score += 120;
+    if (focus === "concert" && (song.sources.includes("concert") || song.sources.includes("star"))) score += 120;
+    if (focus === "unrated" && status === "unknown") score += 150;
+    return score;
+  }
+
+  function estimateSongMinutes(song) {
+    const baseline = { blocked: 15, review: 10, unknown: 8, ready: 5 }[getSongStatus(song.key)];
+    const durationMinutes = Math.ceil((song.durationSeconds || 0) / 60);
+    return Math.max(baseline, durationMinutes ? durationMinutes + 3 : 0);
+  }
+
+  function generatePlan(id) {
+    collectSongs();
+    const rehearsal = getRehearsalById(id);
+    if (!rehearsal || !songs.length) {
+      alert("Todavia no hay canciones o datos suficientes para generar el plan.");
+      return;
+    }
+    const record = getPlanRecord(rehearsal);
+    const targetMinutes = rehearsalDurationMinutes(rehearsal);
+    const reserveMinutes = 10 + (targetMinutes >= 90 ? 5 : 0);
+    const songsBudget = Math.max(20, targetMinutes - reserveMinutes);
+    const candidates = selectedSongsForRecord(record)
+      .filter(song => !record.excluded.includes(song.key))
+      .map(song => ({
+        ...song,
+        score: scoreSong(song, record.focus, record.required.includes(song.key)),
+        plannedMinutes: estimateSongMinutes(song)
+      }))
+      .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title, "es"));
+
+    const selected = [];
+    let usedMinutes = 0;
+    candidates.forEach(song => {
+      const required = record.required.includes(song.key);
+      if (required || usedMinutes + song.plannedMinutes <= songsBudget || selected.length === 0) {
+        selected.push(song);
+        usedMinutes += song.plannedMinutes;
+      }
+    });
+
+    const openerIndex = selected.findIndex(song => getSongStatus(song.key) === "ready" && !record.required.includes(song.key));
+    if (openerIndex > 0) selected.unshift(selected.splice(openerIndex, 1)[0]);
+    record.plan = {
+      rehearsalId: id,
+      generatedAt: new Date().toISOString(),
+      targetMinutes,
+      reserveMinutes,
+      focus: record.focus,
+      sources: record.sources.slice(),
+      songs: selected
+    };
+    record.updatedAt = new Date().toISOString();
+    queueSave();
+    renderRehearsalPlans();
+  }
+
+  function clearPlan(id) {
+    const rehearsal = getRehearsalById(id);
+    if (!rehearsal) return;
+    getPlanRecord(rehearsal).plan = null;
+    queueSave();
+    renderRehearsalPlans();
+  }
+
+  function updatePlanRecordFromCard(card) {
+    const id = card.dataset.rehearsalId;
+    const rehearsal = getRehearsalById(id);
+    if (!rehearsal) return null;
+    const record = getPlanRecord(rehearsal);
+    const previousFocus = record.focus;
+    const previousSources = record.sources.slice().sort().join(",");
+    record.objective = card.querySelector(".sr-objective")?.value.trim() || "";
+    record.focus = card.querySelector(".sr-focus")?.value || "balanced";
+    record.sources = Array.from(card.querySelectorAll("[data-sr-source]:checked")).map(input => input.dataset.srSource);
+    if (!record.sources.length) record.sources = ["rehearsal"];
+    const nextSources = record.sources.slice().sort().join(",");
+    if (record.focus !== previousFocus || nextSources !== previousSources) record.plan = null;
+    record.updatedAt = new Date().toISOString();
+    return record;
   }
 
   function decorateSetlistRows() {
@@ -645,11 +765,8 @@
 
   function renderAll() {
     collectSongs();
-    renderSummary();
-    syncNextRehearsalDuration();
-    renderSongs();
-    renderPlan();
-    renderHistory();
+    renderSetlistPanels();
+    renderRehearsalPlans();
     decorateSetlistRows();
   }
 
@@ -671,12 +788,17 @@
     window.toggleMetronomeFromTable(match[0], null);
   }
 
-  function startSession() {
-    if (!currentPlan || !Array.isArray(currentPlan.songs) || !currentPlan.songs.length) {
-      generatePlan();
-      if (!currentPlan || !currentPlan.songs.length) return;
+  function startSession(id) {
+    const rehearsal = getRehearsalById(id);
+    if (!rehearsal) return;
+    const record = getPlanRecord(rehearsal);
+    if (!record.plan || !Array.isArray(record.plan.songs) || !record.plan.songs.length) {
+      generatePlan(id);
     }
+    if (!record.plan || !record.plan.songs.length) return;
     activeSession = {
+      rehearsalId: id,
+      plan: JSON.parse(JSON.stringify(record.plan)),
       startedAt: new Date().toISOString(),
       sessionStartedMs: Date.now(),
       songStartedMs: Date.now(),
@@ -691,17 +813,15 @@
   }
 
   function currentSessionSong() {
-    return activeSession && currentPlan && currentPlan.songs[activeSession.index];
+    return activeSession && activeSession.plan && activeSession.plan.songs[activeSession.index];
   }
 
   function renderSessionClocks() {
     if (!activeSession) return;
     const songElapsed = Math.round((Date.now() - activeSession.songStartedMs) / 1000);
     const totalElapsed = Math.round((Date.now() - activeSession.sessionStartedMs) / 1000);
-    const clock = document.getElementById("sr-session-clock");
-    const total = document.getElementById("sr-session-total-time");
-    if (clock) clock.textContent = formatSeconds(songElapsed);
-    if (total) total.textContent = `Tiempo de sesion: ${formatSeconds(totalElapsed)}`;
+    document.getElementById("sr-session-clock").textContent = formatSeconds(songElapsed);
+    document.getElementById("sr-session-total-time").textContent = `Tiempo de sesion: ${formatSeconds(totalElapsed)}`;
   }
 
   function renderSession() {
@@ -711,8 +831,7 @@
       return;
     }
     const status = getSongStatus(song.key);
-    const record = getSongRecord(song.key);
-    const total = currentPlan.songs.length;
+    const total = activeSession.plan.songs.length;
     const index = activeSession.index;
     document.getElementById("sr-session-counter").textContent = `${index + 1} / ${total}`;
     document.getElementById("sr-session-progress-fill").style.width = `${((index + 1) / total) * 100}%`;
@@ -720,10 +839,9 @@
     document.getElementById("sr-session-title").textContent = song.title;
     document.getElementById("sr-session-meta").textContent = [
       song.musicalKey ? `Tonalidad: ${song.musicalKey}` : "",
-      song.tempo ? `Tempo: ${song.tempo}` : "",
-      sourceBadges(song).replace(/<[^>]+>/g, " ")
+      song.tempo ? `Tempo: ${song.tempo}` : ""
     ].filter(Boolean).join(" · ");
-    document.getElementById("sr-session-note").textContent = record.note || "Sin notas de trabajo para esta cancion.";
+    document.getElementById("sr-session-note").textContent = getSongRecord(song.key).note || "Sin notas de trabajo para esta cancion.";
     document.getElementById("sr-session-target").textContent = `Tiempo recomendado: ${song.plannedMinutes} min`;
     activeSession.songStartedMs = Date.now();
     renderSessionClocks();
@@ -739,7 +857,7 @@
     if (result === "blocked") setSongStatus(song.key, "blocked");
     activeSession.index++;
     activeSession.songStartedMs = Date.now();
-    if (activeSession.index >= currentPlan.songs.length) finishSession(false);
+    if (activeSession.index >= activeSession.plan.songs.length) finishSession(false);
     else renderSession();
   }
 
@@ -747,15 +865,15 @@
     if (!activeSession) return;
     clearInterval(sessionTimer);
     sessionTimer = null;
-    const finished = {
+    state.sessions.unshift({
       id: `session_${Date.now()}`,
+      rehearsalId: activeSession.rehearsalId,
       startedAt: activeSession.startedAt,
       endedAt: new Date().toISOString(),
-      plannedMinutes: currentPlan ? currentPlan.targetMinutes : 0,
+      plannedMinutes: activeSession.plan.targetMinutes,
       partial: !!partial,
       results: activeSession.results
-    };
-    state.sessions.unshift(finished);
+    });
     state.sessions = state.sessions.slice(0, MAX_SESSIONS);
     activeSession = null;
     document.getElementById("sr-session-overlay")?.classList.remove("show");
@@ -764,43 +882,55 @@
     renderAll();
   }
 
-  function clearPlan() {
-    currentPlan = null;
-    writeLocalState();
-    renderPlan();
-  }
-
   function wireEvents() {
-    const section = document.getElementById("smart-rehearsal");
-    section?.addEventListener("click", event => {
-      const statusButton = event.target.closest("[data-status][data-key]");
+    document.addEventListener("click", event => {
+      const statusButton = event.target.closest("[data-sr-status][data-song-key]");
       if (statusButton) {
-        setSongStatus(statusButton.dataset.key, statusButton.dataset.status);
+        setSongStatus(statusButton.dataset.songKey, statusButton.dataset.srStatus);
         return;
       }
-      const noteButton = event.target.closest("[data-note-key]");
+      const noteButton = event.target.closest("[data-sr-note]");
       if (noteButton) {
-        editSongNote(noteButton.dataset.noteKey);
+        editSongNote(noteButton.dataset.srNote);
         return;
       }
-      if (event.target.closest("#sr-generate-plan")) generatePlan();
-      if (event.target.closest("#sr-start-session")) startSession();
-      if (event.target.closest("#sr-clear-plan")) clearPlan();
-    });
-    document.getElementById("sr-search")?.addEventListener("input", renderSongs);
-    document.getElementById("sr-source-filter")?.addEventListener("change", renderSongs);
-    document.getElementById("sr-duration")?.addEventListener("change", () => {
-      durationManuallyChanged = true;
-    });
-
-    const overlay = document.getElementById("sr-session-overlay");
-    overlay?.addEventListener("click", event => {
+      const card = event.target.closest(".sr-rehearsal-card");
+      if (card) {
+        const record = updatePlanRecordFromCard(card);
+        const id = card.dataset.rehearsalId;
+        const addButton = event.target.closest("[data-sr-add]");
+        if (addButton && record) {
+          const type = addButton.dataset.srAdd;
+          const key = card.querySelector(`[data-sr-picker="${type}"]`)?.value;
+          if (key && !record[type].includes(key)) {
+            record[type].push(key);
+            const opposite = type === "required" ? "excluded" : "required";
+            record[opposite] = record[opposite].filter(item => item !== key);
+            record.plan = null;
+            queueSave();
+            renderRehearsalPlans();
+          }
+          return;
+        }
+        const removeButton = event.target.closest("[data-sr-remove]");
+        if (removeButton && record) {
+          const type = removeButton.dataset.srRemove;
+          record[type] = record[type].filter(key => key !== removeButton.dataset.songKey);
+          record.plan = null;
+          queueSave();
+          renderRehearsalPlans();
+          return;
+        }
+        if (event.target.closest("[data-sr-generate]")) generatePlan(id);
+        if (event.target.closest("[data-sr-start]")) startSession(id);
+        if (event.target.closest("[data-sr-clear]")) clearPlan(id);
+      }
       const resultButton = event.target.closest("[data-result]");
-      if (resultButton) {
+      if (resultButton && activeSession) {
         recordSessionResult(resultButton.dataset.result);
         return;
       }
-      if (event.target.closest("#sr-finish-session")) {
+      if (event.target.closest("#sr-finish-session") && activeSession) {
         if (confirm("Finalizar y guardar el progreso de este ensayo?")) finishSession(true);
         return;
       }
@@ -814,33 +944,45 @@
         if (song) startMetronomeForSong(song);
       }
     });
+
+    document.addEventListener("change", event => {
+      const card = event.target.closest(".sr-rehearsal-card");
+      if (!card || !event.target.matches("[data-sr-source],.sr-focus")) return;
+      updatePlanRecordFromCard(card);
+      queueSave();
+      renderRehearsalPlans();
+    });
+
+    document.addEventListener("input", event => {
+      const card = event.target.closest(".sr-rehearsal-card");
+      if (!card || !event.target.matches(".sr-objective")) return;
+      updatePlanRecordFromCard(card);
+      queueSave();
+    });
   }
 
   function init() {
     readLocalState();
     injectStyles();
-    injectInterface();
+    createSessionOverlay();
     wireEvents();
     renderAll();
-
-    setTimeout(loadRemoteState, 2500);
-    setTimeout(loadRemoteState, 8000);
+    setTimeout(loadRemoteState, 1500);
+    setTimeout(loadRemoteState, 6000);
     setInterval(() => {
       if (collectSongs()) renderAll();
-      else {
-        syncNextRehearsalDuration();
-        decorateSetlistRows();
-      }
+      else decorateSetlistRows();
     }, 2500);
 
     window.SmartRehearsal = {
+      render: renderAll,
+      renderRehearsals: renderRehearsalPlans,
       generatePlan,
       startSession,
-      render: renderAll,
       getSongs: () => songs.slice(),
       getState: () => JSON.parse(JSON.stringify(state))
     };
-    console.log("--- SMART REHEARSAL v1 cargado ---");
+    console.log("--- SMART REHEARSAL v2 cargado ---");
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
