@@ -1719,8 +1719,8 @@
   };
 
   // ============================================================
-  // 9. INIT — DEFENSIVO: espera 2.5s tras carga completa para
-  //    no competir con la inicialización del index.html
+  // 9. INIT — se ejecuta al estar disponible el DOM; las conexiones
+  //    externas mantienen sus propios reintentos defensivos.
   // ============================================================
   // ============================================================
   // 8.ter  OCULTAR EN EL PANEL DE CONFIGURACIÓN los bloques de
@@ -1795,11 +1795,9 @@
   }
 
   function startWhenReady() {
-    // Esperar 2.5s tras el "load" completo de la página para no
-    // interferir con el splash, la carga de Firebase, etc.
-    const deferred = () => setTimeout(() => safeRun(init, "init"), 2500);
-    if (document.readyState === "complete") deferred();
-    else window.addEventListener("load", deferred, { once: true });
+    const run = () => safeRun(init, "init");
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run, { once: true });
+    else run();
   }
 
   startWhenReady();

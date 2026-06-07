@@ -1077,7 +1077,7 @@
     openModal('pz-modal-password');
   }
 
-  // ============== INIT (defensivo) ==============
+  // ============== INIT (defensivo y sin espera artificial) ==============
   let _initialized = false;
   function init() {
     if (_initialized) return;
@@ -1099,11 +1099,9 @@
   }
 
   function _start() {
-    // Nos enganchamos al "load" + 3.5s para que el splash, Firebase,
-    // setlists.js, calendario.js y todo lo del index estén ya configurados.
-    const deferred = () => setTimeout(() => _safe(init, 'init'), 3500);
-    if (document.readyState === 'complete') deferred();
-    else window.addEventListener('load', deferred, { once: true });
+    const run = () => _safe(init, 'init');
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run, { once: true });
+    else run();
   }
 
   _start();

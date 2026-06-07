@@ -59,7 +59,7 @@
     /* ---------- Splash Screen ---------- */
     #splash-screen {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background-color: #000000; display: flex; justify-content: center; align-items: center;
+      background-color: #000000; display: flex; flex-direction: column; justify-content: center; align-items: center;
       z-index: 200000; opacity: 1; visibility: visible;
       transition: opacity 0.5s ease-out, visibility 0.5s linear; /* Transición más rápida */
     }
@@ -69,6 +69,11 @@
       animation: splash-image-entry 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
     @keyframes splash-image-entry { to { opacity: 1; transform: scale(1) translateY(0); } }
+    #splash-status {
+      margin-top: 18px; color: #aaa; font-size: 0.9rem; letter-spacing: 0.04em;
+      animation: splash-status-pulse 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes splash-status-pulse { to { color: #0cf; } }
     #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
     header{
@@ -604,6 +609,7 @@
 <body>
   <div id="splash-screen">
     <img src="assets/Logo Sobre negro1.png" alt="Cargando El Sótano del Doctor...">
+    <p id="splash-status">Preparando la intranet...</p>
   </div>
   <div id="firebase-critical-error-banner" style="display:none;">
     ERROR CRÍTICO: La configuración de Firebase no es válida o es un placeholder. La aplicación puede no funcionar correctamente. Contacta al administrador.
@@ -2475,10 +2481,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     siteAudioControlButton.addEventListener('click', () => { if (!siteAudioElement) return; const wasMuted = siteAudioElement.muted; siteAudioElement.muted = !siteAudioElement.muted; updateSiteAudioMuteButton(); if (!siteAudioElement.muted) { if (siteAudioElement.paused || wasMuted) { if(wasMuted && siteAudioElement.volume > 0 && !siteAudioElement.paused) fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); else { siteAudioElement.volume = 0; fadeInSiteAudio(siteAudioElement, SITE_AUDIO_FADE_DURATION, SITE_AUDIO_TARGET_VOLUME); } } } else stopSiteAudioFade(); });
   }
 
-  const splashScreen = document.getElementById('splash-screen'); if (splashScreen) { setTimeout(() => { splashScreen.classList.add('hidden'); setTimeout(() => { if (splashScreen.parentNode) splashScreen.style.display = 'none'; }, 500); }, 100); }
+  const splashScreen = document.getElementById('splash-screen');
+  const splashStatus = document.getElementById('splash-status');
+  const splashStartedAt = performance.now();
+  let splashFinished = false;
+  window.finishInitialLoad = (message = "Intranet preparada") => {
+      if (splashFinished || !splashScreen) return;
+      splashFinished = true;
+      if (splashStatus) splashStatus.textContent = message;
+      const minimumVisibleTime = Math.max(0, 650 - (performance.now() - splashStartedAt));
+      setTimeout(() => {
+          splashScreen.classList.add('hidden');
+          setTimeout(() => { splashScreen.style.display = 'none'; }, 500);
+      }, minimumVisibleTime);
+  };
+  setTimeout(() => window.finishInitialLoad("Intranet preparada"), 8000);
   updateConnectionStatus();
 
   async function loadAllData() {
+      if (splashStatus) splashStatus.textContent = "Cargando datos de la banda...";
       try {
           if(window.loadJukeboxLibrary) {
               await Promise.all([loadSetlistConfig(), loadUsers(), loadRehearsals(), window.loadJukeboxLibrary(), window.loadPdfLibrary(), window.loadMasterDocs()]);
@@ -2488,9 +2509,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           }
       } catch (e) { }
       if(window.loadAnalysisData) window.loadAnalysisData(); else setTimeout(() => { if(window.loadAnalysisData) window.loadAnalysisData(); }, 1500);
-      try { window.globalItems1 = await cargarPrimerSetlist(); } catch (e) { }
-      try { window.globalItems2 = await cargarSegundoSetlist(); } catch (e) { }
-      try { window.globalItemsStar = await cargarStarSetlist(); } catch (e) { }
+      if (splashStatus) splashStatus.textContent = "Preparando repertorios...";
+      await Promise.allSettled([cargarPrimerSetlist(), cargarSegundoSetlist(), cargarStarSetlist()]);
+      if (window.SmartRehearsal) window.SmartRehearsal.render();
       document.getElementById("download-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("Vacío."); };
       document.getElementById("download-basic-btn").onclick = () => { if (window.globalItems1 && window.globalItems1.length > 0) genBasicPDF(window.globalItems1, setlistConfig.setlist1.name, setlistConfig.setlist1.name); else alert("Vacío."); };
       document.getElementById("download-btn-2").onclick = () => { if (window.globalItems2 && window.globalItems2.length > 0) genPDF(window.globalItems2, setlistConfig.setlist2.name, setlistConfig.setlist2.name); else alert("Vacío."); };
@@ -2512,6 +2533,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       setupPersonalPdfBtn("download-personal-btn", window.globalItems1, setlistConfig.setlist1.name);
       setupPersonalPdfBtn("download-personal-btn-2", window.globalItems2, setlistConfig.setlist2.name);
       setupPersonalPdfBtn("download-personal-btn-star", window.globalItemsStar, setlistConfig.setlistStar.name);
+      window.finishInitialLoad();
   }
   if (typeof firebase !== 'undefined') loadAllData();
   const prevBtn = document.getElementById('prev-month-btn'); const nextBtn = document.getElementById('next-month-btn');
@@ -2521,8 +2543,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 </script>
-<script src="setlist-extension.js?v=4"></script>
-<script src="private-zone.js?v=4"></script>
+<script src="setlist-extension.js?v=6"></script>
+<script src="private-zone.js?v=5"></script>
 <script src="smart-rehearsal.js?v=1"></script>
 </body>
 </html>
