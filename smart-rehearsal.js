@@ -126,6 +126,44 @@
       : state.rehearsalPlans;
   }
 
+  function updatedTime(record) {
+    const time = Date.parse(record && record.updatedAt ? record.updatedAt : "");
+    return Number.isFinite(time) ? time : 0;
+  }
+
+  function mergeRecordMaps(remoteMap, localMap, preferLocalOnTie = true) {
+    const merged = { ...(remoteMap || {}) };
+    Object.entries(localMap || {}).forEach(([key, localRecord]) => {
+      const remoteRecord = merged[key];
+      const localTime = updatedTime(localRecord);
+      const remoteTime = updatedTime(remoteRecord);
+      if (!remoteRecord || localTime > remoteTime || (preferLocalOnTie && localTime === remoteTime)) merged[key] = localRecord;
+    });
+    return merged;
+  }
+
+  function mergeSessions(remoteSessions, localSessions) {
+    const byId = new Map();
+    [...(remoteSessions || []), ...(localSessions || [])].forEach(session => {
+      if (!session) return;
+      const id = session.id || `${session.rehearsalId || "legacy"}_${session.startedAt || session.endedAt || "session"}`;
+      byId.set(id, session);
+    });
+    return Array.from(byId.values())
+      .sort((a, b) => Date.parse(b.endedAt || b.startedAt || "") - Date.parse(a.endedAt || a.startedAt || ""))
+      .slice(0, MAX_SESSIONS);
+  }
+
+  function touchPlanRecord(record) {
+    const now = new Date();
+    const editor = getIdentity();
+    const previousTime = Date.parse(record.updatedAt || "");
+    const sameEditBurst = record.updatedBy === editor && Number.isFinite(previousTime) && now.getTime() - previousTime < 2000;
+    record.updatedAt = now.toISOString();
+    record.updatedBy = editor;
+    if (!sameEditBurst) record.revision = Number(record.revision || 0) + 1;
+  }
+
   function readLocalState() {
     try {
       const saved = JSON.parse(localStorage.getItem(LOCAL_STATE_KEY) || localStorage.getItem(LEGACY_STATE_KEY) || "{}");
@@ -159,9 +197,9 @@
         rehearsalPlans: {}
       });
       if (!remote || typeof remote !== "object") return;
-      state.songs = { ...state.songs, ...(remote.songs || {}) };
-      if (Array.isArray(remote.sessions)) state.sessions = remote.sessions.slice(0, MAX_SESSIONS);
-      state.rehearsalPlans = { ...state.rehearsalPlans, ...(remote.rehearsalPlans || {}) };
+      state.songs = mergeRecordMaps(remote.songs, state.songs, false);
+      state.sessions = mergeSessions(remote.sessions, state.sessions);
+      state.rehearsalPlans = mergeRecordMaps(remote.rehearsalPlans, state.rehearsalPlans, false);
       writeLocalState();
       renderAll();
       setSyncMessage(IS_LOCAL_PREVIEW
@@ -184,12 +222,41 @@
     }
     try {
       setSyncMessage("Guardando...");
-      await window.withRetry(() => window.saveDoc("intranet", DOC_ID, {
-        songs: state.songs,
-        sessions: state.sessions.slice(0, MAX_SESSIONS),
-        rehearsalPlans: state.rehearsalPlans,
-        updatedAt: new Date().toISOString()
-      }, true));
+      const localSnapshot = JSON.parse(JSON.stringify(state));
+      if (typeof db !== "undefined" && db && typeof db.runTransaction === "function") {
+        let committedState = null;
+        await window.withRetry(() => db.runTransaction(async transaction => {
+          const ref = db.collection("intranet").doc(DOC_ID);
+          const snapshot = await transaction.get(ref);
+          const remote = snapshot.exists ? snapshot.data() : {};
+          committedState = {
+            songs: mergeRecordMaps(remote.songs, localSnapshot.songs),
+            sessions: mergeSessions(remote.sessions, localSnapshot.sessions),
+            rehearsalPlans: mergeRecordMaps(remote.rehearsalPlans, localSnapshot.rehearsalPlans)
+          };
+          transaction.set(ref, {
+            ...committedState,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+        }));
+        if (committedState) state = committedState;
+      } else {
+        const remote = await window.loadDoc("intranet", DOC_ID, {
+          songs: {},
+          sessions: [],
+          rehearsalPlans: {}
+        });
+        state.songs = mergeRecordMaps(remote.songs, state.songs);
+        state.sessions = mergeSessions(remote.sessions, state.sessions);
+        state.rehearsalPlans = mergeRecordMaps(remote.rehearsalPlans, state.rehearsalPlans);
+        await window.withRetry(() => window.saveDoc("intranet", DOC_ID, {
+          songs: state.songs,
+          sessions: state.sessions.slice(0, MAX_SESSIONS),
+          rehearsalPlans: state.rehearsalPlans,
+          updatedAt: new Date().toISOString()
+        }, true));
+      }
+      writeLocalState();
       setSyncMessage("Guardado");
     } catch (error) {
       console.error("[Ensayo Inteligente] Error guardando:", error);
@@ -352,6 +419,15 @@
       .sr-plan-number { color:#ffb52e; font-weight:bold; text-align:center; }
       .sr-plan-time { color:#aaa; font-size:.78em; }
       .sr-history-item { padding:7px 4px; border-bottom:1px solid #292929; color:#ccc; font-size:.78em; }
+      .sr-row-summary { min-width:150px; display:flex; flex-direction:column; gap:5px; align-items:flex-start; }
+      .sr-row-status { display:inline-flex; align-items:center; border-radius:12px; padding:3px 7px; font-size:.72em; font-weight:bold; border:1px solid #555; }
+      .sr-row-status.unprepared { color:#aaa; }
+      .sr-row-status.prepared { color:#ffb52e; border-color:#ffb52e; }
+      .sr-row-status.completed { color:#43d17a; border-color:#43d17a; }
+      .sr-row-objective { color:#ddd; font-size:.74em; max-width:220px; }
+      .sr-row-meta { color:#888; font-size:.68em; }
+      .sr-row-warning { color:#ff8a8a; font-size:.68em; }
+      .sr-open-plan { border:1px solid #555; background:#222; color:#fff; border-radius:6px; padding:5px 8px; cursor:pointer; font-size:.7em; }
       tr[data-sr-status] td:first-child { border-left:4px solid #777 !important; }
       tr[data-sr-status="ready"] td:first-child { border-left-color:#43d17a !important; }
       tr[data-sr-status="review"] td:first-child { border-left-color:#ffb52e !important; }
@@ -481,7 +557,9 @@
         required: [],
         excluded: [],
         plan: null,
-        updatedAt: null
+        updatedAt: null,
+        updatedBy: null,
+        revision: 0
       };
     }
     const record = state.rehearsalPlans[id];
@@ -489,6 +567,43 @@
     if (!Array.isArray(record.required)) record.required = [];
     if (!Array.isArray(record.excluded)) record.excluded = [];
     return record;
+  }
+
+  function rehearsalSummary(rehearsal) {
+    const id = rehearsalId(rehearsal);
+    const record = getPlanRecord(rehearsal);
+    const sessions = state.sessions.filter(session => session.rehearsalId === id);
+    const planSongs = record.plan && Array.isArray(record.plan.songs) ? record.plan.songs : [];
+    const plannedMinutes = planSongs.reduce((sum, song) => sum + Number(song.plannedMinutes || 0), 0) + Number(record.plan?.reserveMinutes || 0);
+    const targetMinutes = rehearsalDurationMinutes(rehearsal);
+    const status = sessions.length ? "completed" : planSongs.length ? "prepared" : "unprepared";
+    const label = { completed: "Ensayo realizado", prepared: "Plan preparado", unprepared: "Sin preparar" }[status];
+    const warnings = [];
+    if (!record.objective?.trim()) warnings.push("Falta objetivo");
+    if (!record.required.length && !planSongs.length) warnings.push("Faltan prioridades");
+    if (plannedMinutes > targetMinutes) warnings.push(`Excede ${plannedMinutes - targetMinutes} min`);
+    return { id, record, planSongs, plannedMinutes, targetMinutes, status, label, warnings };
+  }
+
+  function rehearsalSummaryHtml(rehearsal) {
+    const summary = rehearsalSummary(rehearsal);
+    const editor = summary.record.updatedBy ? ` · por ${escapeHtml(summary.record.updatedBy)}` : "";
+    return `
+      <div class="sr-row-summary">
+        <span class="sr-row-status ${summary.status}">${escapeHtml(summary.label)}</span>
+        ${summary.record.objective ? `<span class="sr-row-objective">${escapeHtml(summary.record.objective)}</span>` : ""}
+        <span class="sr-row-meta">${summary.planSongs.length} canciones · ${summary.plannedMinutes || 0}/${summary.targetMinutes} min${editor}</span>
+        ${summary.warnings.length ? `<span class="sr-row-warning">${escapeHtml(summary.warnings.join(" · "))}</span>` : ""}
+        <button class="sr-open-plan" data-sr-open-plan="${escapeHtml(summary.id)}">Abrir plan</button>
+      </div>
+    `;
+  }
+
+  function renderRehearsalRowSummaries() {
+    document.querySelectorAll("[data-smart-rehearsal-id]").forEach(cell => {
+      const rehearsal = getRehearsalById(cell.dataset.smartRehearsalId);
+      if (rehearsal) cell.innerHTML = rehearsalSummaryHtml(rehearsal);
+    });
   }
 
   function selectedSongsForRecord(record) {
@@ -613,6 +728,7 @@
               <button class="sr-small-btn" data-sr-add="excluded">Excluir</button>
             </div>
             <div class="sr-tag-list">${tagsHtml(record.excluded, "excluded")}</div>
+            <div class="sr-row-meta">${record.updatedAt ? `Revision ${Number(record.revision || 0)} · ${escapeHtml(record.updatedBy || "Banda")} · ${new Date(record.updatedAt).toLocaleString("es-ES")}` : "Aun sin modificaciones"}</div>
             <div class="sr-sync-status"></div>
           </div>
           <div>
@@ -655,6 +771,7 @@
         card.open = openCards.has(card.dataset.rehearsalId);
       });
     }
+    renderRehearsalRowSummaries();
   }
 
   function getRehearsalById(id) {
@@ -722,7 +839,7 @@
       sources: record.sources.slice(),
       songs: selected
     };
-    record.updatedAt = new Date().toISOString();
+    touchPlanRecord(record);
     queueSave();
     renderRehearsalPlans();
   }
@@ -730,7 +847,9 @@
   function clearPlan(id) {
     const rehearsal = getRehearsalById(id);
     if (!rehearsal) return;
-    getPlanRecord(rehearsal).plan = null;
+    const record = getPlanRecord(rehearsal);
+    record.plan = null;
+    touchPlanRecord(record);
     queueSave();
     renderRehearsalPlans();
   }
@@ -740,6 +859,7 @@
     const rehearsal = getRehearsalById(id);
     if (!rehearsal) return null;
     const record = getPlanRecord(rehearsal);
+    const previousObjective = record.objective || "";
     const previousFocus = record.focus;
     const previousSources = record.sources.slice().sort().join(",");
     record.objective = card.querySelector(".sr-objective")?.value.trim() || "";
@@ -748,7 +868,7 @@
     if (!record.sources.length) record.sources = ["rehearsal"];
     const nextSources = record.sources.slice().sort().join(",");
     if (record.focus !== previousFocus || nextSources !== previousSources) record.plan = null;
-    record.updatedAt = new Date().toISOString();
+    if (record.objective !== previousObjective || record.focus !== previousFocus || nextSources !== previousSources) touchPlanRecord(record);
     return record;
   }
 
@@ -872,7 +992,8 @@
       endedAt: new Date().toISOString(),
       plannedMinutes: activeSession.plan.targetMinutes,
       partial: !!partial,
-      results: activeSession.results
+      results: activeSession.results,
+      recordedBy: getIdentity()
     });
     state.sessions = state.sessions.slice(0, MAX_SESSIONS);
     activeSession = null;
@@ -894,6 +1015,16 @@
         editSongNote(noteButton.dataset.srNote);
         return;
       }
+      const openPlanButton = event.target.closest("[data-sr-open-plan]");
+      if (openPlanButton) {
+        const card = Array.from(document.querySelectorAll(".sr-rehearsal-card"))
+          .find(item => item.dataset.rehearsalId === openPlanButton.dataset.srOpenPlan);
+        if (card) {
+          card.open = true;
+          card.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        return;
+      }
       const card = event.target.closest(".sr-rehearsal-card");
       if (card) {
         const record = updatePlanRecordFromCard(card);
@@ -907,6 +1038,7 @@
             const opposite = type === "required" ? "excluded" : "required";
             record[opposite] = record[opposite].filter(item => item !== key);
             record.plan = null;
+            touchPlanRecord(record);
             queueSave();
             renderRehearsalPlans();
           }
@@ -917,6 +1049,7 @@
           const type = removeButton.dataset.srRemove;
           record[type] = record[type].filter(key => key !== removeButton.dataset.songKey);
           record.plan = null;
+          touchPlanRecord(record);
           queueSave();
           renderRehearsalPlans();
           return;
@@ -958,6 +1091,7 @@
       if (!card || !event.target.matches(".sr-objective")) return;
       updatePlanRecordFromCard(card);
       queueSave();
+      renderRehearsalRowSummaries();
     });
   }
 

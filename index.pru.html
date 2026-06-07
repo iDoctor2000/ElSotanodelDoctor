@@ -1053,7 +1053,7 @@
       </div>
       <p id="total-time"></p>
     </section>
-    <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th class="details-col-header">Info</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
+    <section id="rehearsals"> <h2>Próximos Ensayos</h2> <div class="table-wrapper"><table id="rehearsal-main-table"> <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th class="calendar-col-header">Cal</th><th class="details-col-header">Info</th><th>Plan</th><th>Confirmar Asistencia</th></tr></thead><tbody id="rehearsal-main-body"></tbody></table></div></section>
     <section id="second-setlist">
       <h2>
           Setlist Próximo Concierto
@@ -1831,6 +1831,10 @@ function populateIdentitySelector() {
 /* ---------- 7. Ensayos ---------- */
 let rehearsals = []; let editingRehearsalIndex = null;
 window.getRehearsalsForSmartMode = () => rehearsals;
+function currentRehearsalEditor(){const selector=document.getElementById("user-identity-selector");return selector&&selector.value?selector.value:"Banda"}
+function buildRehearsalSmartId(rehearsal){return String([rehearsal.date||"sin_fecha",rehearsal.startTime||"sin_hora",rehearsal.endTime||"",rehearsal.location||"sin_lugar"].join("_")).trim().replace(/[.#$[\]/:\s,]/g,"_")}
+function touchRehearsalMetadata(rehearsal,created=false){const now=new Date().toISOString();rehearsal.smartMeta={...(rehearsal.smartMeta||{}),createdAt:rehearsal.smartMeta?.createdAt||now,createdBy:rehearsal.smartMeta?.createdBy||(created?currentRehearsalEditor():"Migración automática"),updatedAt:now,updatedBy:currentRehearsalEditor(),revision:Number(rehearsal.smartMeta?.revision||0)+1}}
+function ensureRehearsalSmartIds(){const used=new Set(rehearsals.filter(r=>r&&r.smartId).map(r=>String(r.smartId)));let changed=false;rehearsals.forEach(r=>{if(!r||r.smartId)return;const base=buildRehearsalSmartId(r);let candidate=base;let suffix=2;while(used.has(candidate))candidate=`${base}_${suffix++}`;r.smartId=candidate;touchRehearsalMetadata(r);used.add(candidate);changed=true});return changed}
 
 // Lógica para el preview del día al cambiar fecha
 document.getElementById("rehearsal-date").addEventListener("change", function() {
@@ -1854,7 +1858,7 @@ function renderRehearsals() {
     if(!Array.isArray(rehearsals)||rehearsals.length===0){
         const emptyMsgConfig='<tr><td colspan="6">No hay ensayos programados.</td></tr>';
         tbodyConfig.innerHTML=emptyMsgConfig;
-        const emptyMsgMain='<tr><td colspan="6">No hay próximos ensayos.</td></tr>';
+        const emptyMsgMain='<tr><td colspan="7">No hay próximos ensayos.</td></tr>';
         tbodyMain.innerHTML=emptyMsgMain;
         if(window.SmartRehearsal) window.SmartRehearsal.renderRehearsals();
         return
@@ -1883,7 +1887,8 @@ function renderRehearsals() {
         if(rehearsalDate>=today){
             const calendarCell=`<td class="calendar-col"><button class="calendar-btn" title="Añadir a mi calendario" onclick='generateICS("Ensayo El Sótano del Doctor", "${r.date}", "${r.startTime}", "${r.location}", "Ensayo de la banda El Sótano del Doctor.", ${durationSeconds})'><svg viewBox="0 0 24 24"><path d="M12 4V2m0 20v-2m8-8h2m-20 0h-2m15.071-3.071l-1.414-1.414M5.343 17.657l-1.414-1.414m0-10.486l1.414-1.414m12.728 12.728l-1.414 1.414"/><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button></td>`;
             const detailsCell = `<td class="details-col-header"><button class="details-btn" onclick="openRehearsalDetailsModal(${i})" title="Notas del Ensayo">➡️</button></td>`;
-            tbodyMain.insertAdjacentHTML("beforeend",`<tr><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}${detailsCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`)
+            const smartPlanCell=`<td class="smart-plan-summary-cell" data-smart-rehearsal-id="${r.smartId||buildRehearsalSmartId(r)}"><span style="color:#888;font-size:.8em;">Preparando...</span></td>`;
+            tbodyMain.insertAdjacentHTML("beforeend",`<tr data-smart-rehearsal-row="${r.smartId||buildRehearsalSmartId(r)}"><td>${formattedDate} <span class="rehearsal-duration">(${durationText})</span></td><td>${r.startTime} - ${r.endTime}</td><td>${r.location}</td>${calendarCell}${detailsCell}${smartPlanCell}<td><div class="attendance-form"><select class="attendance-user" data-i="${i}"><option value="" disabled selected>¿Nombre?</option>${userOptions}</select><select class="attendance-response" data-i="${i}"><option value="" disabled selected>¿Asistirás?</option><option value="Sí">Sí</option><option value="No">No</option></select><button class="confirm-attendance" data-i="${i}">Confirmar</button></div>${summary}</td></tr>`)
         }
     }); 
 
@@ -1927,6 +1932,7 @@ document.getElementById('save-rehearsal-details').onclick = async () => {
     const msg = document.getElementById('rehearsal-detail-message');
     if (rehearsals[index]) {
         rehearsals[index].notes = notes;
+        touchRehearsalMetadata(rehearsals[index]);
         try {
             await saveRehearsals();
             msg.textContent = "Información guardada correctamente.";
@@ -1938,7 +1944,7 @@ document.getElementById('save-rehearsal-details').onclick = async () => {
     }
 };
 
-async function loadRehearsals() { try { const data = await window.withRetry(() => window.loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; renderRehearsals(); } catch (e) { console.error("Error al cargar ensayos:", e); } }
+async function loadRehearsals() { try { const data = await window.withRetry(() => window.loadDoc("intranet", "rehearsals", { rehearsals: [] })); rehearsals = Array.isArray(data.rehearsals) ? data.rehearsals : []; const migrated=ensureRehearsalSmartIds();renderRehearsals();const localPreview=["localhost","127.0.0.1","::1"].includes(window.location.hostname);if(migrated&&!localPreview)await window.withRetry(() => window.saveDoc("intranet", "rehearsals", { rehearsals })); } catch (e) { console.error("Error al cargar ensayos:", e); } }
 async function saveRehearsals() { try { await window.withRetry(() => window.saveDoc("intranet", "rehearsals", { rehearsals })); renderRehearsals(); renderStats(); return true; } catch (e) { console.error("Error al guardar ensayos:", e); throw e; } }
 function resetRehearsalForm() { document.getElementById("rehearsal-date").value = ""; document.getElementById("rehearsal-start-time").value = ""; document.getElementById("rehearsal-end-time").value = ""; document.getElementById("rehearsal-location").value = ""; document.getElementById("add-rehearsal").textContent = "Añadir Ensayo"; document.getElementById("cancel-edit-rehearsal").style.display = "none"; editingRehearsalIndex = null; document.getElementById("rehearsal-day-preview").textContent = ""; }
 
@@ -2281,7 +2287,7 @@ document.getElementById("add-user").onclick = async () => { const msg=document.g
 document.getElementById("cancel-edit-user").onclick = () => { resetUserForm(); document.getElementById("user-message").textContent = ""; };
 document.getElementById("menu-rehearsal").onclick = e => { e.preventDefault(); openConfigScreen("rehearsal-screen"); };
 document.getElementById("close-rehearsal").onclick = () => { document.getElementById("rehearsal-screen").style.display = "none"; document.getElementById("rehearsal-message").textContent = ""; resetRehearsalForm(); };
-document.getElementById("add-rehearsal").onclick = async () => { const msg=document.getElementById("rehearsal-message");msg.textContent="";const date=document.getElementById("rehearsal-date").value,startTime=document.getElementById("rehearsal-start-time").value,endTime=document.getElementById("rehearsal-end-time").value,loc=document.getElementById("rehearsal-location").value.trim();if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return} if(calculateDuration(startTime,endTime)<=0){msg.className="error-message";msg.textContent="Hora fin posterior a inicio.";return} try{const previous=editingRehearsalIndex!==null?rehearsals[editingRehearsalIndex]:null;const generatedId=window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():`rehearsal_${Date.now()}`;const newData={date,startTime,endTime,location:loc,attendance:[],smartId:previous?.smartId||(previous&&window.getRehearsalSmartId?window.getRehearsalSmartId(previous):generatedId)};if(editingRehearsalIndex!==null){newData.attendance=previous.attendance||[];newData.notes=previous.notes||"";rehearsals[editingRehearsalIndex]=newData;msg.textContent="Ensayo actualizado."}else{rehearsals.push(newData);msg.textContent="Ensayo añadido."} await saveRehearsals();msg.className="success-message";resetRehearsalForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
+document.getElementById("add-rehearsal").onclick = async () => { const msg=document.getElementById("rehearsal-message");msg.textContent="";const date=document.getElementById("rehearsal-date").value,startTime=document.getElementById("rehearsal-start-time").value,endTime=document.getElementById("rehearsal-end-time").value,loc=document.getElementById("rehearsal-location").value.trim();if(!date||!startTime||!endTime||!loc){msg.className="error-message";msg.textContent="Completa campos.";return} if(calculateDuration(startTime,endTime)<=0){msg.className="error-message";msg.textContent="Hora fin posterior a inicio.";return} try{const previous=editingRehearsalIndex!==null?rehearsals[editingRehearsalIndex]:null;const generatedId=window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():`rehearsal_${Date.now()}`;const newData={date,startTime,endTime,location:loc,attendance:[],smartId:previous?.smartId||generatedId,smartMeta:previous?.smartMeta||null};if(editingRehearsalIndex!==null){newData.attendance=previous.attendance||[];newData.notes=previous.notes||"";touchRehearsalMetadata(newData);rehearsals[editingRehearsalIndex]=newData;msg.textContent="Ensayo actualizado."}else{touchRehearsalMetadata(newData,true);rehearsals.push(newData);msg.textContent="Ensayo añadido."} await saveRehearsals();msg.className="success-message";resetRehearsalForm()}catch(e){msg.className="error-message";msg.textContent="Error al guardar: "+e.message}};
 document.getElementById("cancel-edit-rehearsal").onclick = () => { resetRehearsalForm(); document.getElementById("rehearsal-message").textContent = ""; };
 document.getElementById("menu-stats").onclick = e => { e.preventDefault(); if(openConfigScreen("stats-screen")){ updateMonthFilter(); renderStats(); }};
 document.getElementById("close-stats").onclick = () => document.getElementById("stats-screen").style.display = "none";
@@ -2547,7 +2553,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 </script>
 <script src="setlist-extension.js?v=6"></script>
 <script src="private-zone.js?v=5"></script>
-<script src="smart-rehearsal.js?v=2"></script>
+<script src="smart-rehearsal.js?v=3"></script>
 </body>
 </html>
 </body>
