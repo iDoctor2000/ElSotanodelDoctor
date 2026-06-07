@@ -1824,6 +1824,7 @@ function populateIdentitySelector() {
 
 /* ---------- 7. Ensayos ---------- */
 let rehearsals = []; let editingRehearsalIndex = null;
+window.getRehearsalsForSmartMode = () => rehearsals;
 
 // Lógica para el preview del día al cambiar fecha
 document.getElementById("rehearsal-date").addEventListener("change", function() {
@@ -2522,6 +2523,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 </script>
 <script src="setlist-extension.js?v=4"></script>
 <script src="private-zone.js?v=4"></script>
+<script src="smart-rehearsal.js?v=1"></script>
 </body>
 </html>
 </body>
