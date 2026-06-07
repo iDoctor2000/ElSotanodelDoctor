@@ -418,7 +418,12 @@
       .sr-plan-summary { display:flex; justify-content:space-between; gap:8px; color:#aaa; font-size:.8em; margin-bottom:7px; }
       .sr-plan-item { display:grid; grid-template-columns:27px minmax(0,1fr) auto; gap:8px; align-items:center; padding:8px 4px; border-bottom:1px solid #292929; }
       .sr-plan-number { color:#ffb52e; font-weight:bold; text-align:center; }
-      .sr-plan-time { color:#aaa; font-size:.78em; }
+      .sr-plan-time { color:#aaa; font-size:.78em; text-align:right; }
+      .sr-plan-order { display:flex; justify-content:flex-end; gap:4px; margin-top:4px; }
+      .sr-plan-order button {
+        width:26px; height:24px; border:1px solid #555; background:#222; color:#fff; border-radius:5px; cursor:pointer; padding:0;
+      }
+      .sr-plan-order button:disabled { opacity:.25; cursor:not-allowed; }
       .sr-history-item { padding:7px 4px; border-bottom:1px solid #292929; color:#ccc; font-size:.78em; }
       .sr-row-summary { min-width:150px; display:flex; flex-direction:column; gap:5px; align-items:flex-start; }
       .sr-row-status { display:inline-flex; align-items:center; border-radius:12px; padding:3px 7px; font-size:.72em; font-weight:bold; border:1px solid #555; }
@@ -450,9 +455,9 @@
         border:1px solid #ffb52e; background:#171717; color:#ffb52e; border-radius:8px; padding:9px 12px; cursor:pointer; font-weight:bold;
       }
       #sr-plan-screen-content .sr-rehearsal-card { margin-top:18px; }
-      #sr-session-overlay { display:none; position:fixed; inset:0; z-index:120000; background:radial-gradient(circle at top,#242424,#050505 70%); color:#fff; overflow-y:auto; }
+      #sr-session-overlay { display:none; position:fixed; inset:0; z-index:120000; background:radial-gradient(circle at top,#242424,#050505 70%); color:#fff; overflow-y:auto; overscroll-behavior:contain; }
       #sr-session-overlay.show { display:block; }
-      .sr-session-shell { min-height:100%; max-width:900px; margin:0 auto; padding:24px 18px; display:flex; flex-direction:column; justify-content:center; }
+      .sr-session-shell { min-height:100%; max-width:900px; margin:0 auto; padding:24px 18px 40px; display:flex; flex-direction:column; justify-content:flex-start; }
       .sr-session-top { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:18px; color:#aaa; }
       .sr-session-progress { height:7px; background:#222; border-radius:10px; overflow:hidden; margin-bottom:28px; }
       .sr-session-progress > div { height:100%; background:#ffb52e; transition:width .25s; }
@@ -460,11 +465,22 @@
       .sr-session-meta,.sr-session-note,.sr-session-target { text-align:center; color:#aaa; }
       .sr-session-note { max-width:650px; margin:18px auto; color:#ddd; min-height:1.4em; }
       .sr-session-clock { font-family:monospace; color:#ffb52e; font-size:clamp(2.2em,8vw,5em); text-align:center; margin:18px 0 5px; }
+      .sr-session-target.overdue { color:#ff5353; font-weight:bold; }
+      .sr-session-difference { text-align:center; color:#aaa; font-size:.8em; min-height:1.2em; }
+      .sr-session-note-editor { max-width:650px; width:100%; margin:18px auto 0; }
+      .sr-session-note-editor label { display:block; color:#ffb52e; font-size:.82em; font-weight:bold; margin-bottom:5px; }
+      #sr-session-quick-note {
+        width:100%; min-height:72px; resize:vertical; background:#151515; color:#fff; border:1px solid #444; border-radius:8px; padding:9px;
+      }
+      .sr-session-note-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:7px; }
+      .sr-session-note-status { color:#66dd99; font-size:.75em; }
       .sr-session-tools,.sr-session-results { display:flex; flex-wrap:wrap; justify-content:center; gap:9px; margin-top:12px; }
       .sr-session-tools button,.sr-session-results button,.sr-session-close { border:1px solid #555; background:#222; color:#fff; border-radius:9px; padding:12px 17px; cursor:pointer; font-weight:bold; }
+      .sr-session-tools button.active { background:#ffb52e; color:#111; border-color:#ffb52e; }
       .sr-session-results button[data-result="good"] { background:#43d17a; color:#111; border-color:#43d17a; }
       .sr-session-results button[data-result="repeat"] { background:#ffb52e; color:#111; border-color:#ffb52e; }
       .sr-session-results button[data-result="blocked"] { background:#d93838; border-color:#ff5353; }
+      .sr-session-results button:disabled { opacity:.35; cursor:not-allowed; }
       @media(max-width:800px) {
         .sr-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
         .sr-song,.sr-rehearsal-grid { grid-template-columns:1fr; }
@@ -496,7 +512,18 @@
         <div id="sr-session-note" class="sr-session-note"></div>
         <div id="sr-session-clock" class="sr-session-clock">0:00</div>
         <div id="sr-session-target" class="sr-session-target"></div>
+        <div id="sr-session-difference" class="sr-session-difference"></div>
+        <div class="sr-session-note-editor">
+          <label for="sr-session-quick-note">Nota rapida de esta cancion</label>
+          <textarea id="sr-session-quick-note" placeholder="Ej: repetir entrada, ajustar coros, revisar final..."></textarea>
+          <div class="sr-session-note-actions">
+            <button id="sr-session-save-note" class="sr-session-close">Guardar nota</button>
+            <span id="sr-session-note-status" class="sr-session-note-status"></span>
+          </div>
+        </div>
         <div class="sr-session-tools">
+          <button id="sr-session-pause">Pausar</button>
+          <button id="sr-session-add-time">+5 min a esta cancion</button>
           <button id="sr-session-jukebox">Abrir Jukebox</button>
           <button id="sr-session-metronome">Iniciar metronomo</button>
         </div>
@@ -504,7 +531,7 @@
           <button data-result="good">Bien, queda lista</button>
           <button data-result="repeat">Necesita repeticion</button>
           <button data-result="blocked">Queda bloqueada</button>
-          <button data-result="skip">Saltar</button>
+          <button data-result="skip">Saltar cancion</button>
         </div>
       </div>
     `;
@@ -695,7 +722,13 @@
               ${escapeHtml(STATUS[getSongStatus(song.key)].label)}${record.required.includes(song.key) ? " · Imprescindible" : ""}
             </small>
           </span>
-          <span class="sr-plan-time">${song.plannedMinutes} min</span>
+          <span class="sr-plan-time">
+            ${song.plannedMinutes} min
+            <span class="sr-plan-order">
+              <button data-sr-move="up" data-song-key="${escapeHtml(song.key)}" title="Subir cancion" ${index === 0 ? "disabled" : ""}>↑</button>
+              <button data-sr-move="down" data-song-key="${escapeHtml(song.key)}" title="Bajar cancion" ${index === planSongs.length - 1 ? "disabled" : ""}>↓</button>
+            </span>
+          </span>
         </div>
       `).join("")}
       ${plan.targetMinutes >= 90 ? `
@@ -910,6 +943,20 @@
     renderRehearsalPlans();
   }
 
+  function movePlanSong(id, songKey, direction) {
+    const rehearsal = getRehearsalById(id);
+    if (!rehearsal) return;
+    const record = getPlanRecord(rehearsal);
+    const planSongs = record.plan && Array.isArray(record.plan.songs) ? record.plan.songs : [];
+    const currentIndex = planSongs.findIndex(song => song.key === songKey);
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= planSongs.length) return;
+    planSongs.splice(targetIndex, 0, planSongs.splice(currentIndex, 1)[0]);
+    touchPlanRecord(record);
+    queueSave();
+    renderRehearsalPlans();
+  }
+
   function updatePlanRecordFromCard(card) {
     const id = card.dataset.rehearsalId;
     const rehearsal = getRehearsalById(id);
@@ -972,14 +1019,24 @@
       generatePlan(id);
     }
     if (!record.plan || !record.plan.songs.length) return;
+    const sessionPlan = JSON.parse(JSON.stringify(record.plan));
+    sessionPlan.songs = sessionPlan.songs.map(song => ({
+      ...song,
+      originalPlannedMinutes: Number(song.plannedMinutes || 0)
+    }));
     activeSession = {
       rehearsalId: id,
-      plan: JSON.parse(JSON.stringify(record.plan)),
+      plan: sessionPlan,
       startedAt: new Date().toISOString(),
       sessionStartedMs: Date.now(),
+      sessionPausedMs: 0,
       songStartedMs: Date.now(),
+      songPausedMs: 0,
+      pauseStartedMs: null,
+      paused: false,
       index: 0,
-      results: []
+      results: [],
+      quickNotes: {}
     };
     document.getElementById("sr-session-overlay")?.classList.add("show");
     if (!IS_LOCAL_PREVIEW && typeof window.requestWakeLock === "function") window.requestWakeLock();
@@ -992,12 +1049,43 @@
     return activeSession && activeSession.plan && activeSession.plan.songs[activeSession.index];
   }
 
+  function elapsedSeconds(startedMs, pausedMs) {
+    if (!activeSession || !startedMs) return 0;
+    const effectiveNow = activeSession.paused && activeSession.pauseStartedMs ? activeSession.pauseStartedMs : Date.now();
+    return Math.max(0, Math.round((effectiveNow - startedMs - Number(pausedMs || 0)) / 1000));
+  }
+
+  function sessionSongElapsedSeconds() {
+    return elapsedSeconds(activeSession?.songStartedMs, activeSession?.songPausedMs);
+  }
+
+  function sessionTotalElapsedSeconds() {
+    return elapsedSeconds(activeSession?.sessionStartedMs, activeSession?.sessionPausedMs);
+  }
+
   function renderSessionClocks() {
     if (!activeSession) return;
-    const songElapsed = Math.round((Date.now() - activeSession.songStartedMs) / 1000);
-    const totalElapsed = Math.round((Date.now() - activeSession.sessionStartedMs) / 1000);
-    document.getElementById("sr-session-clock").textContent = formatSeconds(songElapsed);
-    document.getElementById("sr-session-total-time").textContent = `Tiempo de sesion: ${formatSeconds(totalElapsed)}`;
+    const song = currentSessionSong();
+    if (!song) return;
+    const songElapsed = sessionSongElapsedSeconds();
+    const totalElapsed = sessionTotalElapsedSeconds();
+    const songTarget = Math.max(0, Number(song.plannedMinutes || 0) * 60);
+    const totalTarget = Math.max(0, Number(activeSession.plan.targetMinutes || 0) * 60);
+    const difference = songTarget - songElapsed;
+    document.getElementById("sr-session-clock").textContent = `${formatSeconds(songElapsed)} / ${formatSeconds(songTarget)}`;
+    document.getElementById("sr-session-total-time").textContent = `Ensayo: ${formatSeconds(totalElapsed)} / ${formatSeconds(totalTarget)}`;
+    const target = document.getElementById("sr-session-target");
+    target.textContent = `Tiempo previsto para esta cancion: ${song.plannedMinutes} min`;
+    target.classList.toggle("overdue", difference < 0);
+    document.getElementById("sr-session-difference").textContent = difference >= 0
+      ? `Quedan ${formatSeconds(difference)} del tiempo previsto`
+      : `Tiempo excedido: ${formatSeconds(Math.abs(difference))}`;
+    const pauseButton = document.getElementById("sr-session-pause");
+    pauseButton.textContent = activeSession.paused ? "Reanudar" : "Pausar";
+    pauseButton.classList.toggle("active", activeSession.paused);
+    document.querySelectorAll("#sr-session-overlay [data-result]").forEach(button => {
+      button.disabled = activeSession.paused;
+    });
   }
 
   function renderSession() {
@@ -1017,28 +1105,87 @@
       song.musicalKey ? `Tonalidad: ${song.musicalKey}` : "",
       song.tempo ? `Tempo: ${song.tempo}` : ""
     ].filter(Boolean).join(" · ");
-    document.getElementById("sr-session-note").textContent = getSongRecord(song.key).note || "Sin notas de trabajo para esta cancion.";
-    document.getElementById("sr-session-target").textContent = `Tiempo recomendado: ${song.plannedMinutes} min`;
+    const savedNote = activeSession.quickNotes[song.key] ?? getSongRecord(song.key).note ?? "";
+    document.getElementById("sr-session-note").textContent = savedNote || "Sin notas de trabajo para esta cancion.";
+    document.getElementById("sr-session-quick-note").value = savedNote;
+    document.getElementById("sr-session-note-status").textContent = "";
     activeSession.songStartedMs = Date.now();
+    activeSession.songPausedMs = 0;
+    renderSessionClocks();
+  }
+
+  function saveSessionQuickNote(showConfirmation = true) {
+    const song = currentSessionSong();
+    const field = document.getElementById("sr-session-quick-note");
+    if (!activeSession || !song || !field) return "";
+    const note = field.value.trim();
+    activeSession.quickNotes[song.key] = note;
+    state.songs[song.key] = {
+      ...getSongRecord(song.key),
+      note,
+      updatedAt: new Date().toISOString(),
+      updatedBy: getIdentity()
+    };
+    document.getElementById("sr-session-note").textContent = note || "Sin notas de trabajo para esta cancion.";
+    if (showConfirmation) document.getElementById("sr-session-note-status").textContent = "Nota guardada";
+    queueSave();
+    return note;
+  }
+
+  function toggleSessionPause() {
+    if (!activeSession) return;
+    if (!activeSession.paused) {
+      activeSession.paused = true;
+      activeSession.pauseStartedMs = Date.now();
+    } else {
+      const pausedFor = Math.max(0, Date.now() - activeSession.pauseStartedMs);
+      activeSession.sessionPausedMs += pausedFor;
+      activeSession.songPausedMs += pausedFor;
+      activeSession.pauseStartedMs = null;
+      activeSession.paused = false;
+    }
+    renderSessionClocks();
+  }
+
+  function extendCurrentSongTime() {
+    const song = currentSessionSong();
+    if (!activeSession || !song) return;
+    song.plannedMinutes = Number(song.plannedMinutes || 0) + 5;
+    document.getElementById("sr-session-note-status").textContent = "Tiempo previsto ampliado en 5 minutos";
     renderSessionClocks();
   }
 
   function recordSessionResult(result) {
     const song = currentSessionSong();
     if (!song) return;
-    const seconds = Math.max(1, Math.round((Date.now() - activeSession.songStartedMs) / 1000));
-    activeSession.results.push({ key: song.key, title: song.title, result, seconds });
+    if (activeSession.paused) {
+      alert("Reanuda el ensayo antes de registrar el resultado.");
+      return;
+    }
+    const seconds = Math.max(1, sessionSongElapsedSeconds());
+    const note = saveSessionQuickNote(false);
+    activeSession.results.push({
+      key: song.key,
+      title: song.title,
+      result,
+      seconds,
+      plannedMinutes: Number(song.plannedMinutes || 0),
+      extendedMinutes: Math.max(0, Number(song.plannedMinutes || 0) - Number(song.originalPlannedMinutes || 0)),
+      note
+    });
     if (result === "good") setSongStatus(song.key, "ready");
     if (result === "repeat") setSongStatus(song.key, "review");
     if (result === "blocked") setSongStatus(song.key, "blocked");
     activeSession.index++;
     activeSession.songStartedMs = Date.now();
+    activeSession.songPausedMs = 0;
     if (activeSession.index >= activeSession.plan.songs.length) finishSession(false);
     else renderSession();
   }
 
   function finishSession(partial) {
     if (!activeSession) return;
+    saveSessionQuickNote(false);
     clearInterval(sessionTimer);
     sessionTimer = null;
     state.sessions.unshift({
@@ -1047,6 +1194,7 @@
       startedAt: activeSession.startedAt,
       endedAt: new Date().toISOString(),
       plannedMinutes: activeSession.plan.targetMinutes,
+      actualSeconds: sessionTotalElapsedSeconds(),
       partial: !!partial,
       results: activeSession.results,
       recordedBy: getIdentity()
@@ -1084,6 +1232,11 @@
       if (card) {
         const record = updatePlanRecordFromCard(card);
         const id = card.dataset.rehearsalId;
+        const moveButton = event.target.closest("[data-sr-move]");
+        if (moveButton) {
+          movePlanSong(id, moveButton.dataset.songKey, moveButton.dataset.srMove);
+          return;
+        }
         const addButton = event.target.closest("[data-sr-add]");
         if (addButton && record) {
           const type = addButton.dataset.srAdd;
@@ -1120,6 +1273,18 @@
       }
       if (event.target.closest("#sr-finish-session") && activeSession) {
         if (confirm("Finalizar y guardar el progreso de este ensayo?")) finishSession(true);
+        return;
+      }
+      if (event.target.closest("#sr-session-save-note")) {
+        saveSessionQuickNote();
+        return;
+      }
+      if (event.target.closest("#sr-session-pause")) {
+        toggleSessionPause();
+        return;
+      }
+      if (event.target.closest("#sr-session-add-time")) {
+        extendCurrentSongTime();
         return;
       }
       if (event.target.closest("#sr-session-jukebox")) {
@@ -1176,7 +1341,7 @@
       getSongs: () => songs.slice(),
       getState: () => JSON.parse(JSON.stringify(state))
     };
-    console.log("--- SMART REHEARSAL v2 cargado ---");
+    console.log("--- SMART REHEARSAL v5 cargado ---");
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
