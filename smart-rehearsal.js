@@ -48,6 +48,7 @@
   let finishConfirmTimer = null;
   let saveTimer = null;
   let lastSongsFingerprint = "";
+  let intelligenceFilters = { source: "all", status: "all" };
 
   function sanitizeKey(value) {
     return value ? String(value).trim().replace(/[.#$[\]/:\s,]/g, "_") : "unknown";
@@ -131,10 +132,18 @@
     return selector && selector.value ? selector.value : "Banda";
   }
 
+  function ensureSessionId(session) {
+    if (!session) return session;
+    return session.id ? session : {
+      ...session,
+      id: `session_${sanitizeKey(session.endedAt || session.startedAt || session.rehearsalId || "legacy")}`
+    };
+  }
+
   function normalizeState(saved) {
     if (!saved || typeof saved !== "object") return;
     state.songs = saved.songs && typeof saved.songs === "object" ? saved.songs : state.songs;
-    state.sessions = Array.isArray(saved.sessions) ? saved.sessions.slice(0, MAX_SESSIONS) : state.sessions;
+    state.sessions = Array.isArray(saved.sessions) ? saved.sessions.map(ensureSessionId).slice(0, MAX_SESSIONS) : state.sessions;
     state.rehearsalPlans = saved.rehearsalPlans && typeof saved.rehearsalPlans === "object"
       ? saved.rehearsalPlans
       : state.rehearsalPlans;
@@ -160,8 +169,8 @@
     const byId = new Map();
     [...(remoteSessions || []), ...(localSessions || [])].forEach(session => {
       if (!session) return;
-      const id = session.id || `${session.rehearsalId || "legacy"}_${session.startedAt || session.endedAt || "session"}`;
-      byId.set(id, session);
+      const normalizedSession = ensureSessionId(session);
+      byId.set(normalizedSession.id, normalizedSession);
     });
     return Array.from(byId.values())
       .sort((a, b) => Date.parse(b.endedAt || b.startedAt || "") - Date.parse(a.endedAt || a.startedAt || ""))
@@ -335,6 +344,80 @@
     return state.songs[songKey] || {};
   }
 
+  function daysSince(dateValue) {
+    const time = Date.parse(dateValue || "");
+    if (!Number.isFinite(time)) return null;
+    return Math.max(0, Math.floor((Date.now() - time) / 86400000));
+  }
+
+  function getNextConcertInfo() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Array.from(document.querySelectorAll("#bandhelper-concerts-container table tbody tr"))
+      .map(row => {
+        const dateText = row.cells?.[0]?.textContent.trim() || "";
+        const match = dateText.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+        if (!match) return null;
+        let year = Number(match[3]);
+        if (year < 100) year += year < 70 ? 2000 : 1900;
+        const date = new Date(year, Number(match[2]) - 1, Number(match[1]));
+        return {
+          date,
+          dateText,
+          title: row.cells?.[1]?.textContent.trim() || "Próximo concierto",
+          days: Math.ceil((date.getTime() - today.getTime()) / 86400000)
+        };
+      })
+      .filter(concert => concert && concert.days >= 0)
+      .sort((a, b) => a.date - b.date)[0] || null;
+  }
+
+  function songHistoryStats(songKey) {
+    const entries = [];
+    state.sessions.forEach(session => {
+      (Array.isArray(session.results) ? session.results : []).forEach(result => {
+        if (result?.key !== songKey) return;
+        entries.push({
+          ...result,
+          sessionId: session.id,
+          endedAt: session.endedAt || session.startedAt || ""
+        });
+      });
+    });
+    entries.sort((a, b) => Date.parse(b.endedAt || "") - Date.parse(a.endedAt || ""));
+    const recent = entries.slice(0, 3);
+    return {
+      entries,
+      sessions: new Set(entries.map(entry => entry.sessionId)).size,
+      totalSeconds: entries.reduce((sum, entry) => sum + Number(entry.seconds || 0), 0),
+      lastResult: entries[0]?.result || "",
+      lastWorkedAt: entries[0]?.endedAt || "",
+      daysSinceWorked: entries[0] ? daysSince(entries[0].endedAt) : null,
+      recentProblems: recent.filter(entry => entry.result === "repeat" || entry.result === "blocked").length,
+      readyCount: entries.filter(entry => entry.result === "good").length,
+      repeatCount: entries.filter(entry => entry.result === "repeat").length,
+      blockedCount: entries.filter(entry => entry.result === "blocked").length
+    };
+  }
+
+  function priorityReasons(song, focus, required, history = songHistoryStats(song.key), nextConcert = getNextConcertInfo()) {
+    const status = getSongStatus(song.key);
+    const reasons = [];
+    if (required) reasons.push("Marcada como imprescindible");
+    if (status === "blocked") reasons.push("Está bloqueada");
+    else if (status === "review") reasons.push("Necesita repaso");
+    else if (status === "unknown") reasons.push("Pendiente de valorar");
+    if (history.recentProblems >= 2) reasons.push(`${history.recentProblems} problemas recientes`);
+    if (!history.entries.length) reasons.push("Nunca trabajada en Modo Ensayo");
+    else if (history.daysSinceWorked >= 45) reasons.push(`${history.daysSinceWorked} días sin trabajar`);
+    if (nextConcert && nextConcert.days <= 30 && (song.sources.includes("concert") || song.sources.includes("star"))) {
+      reasons.push(`Concierto en ${nextConcert.days} días`);
+    }
+    if (focus === "concert" && (song.sources.includes("concert") || song.sources.includes("star"))) reasons.push("Enfoque concierto");
+    if (focus === "problems" && (status === "blocked" || status === "review")) reasons.push("Enfoque problemas");
+    return reasons.slice(0, 3);
+  }
+
   function setSongStatus(songKey, status) {
     if (!STATUS[status] || status === "unknown") return;
     state.songs[songKey] = {
@@ -429,9 +512,13 @@
       .sr-sync-status.error { color:#ff8a8a; }
       .sr-plan-empty,.sr-empty { color:#888; text-align:center; padding:18px 7px; }
       .sr-plan-summary { display:flex; justify-content:space-between; gap:8px; color:#aaa; font-size:.8em; margin-bottom:7px; }
+      .sr-plan-context { background:#17130b; border:1px solid rgba(255,181,46,.35); border-radius:8px; color:#ddd; font-size:.76em; padding:8px 10px; margin-bottom:8px; }
+      .sr-plan-context strong { color:#ffb52e; }
       .sr-plan-item { display:grid; grid-template-columns:27px minmax(0,1fr) auto; gap:8px; align-items:center; padding:8px 4px; border-bottom:1px solid #292929; }
       .sr-plan-number { color:#ffb52e; font-weight:bold; text-align:center; }
       .sr-plan-time { color:#aaa; font-size:.78em; text-align:right; }
+      .sr-priority-reasons { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+      .sr-priority-reason { background:#242017; border:1px solid #514427; border-radius:10px; color:#d8c28e; font-size:.65em; padding:2px 6px; }
       .sr-plan-order { display:flex; justify-content:flex-end; gap:4px; margin-top:4px; }
       .sr-plan-order button {
         width:26px; height:24px; border:1px solid #555; background:#222; color:#fff; border-radius:5px; cursor:pointer; padding:0;
@@ -528,6 +615,26 @@
       .sr-close-actions button:disabled { opacity:.4; cursor:not-allowed; }
       .sr-history-item { position:relative; padding-right:95px; }
       .sr-history-open { position:absolute; right:0; top:5px; border:1px solid #555; background:#222; color:#fff; border-radius:6px; padding:4px 7px; cursor:pointer; font-size:.7em; }
+      #sr-intelligence-dashboard {
+        max-width:1200px; margin:0 auto; padding:20px; background:#111; border-radius:12px;
+        box-shadow:0 4px 15px rgba(0,204,255,.16); border:1px solid #222;
+      }
+      #sr-intelligence-dashboard > details > summary { color:#0cf; cursor:pointer; font-size:1.35em; font-weight:bold; text-align:center; list-style-position:inside; }
+      .sr-dashboard-subtitle { color:#aaa; font-size:.8em; text-align:center; margin:8px 0 14px; }
+      .sr-dashboard-toolbar { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin:10px 0 14px; }
+      .sr-dashboard-toolbar select { background:#171717; border:1px solid #444; border-radius:7px; color:#fff; padding:7px 9px; }
+      .sr-dashboard-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+      .sr-dashboard-card { background:#0b0b0b; border:1px solid #333; border-radius:9px; padding:10px; text-align:center; }
+      .sr-dashboard-card strong { display:block; color:#ffb52e; font-size:1.45em; }
+      .sr-dashboard-card span { color:#aaa; font-size:.72em; }
+      .sr-dashboard-columns { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+      .sr-dashboard-list { max-height:310px; overflow-y:auto; }
+      .sr-dashboard-song { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; border-bottom:1px solid #292929; padding:8px 2px; }
+      .sr-dashboard-song:last-child { border-bottom:0; }
+      .sr-dashboard-song small { color:#888; display:block; margin-top:3px; }
+      .sr-dashboard-status { font-size:.7em; font-weight:bold; white-space:nowrap; }
+      .sr-dashboard-concert { color:#ddd; font-size:.8em; text-align:center; margin:0 0 10px; }
+      .sr-dashboard-concert strong { color:#ffb52e; }
       @media(max-width:800px) {
         .sr-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
         .sr-song,.sr-rehearsal-grid { grid-template-columns:1fr; }
@@ -539,6 +646,11 @@
         .sr-close-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
         .sr-close-grid { grid-template-columns:1fr; }
         .sr-summary-shell { padding:16px 10px 30px; }
+        #sr-intelligence-dashboard { padding:14px 10px; }
+        .sr-dashboard-grid,.sr-dashboard-columns { grid-template-columns:1fr 1fr; }
+      }
+      @media(max-width:520px) {
+        .sr-dashboard-columns { grid-template-columns:1fr; }
       }
     `;
     document.head.appendChild(style);
@@ -680,7 +792,7 @@
     if (!state.rehearsalPlans[id]) {
       state.rehearsalPlans[id] = {
         objective: rehearsal.notes || "",
-        focus: "balanced",
+        focus: "smart",
         sources: ["rehearsal"],
         required: [],
         excluded: [],
@@ -763,11 +875,17 @@
     const planSongs = plan && Array.isArray(plan.songs) ? plan.songs : [];
     if (!planSongs.length) return '<div class="sr-plan-empty">Configura las prioridades y genera el plan de este ensayo.</div>';
     const songsMinutes = planSongs.reduce((sum, song) => sum + Number(song.plannedMinutes || 0), 0);
+    const problemSongs = planSongs.filter(song => ["blocked", "review"].includes(getSongStatus(song.key))).length;
+    const contextMessages = [];
+    if (plan.nextConcert) contextMessages.push(`Próximo concierto: ${plan.nextConcert.title} en ${plan.nextConcert.days} días`);
+    if (problemSongs) contextMessages.push(`${problemSongs} canciones con problemas incluidas`);
+    if (songsMinutes + plan.reserveMinutes > plan.targetMinutes) contextMessages.push("El plan supera el tiempo disponible");
     return `
       <div class="sr-plan-summary">
         <span>${planSongs.length} canciones</span>
         <span>${songsMinutes + plan.reserveMinutes} de ${plan.targetMinutes} min</span>
       </div>
+      ${contextMessages.length ? `<div class="sr-plan-context"><strong>Lectura inteligente:</strong> ${escapeHtml(contextMessages.join(" · "))}</div>` : ""}
       <div class="sr-plan-item">
         <span class="sr-plan-number">0</span>
         <span><strong>Calentamiento y ajuste de sonido</strong></span>
@@ -781,6 +899,11 @@
             <small style="color:${STATUS[getSongStatus(song.key)].color}">
               ${escapeHtml(STATUS[getSongStatus(song.key)].label)}${record.required.includes(song.key) ? " · Imprescindible" : ""}
             </small>
+            ${(Array.isArray(song.reasons) ? song.reasons : priorityReasons(song, record.focus, record.required.includes(song.key))).length ? `
+              <span class="sr-priority-reasons">
+                ${(Array.isArray(song.reasons) ? song.reasons : priorityReasons(song, record.focus, record.required.includes(song.key))).map(reason => `<span class="sr-priority-reason">${escapeHtml(reason)}</span>`).join("")}
+              </span>
+            ` : ""}
           </span>
           <span class="sr-plan-time">
             ${song.plannedMinutes} min
@@ -952,6 +1075,7 @@
             </div>
             <label class="sr-form-label">Enfoque automatico</label>
             <select class="sr-focus" data-sr-focus="${escapeHtml(id)}">
+              <option value="smart" ${record.focus === "smart" ? "selected" : ""}>Prioridad inteligente (recomendado)</option>
               <option value="balanced" ${record.focus === "balanced" ? "selected" : ""}>Plan equilibrado</option>
               <option value="problems" ${record.focus === "problems" ? "selected" : ""}>Priorizar problemas</option>
               <option value="concert" ${record.focus === "concert" ? "selected" : ""}>Priorizar conciertos</option>
@@ -1073,7 +1197,7 @@
     return getRehearsals().find(rehearsal => rehearsalId(rehearsal) === id);
   }
 
-  function scoreSong(song, focus, required) {
+  function scoreSong(song, focus, required, history = songHistoryStats(song.key), nextConcert = getNextConcertInfo()) {
     const status = getSongStatus(song.key);
     let score = STATUS[status].score;
     if (required) score += 1000;
@@ -1081,6 +1205,21 @@
     if (song.sources.includes("concert")) score += 25;
     if (song.sources.includes("rehearsal")) score += 12;
     if (!window.jukeboxLibrary || !window.jukeboxLibrary[song.key]) score += 5;
+    if (!history.entries.length) score += 35;
+    if (history.lastResult === "blocked") score += 75;
+    if (history.lastResult === "repeat") score += 45;
+    score += Math.min(history.recentProblems * 35, 105);
+    if (history.daysSinceWorked >= 30) score += Math.min(Math.floor(history.daysSinceWorked / 10) * 8, 80);
+    if (status === "ready" && history.daysSinceWorked !== null && history.daysSinceWorked < 14) score -= 45;
+    if (nextConcert && (song.sources.includes("concert") || song.sources.includes("star"))) {
+      if (nextConcert.days <= 7) score += 150;
+      else if (nextConcert.days <= 14) score += 110;
+      else if (nextConcert.days <= 30) score += 70;
+    }
+    if (focus === "smart") {
+      if (status === "blocked" || status === "review") score += 70;
+      if (!history.entries.length || history.daysSinceWorked >= 45) score += 45;
+    }
     if (focus === "problems" && (status === "blocked" || status === "review")) score += 120;
     if (focus === "concert" && (song.sources.includes("concert") || song.sources.includes("star"))) score += 120;
     if (focus === "unrated" && status === "unknown") score += 150;
@@ -1104,13 +1243,19 @@
     const targetMinutes = rehearsalDurationMinutes(rehearsal);
     const reserveMinutes = 10 + (targetMinutes >= 90 ? 5 : 0);
     const songsBudget = Math.max(20, targetMinutes - reserveMinutes);
+    const nextConcert = getNextConcertInfo();
     const candidates = selectedSongsForRecord(record)
       .filter(song => !record.excluded.includes(song.key))
-      .map(song => ({
-        ...song,
-        score: scoreSong(song, record.focus, record.required.includes(song.key)),
-        plannedMinutes: estimateSongMinutes(song)
-      }))
+      .map(song => {
+        const required = record.required.includes(song.key);
+        const history = songHistoryStats(song.key);
+        return {
+          ...song,
+          score: scoreSong(song, record.focus, required, history, nextConcert),
+          reasons: priorityReasons(song, record.focus, required, history, nextConcert),
+          plannedMinutes: estimateSongMinutes(song)
+        };
+      })
       .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title, "es"));
 
     const selected = [];
@@ -1132,6 +1277,11 @@
       reserveMinutes,
       focus: record.focus,
       sources: record.sources.slice(),
+      nextConcert: nextConcert ? {
+        title: nextConcert.title,
+        dateText: nextConcert.dateText,
+        days: nextConcert.days
+      } : null,
       songs: selected
     };
     touchPlanRecord(record);
@@ -1172,13 +1322,128 @@
     const previousFocus = record.focus;
     const previousSources = record.sources.slice().sort().join(",");
     record.objective = card.querySelector(".sr-objective")?.value.trim() || "";
-    record.focus = card.querySelector(".sr-focus")?.value || "balanced";
+    record.focus = card.querySelector(".sr-focus")?.value || "smart";
     record.sources = Array.from(card.querySelectorAll("[data-sr-source]:checked")).map(input => input.dataset.srSource);
     if (!record.sources.length) record.sources = ["rehearsal"];
     const nextSources = record.sources.slice().sort().join(",");
     if (record.focus !== previousFocus || nextSources !== previousSources) record.plan = null;
     if (record.objective !== previousObjective || record.focus !== previousFocus || nextSources !== previousSources) touchPlanRecord(record);
     return record;
+  }
+
+  function dashboardTime(seconds) {
+    const totalMinutes = Math.round((Number(seconds) || 0) / 60);
+    if (totalMinutes < 60) return `${totalMinutes} min`;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours} h${minutes ? ` ${minutes} min` : ""}`;
+  }
+
+  function dashboardSongHtml(item, detail) {
+    const status = getSongStatus(item.song.key);
+    return `
+      <div class="sr-dashboard-song">
+        <div>
+          <strong>${escapeHtml(item.song.title)}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </div>
+        <span class="sr-dashboard-status" style="color:${STATUS[status].color}">${escapeHtml(STATUS[status].label)}</span>
+      </div>
+    `;
+  }
+
+  function renderIntelligenceDashboard() {
+    const rehearsalsSection = document.getElementById("rehearsals");
+    if (!rehearsalsSection) return;
+    let section = document.getElementById("sr-intelligence-dashboard");
+    if (!section) {
+      section = document.createElement("section");
+      section.id = "sr-intelligence-dashboard";
+      rehearsalsSection.insertAdjacentElement("afterend", section);
+    }
+    const wasOpen = section.querySelector("details")?.open || false;
+    const filteredSongs = songs.filter(song => {
+      const sourceMatches = intelligenceFilters.source === "all" || song.sources.includes(intelligenceFilters.source);
+      const statusMatches = intelligenceFilters.status === "all" || getSongStatus(song.key) === intelligenceFilters.status;
+      return sourceMatches && statusMatches;
+    });
+    const analytics = filteredSongs.map(song => ({ song, history: songHistoryStats(song.key) }));
+    const counts = { ready: 0, review: 0, blocked: 0, unknown: 0 };
+    filteredSongs.forEach(song => counts[getSongStatus(song.key)]++);
+    const readiness = filteredSongs.length ? Math.round((counts.ready / filteredSongs.length) * 100) : 0;
+    const worked = analytics.filter(item => item.history.entries.length).length;
+    const totalSeconds = analytics.reduce((sum, item) => sum + item.history.totalSeconds, 0);
+    const nextConcert = getNextConcertInfo();
+    const priorities = analytics
+      .map(item => ({
+        ...item,
+        score: scoreSong(item.song, "smart", false, item.history, nextConcert),
+        reasons: priorityReasons(item.song, "smart", false, item.history, nextConcert)
+      }))
+      .sort((a, b) => b.score - a.score || a.song.title.localeCompare(b.song.title, "es"))
+      .slice(0, 6);
+    const mostWorked = analytics
+      .filter(item => item.history.totalSeconds > 0)
+      .sort((a, b) => b.history.totalSeconds - a.history.totalSeconds)
+      .slice(0, 6);
+    const recentSessions = state.sessions.slice(0, 5);
+
+    section.innerHTML = `
+      <details ${wasOpen ? "open" : ""}>
+        <summary>Evolución e historial inteligente</summary>
+        <p class="sr-dashboard-subtitle">Una lectura práctica del repertorio basada en el semáforo y en los resultados reales del Modo Ensayo.</p>
+        ${nextConcert ? `<p class="sr-dashboard-concert"><strong>Próximo concierto:</strong> ${escapeHtml(nextConcert.title)} · dentro de ${nextConcert.days} días</p>` : ""}
+        <div class="sr-dashboard-toolbar">
+          <label>
+            <span class="sr-row-meta">Setlist</span>
+            <select data-sr-dashboard-filter="source">
+              <option value="all" ${intelligenceFilters.source === "all" ? "selected" : ""}>Todos</option>
+              ${Object.entries(SOURCES).map(([source, config]) => `<option value="${source}" ${intelligenceFilters.source === source ? "selected" : ""}>${escapeHtml(config.short)}</option>`).join("")}
+            </select>
+          </label>
+          <label>
+            <span class="sr-row-meta">Estado</span>
+            <select data-sr-dashboard-filter="status">
+              <option value="all" ${intelligenceFilters.status === "all" ? "selected" : ""}>Todos</option>
+              ${Object.entries(STATUS).map(([status, config]) => `<option value="${status}" ${intelligenceFilters.status === status ? "selected" : ""}>${escapeHtml(config.label)}</option>`).join("")}
+            </select>
+          </label>
+        </div>
+        <div class="sr-dashboard-grid">
+          <div class="sr-dashboard-card"><strong>${readiness}%</strong><span>Preparación</span></div>
+          <div class="sr-dashboard-card"><strong>${worked}/${filteredSongs.length}</strong><span>Canciones trabajadas</span></div>
+          <div class="sr-dashboard-card"><strong>${dashboardTime(totalSeconds)}</strong><span>Tiempo real registrado</span></div>
+          <div class="sr-dashboard-card"><strong style="color:${STATUS.blocked.color}">${counts.blocked}</strong><span>Bloqueadas</span></div>
+        </div>
+        <div class="sr-dashboard-columns">
+          <div class="sr-panel">
+            <h4>Prioridades automáticas ahora</h4>
+            <div class="sr-dashboard-list">
+              ${priorities.length ? priorities.map(item => dashboardSongHtml(item, item.reasons.join(" · ") || "Prioridad equilibrada")).join("") : '<div class="sr-empty">No hay canciones para este filtro.</div>'}
+            </div>
+          </div>
+          <div class="sr-panel">
+            <h4>Canciones más trabajadas</h4>
+            <div class="sr-dashboard-list">
+              ${mostWorked.length ? mostWorked.map(item => dashboardSongHtml(item, `${item.history.sessions} sesiones · ${dashboardTime(item.history.totalSeconds)} · último resultado: ${resultLabel(item.history.lastResult)}`)).join("") : '<div class="sr-empty">Aún no hay tiempo registrado con estos filtros.</div>'}
+            </div>
+          </div>
+        </div>
+        <div class="sr-panel" style="margin-top:10px;">
+          <h4>Sesiones recientes</h4>
+          ${recentSessions.length ? recentSessions.map(session => {
+            const stats = sessionStats(session);
+            return `
+              <div class="sr-history-item">
+                <strong>${new Date(session.endedAt || session.startedAt).toLocaleString("es-ES")}</strong>
+                · ${stats.results.length} trabajadas · ${stats.pending.length} pendientes · ${dashboardTime(stats.actualSeconds)}
+                <button class="sr-history-open" data-sr-open-summary="${escapeHtml(session.id)}">Ver resumen</button>
+              </div>
+            `;
+          }).join("") : '<div class="sr-empty">Aún no hay sesiones registradas.</div>'}
+        </div>
+      </details>
+    `;
   }
 
   function decorateSetlistRows() {
@@ -1196,6 +1461,7 @@
     collectSongs();
     renderSetlistPanels();
     renderRehearsalPlans();
+    renderIntelligenceDashboard();
     decorateSetlistRows();
   }
 
@@ -1559,6 +1825,12 @@
     });
 
     document.addEventListener("change", event => {
+      const dashboardFilter = event.target.closest("[data-sr-dashboard-filter]");
+      if (dashboardFilter) {
+        intelligenceFilters[dashboardFilter.dataset.srDashboardFilter] = dashboardFilter.value;
+        renderIntelligenceDashboard();
+        return;
+      }
       const card = event.target.closest(".sr-rehearsal-card");
       if (!card || !event.target.matches("[data-sr-source],.sr-focus")) return;
       updatePlanRecordFromCard(card);
@@ -1602,9 +1874,11 @@
       generatePlan,
       startSession,
       getSongs: () => songs.slice(),
+      getSongHistory: songHistoryStats,
+      getNextConcert: getNextConcertInfo,
       getState: () => JSON.parse(JSON.stringify(state))
     };
-    console.log("--- SMART REHEARSAL v6 cargado ---");
+    console.log("--- SMART REHEARSAL v7 cargado ---");
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
