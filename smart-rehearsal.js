@@ -43,6 +43,7 @@
   let state = { songs: {}, sessions: [], rehearsalPlans: {} };
   let songs = [];
   let activeSession = null;
+  let activePlanScreenId = null;
   let sessionTimer = null;
   let saveTimer = null;
   let lastSongsFingerprint = "";
@@ -365,7 +366,7 @@
         margin-top:18px; background:rgba(0,0,0,.28); border:1px solid rgba(255,181,46,.28);
         border-radius:10px; padding:12px;
       }
-      .sr-setlist-panel > summary,.sr-rehearsal-card > summary {
+      .sr-setlist-panel > summary,.sr-rehearsal-card-header {
         color:#ffb52e; cursor:pointer; font-weight:bold; padding:3px; list-style-position:inside;
       }
       .sr-subtitle { color:#aaa; font-size:.82em; margin:9px 0 12px; }
@@ -387,7 +388,7 @@
       .sr-status-btn.active.ready { color:#111; background:#43d17a; border-color:#43d17a; }
       .sr-status-btn.active.review { color:#111; background:#ffb52e; border-color:#ffb52e; }
       .sr-status-btn.active.blocked { color:#fff; background:#d93838; border-color:#ff5353; }
-      .sr-rehearsal-plans { margin-top:18px; }
+      .sr-rehearsal-card-header { cursor:default; }
       .sr-rehearsal-heading { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; align-items:center; }
       .sr-rehearsal-meta { color:#aaa; font-size:.8em; font-weight:normal; }
       .sr-rehearsal-grid { display:grid; grid-template-columns:minmax(260px,.8fr) minmax(320px,1.2fr); gap:12px; margin-top:12px; }
@@ -432,6 +433,23 @@
       tr[data-sr-status="ready"] td:first-child { border-left-color:#43d17a !important; }
       tr[data-sr-status="review"] td:first-child { border-left-color:#ffb52e !important; }
       tr[data-sr-status="blocked"] td:first-child { border-left-color:#ff5353 !important; }
+      #sr-plan-screen {
+        display:none; position:fixed; inset:0; z-index:115000; overflow-y:auto; overscroll-behavior:contain;
+        background:radial-gradient(circle at top,#242424,#050505 70%); color:#fff;
+      }
+      #sr-plan-screen.show { display:block; }
+      .sr-plan-screen-shell { min-height:100%; max-width:1180px; margin:0 auto; padding:0 18px 30px; }
+      .sr-plan-screen-top {
+        position:sticky; top:0; z-index:2; display:flex; justify-content:space-between; align-items:center; gap:14px;
+        padding:14px 0; background:rgba(8,8,8,.94); border-bottom:1px solid #333; backdrop-filter:blur(8px);
+      }
+      .sr-plan-screen-title { display:flex; flex-direction:column; gap:2px; text-align:right; }
+      .sr-plan-screen-title span { color:#ffb52e; font-size:.78em; font-weight:bold; text-transform:uppercase; letter-spacing:.08em; }
+      .sr-plan-screen-title strong { color:#fff; font-size:1em; }
+      .sr-plan-back {
+        border:1px solid #ffb52e; background:#171717; color:#ffb52e; border-radius:8px; padding:9px 12px; cursor:pointer; font-weight:bold;
+      }
+      #sr-plan-screen-content .sr-rehearsal-card { margin-top:18px; }
       #sr-session-overlay { display:none; position:fixed; inset:0; z-index:120000; background:radial-gradient(circle at top,#242424,#050505 70%); color:#fff; overflow-y:auto; }
       #sr-session-overlay.show { display:block; }
       .sr-session-shell { min-height:100%; max-width:900px; margin:0 auto; padding:24px 18px; display:flex; flex-direction:column; justify-content:center; }
@@ -452,6 +470,9 @@
         .sr-song,.sr-rehearsal-grid { grid-template-columns:1fr; }
         .sr-status-controls { justify-content:flex-start; }
         .sr-song-list { max-height:none; }
+        .sr-plan-screen-shell { padding:0 10px 20px; }
+        .sr-plan-screen-top { align-items:flex-start; }
+        .sr-plan-screen-title strong { font-size:.82em; }
       }
     `;
     document.head.appendChild(style);
@@ -488,6 +509,26 @@
       </div>
     `;
     document.body.appendChild(overlay);
+  }
+
+  function createPlanScreen() {
+    if (document.getElementById("sr-plan-screen")) return;
+    const screen = document.createElement("div");
+    screen.id = "sr-plan-screen";
+    screen.setAttribute("aria-hidden", "true");
+    screen.innerHTML = `
+      <div class="sr-plan-screen-shell">
+        <div class="sr-plan-screen-top">
+          <button id="sr-close-plan-screen" class="sr-plan-back">Volver a ensayos</button>
+          <div class="sr-plan-screen-title">
+            <span>Plan inteligente</span>
+            <strong id="sr-plan-screen-date">Ensayo</strong>
+          </div>
+        </div>
+        <div id="sr-plan-screen-content"></div>
+      </div>
+    `;
+    document.body.appendChild(screen);
   }
 
   function setlistSummaryHtml(sourceSongs) {
@@ -683,18 +724,18 @@
     }).join("");
   }
 
-  function rehearsalCardHtml(rehearsal, index) {
+  function rehearsalCardHtml(rehearsal) {
     const id = rehearsalId(rehearsal);
     const record = getPlanRecord(rehearsal);
     const duration = rehearsalDurationMinutes(rehearsal);
     return `
-      <details class="sr-rehearsal-card" data-rehearsal-id="${escapeHtml(id)}" ${index === 0 ? "open" : ""}>
-        <summary>
+      <article class="sr-rehearsal-card" data-rehearsal-id="${escapeHtml(id)}">
+        <div class="sr-rehearsal-card-header">
           <span class="sr-rehearsal-heading">
             <span>Plan · ${escapeHtml(formatRehearsalDate(rehearsal))}</span>
             <span class="sr-rehearsal-meta">${escapeHtml(rehearsal.startTime || "")}-${escapeHtml(rehearsal.endTime || "")} · ${duration} min · ${escapeHtml(rehearsal.location || "")}</span>
           </span>
-        </summary>
+        </div>
         <div class="sr-rehearsal-grid">
           <div class="sr-panel">
             <h4>Objetivo y prioridades</h4>
@@ -747,31 +788,46 @@
             </div>
           </div>
         </div>
-      </details>
+      </article>
     `;
   }
 
+  function closePlanScreen() {
+    activePlanScreenId = null;
+    const screen = document.getElementById("sr-plan-screen");
+    if (!screen) return;
+    screen.classList.remove("show");
+    screen.setAttribute("aria-hidden", "true");
+  }
+
+  function renderPlanScreen(id, resetScroll = false) {
+    const screen = document.getElementById("sr-plan-screen");
+    const content = document.getElementById("sr-plan-screen-content");
+    const rehearsal = getRehearsalById(id);
+    if (!screen || !content || !rehearsal) {
+      closePlanScreen();
+      return;
+    }
+    const previousScroll = screen.scrollTop;
+    content.innerHTML = rehearsalCardHtml(rehearsal);
+    const title = document.getElementById("sr-plan-screen-date");
+    if (title) title.textContent = formatRehearsalDate(rehearsal);
+    screen.scrollTop = resetScroll ? 0 : previousScroll;
+  }
+
+  function openPlanScreen(id) {
+    const screen = document.getElementById("sr-plan-screen");
+    if (!screen || !getRehearsalById(id)) return;
+    activePlanScreenId = id;
+    renderPlanScreen(id, true);
+    screen.classList.add("show");
+    screen.setAttribute("aria-hidden", "false");
+  }
+
   function renderRehearsalPlans() {
-    const section = document.getElementById("rehearsals");
-    if (!section) return;
-    let container = document.getElementById("sr-rehearsal-plans");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "sr-rehearsal-plans";
-      container.className = "sr-rehearsal-plans";
-      section.appendChild(container);
-    }
-    const openCards = new Set(Array.from(container.querySelectorAll(".sr-rehearsal-card[open]")).map(card => card.dataset.rehearsalId));
-    const rehearsals = getFutureRehearsals();
-    container.innerHTML = rehearsals.length
-      ? `<h3 style="color:#ffb52e;margin:0 0 8px;">Planes inteligentes por ensayo</h3>${rehearsals.map(rehearsalCardHtml).join("")}`
-      : '<div class="sr-empty">Programa un ensayo para preparar su plan inteligente.</div>';
-    if (openCards.size) {
-      container.querySelectorAll(".sr-rehearsal-card").forEach(card => {
-        card.open = openCards.has(card.dataset.rehearsalId);
-      });
-    }
+    document.getElementById("sr-rehearsal-plans")?.remove();
     renderRehearsalRowSummaries();
+    if (activePlanScreenId) renderPlanScreen(activePlanScreenId);
   }
 
   function getRehearsalById(id) {
@@ -1017,12 +1073,11 @@
       }
       const openPlanButton = event.target.closest("[data-sr-open-plan]");
       if (openPlanButton) {
-        const card = Array.from(document.querySelectorAll(".sr-rehearsal-card"))
-          .find(item => item.dataset.rehearsalId === openPlanButton.dataset.srOpenPlan);
-        if (card) {
-          card.open = true;
-          card.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
+        openPlanScreen(openPlanButton.dataset.srOpenPlan);
+        return;
+      }
+      if (event.target.closest("#sr-close-plan-screen")) {
+        closePlanScreen();
         return;
       }
       const card = event.target.closest(".sr-rehearsal-card");
@@ -1093,12 +1148,17 @@
       queueSave();
       renderRehearsalRowSummaries();
     });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && activePlanScreenId && !activeSession) closePlanScreen();
+    });
   }
 
   function init() {
     readLocalState();
     injectStyles();
     createSessionOverlay();
+    createPlanScreen();
     wireEvents();
     renderAll();
     setTimeout(loadRemoteState, 1500);

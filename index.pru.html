@@ -37,10 +37,11 @@
   <style>
     *,*::before,*::after{box-sizing:border-box}
     
-    /* FONDO CON PROFUNDIDAD Y BLOQUEO DE SCROLL LATERAL/ZOOM */
+    /* FONDO CON PROFUNDIDAD Y SCROLL VERTICAL COMPATIBLE CON ESCRITORIO */
     html,body {
         margin:0; padding:0; 
         overflow-x:hidden; /* Evita scroll lateral */
+        overflow-y:auto;
         width: 100%;
         /* FIX iOS: Usar min-height en lugar de height fixed evita rebotes y bloqueos */
         min-height: 100vh;
@@ -50,9 +51,9 @@
         background-attachment: fixed;
         color:#fff;
         
-        /* PROPIEDADES PARA SENSACIÓN APP NATIVA */
-        touch-action: manipulation;
-        overscroll-behavior-y: none;
+        /* Permite rueda, trackpad y gesto vertical sin perder el zoom táctil */
+        touch-action: pan-y pinch-zoom;
+        overscroll-behavior-y: auto;
         -webkit-tap-highlight-color: transparent;
     }
     
@@ -2551,9 +2552,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 </script>
-<script src="setlist-extension.js?v=6"></script>
+<script src="setlist-extension.js?v=7"></script>
 <script src="private-zone.js?v=5"></script>
-<script src="smart-rehearsal.js?v=3"></script>
+<script src="smart-rehearsal.js?v=4"></script>
 </body>
 </html>
 </body>

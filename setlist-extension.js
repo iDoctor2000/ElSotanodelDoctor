@@ -950,6 +950,9 @@
       ".pz-modal-backdrop.show",
       "#metronome-popup.visible",
       "#idoctor-tuner-popup.visible",
+      "#sr-plan-screen.show",
+      "#sr-session-overlay.show",
+      "#live-mode-overlay.show",
     ].join(","));
     let anyVisible = false;
     candidates.forEach((el) => {
@@ -976,15 +979,45 @@
     } catch (_) {}
   }
 
+  function _canScrollPage(deltaY) {
+    const scroller = document.scrollingElement || document.documentElement;
+    const maxScroll = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    return deltaY < 0 ? scroller.scrollTop > 0 : deltaY > 0 && scroller.scrollTop < maxScroll;
+  }
+
+  function _hasScrollableAncestor(target, deltaY) {
+    let element = target instanceof Element ? target : null;
+    while (element && element !== document.body && element !== document.documentElement) {
+      const style = window.getComputedStyle(element);
+      const scrollable = /(auto|scroll)/.test(style.overflowY) && element.scrollHeight > element.clientHeight + 1;
+      if (scrollable) {
+        const canMove = deltaY < 0 ? element.scrollTop > 0 : element.scrollTop < element.scrollHeight - element.clientHeight - 1;
+        if (canMove) return true;
+      }
+      element = element.parentElement;
+    }
+    return false;
+  }
+
   function startScrollWatchdog() {
     // Tic periódico
     setInterval(() => _maybeRestoreScroll("watchdog"), 500);
 
-    // Cuando el usuario intenta hacer scroll, restaurar al instante.
-    // Usamos `passive: true` para no afectar al rendimiento del scroll.
-    const onWheelOrTouch = () => _maybeRestoreScroll("wheel/touch");
-    window.addEventListener("wheel", onWheelOrTouch, { passive: true, capture: true });
-    window.addEventListener("touchstart", onWheelOrTouch, { passive: true, capture: true });
+    // Brave y otros Chromium pueden conservar un bloqueo de scroll tras cerrar
+    // una capa. Liberamos el bloqueo y, si la rueda no movió nada, hacemos un
+    // único desplazamiento de respaldo sin interferir con listas o modales.
+    window.addEventListener("wheel", (event) => {
+      _maybeRestoreScroll("wheel");
+      if (!event.deltaY || _anyBlockingModalVisible() || _hasScrollableAncestor(event.target, event.deltaY)) return;
+      const before = window.scrollY;
+      const deltaY = event.deltaY;
+      setTimeout(() => {
+        if (window.scrollY === before && _canScrollPage(deltaY) && !_anyBlockingModalVisible()) {
+          window.scrollBy({ top: deltaY, left: 0, behavior: "auto" });
+        }
+      }, 0);
+    }, { passive: true, capture: true });
+    window.addEventListener("touchstart", () => _maybeRestoreScroll("touch"), { passive: true, capture: true });
 
     // ESC siempre libera el scroll (por si quedó algún modal escondido).
     window.addEventListener("keydown", (e) => {
