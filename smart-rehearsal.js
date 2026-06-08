@@ -40,7 +40,7 @@
     }
   };
 
-  let state = { songs: {}, sessions: [], rehearsalPlans: {} };
+  let state = { songs: {}, sessions: [], rehearsalPlans: {}, actionItems: {} };
   let songs = [];
   let activeSession = null;
   let activePlanScreenId = null;
@@ -147,6 +147,9 @@
     state.rehearsalPlans = saved.rehearsalPlans && typeof saved.rehearsalPlans === "object"
       ? saved.rehearsalPlans
       : state.rehearsalPlans;
+    state.actionItems = saved.actionItems && typeof saved.actionItems === "object"
+      ? saved.actionItems
+      : state.actionItems;
   }
 
   function updatedTime(record) {
@@ -217,12 +220,14 @@
       const remote = await window.loadDoc("intranet", DOC_ID, {
         songs: {},
         sessions: [],
-        rehearsalPlans: {}
+        rehearsalPlans: {},
+        actionItems: {}
       });
       if (!remote || typeof remote !== "object") return;
       state.songs = mergeRecordMaps(remote.songs, state.songs, false);
       state.sessions = mergeSessions(remote.sessions, state.sessions);
       state.rehearsalPlans = mergeRecordMaps(remote.rehearsalPlans, state.rehearsalPlans, false);
+      state.actionItems = mergeRecordMaps(remote.actionItems, state.actionItems, false);
       writeLocalState();
       renderAll();
       setSyncMessage(IS_LOCAL_PREVIEW
@@ -255,7 +260,8 @@
           committedState = {
             songs: mergeRecordMaps(remote.songs, localSnapshot.songs),
             sessions: mergeSessions(remote.sessions, localSnapshot.sessions),
-            rehearsalPlans: mergeRecordMaps(remote.rehearsalPlans, localSnapshot.rehearsalPlans)
+            rehearsalPlans: mergeRecordMaps(remote.rehearsalPlans, localSnapshot.rehearsalPlans),
+            actionItems: mergeRecordMaps(remote.actionItems, localSnapshot.actionItems)
           };
           transaction.set(ref, {
             ...committedState,
@@ -267,15 +273,18 @@
         const remote = await window.loadDoc("intranet", DOC_ID, {
           songs: {},
           sessions: [],
-          rehearsalPlans: {}
+          rehearsalPlans: {},
+          actionItems: {}
         });
         state.songs = mergeRecordMaps(remote.songs, state.songs);
         state.sessions = mergeSessions(remote.sessions, state.sessions);
         state.rehearsalPlans = mergeRecordMaps(remote.rehearsalPlans, state.rehearsalPlans);
+        state.actionItems = mergeRecordMaps(remote.actionItems, state.actionItems);
         await window.withRetry(() => window.saveDoc("intranet", DOC_ID, {
           songs: state.songs,
           sessions: state.sessions.slice(0, MAX_SESSIONS),
           rehearsalPlans: state.rehearsalPlans,
+          actionItems: state.actionItems,
           updatedAt: new Date().toISOString()
         }, true));
       }
@@ -350,7 +359,7 @@
     return Math.max(0, Math.floor((Date.now() - time) / 86400000));
   }
 
-  function getNextConcertInfo() {
+  function getUpcomingConcerts() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return Array.from(document.querySelectorAll("#bandhelper-concerts-container table tbody tr"))
@@ -369,7 +378,11 @@
         };
       })
       .filter(concert => concert && concert.days >= 0)
-      .sort((a, b) => a.date - b.date)[0] || null;
+      .sort((a, b) => a.date - b.date);
+  }
+
+  function getNextConcertInfo() {
+    return getUpcomingConcerts()[0] || null;
   }
 
   function songHistoryStats(songKey) {
@@ -416,6 +429,37 @@
     if (focus === "concert" && (song.sources.includes("concert") || song.sources.includes("star"))) reasons.push("Enfoque concierto");
     if (focus === "problems" && (status === "blocked" || status === "review")) reasons.push("Enfoque problemas");
     return reasons.slice(0, 3);
+  }
+
+  function getActionItems(includeArchived = false) {
+    return Object.values(state.actionItems || {})
+      .filter(item => item && (includeArchived || !item.archived))
+      .sort((a, b) => Number(a.done) - Number(b.done) || String(a.dueDate || "9999").localeCompare(String(b.dueDate || "9999")));
+  }
+
+  function songOpenTasks(songKey) {
+    return getActionItems().filter(item => !item.done && item.songKey === songKey);
+  }
+
+  function knownPeople() {
+    const values = Array.from(document.querySelectorAll("#user-identity-selector option"))
+      .map(option => option.value)
+      .filter(Boolean);
+    return Array.from(new Set(["Banda", ...values]));
+  }
+
+  function defaultTaskDueDate() {
+    const rehearsal = getFutureRehearsals()[0];
+    if (rehearsal?.date) return rehearsal.date;
+    const concert = getNextConcertInfo();
+    if (concert?.date) {
+      const year = concert.date.getFullYear();
+      const month = String(concert.date.getMonth() + 1).padStart(2, "0");
+      const day = String(concert.date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+    const fallback = new Date(Date.now() + 7 * 86400000);
+    return fallback.toISOString().slice(0, 10);
   }
 
   function setSongStatus(songKey, status) {
@@ -635,6 +679,30 @@
       .sr-dashboard-status { font-size:.7em; font-weight:bold; white-space:nowrap; }
       .sr-dashboard-concert { color:#ddd; font-size:.8em; text-align:center; margin:0 0 10px; }
       .sr-dashboard-concert strong { color:#ffb52e; }
+      .sr-radar-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:10px; }
+      .sr-radar-card { background:#0b0b0b; border:1px solid #333; border-radius:9px; padding:10px; }
+      .sr-radar-card.high { border-color:#ff5353; }
+      .sr-radar-card.medium { border-color:#ffb52e; }
+      .sr-radar-card.low { border-color:#43d17a; }
+      .sr-radar-heading { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+      .sr-radar-heading strong { color:#fff; }
+      .sr-risk-badge { border:1px solid currentColor; border-radius:12px; font-size:.65em; font-weight:bold; padding:3px 6px; white-space:nowrap; }
+      .sr-risk-badge.high { color:#ff5353; }
+      .sr-risk-badge.medium { color:#ffb52e; }
+      .sr-risk-badge.low { color:#43d17a; }
+      .sr-readiness-bar { background:#222; border-radius:8px; height:7px; overflow:hidden; margin:9px 0 6px; }
+      .sr-readiness-bar > span { display:block; height:100%; background:#43d17a; }
+      .sr-radar-meta { color:#aaa; font-size:.72em; line-height:1.45; }
+      .sr-task-form { display:grid; grid-template-columns:minmax(180px,1.5fr) minmax(140px,1fr) minmax(110px,.8fr) minmax(125px,.8fr) auto; gap:7px; margin-bottom:10px; }
+      .sr-task-form input,.sr-task-form select { min-width:0; background:#171717; border:1px solid #444; border-radius:7px; color:#fff; padding:8px; }
+      .sr-task-form button { border:0; border-radius:7px; padding:8px 12px; background:#ffb52e; color:#111; font-weight:bold; cursor:pointer; }
+      .sr-task-item { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:8px; align-items:center; border-bottom:1px solid #292929; padding:8px 2px; }
+      .sr-task-item.done strong { color:#777; text-decoration:line-through; }
+      .sr-task-item small { color:#888; display:block; margin-top:3px; }
+      .sr-task-actions { display:flex; gap:5px; }
+      .sr-task-actions button { border:1px solid #555; background:#222; color:#ddd; border-radius:6px; padding:5px 7px; cursor:pointer; font-size:.68em; }
+      .sr-task-overdue { color:#ff5353 !important; }
+      .sr-task-marker { color:#b070ff; font-size:.68em; display:block; margin-top:4px; }
       @media(max-width:800px) {
         .sr-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
         .sr-song,.sr-rehearsal-grid { grid-template-columns:1fr; }
@@ -648,9 +716,14 @@
         .sr-summary-shell { padding:16px 10px 30px; }
         #sr-intelligence-dashboard { padding:14px 10px; }
         .sr-dashboard-grid,.sr-dashboard-columns { grid-template-columns:1fr 1fr; }
+        .sr-radar-grid { grid-template-columns:1fr; }
+        .sr-task-form { grid-template-columns:1fr 1fr; }
       }
       @media(max-width:520px) {
         .sr-dashboard-columns { grid-template-columns:1fr; }
+        .sr-task-form { grid-template-columns:1fr; }
+        .sr-task-item { grid-template-columns:auto minmax(0,1fr); }
+        .sr-task-actions { grid-column:2; }
       }
     `;
     document.head.appendChild(style);
@@ -904,6 +977,7 @@
                 ${(Array.isArray(song.reasons) ? song.reasons : priorityReasons(song, record.focus, record.required.includes(song.key))).map(reason => `<span class="sr-priority-reason">${escapeHtml(reason)}</span>`).join("")}
               </span>
             ` : ""}
+            ${songOpenTasks(song.key).length ? `<span class="sr-task-marker">${songOpenTasks(song.key).length} tarea${songOpenTasks(song.key).length === 1 ? "" : "s"} pendiente${songOpenTasks(song.key).length === 1 ? "" : "s"}</span>` : ""}
           </span>
           <span class="sr-plan-time">
             ${song.plannedMinutes} min
@@ -1352,6 +1426,176 @@
     `;
   }
 
+  function concertRadarData(concert) {
+    let concertSongs = songs.filter(song => song.sources.includes("concert"));
+    if (!concertSongs.length) concertSongs = songs.filter(song => song.sources.includes("star"));
+    const analytics = concertSongs.map(song => {
+      const history = songHistoryStats(song.key);
+      return {
+        song,
+        history,
+        score: scoreSong(song, "concert", false, history, concert)
+      };
+    });
+    const weights = { ready: 100, review: 55, unknown: 25, blocked: 0 };
+    const readiness = analytics.length
+      ? Math.round(analytics.reduce((sum, item) => sum + weights[getSongStatus(item.song.key)], 0) / analytics.length)
+      : 0;
+    const critical = analytics
+      .filter(item => getSongStatus(item.song.key) !== "ready" || item.history.recentProblems)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+    const blocked = analytics.filter(item => getSongStatus(item.song.key) === "blocked").length;
+    const review = analytics.filter(item => getSongStatus(item.song.key) === "review").length;
+    const unknown = analytics.filter(item => getSongStatus(item.song.key) === "unknown").length;
+    const recommendedMinutes = critical.reduce((sum, item) => sum + estimateSongMinutes(item.song), 0);
+    let risk = "low";
+    if (readiness < 65 || (concert.days <= 30 && blocked > 0) || (concert.days <= 14 && critical.length > 0)) risk = "high";
+    else if (readiness < 85 || blocked > 0 || (concert.days <= 45 && (review > 0 || unknown > 0))) risk = "medium";
+    return { concert, concertSongs, analytics, readiness, critical, blocked, review, unknown, recommendedMinutes, risk };
+  }
+
+  function riskLabel(risk) {
+    return { high: "Riesgo alto", medium: "Riesgo medio", low: "Riesgo bajo" }[risk] || "Sin datos";
+  }
+
+  function radarHtml() {
+    const radars = getUpcomingConcerts().slice(0, 3).map(concertRadarData);
+    if (!radars.length) return '<div class="sr-empty">Todavía no hay conciertos próximos para analizar.</div>';
+    return `
+      <div class="sr-radar-grid">
+        ${radars.map((radar, index) => `
+          <article class="sr-radar-card ${radar.risk}">
+            <div class="sr-radar-heading">
+              <strong>${escapeHtml(radar.concert.title)}</strong>
+              <span class="sr-risk-badge ${radar.risk}">${escapeHtml(riskLabel(radar.risk))}</span>
+            </div>
+            <div class="sr-readiness-bar"><span style="width:${radar.readiness}%"></span></div>
+            <div class="sr-radar-meta">
+              ${radar.readiness}% preparada · dentro de ${radar.concert.days} días<br>
+              ${radar.blocked} bloqueadas · ${radar.review} para repasar · ${radar.unknown} sin valorar<br>
+              Recomendación: reservar ${radar.recommendedMinutes} min para ${radar.critical.length} canciones críticas
+            </div>
+            ${index === 0 && radar.critical.length ? `
+              <div class="sr-actions">
+                <button class="sr-small-btn" data-sr-create-radar-tasks>Crear tareas críticas</button>
+              </div>
+            ` : ""}
+          </article>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function taskSongOptionsHtml() {
+    return `<option value="">Sin canción concreta</option>${songs.map(song => `<option value="${escapeHtml(song.key)}">${escapeHtml(song.title)}</option>`).join("")}`;
+  }
+
+  function taskOwnerOptionsHtml() {
+    return knownPeople().map(person => `<option value="${escapeHtml(person)}" ${person === getIdentity() ? "selected" : ""}>${escapeHtml(person)}</option>`).join("");
+  }
+
+  function taskListHtml() {
+    const tasks = getActionItems().slice(0, 20);
+    if (!tasks.length) return '<div class="sr-empty">No hay tareas pendientes. El radar puede crear las primeras automáticamente.</div>';
+    const today = new Date().toISOString().slice(0, 10);
+    return tasks.map(task => {
+      const song = songs.find(item => item.key === task.songKey);
+      const overdue = !task.done && task.dueDate && task.dueDate < today;
+      return `
+        <div class="sr-task-item ${task.done ? "done" : ""}">
+          <button class="sr-small-btn" data-sr-toggle-task="${escapeHtml(task.id)}" title="${task.done ? "Reabrir tarea" : "Marcar como completada"}">${task.done ? "↺" : "✓"}</button>
+          <div>
+            <strong>${escapeHtml(task.title)}</strong>
+            <small class="${overdue ? "sr-task-overdue" : ""}">
+              ${song ? `${escapeHtml(song.title)} · ` : ""}${escapeHtml(task.owner || "Banda")} · ${task.dueDate ? `límite ${new Date(`${task.dueDate}T00:00:00`).toLocaleDateString("es-ES")}` : "sin fecha límite"}
+            </small>
+          </div>
+          <div class="sr-task-actions">
+            <button data-sr-archive-task="${escapeHtml(task.id)}">Quitar</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function tasksPanelHtml() {
+    return `
+      <div class="sr-panel" style="margin-top:10px;">
+        <h4>Tareas entre ensayos</h4>
+        <div class="sr-task-form">
+          <input data-sr-task-title placeholder="Acción concreta: revisar entrada, preparar coros...">
+          <select data-sr-task-song>${taskSongOptionsHtml()}</select>
+          <select data-sr-task-owner>${taskOwnerOptionsHtml()}</select>
+          <input data-sr-task-due type="date" value="${escapeHtml(defaultTaskDueDate())}">
+          <button data-sr-add-task>Añadir tarea</button>
+        </div>
+        <div class="sr-dashboard-list">${taskListHtml()}</div>
+      </div>
+    `;
+  }
+
+  function addActionItem(title, songKey, owner, dueDate) {
+    const cleanTitle = String(title || "").trim();
+    if (!cleanTitle) return false;
+    const now = new Date().toISOString();
+    const id = `task_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    state.actionItems[id] = {
+      id,
+      title: cleanTitle,
+      songKey: songKey || "",
+      owner: owner || "Banda",
+      dueDate: dueDate || "",
+      done: false,
+      archived: false,
+      createdAt: now,
+      updatedAt: now,
+      updatedBy: getIdentity()
+    };
+    queueSave();
+    renderAll();
+    return true;
+  }
+
+  function updateActionItem(id, changes) {
+    const task = state.actionItems[id];
+    if (!task) return;
+    state.actionItems[id] = {
+      ...task,
+      ...changes,
+      updatedAt: new Date().toISOString(),
+      updatedBy: getIdentity()
+    };
+    queueSave();
+    renderAll();
+  }
+
+  function createRadarTasks() {
+    const concert = getNextConcertInfo();
+    if (!concert) return;
+    const radar = concertRadarData(concert);
+    const dueDate = defaultTaskDueDate();
+    radar.critical.slice(0, 3).forEach(item => {
+      if (songOpenTasks(item.song.key).length) return;
+      const now = new Date().toISOString();
+      const id = `task_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      state.actionItems[id] = {
+        id,
+        title: `Resolver prioridad antes de ${concert.title}`,
+        songKey: item.song.key,
+        owner: "Banda",
+        dueDate,
+        done: false,
+        archived: false,
+        createdAt: now,
+        updatedAt: now,
+        updatedBy: getIdentity()
+      };
+    });
+    queueSave();
+    renderAll();
+  }
+
   function renderIntelligenceDashboard() {
     const rehearsalsSection = document.getElementById("rehearsals");
     if (!rehearsalsSection) return;
@@ -1415,6 +1659,10 @@
           <div class="sr-dashboard-card"><strong>${dashboardTime(totalSeconds)}</strong><span>Tiempo real registrado</span></div>
           <div class="sr-dashboard-card"><strong style="color:${STATUS.blocked.color}">${counts.blocked}</strong><span>Bloqueadas</span></div>
         </div>
+        <div class="sr-panel" style="margin-top:10px;">
+          <h4>Radar de preparación para conciertos</h4>
+          ${radarHtml()}
+        </div>
         <div class="sr-dashboard-columns">
           <div class="sr-panel">
             <h4>Prioridades automáticas ahora</h4>
@@ -1429,6 +1677,7 @@
             </div>
           </div>
         </div>
+        ${tasksPanelHtml()}
         <div class="sr-panel" style="margin-top:10px;">
           <h4>Sesiones recientes</h4>
           ${recentSessions.length ? recentSessions.map(session => {
@@ -1742,6 +1991,31 @@
         openPlanScreen(openNextPlanButton.dataset.srOpenNextPlan);
         return;
       }
+      if (event.target.closest("[data-sr-create-radar-tasks]")) {
+        createRadarTasks();
+        return;
+      }
+      if (event.target.closest("[data-sr-add-task]")) {
+        const dashboard = event.target.closest("#sr-intelligence-dashboard");
+        if (!dashboard) return;
+        const title = dashboard.querySelector("[data-sr-task-title]")?.value || "";
+        const songKey = dashboard.querySelector("[data-sr-task-song]")?.value || "";
+        const owner = dashboard.querySelector("[data-sr-task-owner]")?.value || "Banda";
+        const dueDate = dashboard.querySelector("[data-sr-task-due]")?.value || "";
+        if (!addActionItem(title, songKey, owner, dueDate)) alert("Escribe una acción concreta antes de añadir la tarea.");
+        return;
+      }
+      const toggleTaskButton = event.target.closest("[data-sr-toggle-task]");
+      if (toggleTaskButton) {
+        const task = state.actionItems[toggleTaskButton.dataset.srToggleTask];
+        if (task) updateActionItem(task.id, { done: !task.done, completedAt: task.done ? null : new Date().toISOString() });
+        return;
+      }
+      const archiveTaskButton = event.target.closest("[data-sr-archive-task]");
+      if (archiveTaskButton) {
+        updateActionItem(archiveTaskButton.dataset.srArchiveTask, { archived: true });
+        return;
+      }
       const card = event.target.closest(".sr-rehearsal-card");
       if (card) {
         const record = updatePlanRecordFromCard(card);
@@ -1876,9 +2150,11 @@
       getSongs: () => songs.slice(),
       getSongHistory: songHistoryStats,
       getNextConcert: getNextConcertInfo,
+      getConcertRadar: () => getUpcomingConcerts().map(concertRadarData),
+      getActionItems: () => JSON.parse(JSON.stringify(getActionItems())),
       getState: () => JSON.parse(JSON.stringify(state))
     };
-    console.log("--- SMART REHEARSAL v7 cargado ---");
+    console.log("--- SMART REHEARSAL v8 cargado ---");
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
