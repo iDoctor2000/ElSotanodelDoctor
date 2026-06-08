@@ -535,12 +535,18 @@
     .cal-day.other-month { background: rgba(0, 0, 0, 0.2); opacity: 0.5; border: none; }
     .cal-day.today { border: 1px solid #0cf; background: rgba(0, 204, 255, 0.05); }
     .cal-day-number { font-size: 0.8em; color: #777; align-self: flex-end; margin-bottom: 5px; }
+    .cal-day-add { position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; margin: 0; padding: 0; border: 1px solid rgba(0, 204, 255, 0.45); border-radius: 50%; background: rgba(0, 18, 24, 0.9); color: #0cf; font-size: 18px; line-height: 20px; opacity: 0.32; cursor: pointer; transition: opacity 0.2s, transform 0.2s, background 0.2s; z-index: 4; }
+    .cal-day:hover .cal-day-add, .cal-day-add:focus-visible { opacity: 1; transform: scale(1.08); background: #0cf; color: #001018; outline: none; }
     .cal-event { font-size: 0.75em; padding: 3px 5px; border-radius: 3px; margin-bottom: 3px; word-wrap: break-word; line-height: 1.2; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.2s ease, filter 0.2s ease; }
     .cal-event:hover { transform: scale(1.02) translateY(-1px); filter: brightness(1.2); z-index: 5; }
     .cal-event.type-ensayo { color: #ff9999; border-left: 3px solid #ff3333; background: linear-gradient(90deg, rgba(255, 0, 0, 0.15) 0%, rgba(255,0,0,0.05) 100%); }
     .cal-event.type-concierto { color: #ffff99; border-left: 3px solid #ffff00; background: linear-gradient(90deg, rgba(255, 255, 0, 0.15) 0%, rgba(255,255,0,0.05) 100%); }
+    .calendar-add-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
+    .calendar-add-type { min-height: 90px; margin: 0; border: 1px solid #444; border-radius: 10px; background: rgba(20,20,20,0.9); color: #fff; font-size: 1.05em; cursor: pointer; }
+    .calendar-add-type:hover { border-color: #0cf; background: rgba(0, 204, 255, 0.12); }
+    .calendar-add-date-label { color: #0cf; text-align: center; font-weight: bold; }
 
-    @media(max-width:768px){ .cal-day { min-height: 70px; font-size: 0.9em; } .cal-event { font-size: 0.7em; } .cal-header { font-size: 0.7em; padding: 5px 0; } }
+    @media(max-width:768px){ .cal-day { min-height: 70px; font-size: 0.9em; } .cal-day-add { width: 22px; height: 22px; font-size: 16px; line-height: 18px; opacity: 0.7; } .cal-event { font-size: 0.7em; } .cal-header { font-size: 0.7em; padding: 5px 0; } .calendar-add-options { grid-template-columns: 1fr; } }
 
     .suggestion-form { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
     .suggestion-form-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
@@ -838,6 +844,9 @@
   </script>
 
   <div id="concert-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Detalles del Concierto</h3><h4 id="concert-detail-title-display"></h4><input type="hidden" id="concert-detail-id"><label for="concert-detail-location">Detalles adicionales de la ubicación:</label><textarea id="concert-detail-location"></textarea><label for="concert-detail-gmaps-link">Enlace de Google Maps (Lugar Evento):</label><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;"><input type="url" id="concert-detail-gmaps-link" placeholder="https://maps.app.goo.gl/example" style="flex-grow: 1; margin-bottom: 0;"><button id="open-gmaps-link-btn" style="display:none; padding: 10px 15px; background: #0cf; color: #000; border: none; border-radius: 8px; cursor: pointer; line-height: 1.5;">Abrir Mapa</button></div><div class="modal-field-group"><div><label for="concert-detail-soundsetup">Montaje Equipo Sonido:</label><input type="time" id="concert-detail-soundsetup"></div><div><label for="concert-detail-instrumentssetup">Montaje Batería/Instrumentos:</label><input type="time" id="concert-detail-instrumentssetup"></div></div><div class="modal-field-group"><div><label for="concert-detail-soundcheck">Prueba de sonido:</label><input type="time" id="concert-detail-soundcheck"></div><div><label for="concert-detail-showtime">Hora del show (confirmada/ajustada):</label><input type="time" id="concert-detail-showtime"></div></div><label for="concert-detail-notes">Notas generales:</label><textarea id="concert-detail-notes"></textarea><label for="concert-detail-sound-company">Empresa de Sonorización:</label><input type="text" id="concert-detail-sound-company" placeholder="Nombre de la empresa o técnico externo"><h4>Músicos Asistentes</h4><div id="musicians-attendance-list"></div><h4>Técnicos Responsables</h4><div id="technicians-attendance-list" style="border: 1px solid #333; padding: 10px; margin-bottom:15px;"></div><button id="save-concert-details">Guardar Detalles</button><button id="close-concert-details-modal" class="modal-close-btn">Cerrar</button><p id="concert-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
+  <div id="calendar-add-modal" class="modal-backdrop"><div class="modal-content" style="max-width:500px;"><h3>Añadir al calendario</h3><p id="calendar-add-date-display" class="calendar-add-date-label"></p><p style="text-align:center;color:#aaa;">¿Qué quieres programar para este día?</p><div class="calendar-add-options"><button id="calendar-add-rehearsal" class="calendar-add-type">Ensayo</button><button id="calendar-add-concert" class="calendar-add-type">Concierto</button></div><button id="close-calendar-add-modal" class="modal-close-btn">Cancelar</button></div></div>
+  <div id="calendar-auth-modal" class="modal-backdrop"><div class="modal-content" style="max-width:460px;"><h3>Autorizar edición</h3><p style="color:#aaa;text-align:center;">Identifícate para añadir fechas al calendario.</p><label for="calendar-auth-password">Contraseña de Configuración</label><input type="password" id="calendar-auth-password" autocomplete="current-password" placeholder="Contraseña"><button id="submit-calendar-auth">Autorizar</button><button id="close-calendar-auth" class="modal-close-btn">Cancelar</button><p id="calendar-auth-message" class="error-message"></p></div></div>
+  <div id="calendar-concert-create-modal" class="modal-backdrop"><div class="modal-content" style="max-width:560px;"><h3>Nuevo concierto</h3><p id="calendar-concert-date-display" class="calendar-add-date-label"></p><label for="calendar-concert-title">Nombre del evento</label><input id="calendar-concert-title" placeholder="Ej: Concierto en fiestas"><div class="modal-field-group"><div><label for="calendar-concert-start">Hora de inicio</label><input type="time" id="calendar-concert-start" value="20:00"></div><div><label for="calendar-concert-end">Hora de fin</label><input type="time" id="calendar-concert-end" value="22:00"></div></div><label for="calendar-concert-location">Lugar</label><input id="calendar-concert-location" placeholder="Ej: Plaza del Ayuntamiento"><button id="save-calendar-concert">Crear concierto y completar detalles</button><button id="close-calendar-concert-create" class="modal-close-btn">Cancelar</button><p id="calendar-concert-create-message" class="error-message"></p></div></div>
   <div id="rehearsal-details-modal" class="modal-backdrop"><div class="modal-content"><h3>Información del Ensayo</h3><h4 id="rehearsal-detail-title-display"></h4><input type="hidden" id="rehearsal-detail-index"><label for="rehearsal-notes">Preparación / Notas / Canciones a mirar:</label><textarea id="rehearsal-notes" style="min-height: 400px; font-size: 1em;" placeholder="Escribe aquí qué hay que preparar para este ensayo..."></textarea><button id="save-rehearsal-details">Guardar Información</button><button id="close-rehearsal-details-modal" class="modal-close-btn">Cerrar</button><p id="rehearsal-detail-message" class="success-message" style="text-align:left; margin-top:10px;"></p></div></div>
   <div id="setlist-config-screen" class="config-screen"><button class="close-btn" id="close-setlist-config">Cerrar</button><h2>Configuración de Setlists</h2><h3>Setlist Próximo Ensayo</h3><label>Nombre</label><input id="setlist1-name" placeholder="Ej: Ensayos 2025"><label>ID/URL feed</label><input id="setlist1-url" placeholder="URL"><h3>Setlist Próximo Concierto</h3><label>Nombre</label><input id="setlist2-name" placeholder="Ej: Concierto Navidad"><label>ID/URL feed</label><input id="setlist2-url" placeholder="Ej: TXHvy autónomo o URL completa"><h3>Setlist Concierto Estrella</h3><label>Nombre</label><input id="setlistStar-name" placeholder="Ej: Gran Evento 2025"><label>ID/URL feed</label><input id="setlistStar-url" placeholder="URL"><button id="guardar-setlist-config">Guardar Configuración</button><p id="setlist-message" class="error-message"></p></div>
   
@@ -2179,6 +2188,133 @@ async function verifyBiometry() {
     }
 }
 
+let pendingCalendarDate = "";
+let calendarAuthorizationResolver = null;
+function formatCalendarDateLabel(isoDate) {
+    const date = new Date(`${isoDate}T12:00:00`);
+    return Number.isNaN(date.getTime()) ? isoDate : date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+function formatManualConcertDate(isoDate, startTime, endTime) {
+    const [year, month, day] = isoDate.split('-');
+    const range = endTime ? `${startTime} a ${endTime}` : startTime;
+    return `${day}/${month}/${String(year).slice(-2)}, ${range}`;
+}
+function escapeCalendarHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]));
+}
+async function ensureCalendarEditAuthorization() {
+    if (isAuthenticated) return true;
+    const bioSuccess = await verifyBiometry();
+    if (bioSuccess) {
+        isAuthenticated = true;
+        return true;
+    }
+    document.getElementById('calendar-auth-password').value = '';
+    document.getElementById('calendar-auth-message').textContent = '';
+    document.getElementById('calendar-auth-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('calendar-auth-password').focus();
+    return new Promise(resolve => { calendarAuthorizationResolver = resolve; });
+}
+function finishCalendarAuthorization(authorized) {
+    document.getElementById('calendar-auth-modal').classList.remove('show');
+    document.getElementById('calendar-auth-password').value = '';
+    document.getElementById('calendar-auth-message').textContent = '';
+    document.body.style.overflow = '';
+    if (calendarAuthorizationResolver) {
+        calendarAuthorizationResolver(authorized);
+        calendarAuthorizationResolver = null;
+    }
+}
+function submitCalendarAuthorization() {
+    const password = document.getElementById('calendar-auth-password').value;
+    if (password && password.toLowerCase() === PASSWORD.toLowerCase()) {
+        isAuthenticated = true;
+        finishCalendarAuthorization(true);
+    } else {
+        document.getElementById('calendar-auth-message').textContent = "Contraseña incorrecta.";
+    }
+}
+async function openCalendarQuickAdd(isoDate) {
+    if (!(await ensureCalendarEditAuthorization())) return;
+    pendingCalendarDate = isoDate;
+    closeAll();
+    document.getElementById('calendar-add-date-display').textContent = formatCalendarDateLabel(isoDate);
+    document.getElementById('calendar-add-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function closeCalendarQuickAdd() {
+    document.getElementById('calendar-add-modal').classList.remove('show');
+    document.getElementById('calendar-concert-create-modal').classList.remove('show');
+    document.getElementById('calendar-concert-create-message').textContent = '';
+    document.body.style.overflow = '';
+}
+function openCalendarRehearsalForm() {
+    const selectedDate = pendingCalendarDate;
+    closeAll();
+    resetRehearsalForm();
+    document.getElementById('rehearsal-screen').style.display = 'block';
+    document.getElementById('rehearsal-date').value = selectedDate;
+    document.getElementById('rehearsal-date').dispatchEvent(new Event('change'));
+    document.getElementById('rehearsal-screen').scrollTop = 0;
+}
+function openCalendarConcertForm() {
+    document.getElementById('calendar-add-modal').classList.remove('show');
+    document.getElementById('calendar-concert-title').value = '';
+    document.getElementById('calendar-concert-start').value = '20:00';
+    document.getElementById('calendar-concert-end').value = '22:00';
+    document.getElementById('calendar-concert-location').value = '';
+    document.getElementById('calendar-concert-create-message').textContent = '';
+    document.getElementById('calendar-concert-date-display').textContent = formatCalendarDateLabel(pendingCalendarDate);
+    document.getElementById('calendar-concert-create-modal').classList.add('show');
+    document.getElementById('calendar-concert-title').focus();
+}
+document.getElementById('calendar-add-rehearsal').onclick = openCalendarRehearsalForm;
+document.getElementById('calendar-add-concert').onclick = openCalendarConcertForm;
+document.getElementById('submit-calendar-auth').onclick = submitCalendarAuthorization;
+document.getElementById('close-calendar-auth').onclick = () => finishCalendarAuthorization(false);
+document.getElementById('calendar-auth-password').addEventListener('keydown', event => { if (event.key === 'Enter') submitCalendarAuthorization(); });
+document.getElementById('close-calendar-add-modal').onclick = closeCalendarQuickAdd;
+document.getElementById('close-calendar-concert-create').onclick = closeCalendarQuickAdd;
+document.getElementById('save-calendar-concert').onclick = async () => {
+    const message = document.getElementById('calendar-concert-create-message');
+    const title = document.getElementById('calendar-concert-title').value.trim();
+    const startTime = document.getElementById('calendar-concert-start').value;
+    const endTime = document.getElementById('calendar-concert-end').value;
+    const location = document.getElementById('calendar-concert-location').value.trim();
+    message.textContent = '';
+    if (!pendingCalendarDate || !title || !startTime || !endTime || !location) {
+        message.textContent = "Completa nombre, horario y lugar.";
+        return;
+    }
+    if (calculateDuration(startTime, endTime) <= 0) {
+        message.textContent = "La hora de fin debe ser posterior a la de inicio.";
+        return;
+    }
+    const concertId = sanitizeFirebaseKey(`manual_${pendingCalendarDate}_${title}_${Date.now()}`);
+    const rawDate = formatManualConcertDate(pendingCalendarDate, startTime, endTime);
+    const manualData = {
+        manualCalendarEvent: true,
+        eventDate: pendingCalendarDate,
+        eventTitle: title,
+        eventLocation: location,
+        eventStartTime: startTime,
+        eventEndTime: endTime,
+        locationDetails: location,
+        showTime: startTime,
+        lastUpdated: new Date().toISOString()
+    };
+    try {
+        await window.withRetry(() => window.saveDoc('concert_details', concertId, manualData, true));
+        globalConcertDetails[concertId] = manualData;
+        renderVisualCalendar();
+        closeCalendarQuickAdd();
+        openConcertDetailModal(concertId, rawDate, title, location);
+    } catch (error) {
+        message.textContent = `Error al crear el concierto: ${error.message}.`;
+    }
+};
+
 document.getElementById("menu-config").onclick = async (e) => { 
     e.preventDefault();
     const submenu = document.getElementById("config-submenu");
@@ -2376,7 +2512,7 @@ document.getElementById('live-content-area').onclick = (e) => { const width = wi
 
 /* ---------- 12. Lógica Calendario Visual ---------- */
 let currentCalDate = new Date(); let globalConcertDetails = {}; 
-function attachConcertDetailsListener() { if (typeof db !== 'undefined') { try { db.collection('concert_details').onSnapshot(snapshot => { snapshot.forEach(doc => { globalConcertDetails[doc.id] = doc.data(); }); renderVisualCalendar(); }); } catch(e) { } } }
+function attachConcertDetailsListener() { if (typeof db !== 'undefined') { try { db.collection('concert_details').onSnapshot(snapshot => { globalConcertDetails = {}; snapshot.forEach(doc => { globalConcertDetails[doc.id] = doc.data(); }); renderVisualCalendar(); }); } catch(e) { } } }
 function renderVisualCalendar() {
     const grid = document.getElementById('calendar-grid-container');
     const monthDisplay = document.getElementById('calendar-month-display');
@@ -2392,6 +2528,18 @@ function renderVisualCalendar() {
     const today = new Date();
     const events = [];
     if (Array.isArray(rehearsals)) { rehearsals.forEach((r, i) => { let missingStr = ""; if (r.attendance && Array.isArray(r.attendance)) { const missingNames = r.attendance.filter(a => a.attending === "No").map(a => { const u = users.find(user => user.name === a.name); return u ? u.nickname : a.name; }); if (missingNames.length > 0) missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${missingNames.join(", ")}]</span>`; } events.push({ dateStr: r.date, type: 'ensayo', title: `Ensayo (${r.startTime} - ${r.endTime})${missingStr}`, index: i }); }); }
+    Object.entries(globalConcertDetails).forEach(([concertId, details]) => {
+      if (!details || !details.manualCalendarEvent || !details.eventDate) return;
+      let missingStr = "";
+      if (Array.isArray(details.attendees)) {
+        const missingNames = users.filter(u => { const val = u.nickname || u.name; return !details.attendees.includes(val); }).map(u => u.nickname || u.name);
+        if (missingNames.length > 0) missingStr = `<br><span style="color: #fff; font-weight: normal; font-size: 0.9em;">[Faltan: ${escapeCalendarHtml(missingNames.join(", "))}]</span>`;
+      }
+      const title = details.eventTitle || "Concierto";
+      const location = details.eventLocation || details.locationDetails || "";
+      const rawDate = formatManualConcertDate(details.eventDate, details.eventStartTime || details.showTime || "20:00", details.eventEndTime || "");
+      events.push({ dateStr: details.eventDate, type: 'concierto', title: `${escapeCalendarHtml(title)}${missingStr}`, rawDate, rawTitle: title, rawLoc: location, id: concertId });
+    });
     const concertRows = document.querySelectorAll('#bandhelper-concerts-container table tbody tr');
     concertRows.forEach(row => {
       const cells = row.cells;
@@ -2413,6 +2561,7 @@ function renderVisualCalendar() {
       if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) div.classList.add('today');
       const numDiv = document.createElement('div'); numDiv.className = 'cal-day-number'; numDiv.textContent = day; div.appendChild(numDiv);
       const currentIso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const addBtn = document.createElement('button'); addBtn.type = 'button'; addBtn.className = 'cal-day-add'; addBtn.textContent = '+'; addBtn.title = 'Añadir ensayo o concierto'; addBtn.setAttribute('aria-label', `Añadir evento el ${formatCalendarDateLabel(currentIso)}`); addBtn.onclick = (e) => { e.stopPropagation(); openCalendarQuickAdd(currentIso); }; div.appendChild(addBtn);
       const dayEvents = events.filter(e => e.dateStr === currentIso);
       dayEvents.forEach(evt => {
         const evtDiv = document.createElement('div'); evtDiv.className = `cal-event type-${evt.type}`; evtDiv.innerHTML = evt.title;
