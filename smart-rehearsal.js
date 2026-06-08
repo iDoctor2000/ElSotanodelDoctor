@@ -10,6 +10,7 @@
   const LOCAL_STATE_KEY = "esdd_rehearsal_intelligence_v2";
   const LEGACY_STATE_KEY = "esdd_rehearsal_intelligence_v1";
   const MAX_SESSIONS = 30;
+  const MAX_PRACTICE_LOGS = 100;
   const IS_LOCAL_PREVIEW = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
 
   const STATUS = {
@@ -40,11 +41,13 @@
     }
   };
 
-  let state = { songs: {}, sessions: [], rehearsalPlans: {}, actionItems: {} };
+  let state = { songs: {}, sessions: [], rehearsalPlans: {}, actionItems: {}, practiceLogs: [] };
   let songs = [];
   let activeSession = null;
+  let activePractice = null;
   let activePlanScreenId = null;
   let sessionTimer = null;
+  let practiceTimer = null;
   let finishConfirmTimer = null;
   let saveTimer = null;
   let lastSongsFingerprint = "";
@@ -150,6 +153,9 @@
     state.actionItems = saved.actionItems && typeof saved.actionItems === "object"
       ? saved.actionItems
       : state.actionItems;
+    state.practiceLogs = Array.isArray(saved.practiceLogs)
+      ? saved.practiceLogs.slice(0, MAX_PRACTICE_LOGS)
+      : state.practiceLogs;
   }
 
   function updatedTime(record) {
@@ -178,6 +184,18 @@
     return Array.from(byId.values())
       .sort((a, b) => Date.parse(b.endedAt || b.startedAt || "") - Date.parse(a.endedAt || a.startedAt || ""))
       .slice(0, MAX_SESSIONS);
+  }
+
+  function mergePracticeLogs(remoteLogs, localLogs) {
+    const byId = new Map();
+    [...(remoteLogs || []), ...(localLogs || [])].forEach(log => {
+      if (!log) return;
+      const id = log.id || `practice_${sanitizeKey(log.endedAt || log.startedAt || "legacy")}`;
+      byId.set(id, { ...log, id });
+    });
+    return Array.from(byId.values())
+      .sort((a, b) => Date.parse(b.endedAt || b.startedAt || "") - Date.parse(a.endedAt || a.startedAt || ""))
+      .slice(0, MAX_PRACTICE_LOGS);
   }
 
   function touchPlanRecord(record) {
@@ -221,13 +239,15 @@
         songs: {},
         sessions: [],
         rehearsalPlans: {},
-        actionItems: {}
+        actionItems: {},
+        practiceLogs: []
       });
       if (!remote || typeof remote !== "object") return;
       state.songs = mergeRecordMaps(remote.songs, state.songs, false);
       state.sessions = mergeSessions(remote.sessions, state.sessions);
       state.rehearsalPlans = mergeRecordMaps(remote.rehearsalPlans, state.rehearsalPlans, false);
       state.actionItems = mergeRecordMaps(remote.actionItems, state.actionItems, false);
+      state.practiceLogs = mergePracticeLogs(remote.practiceLogs, state.practiceLogs);
       writeLocalState();
       renderAll();
       setSyncMessage(IS_LOCAL_PREVIEW
@@ -261,7 +281,8 @@
             songs: mergeRecordMaps(remote.songs, localSnapshot.songs),
             sessions: mergeSessions(remote.sessions, localSnapshot.sessions),
             rehearsalPlans: mergeRecordMaps(remote.rehearsalPlans, localSnapshot.rehearsalPlans),
-            actionItems: mergeRecordMaps(remote.actionItems, localSnapshot.actionItems)
+            actionItems: mergeRecordMaps(remote.actionItems, localSnapshot.actionItems),
+            practiceLogs: mergePracticeLogs(remote.practiceLogs, localSnapshot.practiceLogs)
           };
           transaction.set(ref, {
             ...committedState,
@@ -274,17 +295,20 @@
           songs: {},
           sessions: [],
           rehearsalPlans: {},
-          actionItems: {}
+          actionItems: {},
+          practiceLogs: []
         });
         state.songs = mergeRecordMaps(remote.songs, state.songs);
         state.sessions = mergeSessions(remote.sessions, state.sessions);
         state.rehearsalPlans = mergeRecordMaps(remote.rehearsalPlans, state.rehearsalPlans);
         state.actionItems = mergeRecordMaps(remote.actionItems, state.actionItems);
+        state.practiceLogs = mergePracticeLogs(remote.practiceLogs, state.practiceLogs);
         await window.withRetry(() => window.saveDoc("intranet", DOC_ID, {
           songs: state.songs,
           sessions: state.sessions.slice(0, MAX_SESSIONS),
           rehearsalPlans: state.rehearsalPlans,
           actionItems: state.actionItems,
+          practiceLogs: state.practiceLogs.slice(0, MAX_PRACTICE_LOGS),
           updatedAt: new Date().toISOString()
         }, true));
       }
@@ -703,6 +727,27 @@
       .sr-task-actions button { border:1px solid #555; background:#222; color:#ddd; border-radius:6px; padding:5px 7px; cursor:pointer; font-size:.68em; }
       .sr-task-overdue { color:#ff5353 !important; }
       .sr-task-marker { color:#b070ff; font-size:.68em; display:block; margin-top:4px; }
+      #sr-practice-overlay {
+        display:none; position:fixed; inset:0; z-index:123000; overflow-y:auto; overscroll-behavior:contain;
+        background:radial-gradient(circle at top,#251d32,#050505 72%); color:#fff;
+      }
+      #sr-practice-overlay.show { display:block; }
+      .sr-practice-shell { min-height:100%; max-width:850px; margin:0 auto; padding:22px 18px 40px; }
+      .sr-practice-top { display:flex; justify-content:space-between; align-items:center; gap:10px; color:#aaa; }
+      .sr-practice-kicker { color:#b070ff; font-size:.78em; font-weight:bold; text-transform:uppercase; letter-spacing:.08em; text-align:center; margin-top:35px; }
+      .sr-practice-title { font-size:clamp(1.8em,6vw,3.8em); line-height:1.08; text-align:center; margin:8px 0; }
+      .sr-practice-song { color:#ffb52e; font-size:1.05em; text-align:center; min-height:1.4em; }
+      .sr-practice-clock { font-family:monospace; color:#b070ff; font-size:clamp(2.8em,10vw,6em); text-align:center; margin:25px 0 10px; }
+      .sr-practice-tools,.sr-practice-finish { display:flex; justify-content:center; flex-wrap:wrap; gap:9px; margin-top:12px; }
+      .sr-practice-tools button,.sr-practice-finish button,.sr-practice-close {
+        border:1px solid #555; background:#222; color:#fff; border-radius:9px; padding:11px 15px; cursor:pointer; font-weight:bold;
+      }
+      .sr-practice-tools button.active { color:#111; background:#b070ff; border-color:#b070ff; }
+      .sr-practice-finish button.primary { color:#111; background:#43d17a; border-color:#43d17a; }
+      #sr-practice-note { width:100%; min-height:110px; resize:vertical; background:#151515; color:#fff; border:1px solid #444; border-radius:8px; padding:10px; margin-top:18px; }
+      .sr-practice-history { margin-top:10px; }
+      .sr-practice-history-item { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; border-bottom:1px solid #292929; padding:8px 2px; }
+      .sr-practice-history-item small { color:#888; display:block; margin-top:3px; }
       @media(max-width:800px) {
         .sr-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
         .sr-song,.sr-rehearsal-grid { grid-template-columns:1fr; }
@@ -724,6 +769,8 @@
         .sr-task-form { grid-template-columns:1fr; }
         .sr-task-item { grid-template-columns:auto minmax(0,1fr); }
         .sr-task-actions { grid-column:2; }
+        .sr-practice-shell { padding:16px 10px 30px; }
+        .sr-practice-top { align-items:flex-start; }
       }
     `;
     document.head.appendChild(style);
@@ -800,6 +847,36 @@
     overlay.className = "modal-overlay";
     overlay.setAttribute("aria-hidden", "true");
     overlay.innerHTML = '<div id="sr-summary-content"></div>';
+    document.body.appendChild(overlay);
+  }
+
+  function createPracticeOverlay() {
+    if (document.getElementById("sr-practice-overlay")) return;
+    const overlay = document.createElement("div");
+    overlay.id = "sr-practice-overlay";
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.innerHTML = `
+      <div class="sr-practice-shell">
+        <div class="sr-practice-top">
+          <span id="sr-practice-owner">Trabajo individual</span>
+          <button id="sr-practice-close" class="sr-practice-close">Cerrar sin registrar</button>
+        </div>
+        <div class="sr-practice-kicker">Modo Trabajo Individual</div>
+        <h2 id="sr-practice-title" class="sr-practice-title">Tarea</h2>
+        <div id="sr-practice-song" class="sr-practice-song"></div>
+        <div id="sr-practice-clock" class="sr-practice-clock">0:00</div>
+        <div class="sr-practice-tools">
+          <button id="sr-practice-pause">Pausar</button>
+          <button id="sr-practice-jukebox">Abrir Jukebox</button>
+          <button id="sr-practice-metronome">Iniciar metrónomo</button>
+        </div>
+        <textarea id="sr-practice-note" placeholder="Qué has trabajado, qué ha mejorado y qué queda pendiente..."></textarea>
+        <div class="sr-practice-finish">
+          <button id="sr-practice-save">Guardar práctica</button>
+          <button id="sr-practice-complete" class="primary">Guardar y completar tarea</button>
+        </div>
+      </div>
+    `;
     document.body.appendChild(overlay);
   }
 
@@ -1407,6 +1484,7 @@
 
   function dashboardTime(seconds) {
     const totalMinutes = Math.round((Number(seconds) || 0) / 60);
+    if (Number(seconds) > 0 && totalMinutes === 0) return "menos de 1 min";
     if (totalMinutes < 60) return `${totalMinutes} min`;
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
@@ -1512,6 +1590,7 @@
             </small>
           </div>
           <div class="sr-task-actions">
+            <button data-sr-practice-task="${escapeHtml(task.id)}">Practicar</button>
             <button data-sr-archive-task="${escapeHtml(task.id)}">Quitar</button>
           </div>
         </div>
@@ -1531,6 +1610,40 @@
           <button data-sr-add-task>Añadir tarea</button>
         </div>
         <div class="sr-dashboard-list">${taskListHtml()}</div>
+      </div>
+    `;
+  }
+
+  function practiceHistoryHtml() {
+    const logs = state.practiceLogs.slice(0, 8);
+    const totalSeconds = state.practiceLogs.reduce((sum, log) => sum + Number(log.seconds || 0), 0);
+    const currentIdentity = getIdentity();
+    const personalSeconds = state.practiceLogs
+      .filter(log => log.owner === currentIdentity)
+      .reduce((sum, log) => sum + Number(log.seconds || 0), 0);
+    return `
+      <div class="sr-panel sr-practice-history">
+        <h4>Trabajo individual registrado</h4>
+        <div class="sr-dashboard-grid">
+          <div class="sr-dashboard-card"><strong>${dashboardTime(totalSeconds)}</strong><span>Tiempo total individual</span></div>
+          <div class="sr-dashboard-card"><strong>${dashboardTime(personalSeconds)}</strong><span>Tiempo de ${escapeHtml(currentIdentity)}</span></div>
+          <div class="sr-dashboard-card"><strong>${state.practiceLogs.length}</strong><span>Sesiones individuales</span></div>
+          <div class="sr-dashboard-card"><strong>${getActionItems().filter(task => task.done).length}</strong><span>Tareas completadas</span></div>
+        </div>
+        <div class="sr-dashboard-list" style="margin-top:8px;">
+          ${logs.length ? logs.map(log => {
+            const song = songs.find(item => item.key === log.songKey);
+            return `
+              <div class="sr-practice-history-item">
+                <div>
+                  <strong>${escapeHtml(song?.title || log.taskTitle || "Trabajo individual")}</strong>
+                  <small>${escapeHtml(log.owner || "Banda")} · ${new Date(log.endedAt || log.startedAt).toLocaleString("es-ES")}${log.note ? ` · ${escapeHtml(log.note)}` : ""}</small>
+                </div>
+                <span class="sr-dashboard-status" style="color:#b070ff">${dashboardTime(log.seconds)}</span>
+              </div>
+            `;
+          }).join("") : '<div class="sr-empty">Todavía no se ha registrado trabajo individual.</div>'}
+        </div>
       </div>
     `;
   }
@@ -1678,6 +1791,7 @@
           </div>
         </div>
         ${tasksPanelHtml()}
+        ${practiceHistoryHtml()}
         <div class="sr-panel" style="margin-top:10px;">
           <h4>Sesiones recientes</h4>
           ${recentSessions.length ? recentSessions.map(session => {
@@ -1730,6 +1844,125 @@
       return;
     }
     window.toggleMetronomeFromTable(match[0], null);
+  }
+
+  function currentPracticeTask() {
+    return activePractice ? state.actionItems[activePractice.taskId] : null;
+  }
+
+  function currentPracticeSong() {
+    const task = currentPracticeTask();
+    return task?.songKey ? songs.find(song => song.key === task.songKey) : null;
+  }
+
+  function practiceElapsedSeconds() {
+    if (!activePractice?.startedMs) return 0;
+    const effectiveNow = activePractice.paused && activePractice.pauseStartedMs ? activePractice.pauseStartedMs : Date.now();
+    return Math.max(0, Math.round((effectiveNow - activePractice.startedMs - Number(activePractice.pausedMs || 0)) / 1000));
+  }
+
+  function renderPracticeClock() {
+    if (!activePractice) return;
+    const clock = document.getElementById("sr-practice-clock");
+    const pause = document.getElementById("sr-practice-pause");
+    if (clock) clock.textContent = formatSeconds(practiceElapsedSeconds());
+    if (pause) {
+      pause.textContent = activePractice.paused ? "Reanudar" : "Pausar";
+      pause.classList.toggle("active", activePractice.paused);
+    }
+  }
+
+  function startPractice(taskId) {
+    const task = state.actionItems[taskId];
+    const overlay = document.getElementById("sr-practice-overlay");
+    if (!task || !overlay) return;
+    const song = task.songKey ? songs.find(item => item.key === task.songKey) : null;
+    activePractice = {
+      taskId,
+      owner: getIdentity(),
+      startedAt: new Date().toISOString(),
+      startedMs: Date.now(),
+      pausedMs: 0,
+      pauseStartedMs: null,
+      paused: false
+    };
+    document.getElementById("sr-practice-owner").textContent = `Trabajando: ${activePractice.owner}`;
+    document.getElementById("sr-practice-title").textContent = task.title;
+    document.getElementById("sr-practice-song").textContent = song ? song.title : "Tarea general de la banda";
+    document.getElementById("sr-practice-note").value = song ? getSongRecord(song.key).note || "" : "";
+    document.getElementById("sr-practice-jukebox").disabled = !song;
+    document.getElementById("sr-practice-metronome").disabled = !song;
+    overlay.classList.add("show");
+    overlay.setAttribute("aria-hidden", "false");
+    clearInterval(practiceTimer);
+    practiceTimer = setInterval(renderPracticeClock, 1000);
+    if (!IS_LOCAL_PREVIEW && typeof window.requestWakeLock === "function") window.requestWakeLock();
+    renderPracticeClock();
+  }
+
+  function togglePracticePause() {
+    if (!activePractice) return;
+    if (!activePractice.paused) {
+      activePractice.paused = true;
+      activePractice.pauseStartedMs = Date.now();
+    } else {
+      activePractice.pausedMs += Math.max(0, Date.now() - activePractice.pauseStartedMs);
+      activePractice.pauseStartedMs = null;
+      activePractice.paused = false;
+    }
+    renderPracticeClock();
+  }
+
+  function closePractice() {
+    activePractice = null;
+    clearInterval(practiceTimer);
+    practiceTimer = null;
+    const overlay = document.getElementById("sr-practice-overlay");
+    overlay?.classList.remove("show");
+    overlay?.setAttribute("aria-hidden", "true");
+    if (!IS_LOCAL_PREVIEW && typeof window.releaseWakeLock === "function") window.releaseWakeLock();
+  }
+
+  function finishPractice(completeTask) {
+    const task = currentPracticeTask();
+    if (!activePractice || !task) return;
+    const song = currentPracticeSong();
+    const note = document.getElementById("sr-practice-note")?.value.trim() || "";
+    const endedAt = new Date().toISOString();
+    const log = {
+      id: `practice_${Date.now()}`,
+      taskId: task.id,
+      taskTitle: task.title,
+      songKey: task.songKey || "",
+      owner: activePractice.owner,
+      startedAt: activePractice.startedAt,
+      endedAt,
+      seconds: Math.max(1, practiceElapsedSeconds()),
+      note,
+      completedTask: !!completeTask
+    };
+    state.practiceLogs.unshift(log);
+    state.practiceLogs = state.practiceLogs.slice(0, MAX_PRACTICE_LOGS);
+    if (song && note) {
+      state.songs[song.key] = {
+        ...getSongRecord(song.key),
+        note,
+        updatedAt: endedAt,
+        updatedBy: activePractice.owner
+      };
+    }
+    if (completeTask) {
+      state.actionItems[task.id] = {
+        ...task,
+        done: true,
+        completedAt: endedAt,
+        updatedAt: endedAt,
+        updatedBy: activePractice.owner
+      };
+    }
+    closePractice();
+    queueSave();
+    renderAll();
   }
 
   function startSession(id) {
@@ -2011,6 +2244,11 @@
         if (task) updateActionItem(task.id, { done: !task.done, completedAt: task.done ? null : new Date().toISOString() });
         return;
       }
+      const practiceTaskButton = event.target.closest("[data-sr-practice-task]");
+      if (practiceTaskButton) {
+        startPractice(practiceTaskButton.dataset.srPracticeTask);
+        return;
+      }
       const archiveTaskButton = event.target.closest("[data-sr-archive-task]");
       if (archiveTaskButton) {
         updateActionItem(archiveTaskButton.dataset.srArchiveTask, { archived: true });
@@ -2095,10 +2333,40 @@
       if (event.target.closest("#sr-session-metronome")) {
         const song = currentSessionSong();
         if (song) startMetronomeForSong(song);
+        return;
+      }
+      if (event.target.closest("#sr-practice-close")) {
+        closePractice();
+        return;
+      }
+      if (event.target.closest("#sr-practice-pause")) {
+        togglePracticePause();
+        return;
+      }
+      if (event.target.closest("#sr-practice-jukebox")) {
+        const song = currentPracticeSong();
+        if (song) openJukeboxForSong(song);
+        return;
+      }
+      if (event.target.closest("#sr-practice-metronome")) {
+        const song = currentPracticeSong();
+        if (song) startMetronomeForSong(song);
+        return;
+      }
+      if (event.target.closest("#sr-practice-save")) {
+        finishPractice(false);
+        return;
+      }
+      if (event.target.closest("#sr-practice-complete")) {
+        finishPractice(true);
       }
     });
 
     document.addEventListener("change", event => {
+      if (event.target.id === "user-identity-selector") {
+        renderIntelligenceDashboard();
+        return;
+      }
       const dashboardFilter = event.target.closest("[data-sr-dashboard-filter]");
       if (dashboardFilter) {
         intelligenceFilters[dashboardFilter.dataset.srDashboardFilter] = dashboardFilter.value;
@@ -2122,6 +2390,10 @@
 
     document.addEventListener("keydown", event => {
       if (event.key !== "Escape" || activeSession) return;
+      if (activePractice) {
+        closePractice();
+        return;
+      }
       if (document.getElementById("sr-summary-overlay")?.classList.contains("show")) closeSessionSummary();
       else if (activePlanScreenId) closePlanScreen();
     });
@@ -2133,6 +2405,7 @@
     createSessionOverlay();
     createPlanScreen();
     createSummaryOverlay();
+    createPracticeOverlay();
     wireEvents();
     renderAll();
     setTimeout(loadRemoteState, 1500);
@@ -2152,9 +2425,11 @@
       getNextConcert: getNextConcertInfo,
       getConcertRadar: () => getUpcomingConcerts().map(concertRadarData),
       getActionItems: () => JSON.parse(JSON.stringify(getActionItems())),
+      getPracticeLogs: () => JSON.parse(JSON.stringify(state.practiceLogs)),
+      startPractice,
       getState: () => JSON.parse(JSON.stringify(state))
     };
-    console.log("--- SMART REHEARSAL v8 cargado ---");
+    console.log("--- SMART REHEARSAL v9 cargado ---");
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
